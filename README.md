@@ -41,7 +41,8 @@ Para voltar ao firmware original, envie o `.bin` da GeekMagic ([GeekMagicClock/s
 
 | Pasta | Conteúdo |
 |---|---|
-| `smalltv-pomodoro/` | Firmware (Arduino/ESP8266). `ui.cpp` desenha todas as telas; `main.cpp` cuida de Wi-Fi, clima, álbum, Pomodoro e painel web; `web.h` é o painel; `assets.h` é gerado a partir de `assets/` |
+| `smalltv-pomodoro/` | Firmware (Arduino/ESP8266). `main.cpp`: Wi-Fi, clima, álbum, Pomodoro e servidor web. `ui.cpp` + `ui_kit.h`: núcleo e kit de desenho. `face_*.cpp`: um arquivo por mostrador, registrados em `faces_list.h`. `assets.h` é gerado a partir de `assets/` |
+| `web/` | Painel web: edite `web/index.html`; `web/build.js` gera o `web.h` comprimido (gzip) |
 | `assets/` | Sprites em pixel art (um `.txt` por sprite), paletas e o gerador `gerar.js` |
 | `sim/` | Simulador das telas no PC; `sim/faces.js` gera as prévias da galeria (`docs/faces/` e `smalltv-pomodoro/faces.h`) |
 | `docs/` | Imagens do README |
@@ -109,7 +110,7 @@ arduino-cli compile --fqbn "esp8266:esp8266:generic:eesz=4M3M,xtal=160,ip=lm2n" 
 ## Detalhes técnicos
 
 - **Layout da flash 4M3M**, o mesmo do firmware original (constantes do LittleFS encontradas no binário V9.0.50, offset `0x14d00`). Assim as fotos e GIFs existentes são lidos. O LittleFS é montado **sem formatação automática**: se não montar, nada é apagado.
-- **Tamanho do binário**: para conseguir voltar ao firmware original pelo painel, este firmware precisa ficar abaixo de ~530 KB (hoje ~514 KB).
+- **Tamanho do binário**: para conseguir voltar ao firmware original pelo painel, este firmware precisa ficar abaixo de ~530 KB (hoje ~491 KB).
 - **Painel comprimido**: o HTML vai com gzip na flash (~24 KB → ~9 KB) e a pilha de rede usa a variante leve do lwIP (`ip=lm2n`, sem recursos que o relógio não usa, como PPP e roteamento)
 - **Fontes desenhadas por código**: os dígitos (pixel art 5×7, fonte vetorial "Geo" e os segmentos do DSEG7 como polígonos) não usam bitmaps na flash.
 - **Sprites** em `PROGMEM` com 4 bits por pixel, desenhados juntando pixels vizinhos iguais em retângulos (menos chamadas SPI).
