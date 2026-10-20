@@ -9,7 +9,7 @@ Firmware alternativo para o **GeekMagic SmallTV Ultra** (ESP8266, tela ST7789 24
 ## Funções
 
 - **8 mostradores**: Matriz, Tomate (cena em pixel art que muda com a hora e o clima; o tomate abre o guarda-chuva na chuva, põe cachecol no frio, óculos escuros no calor e comemora a meta do dia), Analógico, Clima, Neon, Flip (com animação de virada de verdade), LCD retrô e Palavras (hora por extenso em português)
-- **Pomodoro** com anel de progresso, horário de término e o tomate mudando de expressão (focado com um livro, relaxando com um café, dormindo quando pausado) e pulando de alegria quando uma fase termina; contador de focos do dia com meta diária
+- **Pomodoro** com anel de progresso, horário de término e o tomate mudando de expressão (focado, relaxando com um café, dormindo quando pausado); você escolhe no painel o que vai fazer no foco (ler, estudar, programar, tarefas ou desenhar) e a tela mostra a atividade e o objeto dela ao lado do tomate e pulando de alegria quando uma fase termina; contador de focos do dia com meta diária
 - **Clima** via [Open-Meteo](https://open-meteo.com/) (sem chave de API), com busca de cidade pelo painel
 - **Álbum de fotos e GIFs**: lê os arquivos já gravados pelo firmware original; envio pelo painel com recorte automático para 240×240
 - **Brilho noturno** por horário
@@ -22,6 +22,8 @@ Firmware alternativo para o **GeekMagic SmallTV Ultra** (ESP8266, tela ST7789 24
 ![Virada do mostrador Flip, quadro a quadro](docs/flip.png)
 
 ![Pomodoro (foco, pausado, fim de fase) e tela de configuração](docs/pomodoro.png)
+
+![Atividades do foco: ler, estudar, programar, tarefas e desenhar](docs/atividades.png)
 
 ## Instalar
 
@@ -46,7 +48,7 @@ Para voltar ao firmware original, envie o `.bin` da GeekMagic ([GeekMagicClock/s
 
 ## Biblioteca de assets
 
-Todos os desenhos em pixel art (o tomate e suas expressões, café, livro, sol, lua, nuvens e a animação de fim de Pomodoro) são arquivos de texto em `assets/`, um por sprite. O `assets/gerar.js` converte todos em `smalltv-pomodoro/assets.h`: cada sprite vira `SPR_<NOME>` na flash (4 bits por pixel, ~130 bytes um sprite 16×16), sem gastar RAM.
+Todos os desenhos em pixel art (o tomate e suas expressões, café, livro, caderno, notebook, prancheta, paleta de pintor, sol, lua, nuvens e a animação de fim de Pomodoro) são arquivos de texto em `assets/`, um por sprite. O `assets/gerar.js` converte todos em `smalltv-pomodoro/assets.h`: cada sprite vira `SPR_<NOME>` na flash (4 bits por pixel, ~130 bytes um sprite 16×16), sem gastar RAM.
 
 ![Folha de prévia dos assets](docs/assets.png)
 
@@ -103,7 +105,7 @@ arduino-cli compile --fqbn "esp8266:esp8266:generic:eesz=4M3M,xtal=160" --output
 ## Detalhes técnicos
 
 - **Layout da flash 4M3M**, o mesmo do firmware original (constantes do LittleFS encontradas no binário V9.0.50, offset `0x14d00`). Assim as fotos e GIFs existentes são lidos. O LittleFS é montado **sem formatação automática**: se não montar, nada é apagado.
-- **Tamanho do binário**: para conseguir voltar ao firmware original pelo painel, este firmware precisa ficar abaixo de ~530 KB (hoje ~513 KB).
+- **Tamanho do binário**: para conseguir voltar ao firmware original pelo painel, este firmware precisa ficar abaixo de ~530 KB (hoje ~514 KB).
 - **Fontes desenhadas por código**: os dígitos (pixel art 5×7, fonte vetorial "Geo" e os segmentos do DSEG7 como polígonos) não usam bitmaps na flash.
 - **Sprites** em `PROGMEM` com 4 bits por pixel, desenhados juntando pixels vizinhos iguais em retângulos (menos chamadas SPI).
 - **RAM**: o decodificador de GIF precisa de ~24 KB contíguos e o de JPEG de ~18 KB. Se faltar memória, a tela mostra um aviso em vez de travar.

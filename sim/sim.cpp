@@ -129,6 +129,7 @@ static int checkIncremental(const char *name, UiState s, bool pomo) {
       s.ms += 100;
       if (step == 20) s.celebrate = true;          // fase terminou: animação de fim
       if (step == 47) s.celebrate = false;
+      if (step == 55) s.activity = ACT_CODE;       // troca de atividade no meio do foco
       if (step == 70) s.running = !s.running;      // pausa no meio
       if (step == 90) s.running = !s.running;
       if (step == 100) { s.cycleDone++; }          // ciclo avança
@@ -220,6 +221,13 @@ int main() {
   { UiState t = p; t.phase = PH_SHORT; t.totalMs = 5 * 60000; t.remainingMs = 3 * 60000 + 40000; t.running = false; t.now.tm_sec = 0; shot("10_pomo_pausa_pausado", t, true); }
   { UiState t = p; t.phase = PH_LONG; t.totalMs = 15 * 60000; t.remainingMs = 14 * 60000; t.cycleDone = 4; shot("11_pomo_pausa_longa", t, true); }
   { UiState t = p; t.phase = PH_SHORT; t.totalMs = t.remainingMs = 5 * 60000; t.cycleDone = 3; t.celebrate = true; t.ms = 3 * 160; shot("11b_pomo_fim", t, true); }
+  for (int a = 0; a < ACT_COUNT; a++) {  // uma tela por atividade do foco
+    UiState t = p;
+    t.activity = a;
+    char n[32];
+    snprintf(n, sizeof n, "11c_pomo_atividade_%d", a);
+    shot(n, t, true);
+  }
 
   // ---- telas avulsas ----
   { Frame *f = new Frame(); uiBegin(f); uiMessage("Configure o Wi-Fi", "SmallTV-Pomodoro", "Conecte nessa rede e abra", "http://192.168.4.1"); save(*f, "12_portal"); delete f; }
