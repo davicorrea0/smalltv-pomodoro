@@ -61,7 +61,7 @@ arduino-cli compile --fqbn "esp8266:esp8266:generic:eesz=4M3M,xtal=160" --output
 
 - **Layout da flash 4M3M**, o mesmo do firmware original (constantes do LittleFS encontradas no binário V9.0.50, offset `0x14d00`). Assim as fotos e GIFs existentes são lidos. O LittleFS é montado **sem formatação automática**: se não montar, nada é apagado.
 - **Tamanho do binário**: para conseguir voltar ao firmware original pelo painel, este firmware precisa ficar abaixo de ~530 KB (hoje ~483 KB).
-- **Fontes desenhadas por código**: os dígitos (pixel art 5×7, fonte vetorial "Geo" e 7 segmentos) não usam bitmaps na flash.
+- **Fontes desenhadas por código**: os dígitos (pixel art 5×7, fonte vetorial "Geo" e os segmentos do DSEG7 como polígonos) não usam bitmaps na flash.
 - **RAM**: o decodificador de GIF precisa de ~24 KB contíguos e o de JPEG de ~18 KB. Se faltar memória, a tela mostra um aviso em vez de travar.
 
 ### Pinagem
@@ -77,4 +77,5 @@ arduino-cli compile --fqbn "esp8266:esp8266:generic:eesz=4M3M,xtal=160" --output
 
 - Pinagem: [ESPHome devices — GeekMagic Ultra](https://devices.esphome.io/devices/geekmagic-ultra/)
 - Ordem de cor do painel e carregador para o erro de espaço: [giovi321/smalltv-mod](https://github.com/giovi321/smalltv-mod)
+- Fonte dos dígitos do mostrador LCD: [DSEG7 Classic](https://github.com/keshikan/DSEG) (keshikan, SIL Open Font License 1.1 — ver `licenses/DSEG-LICENSE.txt`); os contornos dos segmentos foram extraídos da fonte e são desenhados como polígonos
 - Bibliotecas: Adafruit GFX e ST7789, ArduinoJson, JPEGDEC e AnimatedGIF (bitbank2)
