@@ -875,18 +875,24 @@ static const uint8_t FLIP_DIG[11] = {0, 2, 3, 4, 5, 7, 8, 10, 11, 14, 16};  // p
 static const int FLIP_CW = 400, FLIP_CH = 720;
 
 
-void (*uiFrameHook)() = nullptr;  // o firmware usa para ceder tempo ao Wi-Fi entre quadros
+void (*uiFrameHook)() = nullptr;     // o firmware usa para ceder tempo ao Wi-Fi entre quadros
+uint32_t (*uiMillis)() = nullptr;    // relógio em ms (firmware: millis); sem ele, passos fixos de 20 ms
 
 static const int FL_W = 108, FL_H = 124, FL_HALF = 62, FL_Y = 40;
-static const int FL_DTOP = 17;          // topo do dígito dentro do cartão (dígito = 720/8 = 90 px)
+static const int FL_EXT = 4;             // folga lateral: a borda da aba "cresce" em perspectiva
+static const int FL_BW = FL_W + 2 * FL_EXT;
+static const int FL_DTOP = 17;           // topo do dígito dentro do cartão (dígito = 720/8 = 90 px)
 static const int FL_X[2] = {8, 124};     // cartão das horas e dos minutos
+static const float FL_D = 14.0f * FL_HALF;  // distância do observador (perspectiva sutil)
 static const uint16_t FL_TOP = uiRgb(46, 46, 52), FL_BOT = uiRgb(37, 37, 42), FL_FG = uiRgb(244, 242, 234);
 static const uint8_t FL_CORNER[10] = {7, 5, 3, 2, 2, 1, 1, 0, 0, 0};  // recuo dos cantos arredondados (raio 10)
-static uint8_t flCov[FL_W];
-static uint16_t flRowBuf[FL_W];
+static uint8_t flCov[FL_BW];
+static uint16_t flRowBuf[FL_BW];
 
 // Mistura inteira de cores RGB565: n/16 de b sobre a.
 static uint16_t mix16(uint16_t a, uint16_t b, int n) {
+  if (n <= 0) return a;
+  if (n >= 16) return b;
   int ar = (a >> 11) & 31, ag = (a >> 5) & 63, ab = a & 31;
   int br = (b >> 11) & 31, bg = (b >> 5) & 63, bb = b & 31;
   return ((ar + (br - ar) * n / 16) << 11) | ((ag + (bg - ag) * n / 16) << 5) | (ab + (bb - ab) * n / 16);
@@ -895,7 +901,7 @@ static uint16_t mix16(uint16_t a, uint16_t b, int n) {
 // Acumula a cobertura de um trecho [a, b) em 1/16 de pixel.
 static void flSpan(int a, int b) {
   if (a < 0) a = 0;
-  if (b > FL_W * 16) b = FL_W * 16;
+  if (b > FL_BW * 16) b = FL_BW * 16;
   if (b <= a) return;
   int ia = a >> 4, ib = b >> 4;
   if (ia == ib) {
@@ -904,11 +910,12 @@ static void flSpan(int a, int b) {
   }
   flCov[ia] += 16 - (a & 15);
   for (int i = ia + 1; i < ib; i++) flCov[i] += 16;
-  if (ib < FL_W) flCov[ib] += b & 15;
+  if (ib < FL_BW) flCov[ib] += b & 15;
 }
 
 // Uma sub-linha de um dígito: cruzamentos com as arestas (regra par-ímpar, que trata os furos).
-static void flSubline(int d, int ox16, int sy) {
+// ox16 = origem do dígito (1/16 px, coordenadas do buffer); sx16 = escala horizontal x16 em torno do centro.
+static void flSubline(int d, int ox16, int sy, int sx16) {
   if (sy < 0 || sy >= FLIP_CH) return;
   int xs[24], n = 0;
   for (int c = FLIP_DIG[d]; c < FLIP_DIG[d + 1]; c++) {
@@ -929,66 +936,119 @@ static void flSubline(int d, int ox16, int sy) {
       xs[k] = xs[k - 1];
       xs[k - 1] = t;
     }
-  for (int k = 0; k + 1 < n; k += 2) flSpan(ox16 + xs[k] / 8, ox16 + xs[k + 1] / 8);  // fonte/8 = px
+  const int c16 = FL_BW * 8;  // centro do buffer em 1/16 px
+  for (int k = 0; k + 1 < n; k += 2) {
+    int a = ox16 + xs[k] / 8, b = ox16 + xs[k + 1] / 8;  // fonte/8 = px
+    flSpan(c16 + (a - c16) * sx16 / 16, c16 + (b - c16) * sx16 / 16);
+  }
 }
 
-// Desenha a linha de tela y (relativa ao cartão: yr) mostrando a linha de origem srcTop (px do
-// cartão, fracionária) com altura dy (1/escala) do par "value", escurecida em shade/16.
-static void flRow(int cx, int yr, int value, float srcTop, float dy, int shade) {
+// Desenha a linha de tela FL_Y+yr do cartão em cx mostrando a linha de origem srcTop (px do
+// cartão, fracionária, altura dy) do par "value", com escala horizontal sx e escurecida em shade/16.
+static void flRow(int cx, int yr, int value, float srcTop, float dy, int shade, float sx = 1) {
   memset(flCov, 0, sizeof flCov);
-  bool upper = srcTop < FL_HALF;
-  uint16_t bg = upper ? FL_TOP : FL_BOT;
+  int sx16 = (int)(sx * 16 + 0.5f);
   if (value >= 0)
     for (int j = 0; j < 4; j++) {
       int sy = (int)((srcTop + (j + 0.5f) * dy / 4 - FL_DTOP) * 8);  // linha de origem em unidades da fonte
-      flSubline(value / 10, 4 * 16, sy);
-      flSubline(value % 10, 54 * 16, sy);
+      flSubline(value / 10, (FL_EXT + 4) * 16, sy, sx16);
+      flSubline(value % 10, (FL_EXT + 54) * 16, sy, sx16);
     }
+  uint16_t bg = srcTop < FL_HALF ? FL_TOP : FL_BOT;
   uint16_t pal[17], b = mix16(bg, BG, shade), f = mix16(FL_FG, BG, shade);
   for (int i = 0; i <= 16; i++) pal[i] = mix16(b, f, i);
-  int inset = yr < 10 ? FL_CORNER[yr] : yr >= FL_H - 10 ? FL_CORNER[FL_H - 1 - yr] : 0;
-  for (int x = 0; x < FL_W; x++) {
+  // silhueta: cartão (com cantos arredondados da linha de origem) escalado em torno do centro
+  int sr = (int)srcTop;
+  int inset = sr < 10 ? FL_CORNER[sr < 0 ? 0 : sr] : sr >= FL_H - 10 ? FL_CORNER[FL_H - 1 - sr] : 0;
+  float half = (FL_W / 2 - inset) * sx;
+  int l = (int)(FL_BW / 2 - half + 0.5f), r = (int)(FL_BW / 2 + half + 0.5f);
+  for (int x = 0; x < FL_BW; x++) {
     int c = flCov[x] > 64 ? 64 : flCov[x];
-    flRowBuf[x] = (x < inset || x >= FL_W - inset) ? BG : pal[(c + 2) / 4];
+    flRowBuf[x] = (x < l || x >= r) ? BG : pal[(c + 2) / 4];
   }
-  G->drawRGBBitmap(cx, FL_Y + yr, flRowBuf, FL_W, 1);
+  G->drawRGBBitmap(cx - FL_EXT, FL_Y + yr, flRowBuf, FL_BW, 1);
 }
 
-// Um quadro da virada. p de 0 a 1: aba de cima (antigo) caindo; de 1 a 2: aba de baixo (novo) descendo.
-// p = 2 é o cartão parado mostrando "newV".
-static void flipFrame(int cx, int oldV, int newV, float p) {
-  for (int yr = 0; yr < FL_H; yr++) {
-    if (yr == FL_HALF - 1 || yr == FL_HALF) {  // fenda da dobradiça
-      G->drawFastHLine(cx, FL_Y + yr, FL_W, BG);
-      continue;
-    }
-    if (yr < FL_HALF) {
-      float s = p < 1 ? cosf(p * K_PI / 2) : 0;  // altura aparente da aba que cai
-      float dist = FL_HALF - yr;
-      if (s > 0.02f && dist <= FL_HALF * s) flRow(cx, yr, oldV, FL_HALF - dist / s, 1 / s, (int)((1 - s) * 9));
-      else flRow(cx, yr, newV, yr, 1, 0);
+// Metade de cima do cartão para o ângulo th da aba (0 = em pé, cobrindo; 90 = de lado).
+// A aba mostra a metade de cima do número antigo; atrás dela aparece o número novo.
+static void flipTopHalf(int cx, int oldV, int newV, float th) {
+  float a = th * K_PI / 180, ca = cosf(a), sa = sinf(a);
+  // altura aparente da aba projetada (r = FL_HALF)
+  float dyMax = th < 90 ? FL_HALF * ca * FL_D / (FL_D - FL_HALF * sa) : 0;
+  int shadow = (int)((90 - th) / 90 * 5);  // a aba ainda em pé faz sombra no número novo
+  for (int yr = 0; yr < FL_HALF - 1; yr++) {
+    float dy = FL_HALF - yr - 0.5f;  // distância até a dobradiça
+    if (th < 90 && dy <= dyMax) {
+      // projeção inversa: ponto da aba a r da dobradiça aparece a dy = r·cos·D/(D - r·sen)
+      float r = dy * FL_D / (FL_D * ca + dy * sa);
+      float sx = FL_D / (FL_D - r * sa);
+      float q = FL_D * ca + dy * sa, step = FL_D * FL_D * ca / (q * q);  // linhas de origem por linha de tela
+      flRow(cx, yr, oldV, FL_HALF - r - step / 2, step, (int)(th / 90 * 9), sx);
     } else {
-      float s = p > 1 ? sinf((p - 1) * K_PI / 2) : 0;  // altura aparente da aba que desce
-      float dist = yr - FL_HALF;
-      if (s > 0.02f && dist < FL_HALF * s) flRow(cx, yr, newV, FL_HALF + dist / s, 1 / s, (int)((1 - s) * 7));
-      else flRow(cx, yr, oldV, yr, 1, 0);
+      flRow(cx, yr, newV, yr, 1, th < 90 ? shadow : 0);
     }
   }
-  // dobradiças nas laterais
+}
+
+// Metade de baixo para o ângulo th (90 = de lado, 180 = deitada cobrindo).
+// A aba mostra a metade de baixo do número novo; embaixo dela ainda aparece o antigo.
+static void flipBottomHalf(int cx, int oldV, int newV, float th) {
+  float phi = 180 - th;  // 0 = deitada
+  float a = phi * K_PI / 180, ca = cosf(a), sa = sinf(a);
+  float dyMax = FL_HALF * ca * FL_D / (FL_D - FL_HALF * sa);
+  int shadow = (int)((90 - phi) / 90 * 4);  // a aba chegando faz sombra no número antigo
+  for (int yr = FL_HALF + 1; yr < FL_H; yr++) {
+    float dy = yr - FL_HALF + 0.5f;
+    if (dy <= dyMax) {
+      float r = dy * FL_D / (FL_D * ca + dy * sa);
+      float sx = FL_D / (FL_D - r * sa);
+      float q = FL_D * ca + dy * sa, step = FL_D * FL_D * ca / (q * q);
+      flRow(cx, yr, newV, FL_HALF + r - step / 2, step, (int)(phi / 90 * 7), sx);
+    } else {
+      flRow(cx, yr, oldV, yr, 1, shadow);
+    }
+  }
+}
+
+static void flipHinge(int cx) {
+  G->drawFastHLine(cx - FL_EXT, FL_Y + FL_HALF - 1, FL_BW, BG);
+  G->drawFastHLine(cx - FL_EXT, FL_Y + FL_HALF, FL_BW, BG);
   G->fillCircle(cx, FL_Y + FL_HALF, 3, BG);
   G->fillCircle(cx + FL_W - 1, FL_Y + FL_HALF, 3, BG);
 }
 
-static void flipTo(int cx, int oldV, int newV, bool animate) {
-  if (!animate || oldV < 0) {
-    flipFrame(cx, newV, newV, 2);
-    return;
-  }
-  static const float P[] = {0.15f, 0.35f, 0.55f, 0.75f, 0.92f, 1.08f, 1.25f, 1.45f, 1.65f, 1.85f, 2.0f};
-  for (float p : P) {
-    flipFrame(cx, oldV, newV, p);
+// Cartão parado mostrando "v".
+static void flipStatic(int cx, int v) {
+  for (int yr = 0; yr < FL_H; yr++)
+    if (yr != FL_HALF - 1 && yr != FL_HALF) flRow(cx, yr, v, yr, 1, 0);
+  flipHinge(cx);
+}
+
+// Vira até 2 cartões ao mesmo tempo. Física simples: a aba cai com aceleração constante
+// (ângulo cresce com t²) e quica de leve ao bater. Guiado pelo relógio, não por número de
+// quadros: dura ~0,37 s com quantos quadros o aparelho conseguir desenhar.
+static void flipAnimate(int n, const int *cx, const int *oldV, const int *newV) {
+  const float T_FALL = 280, T_BOUNCE = 90, BOUNCE = 10;  // ms, ms, graus
+  uint32_t t0 = uiMillis ? uiMillis() : 0;
+  float t = 0, prev = 0;
+  for (;;) {
+    float th;
+    if (t < T_FALL) th = 180 * (t / T_FALL) * (t / T_FALL);
+    else if (t < T_FALL + T_BOUNCE) th = 180 - BOUNCE * sinf(K_PI * (t - T_FALL) / T_BOUNCE);
+    else break;
+    for (int i = 0; i < n; i++) {
+      if (th < 90) flipTopHalf(cx[i], oldV[i], newV[i], th);
+      else {
+        if (prev < 90) flipTopHalf(cx[i], oldV[i], newV[i], 90);  // a aba passou: número novo inteiro em cima
+        flipBottomHalf(cx[i], oldV[i], newV[i], th);
+      }
+      flipHinge(cx[i]);
+    }
+    prev = th;
     if (uiFrameHook) uiFrameHook();
+    t = uiMillis ? (float)(uiMillis() - t0) : t + 20;
   }
+  for (int i = 0; i < n; i++) flipStatic(cx[i], newV[i]);
 }
 
 static void pill(int x, int w) { G->fillRoundRect(x, 186, w, 28, 14, CARD); }
@@ -1001,15 +1061,20 @@ static void themeFlip(const UiState &s, bool full) {
     textC(120, 12, 2, MUTED, d);
   }
   int h = s.timeOk ? displayHour(s) : -1, m = s.timeOk ? s.now.tm_min : -1;
-  // na primeira vez desenha parado; depois, cada troca vira a plaquinha
-  if (h != lastDig[0]) {
-    flipTo(FL_X[0], full ? -1 : lastDig[0], h, !full);
-    lastDig[0] = h;
+  // na primeira vez desenha parado; depois, as plaquinhas que mudaram viram juntas
+  int cx[2], ov[2], nv[2], n = 0;
+  const int v[2] = {h, m};
+  for (int i = 0; i < 2; i++) {
+    if (v[i] == lastDig[i]) continue;
+    if (full || lastDig[i] < 0 || v[i] < 0) flipStatic(FL_X[i], v[i]);
+    else {
+      cx[n] = FL_X[i];
+      ov[n] = lastDig[i];
+      nv[n++] = v[i];
+    }
+    lastDig[i] = v[i];
   }
-  if (m != lastDig[1]) {
-    flipTo(FL_X[1], full ? -1 : lastDig[1], m, !full);
-    lastDig[1] = m;
-  }
+  if (n) flipAnimate(n, cx, ov, nv);
   if (full || lastWx != s.wx.version || lastWxOn != (int)s.weatherOn) {
     G->fillRect(8, 184, 110, 32, BG);
     pill(10, 105);

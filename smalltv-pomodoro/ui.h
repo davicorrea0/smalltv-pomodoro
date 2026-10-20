@@ -68,6 +68,8 @@ uint8_t uiSpriteFrame(const UiSprite *s, uint32_t ms);  // quadro da animação 
 void uiBegin(Adafruit_GFX *gfx);
 // Chamado entre os quadros de animação (ex.: virada do Flip) para ceder tempo ao Wi-Fi.
 extern void (*uiFrameHook)();
+// Relógio em ms para animações guiadas por tempo (firmware: millis). Sem ele, passos de 20 ms.
+extern uint32_t (*uiMillis)();
 void uiInvalidate();                         // redesenha tudo na próxima chamada
 void uiRenderClock(const UiState &s);        // tela de relógio no tema escolhido
 void uiRenderPomodoro(const UiState &s);     // anel de progresso do Pomodoro
