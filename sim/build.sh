@@ -13,4 +13,5 @@ mkdir -p out
 "$ZIG" c++ -target x86-windows-gnu -O1 -std=c++17 -DARDUINO=100 -Ishim -I"$GFX" sim.cpp "$GFX/Adafruit_GFX.cpp" -o sim.exe || exit 1
 ./sim.exe; r=$?
 node png.js > /dev/null
+node faces.js
 exit $r

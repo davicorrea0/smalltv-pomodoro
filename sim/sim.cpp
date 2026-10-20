@@ -180,6 +180,15 @@ int main() {
   { UiState t = base(11, 58, 0); t.theme = THEME_WORDS; shot("19_palavras_meiodia", t, false); }
   { UiState t = base(8, 23, 0); t.theme = THEME_WORDS; shot("20_palavras_manha", t, false); }
 
+  // ---- prévias da galeria do painel (docs/faces/face-N.png) ----
+  for (int t = 0; t < THEME_COUNT; t++) {
+    UiState g = t == THEME_ANALOG ? base(10, 9, 30) : base(14, 37, 24);
+    g.theme = t;
+    char n[16];
+    snprintf(n, sizeof n, "face-%d", t);
+    shot(n, g, false);
+  }
+
   // ---- Pomodoro ----
   UiState p = base(14, 37, 25);
   p.phase = PH_WORK; p.running = true; p.totalMs = 25 * 60000; p.remainingMs = 10 * 60000 + 12000; p.cycleDone = 2;

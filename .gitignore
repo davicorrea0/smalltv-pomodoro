@@ -11,3 +11,5 @@ sim/*.pdb
 fw/
 # carregador próprio ainda não testado no aparelho
 smalltv-loader/
+# configuração local do Claude Code
+.claude/

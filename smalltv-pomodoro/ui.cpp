@@ -844,56 +844,60 @@ static void themeFlip(const UiState &s, bool full) {
 
 // ---------- tema 6: LCD RETRÔ ----------
 // Relógio de pulso dos anos 80: tela verde-acinzentada, 7 segmentos com os apagados visíveis.
-static const uint16_t LCD_BG = uiRgb(166, 180, 140), LCD_ON = uiRgb(18, 24, 16), LCD_GHOST = uiRgb(157, 171, 132);  // fantasma = só um vestígio, como no LCD real
-static const uint8_t SEG7[10] = {0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07, 0x7F, 0x6F};
+static const uint16_t LCD_BG = uiRgb(166, 180, 140), LCD_ON = uiRgb(18, 24, 16), LCD_GHOST = uiRgb(161, 175, 136);  // fantasma = só um vestígio, como no LCD real
 
-// Segmentos hexagonais (pontas chanfradas) com inclinação itálica, como nos relógios Casio:
-// cada ponto é deslocado para a direita proporcionalmente à altura (x' = x + k·(yRef - y)).
-static float segK = 0;   // inclinação (0 = reto)
-static int segYRef = 0;  // linha de base da inclinação (pé do dígito)
+// DSEG7 Classic Bold (keshikan, SIL Open Font License 1.1) — os 7 segmentos do "8",
+// em unidades da fonte: x 0..618, y 0..1000 (de cima para baixo). Ordem a b c d e f g.
+static const int16_t DSEG_PT[][2] = {
+  {138, 124}, {45, 31}, {76, 0}, {542, 0}, {573, 31}, {480, 124},  // a
+  {494, 138}, {587, 45}, {618, 76}, {618, 490}, {560, 490}, {556, 486}, {494, 425},  // b
+  {494, 576}, {556, 515}, {560, 511}, {618, 511}, {618, 924}, {587, 955}, {494, 862},  // c
+  {480, 876}, {573, 969}, {542, 1000}, {76, 1000}, {45, 969}, {138, 876},  // d
+  {124, 862}, {31, 955}, {0, 924}, {0, 510}, {58, 510}, {62, 515}, {124, 576},  // e
+  {124, 424}, {62, 485}, {58, 490}, {0, 490}, {0, 76}, {31, 45}, {124, 138},  // f
+  {138, 438}, {478, 438}, {541, 501}, {480, 562}, {138, 562}, {76, 500},  // g
+};
+static const uint8_t DSEG_START[8] = {0, 6, 13, 20, 26, 33, 40, 46};
+static const uint8_t DSEG_MASK[10] = {0x3f, 0x06, 0x5b, 0x4f, 0x66, 0x6d, 0x7d, 0x27, 0x7f, 0x6f};
 
-static void segPoly(const int (*p)[2], int n, uint16_t c) {
-  int X[6], Y[6];
-  for (int i = 0; i < n; i++) {
-    X[i] = p[i][0] + lroundf(segK * (segYRef - p[i][1]));
-    Y[i] = p[i][1];
+// Preenche um polígono convexo (um segmento) linha a linha, amostrando no centro do pixel:
+// assim as folgas finas entre segmentos vizinhos ficam limpas em qualquer tamanho.
+static void fillConvex(const float *px, const float *py, int n, uint16_t c) {
+  float y0 = py[0], y1 = py[0];
+  for (int i = 1; i < n; i++) {
+    if (py[i] < y0) y0 = py[i];
+    if (py[i] > y1) y1 = py[i];
   }
-  for (int i = 1; i + 1 < n; i++) G->fillTriangle(X[0], Y[0], X[i], Y[i], X[i + 1], Y[i + 1], c);
-}
-static void hseg(int x, int y, int len, int t, uint16_t c) {
-  int h = t / 2, r = x + len - 1, b = y + t - 1;
-  const int p[6][2] = {{x, y + h}, {x + h, y}, {r - h, y}, {r, y + h}, {r - h, b}, {x + h, b}};
-  segPoly(p, 6, c);
-}
-static void vseg(int x, int y, int len, int t, uint16_t c) {
-  int h = t / 2, r = x + t - 1, b = y + len - 1;
-  const int p[6][2] = {{x + h, y}, {r, y + h}, {r, b - h}, {x + h, b}, {x, b - h}, {x, y + h}};
-  segPoly(p, 6, c);
-}
-
-// Cada segmento é pintado (aceso ou "fantasma"): troca de dígito sem limpar a área.
-static void seg7(int x, int y, int w, int h, int t, int d, uint16_t on, uint16_t off, float slant = 0.12f) {
-  segK = slant;
-  segYRef = y + h;
-  uint8_t s = d < 0 ? 0 : SEG7[d];
-  const int g = t >= 6 ? 2 : 1;  // folga entre segmentos
-  const int ym = y + (h - t) / 2, yb = y + h - t, half = t / 2;
-  const int vLen = ym - y - 2 * g, vLen2 = yb - ym - 2 * g;
-  hseg(x + g, y, w - 2 * g, t, s & 0x01 ? on : off);              // a
-  vseg(x + w - t, y + half + g, vLen, t, s & 0x02 ? on : off);    // b
-  vseg(x + w - t, ym + half + g, vLen2, t, s & 0x04 ? on : off);  // c
-  hseg(x + g, yb, w - 2 * g, t, s & 0x08 ? on : off);             // d
-  vseg(x, ym + half + g, vLen2, t, s & 0x10 ? on : off);          // e
-  vseg(x, y + half + g, vLen, t, s & 0x20 ? on : off);            // f
-  hseg(x + g, ym, w - 2 * g, t, s & 0x40 ? on : off);             // g
+  for (int y = (int)ceilf(y0 - 0.5f); y <= (int)floorf(y1 - 0.5f); y++) {
+    float sy = y + 0.5f, xl = 1e9f, xr = -1e9f;
+    for (int i = 0; i < n; i++) {
+      int j = (i + 1) % n;
+      float ya = py[i], yb = py[j];
+      if ((ya <= sy && sy < yb) || (yb <= sy && sy < ya)) {
+        float x = px[i] + (sy - ya) * (px[j] - px[i]) / (yb - ya);
+        if (x < xl) xl = x;
+        if (x > xr) xr = x;
+      }
+    }
+    int l = (int)ceilf(xl - 0.5f), r = (int)floorf(xr - 0.5f);
+    if (r >= l) G->drawFastHLine(l, y, r - l + 1, c);
+  }
 }
 
-// Quadradinho inclinado (dois-pontos do LCD)
-static void lcdDot(int x, int y, int sz, int yRef, uint16_t c) {
-  segK = 0.12f;
-  segYRef = yRef;
-  const int p[4][2] = {{x, y}, {x + sz - 1, y}, {x + sz - 1, y + sz - 1}, {x, y + sz - 1}};
-  segPoly(p, 4, c);
+// Dígito no estilo DSEG7 (relógio LCD): h = altura em px, largura = 0,618·h.
+// Cada segmento é pintado aceso ou "fantasma": troca de dígito sem limpar a área.
+static void dsegDigit(int x, int y, int h, int d, uint16_t on, uint16_t off) {
+  const float k = h / 1000.0f;
+  float px[8], py[8];
+  for (int sgm = 0; sgm < 7; sgm++) {
+    int n = DSEG_START[sgm + 1] - DSEG_START[sgm];
+    for (int i = 0; i < n; i++) {
+      px[i] = x + DSEG_PT[DSEG_START[sgm] + i][0] * k;
+      py[i] = y + DSEG_PT[DSEG_START[sgm] + i][1] * k;
+    }
+    bool lit = d >= 0 && d <= 9 && (DSEG_MASK[d] >> sgm & 1);
+    fillConvex(px, py, n, lit ? on : off);
+  }
 }
 
 static void themeLcd(const UiState &s, bool full) {
@@ -924,23 +928,24 @@ static void themeLcd(const UiState &s, bool full) {
     v[0] = h / 10; v[1] = h % 10; v[2] = s.now.tm_min / 10; v[3] = s.now.tm_min % 10;
     if (v[0] == 0) v[0] = -1;  // sem zero à esquerda, como nos relógios de pulso
   }
-  const int X[4] = {12, 62, 128, 178}, Y = 62, H = 80;
+  // dígitos DSEG7 de 78 px (48 de largura), centrados nos dois-pontos em x=120
+  const int X[4] = {10, 65, 127, 182}, Y = 62, H = 78;
   for (int i = 0; i < 4; i++)
     if (full || lastDig[i] != v[i]) {
-      seg7(X[i], Y, 44, H, 8, v[i], LCD_ON, LCD_GHOST);
+      dsegDigit(X[i], Y, H, v[i], LCD_ON, LCD_GHOST);
       lastDig[i] = v[i];
     }
   bool colon = !s.timeOk || s.now.tm_sec % 2 == 0;
   if (full || colon != lastColon) {
-    lcdDot(114, Y + 22, 7, Y + H, colon ? LCD_ON : LCD_GHOST);
-    lcdDot(114, Y + 51, 7, Y + H, colon ? LCD_ON : LCD_GHOST);
+    G->fillCircle(120, Y + 24, 4, colon ? LCD_ON : LCD_GHOST);
+    G->fillCircle(120, Y + 54, 4, colon ? LCD_ON : LCD_GHOST);
     lastColon = colon;
   }
   // segundos pequenos
   int sec = s.timeOk ? s.now.tm_sec : -1;
   if (full || sec != lastSecW) {
-    seg7(170, 156, 22, 38, 5, sec < 0 ? -1 : sec / 10, LCD_ON, LCD_GHOST);
-    seg7(196, 156, 22, 38, 5, sec < 0 ? -1 : sec % 10, LCD_ON, LCD_GHOST);
+    dsegDigit(172, 158, 36, sec < 0 ? -1 : sec / 10, LCD_ON, LCD_GHOST);
+    dsegDigit(198, 158, 36, sec < 0 ? -1 : sec % 10, LCD_ON, LCD_GHOST);
     lastSecW = sec;
   }
   // temperatura (7 segmentos médios) e focos com o tomate monocromático
@@ -949,15 +954,15 @@ static void themeLcd(const UiState &s, bool full) {
     if (s.weatherOn && s.wx.ok) {
       int t = (int)lroundf(s.wx.t);
       if (t >= 0 && t <= 99) {
-        seg7(20, 156, 20, 32, 4, t >= 10 ? t / 10 : -1, LCD_ON, LCD_GHOST);
-        seg7(44, 156, 20, 32, 4, t % 10, LCD_ON, LCD_GHOST);
+        dsegDigit(20, 158, 36, t >= 10 ? t / 10 : -1, LCD_ON, LCD_GHOST);
+        dsegDigit(46, 158, 36, t % 10, LCD_ON, LCD_GHOST);
       } else {
         char n[8];
         snprintf(n, sizeof n, "%d", t);
         text(20, 160, 3, LCD_ON, n);
       }
-      degree(72, 156, 1, LCD_ON);
-      text(80, 156, 2, LCD_ON, "C");
+      degree(74, 156, 1, LCD_ON);
+      text(82, 156, 2, LCD_ON, "C");
     }
     uiSprite(&SPR_TOMATE_LCD, 96, 158, 2, 0, LCD_BG);  // tomate monocromático, no estilo do LCD
     char f[12];
