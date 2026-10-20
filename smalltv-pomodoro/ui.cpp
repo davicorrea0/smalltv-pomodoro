@@ -796,22 +796,211 @@ static void themeNeon(const UiState &s, bool full) {
 }
 
 // ---------- tema 5: FLIP ----------
-static const uint16_t FLIP_TOP = uiRgb(42, 42, 47), FLIP_BOT = uiRgb(31, 31, 35);
+// Relógio de plaquinhas com a fonte Bebas Neue e animação de virada de verdade:
+// a aba de cima (dígito antigo) cai em direção à dobradiça encolhendo em perspectiva e
+// escurecendo, revelando o dígito novo; depois a aba de baixo (dígito novo) desce cobrindo
+// o antigo. O cartão é desenhado linha a linha com escala vertical, então cada quadro da
+// animação é só "qual linha da fonte cai em qual linha da tela".
+//
+// O ESP8266 não tem unidade de ponto flutuante: o preenchimento é todo em inteiros
+// (escala 1/8 px por unidade da fonte, cobertura de borda em 1/16 px, 4 sub-linhas por linha).
 
-static void flipCard(int x, int v) {
-  const int y = 40, w = 105, h = 130;
-  G->fillRect(x - 5, y, w + 10, h, BG);  // a ponta redonda do traço pode passar da borda do cartão
-  G->fillRoundRect(x, y, w, h, 12, FLIP_BOT);
-  G->fillRoundRect(x, y, w, 70, 12, FLIP_TOP);
-  G->fillRect(x, y + 65, w, 5, FLIP_BOT);
-  if (v >= 0) {
-    geoDigit(x + 12, y + 35, v / 10, 6, 10, TEXT);  // dígito 36 x 60, com respiro dentro do cartão
-    geoDigit(x + 57, y + 35, v % 10, 6, 10, TEXT);
+// Bebas Neue (Dharma Type, SIL Open Font License 1.1): contornos dos dígitos 0-9 com as curvas
+// convertidas em segmentos. Unidades da fonte: célula de 400 x 720, y a partir do topo.
+static const int16_t FLIP_PT[580][2] PROGMEM = {
+  {200, 720}, {162, 717}, {129, 709}, {100, 694}, {76, 674}, {57, 649}, {44, 619}, {36, 584},
+  {33, 544}, {33, 544}, {33, 176}, {36, 136}, {44, 102}, {57, 71}, {76, 46}, {100, 26},
+  {129, 12}, {162, 3}, {200, 0}, {200, 0}, {238, 3}, {272, 12}, {300, 26}, {324, 46},
+  {343, 71}, {356, 102}, {364, 136}, {367, 176}, {367, 176}, {367, 544}, {364, 584}, {356, 619},
+  {343, 649}, {324, 674}, {300, 694}, {272, 709}, {238, 717}, {200, 720}, {200, 720}, {200, 620},
+  {232, 612}, {251, 589}, {257, 551}, {257, 551}, {257, 169}, {251, 131}, {232, 108}, {200, 100},
+  {200, 100}, {168, 108}, {149, 131}, {143, 169}, {143, 169}, {143, 551}, {149, 589}, {168, 612},
+  {200, 620}, {200, 620}, {195, 710}, {195, 176}, {80, 176}, {80, 98}, {122, 96}, {156, 90},
+  {181, 79}, {201, 64}, {217, 41}, {231, 10}, {231, 10}, {305, 10}, {305, 710}, {195, 710},
+  {39, 710}, {39, 634}, {42, 586}, {50, 544}, {63, 506}, {77, 478}, {97, 449}, {120, 419},
+  {149, 387}, {149, 387}, {177, 356}, {201, 327}, {219, 300}, {234, 276}, {247, 245}, {254, 213},
+  {257, 180}, {257, 180}, {253, 142}, {243, 118}, {225, 104}, {200, 100}, {200, 100}, {168, 108},
+  {149, 131}, {143, 169}, {143, 169}, {143, 244}, {39, 244}, {39, 176}, {42, 136}, {50, 101},
+  {63, 71}, {81, 46}, {104, 26}, {133, 11}, {165, 3}, {203, 0}, {203, 0}, {241, 3},
+  {274, 11}, {302, 26}, {325, 46}, {343, 71}, {357, 101}, {364, 136}, {367, 176}, {367, 176},
+  {364, 218}, {353, 260}, {337, 301}, {318, 333}, {295, 367}, {266, 403}, {231, 441}, {231, 441},
+  {202, 473}, {180, 502}, {165, 526}, {152, 559}, {148, 595}, {148, 595}, {148, 610}, {357, 610},
+  {357, 710}, {39, 710}, {197, 720}, {159, 717}, {126, 709}, {98, 695}, {75, 675}, {56, 650},
+  {43, 620}, {36, 586}, {33, 546}, {33, 546}, {33, 489}, {137, 489}, {137, 551}, {143, 589},
+  {162, 612}, {194, 620}, {194, 620}, {219, 616}, {237, 603}, {247, 578}, {251, 541}, {251, 541},
+  {251, 484}, {247, 443}, {234, 416}, {212, 400}, {179, 395}, {179, 395}, {142, 395}, {142, 295},
+  {182, 295}, {211, 291}, {232, 278}, {244, 255}, {248, 221}, {248, 221}, {248, 170}, {244, 139},
+  {233, 117}, {216, 104}, {193, 100}, {193, 100}, {164, 107}, {146, 129}, {140, 165}, {140, 165},
+  {140, 211}, {36, 211}, {36, 174}, {39, 134}, {46, 100}, {59, 70}, {78, 45}, {109, 20},
+  {149, 5}, {197, 0}, {197, 0}, {245, 5}, {285, 20}, {317, 45}, {335, 69}, {348, 99},
+  {355, 133}, {358, 173}, {358, 173}, {358, 198}, {353, 249}, {339, 290}, {315, 319}, {280, 339},
+  {280, 339}, {280, 341}, {317, 362}, {342, 393}, {356, 434}, {361, 485}, {361, 485}, {361, 547},
+  {358, 587}, {351, 621}, {338, 651}, {320, 676}, {296, 695}, {268, 709}, {235, 717}, {197, 720},
+  {197, 720}, {225, 710}, {225, 583}, {15, 583}, {15, 483}, {215, 10}, {335, 10}, {335, 483},
+  {387, 483}, {387, 583}, {335, 583}, {335, 710}, {225, 710}, {115, 483}, {225, 483}, {225, 210},
+  {223, 210}, {115, 483}, {202, 720}, {164, 717}, {132, 709}, {103, 694}, {80, 675}, {62, 649},
+  {49, 619}, {41, 584}, {38, 544}, {38, 544}, {38, 489}, {142, 489}, {142, 552}, {148, 590},
+  {167, 612}, {199, 620}, {199, 620}, {231, 612}, {250, 590}, {256, 552}, {256, 552}, {256, 395},
+  {250, 357}, {231, 334}, {199, 326}, {199, 326}, {167, 334}, {148, 357}, {142, 395}, {142, 395},
+  {142, 401}, {38, 401}, {58, 10}, {348, 10}, {348, 110}, {156, 110}, {147, 277}, {149, 277},
+  {173, 249}, {205, 232}, {244, 226}, {244, 226}, {281, 231}, {311, 244}, {335, 267}, {352, 298},
+  {363, 338}, {366, 386}, {366, 386}, {366, 544}, {363, 584}, {356, 619}, {342, 649}, {324, 675},
+  {301, 694}, {273, 709}, {240, 717}, {202, 720}, {202, 720}, {203, 720}, {165, 717}, {132, 709},
+  {103, 694}, {79, 674}, {60, 649}, {47, 619}, {39, 584}, {36, 544}, {36, 544}, {36, 182},
+  {39, 139}, {47, 102}, {60, 71}, {78, 46}, {102, 26}, {131, 11}, {165, 3}, {204, 0},
+  {204, 0}, {242, 3}, {275, 11}, {303, 26}, {326, 46}, {344, 71}, {358, 101}, {365, 136},
+  {368, 176}, {368, 176}, {368, 189}, {264, 189}, {264, 169}, {258, 131}, {239, 108}, {207, 100},
+  {207, 100}, {180, 105}, {161, 119}, {150, 145}, {146, 186}, {146, 186}, {146, 320}, {148, 320},
+  {172, 286}, {205, 266}, {248, 259}, {248, 259}, {285, 264}, {315, 277}, {339, 300}, {356, 331},
+  {367, 371}, {370, 419}, {370, 419}, {370, 544}, {367, 584}, {359, 619}, {346, 649}, {327, 674},
+  {303, 694}, {275, 709}, {241, 717}, {203, 720}, {203, 720}, {203, 620}, {235, 612}, {254, 590},
+  {260, 552}, {260, 552}, {260, 428}, {254, 390}, {235, 367}, {203, 359}, {203, 359}, {171, 367},
+  {152, 390}, {146, 428}, {146, 428}, {146, 552}, {152, 590}, {171, 612}, {203, 620}, {203, 620},
+  {80, 710}, {256, 110}, {34, 110}, {34, 10}, {364, 10}, {364, 106}, {192, 710}, {80, 710},
+  {200, 720}, {161, 717}, {127, 709}, {97, 695}, {73, 676}, {53, 651}, {39, 621}, {31, 587},
+  {28, 547}, {28, 547}, {28, 485}, {32, 437}, {45, 398}, {67, 366}, {100, 342}, {100, 342},
+  {100, 340}, {70, 317}, {49, 288}, {36, 249}, {32, 202}, {32, 202}, {32, 173}, {35, 133},
+  {43, 99}, {56, 69}, {76, 45}, {100, 25}, {128, 11}, {162, 3}, {200, 0}, {200, 0},
+  {238, 3}, {272, 11}, {300, 25}, {325, 45}, {344, 69}, {357, 99}, {365, 133}, {368, 173},
+  {368, 173}, {368, 202}, {364, 248}, {351, 287}, {330, 317}, {300, 340}, {300, 340}, {300, 342},
+  {333, 366}, {355, 398}, {368, 437}, {372, 485}, {372, 485}, {372, 547}, {369, 587}, {361, 621},
+  {347, 651}, {328, 676}, {303, 695}, {273, 709}, {239, 717}, {200, 720}, {200, 720}, {200, 295},
+  {232, 287}, {252, 264}, {258, 225}, {258, 225}, {258, 170}, {252, 131}, {232, 108}, {200, 100},
+  {200, 100}, {168, 108}, {148, 131}, {142, 170}, {142, 170}, {142, 225}, {148, 264}, {168, 287},
+  {200, 295}, {200, 295}, {200, 620}, {227, 615}, {247, 600}, {258, 576}, {262, 541}, {262, 541},
+  {262, 474}, {258, 439}, {247, 415}, {227, 400}, {200, 395}, {200, 395}, {173, 400}, {154, 415},
+  {142, 439}, {138, 474}, {138, 474}, {138, 541}, {142, 576}, {154, 600}, {173, 615}, {200, 620},
+  {200, 620}, {196, 720}, {158, 717}, {126, 709}, {97, 694}, {74, 675}, {56, 649}, {43, 619},
+  {35, 584}, {32, 544}, {32, 544}, {32, 531}, {136, 531}, {136, 551}, {142, 589}, {161, 612},
+  {193, 620}, {193, 620}, {220, 615}, {239, 601}, {250, 575}, {254, 534}, {254, 534}, {254, 400},
+  {252, 400}, {228, 434}, {195, 454}, {152, 461}, {152, 461}, {115, 456}, {85, 443}, {61, 420},
+  {44, 389}, {33, 349}, {30, 301}, {30, 301}, {30, 176}, {33, 136}, {41, 102}, {54, 71},
+  {73, 46}, {97, 26}, {126, 12}, {159, 3}, {197, 0}, {197, 0}, {235, 3}, {269, 12},
+  {297, 26}, {321, 46}, {340, 71}, {353, 102}, {361, 136}, {364, 176}, {364, 176}, {364, 538},
+  {361, 581}, {354, 618}, {340, 649}, {322, 675}, {298, 694}, {270, 709}, {235, 717}, {196, 720},
+  {196, 720}, {197, 361}, {229, 353}, {248, 330}, {254, 292}, {254, 292}, {254, 168}, {248, 130},
+  {229, 108}, {197, 100}, {197, 100}, {165, 108}, {146, 130}, {140, 168}, {140, 168}, {140, 292},
+  {146, 330}, {165, 353}, {197, 361}, {197, 361},
+};
+static const uint16_t FLIP_CEND[16] PROGMEM = {39, 58, 72, 138, 225, 237, 242, 301, 365, 384, 392, 455, 474, 497, 561, 580};  // fim (exclusivo) de cada contorno
+static const uint8_t FLIP_DIG[11] = {0, 2, 3, 4, 5, 7, 8, 10, 11, 14, 16};  // primeiro contorno de cada dígito
+static const int FLIP_CW = 400, FLIP_CH = 720;
+
+
+void (*uiFrameHook)() = nullptr;  // o firmware usa para ceder tempo ao Wi-Fi entre quadros
+
+static const int FL_W = 108, FL_H = 124, FL_HALF = 62, FL_Y = 40;
+static const int FL_DTOP = 17;          // topo do dígito dentro do cartão (dígito = 720/8 = 90 px)
+static const int FL_X[2] = {8, 124};     // cartão das horas e dos minutos
+static const uint16_t FL_TOP = uiRgb(46, 46, 52), FL_BOT = uiRgb(37, 37, 42), FL_FG = uiRgb(244, 242, 234);
+static const uint8_t FL_CORNER[10] = {7, 5, 3, 2, 2, 1, 1, 0, 0, 0};  // recuo dos cantos arredondados (raio 10)
+static uint8_t flCov[FL_W];
+static uint16_t flRowBuf[FL_W];
+
+// Mistura inteira de cores RGB565: n/16 de b sobre a.
+static uint16_t mix16(uint16_t a, uint16_t b, int n) {
+  int ar = (a >> 11) & 31, ag = (a >> 5) & 63, ab = a & 31;
+  int br = (b >> 11) & 31, bg = (b >> 5) & 63, bb = b & 31;
+  return ((ar + (br - ar) * n / 16) << 11) | ((ag + (bg - ag) * n / 16) << 5) | (ab + (bb - ab) * n / 16);
+}
+
+// Acumula a cobertura de um trecho [a, b) em 1/16 de pixel.
+static void flSpan(int a, int b) {
+  if (a < 0) a = 0;
+  if (b > FL_W * 16) b = FL_W * 16;
+  if (b <= a) return;
+  int ia = a >> 4, ib = b >> 4;
+  if (ia == ib) {
+    flCov[ia] += b - a;
+    return;
   }
-  // corte da "folha" + dobradiças
-  G->fillRect(x, y + 64, w, 2, BG);
-  G->fillCircle(x, y + 65, 4, BG);
-  G->fillCircle(x + w - 1, y + 65, 4, BG);
+  flCov[ia] += 16 - (a & 15);
+  for (int i = ia + 1; i < ib; i++) flCov[i] += 16;
+  if (ib < FL_W) flCov[ib] += b & 15;
+}
+
+// Uma sub-linha de um dígito: cruzamentos com as arestas (regra par-ímpar, que trata os furos).
+static void flSubline(int d, int ox16, int sy) {
+  if (sy < 0 || sy >= FLIP_CH) return;
+  int xs[24], n = 0;
+  for (int c = FLIP_DIG[d]; c < FLIP_DIG[d + 1]; c++) {
+    // tabelas em PROGMEM (flash): no ESP8266, "const" comum ocuparia RAM
+    int s = c ? pgm_read_word(&FLIP_CEND[c - 1]) : 0, e = pgm_read_word(&FLIP_CEND[c]);
+    for (int i = s; i < e; i++) {
+      int j = i + 1 < e ? i + 1 : s;
+      int ay = (int16_t)pgm_read_word(&FLIP_PT[i][1]), by = (int16_t)pgm_read_word(&FLIP_PT[j][1]);
+      if ((ay <= sy && sy < by) || (by <= sy && sy < ay)) {
+        int ax = (int16_t)pgm_read_word(&FLIP_PT[i][0]), bx = (int16_t)pgm_read_word(&FLIP_PT[j][0]);
+        if (n < 24) xs[n++] = ax * 16 + (sy - ay) * (bx - ax) * 16 / (by - ay);
+      }
+    }
+  }
+  for (int i = 1; i < n; i++)  // ordenação por inserção (poucos cruzamentos)
+    for (int k = i; k > 0 && xs[k] < xs[k - 1]; k--) {
+      int t = xs[k];
+      xs[k] = xs[k - 1];
+      xs[k - 1] = t;
+    }
+  for (int k = 0; k + 1 < n; k += 2) flSpan(ox16 + xs[k] / 8, ox16 + xs[k + 1] / 8);  // fonte/8 = px
+}
+
+// Desenha a linha de tela y (relativa ao cartão: yr) mostrando a linha de origem srcTop (px do
+// cartão, fracionária) com altura dy (1/escala) do par "value", escurecida em shade/16.
+static void flRow(int cx, int yr, int value, float srcTop, float dy, int shade) {
+  memset(flCov, 0, sizeof flCov);
+  bool upper = srcTop < FL_HALF;
+  uint16_t bg = upper ? FL_TOP : FL_BOT;
+  if (value >= 0)
+    for (int j = 0; j < 4; j++) {
+      int sy = (int)((srcTop + (j + 0.5f) * dy / 4 - FL_DTOP) * 8);  // linha de origem em unidades da fonte
+      flSubline(value / 10, 4 * 16, sy);
+      flSubline(value % 10, 54 * 16, sy);
+    }
+  uint16_t pal[17], b = mix16(bg, BG, shade), f = mix16(FL_FG, BG, shade);
+  for (int i = 0; i <= 16; i++) pal[i] = mix16(b, f, i);
+  int inset = yr < 10 ? FL_CORNER[yr] : yr >= FL_H - 10 ? FL_CORNER[FL_H - 1 - yr] : 0;
+  for (int x = 0; x < FL_W; x++) {
+    int c = flCov[x] > 64 ? 64 : flCov[x];
+    flRowBuf[x] = (x < inset || x >= FL_W - inset) ? BG : pal[(c + 2) / 4];
+  }
+  G->drawRGBBitmap(cx, FL_Y + yr, flRowBuf, FL_W, 1);
+}
+
+// Um quadro da virada. p de 0 a 1: aba de cima (antigo) caindo; de 1 a 2: aba de baixo (novo) descendo.
+// p = 2 é o cartão parado mostrando "newV".
+static void flipFrame(int cx, int oldV, int newV, float p) {
+  for (int yr = 0; yr < FL_H; yr++) {
+    if (yr == FL_HALF - 1 || yr == FL_HALF) {  // fenda da dobradiça
+      G->drawFastHLine(cx, FL_Y + yr, FL_W, BG);
+      continue;
+    }
+    if (yr < FL_HALF) {
+      float s = p < 1 ? cosf(p * K_PI / 2) : 0;  // altura aparente da aba que cai
+      float dist = FL_HALF - yr;
+      if (s > 0.02f && dist <= FL_HALF * s) flRow(cx, yr, oldV, FL_HALF - dist / s, 1 / s, (int)((1 - s) * 9));
+      else flRow(cx, yr, newV, yr, 1, 0);
+    } else {
+      float s = p > 1 ? sinf((p - 1) * K_PI / 2) : 0;  // altura aparente da aba que desce
+      float dist = yr - FL_HALF;
+      if (s > 0.02f && dist < FL_HALF * s) flRow(cx, yr, newV, FL_HALF + dist / s, 1 / s, (int)((1 - s) * 7));
+      else flRow(cx, yr, oldV, yr, 1, 0);
+    }
+  }
+  // dobradiças nas laterais
+  G->fillCircle(cx, FL_Y + FL_HALF, 3, BG);
+  G->fillCircle(cx + FL_W - 1, FL_Y + FL_HALF, 3, BG);
+}
+
+static void flipTo(int cx, int oldV, int newV, bool animate) {
+  if (!animate || oldV < 0) {
+    flipFrame(cx, newV, newV, 2);
+    return;
+  }
+  static const float P[] = {0.15f, 0.35f, 0.55f, 0.75f, 0.92f, 1.08f, 1.25f, 1.45f, 1.65f, 1.85f, 2.0f};
+  for (float p : P) {
+    flipFrame(cx, oldV, newV, p);
+    if (uiFrameHook) uiFrameHook();
+  }
 }
 
 static void pill(int x, int w) { G->fillRoundRect(x, 186, w, 28, 14, CARD); }
@@ -824,12 +1013,13 @@ static void themeFlip(const UiState &s, bool full) {
     textC(120, 12, 2, MUTED, d);
   }
   int h = s.timeOk ? displayHour(s) : -1, m = s.timeOk ? s.now.tm_min : -1;
+  // na primeira vez desenha parado; depois, cada troca vira a plaquinha
   if (h != lastDig[0]) {
-    flipCard(10, h);
+    flipTo(FL_X[0], full ? -1 : lastDig[0], h, !full);
     lastDig[0] = h;
   }
   if (m != lastDig[1]) {
-    flipCard(125, m);
+    flipTo(FL_X[1], full ? -1 : lastDig[1], m, !full);
     lastDig[1] = m;
   }
   if (full || lastWx != s.wx.version || lastWxOn != (int)s.weatherOn) {
