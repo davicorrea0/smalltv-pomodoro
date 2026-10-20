@@ -11,6 +11,8 @@ enum UiTheme : uint8_t {
   THEME_NEON = 4, THEME_FLIP = 5, THEME_LCD = 6, THEME_WORDS = 7, THEME_COUNT
 };
 enum UiPhase : uint8_t { PH_IDLE = 0, PH_WORK, PH_SHORT, PH_LONG };
+// O que a pessoa faz durante o foco: muda o desenho ao lado do tomate e o título da tela.
+enum UiActivity : uint8_t { ACT_READ = 0, ACT_STUDY, ACT_CODE, ACT_TASKS, ACT_DRAW, ACT_COUNT };
 
 struct UiWeather {
   bool ok;
@@ -31,6 +33,7 @@ struct UiState {
   uint8_t cycleDone, longEvery;
   uint16_t today;
   uint8_t dailyGoal;
+  uint8_t activity;  // UiActivity
   // clima
   bool weatherOn;
   UiWeather wx;

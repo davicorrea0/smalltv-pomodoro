@@ -1,0 +1,27 @@
+# Paleta de pintor com pincel: atividade "Desenhar" no foco do Pomodoro.
+cor o #3a2a20   # contorno
+cor w #e0b070   # madeira
+cor W #b88a50   # sombra da madeira
+cor R #e8402f   # tinta
+cor B #4f8dff   # tinta
+cor Y #ffc428   # tinta
+cor G #3ecf7a   # tinta
+cor h #5a3a2a   # cabo do pincel
+cor s #c8ccd4   # metal do pincel
+
+...............h
+....oooooo....h.
+..oowwwwwwoo.h..
+.owwRRwwBBwws...
+.owwRRwwBBwRwo..
+owwwwwwwwwwwwo..
+owYYwwwwwoowwo..
+owYYwwwwo..owo..
+owwwwwwwwoowwo..
+.owGGwwwwwwwWo..
+.owGGwwwwwwWo...
+..oWWwwwwWWo....
+...ooWWWWoo.....
+.....oooo.......
+................
+................

@@ -68,6 +68,7 @@ struct Settings {
   uint8_t invert;       // 1 = INVON (padrão do painel IPS)
   uint8_t flip;         // 1 = girar 180°
   uint8_t dailyGoal;    // meta de focos por dia
+  uint8_t activity;     // atividade do foco (UiActivity); campo novo no fim: unidades antigas leem lixo e caem no padrão
 };
 const uint32_t SETTINGS_MAGIC = 0x504F4D34;     // "POM4"
 const uint32_t SETTINGS_MAGIC_V3 = 0x504F4D33;  // "POM3": mesmos campos, sem os do v4
@@ -85,13 +86,15 @@ void loadSettings() {
     cfg.invert = 1;
     cfg.flip = 0;
     cfg.dailyGoal = 8;
+    cfg.activity = ACT_READ;
     cfg.magic = SETTINGS_MAGIC;
   } else if (cfg.magic != SETTINGS_MAGIC) {
     cfg = Settings{SETTINGS_MAGIC, 25, 5, 15, 4, 80, 0, 0, "<-03>3", "", 0, -1,
-                   THEME_MATRIX, 0, 10, 0, 22, 7, 15, 1, 242, 242, 242, 0, 0, "", 0, 1, 0, 8};
+                   THEME_MATRIX, 0, 10, 0, 22, 7, 15, 1, 242, 242, 242, 0, 0, "", 0, 1, 0, 8, ACT_READ};
   }
   if (cfg.theme >= THEME_COUNT) cfg.theme = THEME_MATRIX;
   if (!cfg.dailyGoal) cfg.dailyGoal = 8;
+  if (cfg.activity >= ACT_COUNT) cfg.activity = ACT_READ;
   cfg.tz[sizeof(cfg.tz) - 1] = 0;
   cfg.otaPass[sizeof(cfg.otaPass) - 1] = 0;
   cfg.city[sizeof(cfg.city) - 1] = 0;
@@ -327,6 +330,7 @@ UiState makeState() {
   s.longEvery = cfg.longEvery;
   s.today = cfg.todayCount;
   s.dailyGoal = cfg.dailyGoal;
+  s.activity = cfg.activity;
   s.weatherOn = cfg.weatherOn && cfg.city[0];
   s.wx = {wx.ok, wx.t, wx.tmin, wx.tmax, wx.hum, wx.code, wx.day, wx.version};
   s.city = cfg.city;
@@ -661,6 +665,8 @@ void sendState() {
   j += cfg.flip;
   j += F(",\"goal\":");
   j += cfg.dailyGoal;
+  j += F(",\"act\":");
+  j += cfg.activity;
   j += F("},\"pv\":");
   j += previewActive() ? (previewUntil - millis()) / 1000 + 1 : 0;
   j += F(",\"heap\":");
@@ -774,6 +780,7 @@ void setupWeb() {
     cfg.hour12 = argRange("h12", cfg.hour12, 0, 1);
     cfg.theme = argRange("theme", cfg.theme, 0, THEME_COUNT - 1);
     cfg.dailyGoal = argRange("goal", cfg.dailyGoal, 1, 30);
+    cfg.activity = argRange("act", cfg.activity, 0, ACT_COUNT - 1);
     uint8_t bgr = argRange("bgr", cfg.bgr, 0, 1), inv = argRange("inv", cfg.invert, 0, 1),
             flip = argRange("flip", cfg.flip, 0, 1);
     bool panelChanged = bgr != cfg.bgr || inv != cfg.invert || flip != cfg.flip;

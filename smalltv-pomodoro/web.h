@@ -105,6 +105,7 @@ nav button.on svg{stroke:var(--ac)}
    <div class="mid"><div id="phase">PRONTO</div><div id="time">--:--</div><div id="dots"></div></div></div>
   <div class="ctl"><button class="ic" title="Zerar" onclick="cmd('reset')">&#8634;</button><button id="go" title="Iniciar/pausar (espaço)" onclick="cmd('toggle')">&#9654;</button><button class="ic" title="Pular fase" onclick="cmd('skip')">&#9197;</button></div>
  </div>
+ <div class="card"><label>O que vou fazer no foco<select data-k="act"><option value="0">&#128214; Ler</option><option value="1">&#128211; Estudar</option><option value="2">&#128187; Programar</option><option value="3">&#128203; Tarefas</option><option value="4">&#127912; Desenhar</option></select></label></div>
  <div class="card stats"><div><b id="today">0</b><span>focos hoje</span></div><div><b id="goal">8</b><span>meta</span></div><div><b id="mins">0</b><span>min focados</span></div></div>
  <h2>Tempos</h2>
  <div class="card">

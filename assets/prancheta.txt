@@ -1,0 +1,25 @@
+# Prancheta com lista: atividade "Tarefas" no foco do Pomodoro.
+cor o #2a2238   # contorno
+cor c #8a909c   # prendedor
+cor b #a86a3c   # prancheta
+cor p #f4efe2   # papel
+cor l #9aa0b0   # texto
+cor G #3ecf7a   # feito
+cor q #c8c0b4   # por fazer
+
+.....oooooo.....
+..oooccccccooo..
+..obboccccobbo..
+..obbboooobbbo..
+..obppppppppbo..
+..obGplllllpbo..
+..obppppppppbo..
+..obGplllllpbo..
+..obppppppppbo..
+..obqpllllppbo..
+..obppppppppbo..
+..obqplllpppbo..
+..obppppppppbo..
+..obbbbbbbbbbo..
+..oooooooooooo..
+................

@@ -281,6 +281,10 @@ static const UiSprite *const FACES[] = {&SPR_TOMATE_FELIZ, &SPR_TOMATE_DORMINDO,
 
 static void mascot(int x, int y, int sc, uint8_t face, int32_t bg = UI_TRANSPARENT) { uiSprite(FACES[face], x, y, sc, 0, bg); }
 
+// Atividades do foco (UiActivity): objeto ao lado do tomate e título da tela do Pomodoro.
+static const UiSprite *const ACTIVITY_SPRITE[ACT_COUNT] = {&SPR_LIVRO, &SPR_CADERNO, &SPR_NOTEBOOK, &SPR_PRANCHETA, &SPR_PALETA_PINTOR};
+static const char *const ACTIVITY_LABEL[ACT_COUNT] = {"LENDO", "ESTUDANDO", "PROGRAMANDO", "TAREFAS", "DESENHANDO"};
+
 // ---------- tema 0: MATRIZ ----------
 static const TimeLayout TL_CLOCK = {{20, 66, 136, 182}, 30, 8, 116};
 
@@ -1307,9 +1311,11 @@ void uiRenderPomodoro(const UiState &s) {
   for (int d = lastRing + 1; d <= target; d++) ringDot(d, col);
   if (target > lastRing) lastRing = target;
 
-  if (changed(cA, PHASE_LABEL[s.phase])) {
+  uint8_t act = s.activity < ACT_COUNT ? s.activity : ACT_READ;
+  const char *label = s.phase == PH_WORK ? ACTIVITY_LABEL[act] : PHASE_LABEL[s.phase];
+  if (changed(cA, label)) {
     G->fillRect(50, 44, 140, 18, BG);  // dentro do anel (raio interno 104)
-    textC(120, 46, 2, col, PHASE_LABEL[s.phase]);
+    textC(120, 46, 2, col, label);
   }
 
   uint32_t secs = (s.remainingMs + 999) / 1000;
@@ -1332,16 +1338,16 @@ void uiRenderPomodoro(const UiState &s) {
     lastGoal = total;
   }
 
-  // tomate + livro (foco) ou café (pausa); quando uma fase termina, a animação de fim
-  int8_t key;
+  // tomate + objeto da atividade (foco) ou café (pausa); quando uma fase termina, a animação de fim
+  int8_t key;  // rosto * 8 + objeto (0..ACT_COUNT-1 = atividade, 7 = café); 64+ = quadro da animação
   if (s.celebrate) key = 64 + uiSpriteFrame(&SPR_TOMATE_FIM, s.ms);
-  else key = (!s.running ? FACE_SLEEP : s.phase == PH_WORK ? FACE_FOCUS : FACE_RELAX) * 2 + (s.phase == PH_WORK);
+  else key = (!s.running ? FACE_SLEEP : s.phase == PH_WORK ? FACE_FOCUS : FACE_RELAX) * 8 + (s.phase == PH_WORK ? act : 7);
   if (key != lastFace) {
     if ((key >= 64) != (lastFace >= 64)) G->fillRect(84, 136, 72, 44, BG);  // troca de layout
     if (key >= 64) uiSprite(&SPR_TOMATE_FIM, 104, 138, 2, key - 64, BG);    // bg repinta o quadro anterior
     else {
-      mascot(86, 144, 2, key / 2, BG);
-      uiSprite(key & 1 ? &SPR_LIVRO : &SPR_CAFE, 122, 144, 2, 0, BG);
+      mascot(86, 144, 2, key / 8, BG);
+      uiSprite(key % 8 == 7 ? &SPR_CAFE : ACTIVITY_SPRITE[key % 8], 122, 144, 2, 0, BG);
     }
     lastFace = key;
   }
