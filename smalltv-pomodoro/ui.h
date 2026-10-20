@@ -6,10 +6,16 @@
 #include <stdint.h>
 #include <time.h>
 
+// Mostradores: a lista fica em faces_list.h (o enum THEME_* é gerado a partir dela).
+#include "faces_list.h"
 enum UiTheme : uint8_t {
-  THEME_MATRIX = 0, THEME_TOMATO = 1, THEME_ANALOG = 2, THEME_WEATHER = 3,
-  THEME_NEON = 4, THEME_FLIP = 5, THEME_LCD = 6, THEME_WORDS = 7, THEME_COUNT
+#define X(id, fn, name, desc) THEME_##id,
+  UI_FACES(X)
+#undef X
+  THEME_COUNT
 };
+const char *uiFaceName(uint8_t t);  // nome no painel
+const char *uiFaceDesc(uint8_t t);  // descrição curta
 enum UiPhase : uint8_t { PH_IDLE = 0, PH_WORK, PH_SHORT, PH_LONG };
 // O que a pessoa faz durante o foco: muda o desenho ao lado do tomate e o título da tela.
 enum UiActivity : uint8_t { ACT_READ = 0, ACT_STUDY, ACT_CODE, ACT_TASKS, ACT_DRAW, ACT_COUNT };

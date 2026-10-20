@@ -28,7 +28,7 @@
 #include "web.h"
 #include "faces.h"
 
-#define FW_VERSION "1.4.2"
+#define FW_VERSION "1.5.0"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
@@ -275,17 +275,7 @@ void weatherLoop() {
   wxNext = millis() + (fetchWeather() ? 15UL : 2UL) * 60000UL;
 }
 
-const char *weatherText(int c) {
-  if (c == 0) return "Ceu limpo";
-  if (c <= 2) return "Poucas nuvens";
-  if (c == 3) return "Nublado";
-  if (c == 45 || c == 48) return "Neblina";
-  if (c >= 51 && c <= 57) return "Garoa";
-  if ((c >= 61 && c <= 67) || (c >= 80 && c <= 82)) return "Chuva";
-  if ((c >= 71 && c <= 77) || c == 85 || c == 86) return "Neve";
-  if (c >= 95) return "Tempestade";
-  return "";
-}
+const char *weatherText(int code);  // de ui.cpp (o mesmo texto que aparece na tela)
 
 // ---------- tela (desenho em ui.cpp) ----------
 // Ordem de cor, inversão e rotação variam entre unidades do SmallTV: tudo configurável no painel.
@@ -746,8 +736,23 @@ void sendFiles() {
 }
 
 void setupWeb() {
-  server.on("/", HTTP_GET, [] { server.send_P(200, "text/html", INDEX_HTML); });
+  // painel comprimido (web/index.html -> web/build.js -> web.h); o navegador descompacta
+  server.on("/", HTTP_GET, [] {
+    server.sendHeader("Content-Encoding", "gzip");
+    server.send_P(200, "text/html", (PGM_P)INDEX_HTML_GZ, sizeof(INDEX_HTML_GZ));
+  });
   server.on("/api/state", HTTP_GET, sendState);
+  // lista dos mostradores para a galeria do painel (vem de faces_list.h)
+  server.on("/api/faces", HTTP_GET, [] {
+    String j = "[";
+    for (uint8_t t = 0; t < THEME_COUNT; t++) {
+      if (t) j += ',';
+      j += "{\"n\":\"" + jsonEscape(uiFaceName(t)) + "\",\"d\":\"" + jsonEscape(uiFaceDesc(t)) + "\"}";
+    }
+    j += "]";
+    server.sendHeader("Cache-Control", "max-age=3600");
+    server.send(200, "application/json", j);
+  });
   // prévia PNG de um mostrador para a galeria do painel (gerada pelo simulador, em faces.h)
   server.on("/face", HTTP_GET, [] {
     int t = server.arg("t").toInt();

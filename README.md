@@ -86,6 +86,10 @@ Todos os desenhos em pixel art (o tomate e suas expressões, café, livro, cader
 
 Para mudar um desenho existente, basta editar o `.txt`: o código não muda. A folha acima é gerada pelo simulador em `sim/out/assets.png`.
 
+## Criar um mostrador
+
+Um arquivo `face_<nome>.cpp` e uma linha em `faces_list.h`: a galeria do painel, a prévia e os testes saem sozinhos. Passo a passo, modelo e o que o kit oferece: **[docs/CRIAR_MOSTRADOR.md](docs/CRIAR_MOSTRADOR.md)**.
+
 ## Simulador das telas
 
 `sim/` compila o mesmo `ui.cpp` do firmware no PC (com [Zig](https://ziglang.org/)) e grava cada tela em PNG, além da folha de prévia dos assets. Também roda um teste de redesenho: simula minutos passando, clima mudando e focos concluídos, e compara o resultado com um desenho feito do zero. Qualquer pixel diferente indica sobra de desenho na tela.
@@ -99,13 +103,14 @@ sim/build.sh
 ```
 arduino-cli core install esp8266:esp8266 --additional-urls https://arduino.esp8266.com/stable/package_esp8266com_index.json
 arduino-cli lib install "Adafruit GFX Library" "Adafruit ST7735 and ST7789 Library" "ArduinoJson" "JPEGDEC" "AnimatedGIF"
-arduino-cli compile --fqbn "esp8266:esp8266:generic:eesz=4M3M,xtal=160" --output-dir build smalltv-pomodoro
+arduino-cli compile --fqbn "esp8266:esp8266:generic:eesz=4M3M,xtal=160,ip=lm2n" --output-dir build smalltv-pomodoro
 ```
 
 ## Detalhes técnicos
 
 - **Layout da flash 4M3M**, o mesmo do firmware original (constantes do LittleFS encontradas no binário V9.0.50, offset `0x14d00`). Assim as fotos e GIFs existentes são lidos. O LittleFS é montado **sem formatação automática**: se não montar, nada é apagado.
 - **Tamanho do binário**: para conseguir voltar ao firmware original pelo painel, este firmware precisa ficar abaixo de ~530 KB (hoje ~514 KB).
+- **Painel comprimido**: o HTML vai com gzip na flash (~24 KB → ~9 KB) e a pilha de rede usa a variante leve do lwIP (`ip=lm2n`, sem recursos que o relógio não usa, como PPP e roteamento)
 - **Fontes desenhadas por código**: os dígitos (pixel art 5×7, fonte vetorial "Geo" e os segmentos do DSEG7 como polígonos) não usam bitmaps na flash.
 - **Sprites** em `PROGMEM` com 4 bits por pixel, desenhados juntando pixels vizinhos iguais em retângulos (menos chamadas SPI).
 - **RAM**: o decodificador de GIF precisa de ~24 KB contíguos e o de JPEG de ~18 KB. Se faltar memória, a tela mostra um aviso em vez de travar.

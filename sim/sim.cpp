@@ -8,7 +8,8 @@
 #include <stdio.h>
 #include <string.h>
 #define UI_ASSET_LIST  // assets.h inclui a lista com o nome de cada asset (para a folha de prévia)
-#include "../smalltv-pomodoro/ui.cpp"
+#include "../smalltv-pomodoro/ui_kit.h"
+#include "../smalltv-pomodoro/assets.h"
 
 class Frame : public Adafruit_GFX {
  public:
@@ -240,8 +241,17 @@ int main() {
   for (int t = 0; t < THEME_COUNT; t++) {
     UiState st = base(14, 58, 50);
     st.theme = t;
-    const char *names[] = {"matriz", "tomate", "analogico", "clima", "neon", "flip", "lcd", "palavras"};
-    fails += checkIncremental(names[t], st, false) != 0;
+    // nome do arquivo a partir do registro (faces_list.h), sem acentos nem espaços
+    char slug[32];
+    int k = 0;
+    for (const unsigned char *p = (const unsigned char *)uiFaceName(t); *p && k < 30; p++) {
+      if (*p == 0xC3 && p[1]) {  // á â ã à é ê í ó ô õ ú ç em UTF-8
+        unsigned char c = *++p;
+        slug[k++] = c >= 0xA0 && c <= 0xA5 ? 'a' : c == 0xA7 ? 'c' : c >= 0xA8 && c <= 0xAB ? 'e' : c >= 0xAC && c <= 0xAF ? 'i' : c >= 0xB2 && c <= 0xB6 ? 'o' : c >= 0xB9 && c <= 0xBC ? 'u' : '_';
+      } else slug[k++] = *p == ' ' ? '_' : (*p >= 'A' && *p <= 'Z' ? *p + 32 : *p);
+    }
+    slug[k] = 0;
+    fails += checkIncremental(slug, st, false) != 0;
   }
   fails += checkIncremental("pomodoro", p, true) != 0;
   return fails;

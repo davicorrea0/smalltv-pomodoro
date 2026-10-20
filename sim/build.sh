@@ -10,8 +10,9 @@ fi
 node ../assets/gerar.js || exit 1  # assets/*.txt -> smalltv-pomodoro/assets.h
 GFX="${GFX:-$HOME/Documents/Arduino/libraries/Adafruit_GFX_Library}"
 mkdir -p out
-"$ZIG" c++ -target x86-windows-gnu -O1 -std=c++17 -DARDUINO=100 -Ishim -I"$GFX" sim.cpp "$GFX/Adafruit_GFX.cpp" -o sim.exe || exit 1
+"$ZIG" c++ -target x86-windows-gnu -O1 -std=c++17 -DARDUINO=100 -Ishim -I"$GFX" sim.cpp ../smalltv-pomodoro/ui.cpp ../smalltv-pomodoro/face_*.cpp "$GFX/Adafruit_GFX.cpp" -o sim.exe || exit 1
 ./sim.exe; r=$?
 node png.js > /dev/null
 node faces.js
+node ../web/build.js
 exit $r
