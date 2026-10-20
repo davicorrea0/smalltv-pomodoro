@@ -26,8 +26,9 @@
 #include <time.h>
 #include "ui.h"
 #include "web.h"
+#include "faces.h"
 
-#define FW_VERSION "1.3.4"
+#define FW_VERSION "1.4.0"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
@@ -188,6 +189,11 @@ void tickPomodoro() {
 
 bool colorTestRequested = false;  // tratado no loop (precisa da tela)
 
+// Prévia de mostrador pedida pelo painel: mostra outro tema por alguns segundos sem salvar.
+uint8_t previewTheme = 0;
+uint32_t previewUntil = 0;
+bool previewActive() { return previewUntil && (int32_t)(millis() - previewUntil) < 0; }
+
 void command(const String &c) {
   if (c == "start") {
     if (phase == IDLE) startPhase(WORK, true);
@@ -324,7 +330,7 @@ UiState makeState() {
   s.weatherOn = cfg.weatherOn && cfg.city[0];
   s.wx = {wx.ok, wx.t, wx.tmin, wx.tmax, wx.hum, wx.code, wx.day, wx.version};
   s.city = cfg.city;
-  s.theme = cfg.theme;
+  s.theme = previewActive() ? previewTheme : cfg.theme;
   s.accent = clockColor();
   strlcpy(ipText, WiFi.localIP().toString().c_str(), sizeof ipText);
   s.ip = ipText;
@@ -653,7 +659,9 @@ void sendState() {
   j += cfg.flip;
   j += F(",\"goal\":");
   j += cfg.dailyGoal;
-  j += F("},\"heap\":");
+  j += F("},\"pv\":");
+  j += previewActive() ? (previewUntil - millis()) / 1000 + 1 : 0;
+  j += F(",\"heap\":");
   j += ESP.getFreeHeap();
   j += F(",\"blk\":");
   j += ESP.getMaxFreeBlockSize();
@@ -732,7 +740,25 @@ void sendFiles() {
 void setupWeb() {
   server.on("/", HTTP_GET, [] { server.send_P(200, "text/html", INDEX_HTML); });
   server.on("/api/state", HTTP_GET, sendState);
+  // prévia PNG de um mostrador para a galeria do painel (gerada pelo simulador, em faces.h)
+  server.on("/face", HTTP_GET, [] {
+    int t = server.arg("t").toInt();
+    if (t < 0 || t >= FACE_PNG_COUNT) {
+      server.send(404, "text/plain", "");
+      return;
+    }
+    server.sendHeader("Cache-Control", "max-age=86400");
+    server.send_P(200, "image/png", (PGM_P)FACE_PNG[t], FACE_PNG_LEN[t]);
+  });
   server.on("/api/cmd", HTTP_POST, [] {
+    if (server.arg("c") == "preview") {
+      int t = server.arg("t").toInt();
+      if (t >= 0 && t < THEME_COUNT) {
+        previewTheme = t;
+        previewUntil = millis() + 15000;
+        viewUntil = millis() + 15000;  // o álbum não interrompe a prévia
+      }
+    }
     command(server.arg("c"));
     sendState();
   });
@@ -998,7 +1024,13 @@ void loop() {
     viewUntil = 0;
   }
 
-  if (phase == IDLE) {
+  if (previewUntil && !previewActive()) {  // fim da prévia: volta ao mostrador salvo
+    previewUntil = 0;
+    viewUntil = 0;
+  }
+  if (previewActive()) {
+    if (inAlbum) stopAlbum();
+  } else if (phase == IDLE) {
     scheduleView();
     albumLoop();  // quadros de GIF precisam rodar fora do limite de 100 ms
   } else if (inAlbum) {
