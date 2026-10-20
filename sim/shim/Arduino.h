@@ -26,3 +26,10 @@ class String {
   unsigned length() const { return strlen(s); }
 };
 #define radians(d) ((d) * 0.017453292519943295)
+// PROGMEM no PC: memória comum
+#ifndef PROGMEM
+#define PROGMEM
+#endif
+#ifndef pgm_read_word
+#define pgm_read_word(a) (*(const uint16_t *)(a))
+#endif

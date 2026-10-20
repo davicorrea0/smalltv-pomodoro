@@ -101,6 +101,15 @@ static void assetSheet() {
   }
 }
 
+static Frame *F;
+static Frame *animFrame = nullptr;
+static int animN = 0;
+static void saveAnimFrame() {
+  char n[32];
+  snprintf(n, sizeof n, "flip_anim_%02d", animN++);
+  save(*animFrame, n);
+}
+
 static void shot(const char *name, const UiState &s, bool pomo) {
   Frame *f = new Frame();
   uiBegin(f);
@@ -179,6 +188,21 @@ int main() {
   { UiState t = base(2, 46, 0); t.theme = THEME_WORDS; shot("18_palavras_para", t, false); }
   { UiState t = base(11, 58, 0); t.theme = THEME_WORDS; shot("19_palavras_meiodia", t, false); }
   { UiState t = base(8, 23, 0); t.theme = THEME_WORDS; shot("20_palavras_manha", t, false); }
+
+  // ---- animação da virada do Flip: 14:37 -> 14:38 ----
+  {
+    Frame *f = new Frame();
+    uiBegin(f);
+    UiState t = base(14, 37, 58);
+    t.theme = THEME_FLIP;
+    uiRenderClock(t);
+    animFrame = f;
+    uiFrameHook = saveAnimFrame;
+    t.now.tm_min = 38;
+    uiRenderClock(t);
+    uiFrameHook = nullptr;
+    delete f;
+  }
 
   // ---- prévias da galeria do painel (docs/faces/face-N.png) ----
   for (int t = 0; t < THEME_COUNT; t++) {

@@ -28,7 +28,7 @@
 #include "web.h"
 #include "faces.h"
 
-#define FW_VERSION "1.4.0"
+#define FW_VERSION "1.4.1"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
@@ -973,6 +973,11 @@ void setup() {
   tft.init(240, 240, SPI_MODE3);
   tft.setSPISpeed(40000000);
   uiBegin(&tft);
+  // entre os quadros de animação (virada do Flip): cede tempo ao Wi-Fi e dá ritmo à virada
+  uiFrameHook = [] {
+    yield();
+    delay(10);
+  };
   applyPanel();
 
   // Monta o LittleFS do firmware original SEM formatar: se falhar, os arquivos ficam intactos.

@@ -63,6 +63,8 @@ void uiSprite(const UiSprite *s, int x, int y, uint8_t scale = 1, uint8_t frame 
 uint8_t uiSpriteFrame(const UiSprite *s, uint32_t ms);  // quadro da animação no instante ms
 
 void uiBegin(Adafruit_GFX *gfx);
+// Chamado entre os quadros de animação (ex.: virada do Flip) para ceder tempo ao Wi-Fi.
+extern void (*uiFrameHook)();
 void uiInvalidate();                         // redesenha tudo na próxima chamada
 void uiRenderClock(const UiState &s);        // tela de relógio no tema escolhido
 void uiRenderPomodoro(const UiState &s);     // anel de progresso do Pomodoro

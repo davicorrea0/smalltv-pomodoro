@@ -8,7 +8,7 @@ Firmware alternativo para o **GeekMagic SmallTV Ultra** (ESP8266, tela ST7789 24
 
 ## Funções
 
-- **8 mostradores**: Matriz, Tomate (cena em pixel art que muda com a hora e o clima; o tomate abre o guarda-chuva na chuva, põe cachecol no frio, óculos escuros no calor e comemora a meta do dia), Analógico, Clima, Neon, Flip, LCD retrô e Palavras (hora por extenso em português)
+- **8 mostradores**: Matriz, Tomate (cena em pixel art que muda com a hora e o clima; o tomate abre o guarda-chuva na chuva, põe cachecol no frio, óculos escuros no calor e comemora a meta do dia), Analógico, Clima, Neon, Flip (com animação de virada de verdade), LCD retrô e Palavras (hora por extenso em português)
 - **Pomodoro** com anel de progresso, horário de término e o tomate mudando de expressão (focado com um livro, relaxando com um café, dormindo quando pausado) e pulando de alegria quando uma fase termina; contador de focos do dia com meta diária
 - **Clima** via [Open-Meteo](https://open-meteo.com/) (sem chave de API), com busca de cidade pelo painel
 - **Álbum de fotos e GIFs**: lê os arquivos já gravados pelo firmware original; envio pelo painel com recorte automático para 240×240
@@ -18,6 +18,8 @@ Firmware alternativo para o **GeekMagic SmallTV Ultra** (ESP8266, tela ST7789 24
 - **Atualização OTA** em `/update` (usuário `admin`, senha opcional), que também serve para voltar ao firmware original
 
 ![Cena Tomate: dia, noite, chuva, neve, calor e meta batida](docs/tomate.png)
+
+![Virada do mostrador Flip, quadro a quadro](docs/flip.png)
 
 ![Pomodoro (foco, pausado, fim de fase) e tela de configuração](docs/pomodoro.png)
 
@@ -101,7 +103,7 @@ arduino-cli compile --fqbn "esp8266:esp8266:generic:eesz=4M3M,xtal=160" --output
 ## Detalhes técnicos
 
 - **Layout da flash 4M3M**, o mesmo do firmware original (constantes do LittleFS encontradas no binário V9.0.50, offset `0x14d00`). Assim as fotos e GIFs existentes são lidos. O LittleFS é montado **sem formatação automática**: se não montar, nada é apagado.
-- **Tamanho do binário**: para conseguir voltar ao firmware original pelo painel, este firmware precisa ficar abaixo de ~530 KB (hoje ~508 KB).
+- **Tamanho do binário**: para conseguir voltar ao firmware original pelo painel, este firmware precisa ficar abaixo de ~530 KB (hoje ~513 KB).
 - **Fontes desenhadas por código**: os dígitos (pixel art 5×7, fonte vetorial "Geo" e os segmentos do DSEG7 como polígonos) não usam bitmaps na flash.
 - **Sprites** em `PROGMEM` com 4 bits por pixel, desenhados juntando pixels vizinhos iguais em retângulos (menos chamadas SPI).
 - **RAM**: o decodificador de GIF precisa de ~24 KB contíguos e o de JPEG de ~18 KB. Se faltar memória, a tela mostra um aviso em vez de travar.
@@ -120,4 +122,5 @@ arduino-cli compile --fqbn "esp8266:esp8266:generic:eesz=4M3M,xtal=160" --output
 - Pinagem: [ESPHome devices — GeekMagic Ultra](https://devices.esphome.io/devices/geekmagic-ultra/)
 - Ordem de cor do painel e carregador para o erro de espaço: [giovi321/smalltv-mod](https://github.com/giovi321/smalltv-mod)
 - Fonte dos dígitos do mostrador LCD: [DSEG7 Classic](https://github.com/keshikan/DSEG) (keshikan, SIL Open Font License 1.1 — ver `licenses/DSEG-LICENSE.txt`); os contornos dos segmentos foram extraídos da fonte e são desenhados como polígonos
+- Fonte dos dígitos do mostrador Flip: [Bebas Neue](https://github.com/dharmatype/Bebas-Neue) (Dharma Type, SIL Open Font License 1.1 — ver `licenses/BebasNeue-OFL.txt`), também convertida em polígonos
 - Bibliotecas: Adafruit GFX e ST7789, ArduinoJson, JPEGDEC e AnimatedGIF (bitbank2)
