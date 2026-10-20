@@ -1,0 +1,14 @@
+# Nuvem de chuva (cinza): céu da cena Tomate com chuva ou tempestade.
+cor w #9aa0b0   # nuvem
+cor W #7a8090   # sombra
+cor o #4a5060   # contorno
+
+......oooo......
+....oowwwwo.....
+...owwwwwwwooo..
+.ooowwwwwwwwwwo.
+owwwwwwwwwwwwwwo
+owwwwwwwwwwwwwwo
+oWwwwwwwwwwwwwWo
+.oWWWWWWWWWWWWo.
+..oooooooooooo..

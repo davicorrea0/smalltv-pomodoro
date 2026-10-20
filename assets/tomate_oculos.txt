@@ -1,0 +1,19 @@
+# Tomate de óculos escuros: cena Tomate com calor (30 graus ou mais).
+paleta tomate
+
+......gGGg......
+....gGGGGGGg....
+...rRRgGGgRRr...
+..rRRRRggRRRRr..
+.rRhhRRRRRRRRRr.
+.rRhRRRRRRRRRRr.
+rRRRRRRRRRRRRRRr
+rRRkkkkkkkkkkRRr
+rRRkwkkRRkwkkRRr
+rRRkkkkRRkkkkRRr
+rRRpRRRRRRRRpRRr
+.rRRRRkRRkRRRRr.
+.rRRRRRkkRRRRRr.
+..rrRRRRRRRRrr..
+....rrrrrrrr....
+................

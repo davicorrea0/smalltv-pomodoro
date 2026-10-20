@@ -1,0 +1,14 @@
+# Nuvem branca: céu da cena Tomate com poucas nuvens ou nublado.
+cor w #ecf0f6   # nuvem
+cor W #c0c8d4   # sombra
+cor o #8a94a6   # contorno
+
+......oooo......
+....oowwwwo.....
+...owwwwwwwooo..
+.ooowwwwwwwwwwo.
+owwwwwwwwwwwwwwo
+owwwwwwwwwwwwwwo
+oWwwwwwwwwwwwwWo
+.oWWWWWWWWWWWWo.
+..oooooooooooo..

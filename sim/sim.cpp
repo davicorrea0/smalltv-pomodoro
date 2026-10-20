@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#define UI_ASSET_LIST  // assets.h inclui a lista com o nome de cada asset (para a folha de prévia)
 #include "../smalltv-pomodoro/ui.cpp"
 
 class Frame : public Adafruit_GFX {
@@ -45,7 +46,60 @@ static UiState base(int h, int m, int s) {
   return st;
 }
 
-static Frame *F;
+// Tela de tamanho livre (folha de prévia dos assets)
+class Canvas : public Adafruit_GFX {
+ public:
+  int w, h;
+  uint16_t *px;
+  Canvas(int w_, int h_, uint16_t bg) : Adafruit_GFX(w_, h_), w(w_), h(h_), px(new uint16_t[w_ * h_]) {
+    for (int i = 0; i < w * h; i++) px[i] = bg;
+  }
+  ~Canvas() { delete[] px; }
+  void drawPixel(int16_t x, int16_t y, uint16_t c) override {
+    if (x < 0 || y < 0 || x >= w || y >= h) return;
+    px[y * w + x] = c;
+  }
+};
+
+// Folha com todos os assets (cada quadro das animações lado a lado) -> out/assets.bin
+// (cabeçalho: largura e altura em uint16; depois os pixels RGB565). png.js gera out/assets.png.
+static void assetSheet() {
+  const int SC = 4, CW = 124, CH = 112, COLS = 6;
+  const int n = sizeof UI_ASSETS / sizeof UI_ASSETS[0];
+  // primeiro os sprites parados; cada animação começa numa linha nova
+  for (int draw = 0, cells = 0; draw < 2; draw++) {
+    Canvas *c = nullptr;
+    if (draw) {
+      c = new Canvas(COLS * CW + 8, (cells + COLS - 1) / COLS * CH + 8, BG);
+      uiBegin(c);
+    }
+    int k = 0;
+    for (int anim = 0; anim < 2; anim++)
+      for (int i = 0; i < n; i++) {
+        const UiSprite *sp = UI_ASSETS[i].sprite;
+        if ((sp->frames > 1) != (anim == 1)) continue;
+        if (anim && k % COLS) k += COLS - k % COLS;
+        for (int f = 0; f < sp->frames; f++, k++) {
+          if (!c) continue;
+          int x = 8 + k % COLS * CW, y = 8 + k / COLS * CH;
+          c->fillRoundRect(x, y, CW - 8, CH - 8, 8, UI_ASSETS[i].bg >= 0 ? UI_ASSETS[i].bg : CARD);
+          uiSprite(sp, x + (CW - 8 - sp->w * SC) / 2, y + 6 + (80 - sp->h * SC) / 2, SC, f);
+          char label[32];
+          if (f == 0) snprintf(label, sizeof label, "%s", UI_ASSETS[i].name);
+          else snprintf(label, sizeof label, "quadro %d", f + 1);
+          textC(x + (CW - 8) / 2, y + CH - 22, 1, f ? MUTED : TEXT, label);
+        }
+      }
+    cells = k;
+    if (!c) continue;
+    FILE *fp = fopen("out/assets.bin", "wb");
+    uint16_t wh[2] = {(uint16_t)c->w, (uint16_t)c->h};
+    fwrite(wh, 2, 2, fp);
+    fwrite(c->px, 2, c->w * c->h, fp);
+    fclose(fp);
+    delete c;
+  }
+}
 
 static void shot(const char *name, const UiState &s, bool pomo) {
   Frame *f = new Frame();
@@ -63,6 +117,9 @@ static int checkIncremental(const char *name, UiState s, bool pomo) {
   for (int step = 0; step < 140; step++) {
     if (pomo) {
       s.remainingMs = s.remainingMs > 1000 ? s.remainingMs - 1000 : 0;
+      s.ms += 100;
+      if (step == 20) s.celebrate = true;          // fase terminou: animação de fim
+      if (step == 47) s.celebrate = false;
       if (step == 70) s.running = !s.running;      // pausa no meio
       if (step == 90) s.running = !s.running;
       if (step == 100) { s.cycleDone++; }          // ciclo avança
@@ -71,6 +128,7 @@ static int checkIncremental(const char *name, UiState s, bool pomo) {
       if (step == 50) { s.wx.t = 9.6f; s.wx.code = 63; s.wx.tmin = 7; s.wx.tmax = 12; s.wx.version++; }
       if (step == 80) s.today++;
       if (step == 110) { s.weatherOn = false; }
+      if (step == 125) s.today = s.dailyGoal;      // meta batida: tomate comemorando
     }
     if (pomo) uiRenderPomodoro(s);
     else uiRenderClock(s);
@@ -107,6 +165,9 @@ int main() {
   s.theme = THEME_TOMATO;              shot("03_tomate_dia", s, false);
   { UiState t = base(23, 41, 0); t.theme = THEME_TOMATO; t.wx.code = 0; t.wx.day = false; t.wx.t = 17; shot("04_tomate_noite", t, false); }
   { UiState t = base(17, 52, 0); t.theme = THEME_TOMATO; t.wx.code = 63; t.wx.t = 19; shot("05_tomate_chuva_entardecer", t, false); }
+  { UiState t = base(10, 9, 0); t.theme = THEME_TOMATO; t.wx.code = 71; t.wx.t = -2; shot("05b_tomate_neve", t, false); }
+  { UiState t = base(13, 15, 0); t.theme = THEME_TOMATO; t.wx.code = 0; t.wx.t = 33; shot("05c_tomate_calor", t, false); }
+  { UiState t = base(15, 40, 0); t.theme = THEME_TOMATO; t.wx.code = 1; t.today = 8; shot("05d_tomate_meta", t, false); }
   { UiState t = base(10, 9, 0); t.theme = THEME_ANALOG; shot("06_analogico", t, false); }
   { UiState t = base(8, 5, 0); t.theme = THEME_WEATHER; t.wx.code = 61; t.wx.t = 18.2f; shot("07_clima_chuva", t, false); }
   { UiState t = base(13, 0, 0); t.theme = THEME_WEATHER; t.wx.code = 0; t.wx.t = 31; t.wx.hum = 38; shot("08_clima_sol", t, false); }
@@ -125,10 +186,13 @@ int main() {
   shot("09_pomo_foco", p, true);
   { UiState t = p; t.phase = PH_SHORT; t.totalMs = 5 * 60000; t.remainingMs = 3 * 60000 + 40000; t.running = false; t.now.tm_sec = 0; shot("10_pomo_pausa_pausado", t, true); }
   { UiState t = p; t.phase = PH_LONG; t.totalMs = 15 * 60000; t.remainingMs = 14 * 60000; t.cycleDone = 4; shot("11_pomo_pausa_longa", t, true); }
+  { UiState t = p; t.phase = PH_SHORT; t.totalMs = t.remainingMs = 5 * 60000; t.cycleDone = 3; t.celebrate = true; t.ms = 3 * 160; shot("11b_pomo_fim", t, true); }
 
   // ---- telas avulsas ----
   { Frame *f = new Frame(); uiBegin(f); uiMessage("Configure o Wi-Fi", "SmallTV-Pomodoro", "Conecte nessa rede e abra", "http://192.168.4.1"); save(*f, "12_portal"); delete f; }
   { Frame *f = new Frame(); uiBegin(f); uiColorTest(); save(*f, "13_teste_cores"); delete f; }
+
+  assetSheet();
 
   // ---- redesenho incremental ----
   int fails = 0;

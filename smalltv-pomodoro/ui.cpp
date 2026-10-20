@@ -8,6 +8,7 @@
 //  - redesenho incremental: cada área guarda o que mostrou e só repinta se mudou.
 
 #include "ui.h"
+#include "assets.h"
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
@@ -252,56 +253,33 @@ static const char *weatherText(int c) {
   return "";
 }
 
-// ---------- mascote: tomate em pixel art 16x16 ----------
-static const char *TOMATO[16] = {
-    "......gGGg......", "....gGGGGGGg....", "...rRRgGGgRRr...", "..rRRRRggRRRRr..",
-    ".rRhhRRRRRRRRRr.", ".rRhRRRRRRRRRRr.", "rRRRRRRRRRRRRRRr", "rRRRRRRRRRRRRRRr",
-    "rRRRRRRRRRRRRRRr", "rRRRRRRRRRRRRRRr", "rRRRRRRRRRRRRRRr", ".rRRRRRRRRRRRRr.",
-    ".rRRRRRRRRRRRRr.", "..rrRRRRRRRRrr..", "....rrrrrrrr....", "................",
-};
-enum Face : uint8_t { FACE_HAPPY, FACE_SLEEP, FACE_FOCUS, FACE_RELAX };
-
-static uint16_t tomatoColor(char ch) {
-  switch (ch) {
-    case 'R': return uiRgb(232, 64, 47);
-    case 'r': return uiRgb(168, 38, 30);
-    case 'h': return uiRgb(255, 145, 120);
-    case 'G': return uiRgb(96, 196, 84);
-    case 'g': return uiRgb(46, 128, 52);
-  }
-  return BG;
-}
-
-static void mascot(int x, int y, int sc, uint8_t face) {
-  for (int r = 0; r < 16; r++)
-    for (int c = 0; c < 16; c++) {
-      char ch = TOMATO[r][c];
-      if (ch != '.') G->fillRect(x + c * sc, y + r * sc, sc, sc, tomatoColor(ch));
+// ---------- sprites em pixel art (assets/*.txt -> assets.h) ----------
+void uiSprite(const UiSprite *sp, int x, int y, uint8_t sc, uint8_t frame, int32_t bg) {
+  UiSprite s;
+  memcpy_P(&s, sp, sizeof s);
+  const uint8_t *px = s.px + (frame % s.frames) * ((s.w * s.h + 1) / 2);
+  auto at = [&](int i) { uint8_t b = pgm_read_byte(px + i / 2); return i & 1 ? b & 15 : b >> 4; };
+  for (int r = 0; r < s.h; r++)
+    for (int c = 0; c < s.w;) {
+      int i = r * s.w + c, v = at(i), run = 1;  // junta pixels vizinhos iguais num retângulo só
+      while (c + run < s.w && at(i + run) == v) run++;
+      if (v || bg >= 0) G->fillRect(x + c * sc, y + r * sc, run * sc, sc, v ? pgm_read_word(s.pal + v - 1) : (uint16_t)bg);
+      c += run;
     }
-  const uint16_t K = uiRgb(40, 14, 12), P = uiRgb(255, 160, 160);
-  auto px = [&](int c, int r, uint16_t col) { G->fillRect(x + c * sc, y + r * sc, sc, sc, col); };
-  switch (face) {
-    case FACE_HAPPY:
-      px(5, 8, K); px(5, 9, K); px(10, 8, K); px(10, 9, K);
-      px(3, 10, P); px(12, 10, P);
-      px(6, 11, K); px(9, 11, K); px(7, 12, K); px(8, 12, K);
-      break;
-    case FACE_SLEEP:
-      px(4, 9, K); px(5, 9, K); px(10, 9, K); px(11, 9, K);
-      px(7, 12, K); px(8, 12, K);
-      break;
-    case FACE_FOCUS:
-      px(4, 6, K); px(5, 7, K); px(11, 6, K); px(10, 7, K);
-      px(5, 9, K); px(10, 9, K);
-      px(6, 12, K); px(7, 12, K); px(8, 12, K); px(9, 12, K);
-      break;
-    case FACE_RELAX:
-      px(4, 9, K); px(5, 8, K); px(6, 9, K); px(9, 9, K); px(10, 8, K); px(11, 9, K);
-      px(3, 10, P); px(12, 10, P);
-      px(7, 11, K); px(8, 11, K); px(7, 12, P); px(8, 12, P);
-      break;
-  }
 }
+
+uint8_t uiSpriteFrame(const UiSprite *sp, uint32_t ms) {
+  UiSprite s;
+  memcpy_P(&s, sp, sizeof s);
+  return s.frames > 1 && s.frameMs ? ms / s.frameMs % s.frames : 0;
+}
+
+// Mascote: tomate 16x16 com uma expressão por asset.
+enum Face : uint8_t { FACE_HAPPY, FACE_SLEEP, FACE_FOCUS, FACE_RELAX, FACE_CHEER, FACE_UMBRELLA, FACE_SCARF, FACE_SHADES };
+static const UiSprite *const FACES[] = {&SPR_TOMATE_FELIZ, &SPR_TOMATE_DORMINDO, &SPR_TOMATE_FOCADO, &SPR_TOMATE_RELAX,
+                                        &SPR_TOMATE_COMEMORANDO, &SPR_TOMATE_GUARDA_CHUVA, &SPR_TOMATE_CACHECOL, &SPR_TOMATE_OCULOS};
+
+static void mascot(int x, int y, int sc, uint8_t face, int32_t bg = UI_TRANSPARENT) { uiSprite(FACES[face], x, y, sc, 0, bg); }
 
 // ---------- tema 0: MATRIZ ----------
 static const TimeLayout TL_CLOCK = {{20, 66, 136, 182}, 30, 8, 116};
@@ -328,18 +306,23 @@ static void focusCard(const UiState &s, int x, int y) {
   const int w = 108, h = 120, cx = x + w / 2;
   G->fillRoundRect(x, y, w, h, 12, CARD);
   text(x + 12, y + 10, 1, MUTED, "FOCOS HOJE");
-  mascot(x + w - 22, y + 6, 1, FACE_HAPPY);
+  int goal = s.dailyGoal ? s.dailyGoal : 1;
+  bool done = s.today >= goal;
   char n[8];
   snprintf(n, sizeof n, "%u", s.today);
-  textC(cx, y + 30, 5, TEXT, n);
-  int goal = s.dailyGoal ? s.dailyGoal : 1;
+  if (done) {  // meta batida: o número vai para a esquerda e o tomate comemora ao lado
+    textC(x + 36, y + 30, 5, TEXT, n);
+    mascot(x + 68, y + 34, 2, FACE_CHEER);
+  } else {
+    mascot(x + w - 22, y + 6, 1, FACE_HAPPY);
+    textC(cx, y + 30, 5, TEXT, n);
+  }
   char g[20];
   snprintf(g, sizeof g, "meta %d", goal);
   textC(cx, y + 76, 1, MUTED, g);
   const int bx = x + 12, bw = w - 24, by = y + 92;
   G->fillRoundRect(bx, by, bw, 8, 4, CARD2);
-  int fill = (s.today >= goal ? goal : s.today) * bw / goal;
-  bool done = s.today >= goal;
+  int fill = (done ? goal : s.today) * bw / goal;
   if (fill > 0) G->fillRoundRect(bx, by, fill < 8 ? 8 : fill, 8, 4, done ? SHORT : WORK);
   if (done) textC(cx, y + 106, 1, SHORT, "meta batida!");
   else {
@@ -415,10 +398,15 @@ static void skyRect(int x, int y, int w, int h, int hour) {
     }
 }
 
-static void pixelCloud(int x, int y, uint16_t c) {
-  G->fillRoundRect(x, y + 10, 52, 14, 7, c);
-  G->fillCircle(x + 16, y + 11, 10, c);
-  G->fillCircle(x + 32, y + 8, 12, c);
+// Expressão do tomate na cena: dorme à noite; de dia reage à chuva, à meta e à temperatura.
+static uint8_t sceneFace(const UiState &s, bool night, bool rain, bool snow) {
+  bool show = s.weatherOn && s.wx.ok;
+  if (night) return FACE_SLEEP;
+  if (rain) return FACE_UMBRELLA;
+  if (s.dailyGoal && s.today >= s.dailyGoal) return FACE_CHEER;
+  if (snow || (show && s.wx.t <= 12)) return FACE_SCARF;
+  if (show && s.wx.t >= 30) return FACE_SHADES;
+  return FACE_HAPPY;
 }
 
 static void tomatoScene(const UiState &s) {
@@ -430,14 +418,8 @@ static void tomatoScene(const UiState &s) {
   float f = night ? fmodf(hf - 19 + 24, 24) / 11.0f : (hf - 6) / 13.0f;
   if (f < 0) f = 0;
   if (f > 1) f = 1;
-  int bx = 24 + f * 192, by = 178 - sinf(f * K_PI) * 72;  // arco abaixo do relógio (topo do astro >= 95)
-  if (night) {
-    G->fillCircle(bx, by, 10, uiRgb(244, 236, 200));
-    G->fillCircle(bx + 5, by - 4, 8, skyAt(by, hour));
-  } else {
-    G->fillCircle(bx, by, 11, SUN);
-    G->fillCircle(bx - 3, by - 3, 4, uiRgb(255, 230, 140));
-  }
+  int bx = 24 + f * 192, by = 178 - sinf(f * K_PI) * 66;  // arco abaixo do relógio (topo do astro >= 95)
+  uiSprite(night ? &SPR_LUA : &SPR_SOL, bx - 16, by - 16, 2);
   // clima no céu
   int c = s.wx.code;
   bool show = s.weatherOn && s.wx.ok;
@@ -445,9 +427,9 @@ static void tomatoScene(const UiState &s) {
   bool rain = show && ((c >= 51 && c <= 67) || (c >= 80 && c <= 82) || c >= 95);
   bool snow = show && ((c >= 71 && c <= 77) || c == 85 || c == 86);
   if (cloudy) {
-    uint16_t cc = rain ? uiRgb(150, 156, 170) : uiRgb(236, 240, 246);
-    pixelCloud(14, 98, cc);
-    pixelCloud(170, 104, cc);
+    const UiSprite *cl = rain ? &SPR_NUVEM_CHUVA : &SPR_NUVEM;
+    uiSprite(cl, 16, 100, 3);
+    uiSprite(cl, 172, 106, 3);
   }
   if (rain)
     for (int i = 0; i < 16; i++) G->fillRect((i * 37 + 20) % 220 + 10, 126 + (i * 23) % 60, 2, 6, RAIN);
@@ -460,8 +442,8 @@ static void tomatoScene(const UiState &s) {
   G->fillRect(0, GROUND_Y + 6, 240, 4, uiRgb(46, 125, 50));
   G->fillRect(0, GROUND_Y + 10, 240, 240 - GROUND_Y - 10, uiRgb(92, 60, 42));
   for (int i = 0; i < 12; i++) G->fillRect((i * 53 + 21) % 230, GROUND_Y - 4, 2, 4, uiRgb(76, 175, 80));  // tufos
-  // mascote em pé na grama; dorme à noite
-  mascot(88, GROUND_Y + 8 - 64, 4, night ? FACE_SLEEP : FACE_HAPPY);
+  // mascote em pé na grama
+  mascot(88, GROUND_Y + 8 - 64, 4, sceneFace(s, night, rain, snow));
   if (night) {
     text(150, GROUND_Y - 58, 2, uiRgb(220, 220, 255), "z");
     text(164, GROUND_Y - 72, 1, uiRgb(220, 220, 255), "z");
@@ -513,12 +495,14 @@ static void tomatoClock(const UiState &s) {
 static void themeTomato(const UiState &s, bool full) {
   int hour = s.timeOk ? s.now.tm_hour : -1;
   int minute = s.timeOk ? s.now.tm_min : -1;
-  bool scene = full || hour != lastHour || lastWx != s.wx.version || lastWxOn != (int)s.weatherOn;
+  int goalDone = s.dailyGoal && s.today >= s.dailyGoal;  // o tomate comemora a meta batida
+  bool scene = full || hour != lastHour || lastWx != s.wx.version || lastWxOn != (int)s.weatherOn || goalDone != lastGoal;
   if (scene) {
     tomatoScene(s);
     lastHour = hour;
     lastWx = s.wx.version;
     lastWxOn = s.weatherOn;
+    lastGoal = goalDone;
   }
   if (scene || minute != lastMin) {
     tomatoClock(s);
@@ -785,7 +769,7 @@ static void themeNeon(const UiState &s, bool full) {
     char f[24];
     snprintf(f, sizeof f, "%u %s hoje", s.today, s.today == 1 ? "foco" : "focos");
     int w = textW(f, 2) + 22;
-    mascot(120 - w / 2, 172, 1, FACE_HAPPY);
+    mascot(120 - w / 2, 172, 1, s.dailyGoal && s.today >= s.dailyGoal ? FACE_CHEER : FACE_HAPPY);
     text(120 - w / 2 + 22, 175, 2, NEON_A, f);
     lastToday = s.today;
   }
@@ -845,7 +829,7 @@ static void themeFlip(const UiState &s, bool full) {
   if (full || lastToday != s.today || lastGoal != s.dailyGoal) {
     G->fillRect(122, 184, 112, 32, BG);
     pill(125, 105);
-    mascot(137, 192, 1, FACE_HAPPY);
+    mascot(137, 192, 1, s.today >= s.dailyGoal ? FACE_CHEER : FACE_HAPPY);
     char f[16];
     snprintf(f, sizeof f, "%u/%u", s.today, s.dailyGoal);
     text(160, 193, 2, s.today >= s.dailyGoal ? SHORT : TEXT, f);
@@ -912,25 +896,6 @@ static void lcdDot(int x, int y, int sz, int yRef, uint16_t c) {
   segPoly(p, 4, c);
 }
 
-// Mascote em uma cor só (estilo LCD): folhas cheias, corpo só no contorno, rosto desenhado.
-static void mascotMono(int x, int y, int sc, uint16_t c, uint16_t bg) {
-  auto body = [](int r, int k) {
-    if (r < 0 || r > 15 || k < 0 || k > 15) return false;
-    char ch = TOMATO[r][k];
-    return ch == 'R' || ch == 'r' || ch == 'h';
-  };
-  for (int r = 0; r < 16; r++)
-    for (int k = 0; k < 16; k++) {
-      char ch = TOMATO[r][k];
-      if (ch == '.') continue;
-      bool leaf = ch == 'g' || ch == 'G';
-      bool edge = !body(r - 1, k) || !body(r + 1, k) || !body(r, k - 1) || !body(r, k + 1);
-      G->fillRect(x + k * sc, y + r * sc, sc, sc, leaf || edge ? c : bg);
-    }
-  const int face[][2] = {{5, 8}, {5, 9}, {10, 8}, {10, 9}, {6, 11}, {9, 11}, {7, 12}, {8, 12}};
-  for (auto &f : face) G->fillRect(x + f[0] * sc, y + f[1] * sc, sc, sc, c);
-}
-
 static void themeLcd(const UiState &s, bool full) {
   if (full) {
     textC(120, 9, 1, uiRgb(170, 170, 182), "TOMATE   ALARM   CHRONO");
@@ -994,7 +959,7 @@ static void themeLcd(const UiState &s, bool full) {
       degree(72, 156, 1, LCD_ON);
       text(80, 156, 2, LCD_ON, "C");
     }
-    mascotMono(96, 158, 2, LCD_ON, LCD_BG);
+    uiSprite(&SPR_TOMATE_LCD, 96, 158, 2, 0, LCD_BG);  // tomate monocromático, no estilo do LCD
     char f[12];
     snprintf(f, sizeof f, "x%u", s.today);
     text(132, 172, 2, LCD_ON, f);
@@ -1172,11 +1137,18 @@ void uiRenderPomodoro(const UiState &s) {
     lastGoal = total;
   }
 
-  uint8_t face = !s.running ? FACE_SLEEP : s.phase == PH_WORK ? FACE_FOCUS : FACE_RELAX;
-  if (face != lastFace) {
-    G->fillRect(102, 142, 36, 36, BG);
-    mascot(104, 144, 2, face);
-    lastFace = face;
+  // tomate + livro (foco) ou café (pausa); quando uma fase termina, a animação de fim
+  int8_t key;
+  if (s.celebrate) key = 64 + uiSpriteFrame(&SPR_TOMATE_FIM, s.ms);
+  else key = (!s.running ? FACE_SLEEP : s.phase == PH_WORK ? FACE_FOCUS : FACE_RELAX) * 2 + (s.phase == PH_WORK);
+  if (key != lastFace) {
+    if ((key >= 64) != (lastFace >= 64)) G->fillRect(84, 136, 72, 44, BG);  // troca de layout
+    if (key >= 64) uiSprite(&SPR_TOMATE_FIM, 104, 138, 2, key - 64, BG);    // bg repinta o quadro anterior
+    else {
+      mascot(86, 144, 2, key / 2, BG);
+      uiSprite(key & 1 ? &SPR_LIVRO : &SPR_CAFE, 122, 144, 2, 0, BG);
+    }
+    lastFace = key;
   }
 
   char st[24];

@@ -1,0 +1,22 @@
+# Tomate de cachecol: cena Tomate com frio (12 graus ou menos) ou neve.
+paleta tomate
+cor S #4f8dff   # cachecol
+cor L #9cc0ff   # listras
+cor s #2a52b0   # contorno do cachecol
+
+......gGGg......
+....gGGGGGGg....
+...rRRgGGgRRr...
+..rRRRRggRRRRr..
+.rRhhRRRRRRRRRr.
+.rRhRRRRRRRRRRr.
+rRRRRkRRRRkRRRRr
+rRRRRkRRRRkRRRRr
+rRRpRRRRRRRRpRRr
+rRRRRRRkkRRRRRRr
+sSSSSSSSSSSSSSSs
+sLLSSLLSSLLSSLLs
+.ssssSLSsssssss.
+..rrsSLSRRRRrr..
+....sLSsrrrr....
+....s.s.........

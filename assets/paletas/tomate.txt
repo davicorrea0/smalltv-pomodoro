@@ -1,0 +1,10 @@
+# Paleta do mascote tomate (as mesmas cores do desenho original).
+cor R #e8402f   # corpo
+cor r #a8261e   # contorno e sombra do corpo
+cor h #ff9178   # brilho
+cor G #60c454   # folhas
+cor g #2e8034   # contorno das folhas
+cor k #280e0c   # olhos e boca
+cor p #ffa0a0   # bochechas
+cor w #ffffff   # brilho nos olhos/óculos
+cor m #7a1010   # dentro da boca aberta
