@@ -1,0 +1,80 @@
+# SmallTV Pomodoro 🍅
+
+Firmware alternativo para o **GeekMagic SmallTV Ultra** (ESP8266, tela ST7789 240×240): relógio com 8 mostradores, Pomodoro, clima, álbum de fotos/GIFs e um mascote tomate em pixel art.
+
+![Os 8 mostradores](docs/mostradores.png)
+
+<sub>Imagens geradas pelo simulador do projeto, que compila o mesmo código de desenho do firmware.</sub>
+
+## Funções
+
+- **8 mostradores**: Matriz, Tomate (cena em pixel art que muda com a hora e o clima), Analógico, Clima, Neon, Flip, LCD retrô e Palavras (hora por extenso em português)
+- **Pomodoro** com anel de progresso, horário de término e o tomate mudando de expressão (focado, relaxando, dormindo quando pausado); contador de focos do dia com meta diária
+- **Clima** via [Open-Meteo](https://open-meteo.com/) (sem chave de API), com busca de cidade pelo painel
+- **Álbum de fotos e GIFs**: lê os arquivos já gravados pelo firmware original; envio pelo painel com recorte automático para 240×240
+- **Brilho noturno** por horário
+- **Painel web** no IP mostrado na tela, com controle do Pomodoro, temas, cores e arquivos
+- **Ajustes do painel** (ordem de cor RGB/BGR, inversão, rotação 180°) com tela de teste de cores, porque isso varia entre unidades
+- **Atualização OTA** em `/update` (usuário `admin`, senha opcional), que também serve para voltar ao firmware original
+
+![Cena Tomate: dia, noite e chuva](docs/tomate.png)
+
+![Pomodoro e tela de configuração](docs/pomodoro.png)
+
+## Instalar
+
+1. Baixe o `.bin` mais recente em [Releases](../../releases).
+2. No painel web do firmware original, abra **Firmware Upgrade** e envie o arquivo.
+   - Se aparecer `ERROR[4]: Not Enough Space`: o espaço de atualização de fábrica varia entre unidades. Envie antes o carregador [`smalltv-mod-loader.bin`](https://github.com/giovi321/smalltv-mod/releases/tag/v2.8.2) (giovi321/smalltv-mod v2.8.2), conecte-se à rede aberta `SmallTV-Loader` e envie este firmware em `http://192.168.4.1/update`.
+3. Se o relógio não conectar sozinho na sua rede, conecte-se à rede `SmallTV-Pomodoro` e abra `http://192.168.4.1` (só redes **2,4 GHz**).
+4. Abra o IP que aparece na tela para usar o painel. Atualizações seguintes: *Sistema → Atualizar firmware*.
+
+Para voltar ao firmware original, envie o `.bin` da GeekMagic ([GeekMagicClock/smalltv-ultra](https://github.com/GeekMagicClock/smalltv-ultra)) em *Sistema → Atualizar firmware*.
+
+> ⚠️ Use só no **SmallTV Ultra** (ESP8266). Não grave no SmallTV Pro (ESP32) nem em outros modelos.
+
+## Estrutura
+
+| Pasta | Conteúdo |
+|---|---|
+| `smalltv-pomodoro/` | Firmware (Arduino/ESP8266). `ui.cpp` desenha todas as telas; `main.cpp` cuida de Wi-Fi, clima, álbum, Pomodoro e painel web; `web.h` é o painel |
+| `sim/` | Simulador das telas no PC |
+| `docs/` | Imagens do README |
+
+## Simulador das telas
+
+`sim/` compila o mesmo `ui.cpp` do firmware no PC (com [Zig](https://ziglang.org/)) e grava cada tela em PNG. Também roda um teste de redesenho: simula minutos passando, clima mudando e focos concluídos, e compara o resultado com um desenho feito do zero. Qualquer pixel diferente indica sobra de desenho na tela.
+
+```
+sim/build.sh
+```
+
+## Compilar
+
+```
+arduino-cli core install esp8266:esp8266 --additional-urls https://arduino.esp8266.com/stable/package_esp8266com_index.json
+arduino-cli lib install "Adafruit GFX Library" "Adafruit ST7735 and ST7789 Library" "ArduinoJson" "JPEGDEC" "AnimatedGIF"
+arduino-cli compile --fqbn "esp8266:esp8266:generic:eesz=4M3M,xtal=160" --output-dir build smalltv-pomodoro
+```
+
+## Detalhes técnicos
+
+- **Layout da flash 4M3M**, o mesmo do firmware original (constantes do LittleFS encontradas no binário V9.0.50, offset `0x14d00`). Assim as fotos e GIFs existentes são lidos. O LittleFS é montado **sem formatação automática**: se não montar, nada é apagado.
+- **Tamanho do binário**: para conseguir voltar ao firmware original pelo painel, este firmware precisa ficar abaixo de ~530 KB (hoje ~483 KB).
+- **Fontes desenhadas por código**: os dígitos (pixel art 5×7, fonte vetorial "Geo" e 7 segmentos) não usam bitmaps na flash.
+- **RAM**: o decodificador de GIF precisa de ~24 KB contíguos e o de JPEG de ~18 KB. Se faltar memória, a tela mostra um aviso em vez de travar.
+
+### Pinagem
+
+| Função | GPIO |
+|---|---|
+| SPI CLK / MOSI | 14 / 13 |
+| Display DC | 0 |
+| Display RST | 2 |
+| Backlight (PWM invertido) | 5 |
+
+## Créditos
+
+- Pinagem: [ESPHome devices — GeekMagic Ultra](https://devices.esphome.io/devices/geekmagic-ultra/)
+- Ordem de cor do painel e carregador para o erro de espaço: [giovi321/smalltv-mod](https://github.com/giovi321/smalltv-mod)
+- Bibliotecas: Adafruit GFX e ST7789, ArduinoJson, JPEGDEC e AnimatedGIF (bitbank2)

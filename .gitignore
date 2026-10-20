@@ -1,0 +1,13 @@
+# saídas de compilação
+build/
+*.bin
+*.elf
+*.map
+# simulador
+sim/out/
+sim/*.exe
+sim/*.pdb
+# firmware de fábrica da GeekMagic (não é nosso; baixe do repositório oficial)
+fw/
+# carregador próprio ainda não testado no aparelho
+smalltv-loader/
