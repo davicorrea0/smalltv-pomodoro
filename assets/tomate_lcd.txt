@@ -1,0 +1,20 @@
+# Tomate monocromático para o mostrador LCD retrô (o fundo do LCD aparece no ".").
+cor K #121810
+fundo #a6b48c   # o fundo do LCD (só na folha de prévia)
+
+......KKKK......
+....KKKKKKKK....
+...KKKKKKKKKK...
+..K...KKKK...K..
+.K.....KK.....K.
+.K............K.
+K..............K
+K..............K
+K....K....K....K
+K....K....K....K
+K..............K
+.K....K..K....K.
+.K.....KK.....K.
+..KK........KK..
+....KKKKKKKK....
+................

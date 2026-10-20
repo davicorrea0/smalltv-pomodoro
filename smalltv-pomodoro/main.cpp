@@ -334,6 +334,8 @@ UiState makeState() {
   s.accent = clockColor();
   strlcpy(ipText, WiFi.localIP().toString().c_str(), sizeof ipText);
   s.ip = ipText;
+  s.ms = millis();
+  s.celebrate = alertUntil != 0;  // fase acabou de terminar: animação de fim no Pomodoro
   return s;
 }
 

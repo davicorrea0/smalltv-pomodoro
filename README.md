@@ -8,8 +8,8 @@ Firmware alternativo para o **GeekMagic SmallTV Ultra** (ESP8266, tela ST7789 24
 
 ## Funções
 
-- **8 mostradores**: Matriz, Tomate (cena em pixel art que muda com a hora e o clima), Analógico, Clima, Neon, Flip (com animação de virada de verdade), LCD retrô e Palavras (hora por extenso em português)
-- **Pomodoro** com anel de progresso, horário de término e o tomate mudando de expressão (focado, relaxando, dormindo quando pausado); contador de focos do dia com meta diária
+- **8 mostradores**: Matriz, Tomate (cena em pixel art que muda com a hora e o clima; o tomate abre o guarda-chuva na chuva, põe cachecol no frio, óculos escuros no calor e comemora a meta do dia), Analógico, Clima, Neon, Flip (com animação de virada de verdade), LCD retrô e Palavras (hora por extenso em português)
+- **Pomodoro** com anel de progresso, horário de término e o tomate mudando de expressão (focado com um livro, relaxando com um café, dormindo quando pausado) e pulando de alegria quando uma fase termina; contador de focos do dia com meta diária
 - **Clima** via [Open-Meteo](https://open-meteo.com/) (sem chave de API), com busca de cidade pelo painel
 - **Álbum de fotos e GIFs**: lê os arquivos já gravados pelo firmware original; envio pelo painel com recorte automático para 240×240
 - **Brilho noturno** por horário
@@ -17,11 +17,11 @@ Firmware alternativo para o **GeekMagic SmallTV Ultra** (ESP8266, tela ST7789 24
 - **Ajustes do painel** (ordem de cor RGB/BGR, inversão, rotação 180°) com tela de teste de cores, porque isso varia entre unidades
 - **Atualização OTA** em `/update` (usuário `admin`, senha opcional), que também serve para voltar ao firmware original
 
-![Cena Tomate: dia, noite e chuva](docs/tomate.png)
+![Cena Tomate: dia, noite, chuva, neve, calor e meta batida](docs/tomate.png)
 
 ![Virada do mostrador Flip, quadro a quadro](docs/flip.png)
 
-![Pomodoro e tela de configuração](docs/pomodoro.png)
+![Pomodoro (foco, pausado, fim de fase) e tela de configuração](docs/pomodoro.png)
 
 ## Instalar
 
@@ -39,13 +39,54 @@ Para voltar ao firmware original, envie o `.bin` da GeekMagic ([GeekMagicClock/s
 
 | Pasta | Conteúdo |
 |---|---|
-| `smalltv-pomodoro/` | Firmware (Arduino/ESP8266). `ui.cpp` desenha todas as telas; `main.cpp` cuida de Wi-Fi, clima, álbum, Pomodoro e painel web; `web.h` é o painel |
+| `smalltv-pomodoro/` | Firmware (Arduino/ESP8266). `ui.cpp` desenha todas as telas; `main.cpp` cuida de Wi-Fi, clima, álbum, Pomodoro e painel web; `web.h` é o painel; `assets.h` é gerado a partir de `assets/` |
+| `assets/` | Sprites em pixel art (um `.txt` por sprite), paletas e o gerador `gerar.js` |
 | `sim/` | Simulador das telas no PC; `sim/faces.js` gera as prévias da galeria (`docs/faces/` e `smalltv-pomodoro/faces.h`) |
 | `docs/` | Imagens do README |
 
+## Biblioteca de assets
+
+Todos os desenhos em pixel art (o tomate e suas expressões, café, livro, sol, lua, nuvens e a animação de fim de Pomodoro) são arquivos de texto em `assets/`, um por sprite. O `assets/gerar.js` converte todos em `smalltv-pomodoro/assets.h`: cada sprite vira `SPR_<NOME>` na flash (4 bits por pixel, ~130 bytes um sprite 16×16), sem gastar RAM.
+
+![Folha de prévia dos assets](docs/assets.png)
+
+### Adicionar um asset
+
+1. Crie `assets/<nome>.txt` (só `a-z`, `0-9` e `_`), por exemplo `assets/regador.txt`:
+
+   ```
+   # Regador: aparece quando ...
+   cor o #2a3a4a   # contorno
+   cor B #4f8dff   # corpo
+   cor b #9cc0ff   # brilho
+   cor A #5aaaff   # água
+
+   ..........A.....
+   ...ooooo...A....
+   ..oBBbBBo.A.....
+   (mais linhas, até completar o desenho)
+   ```
+
+   - cada linha de pixels tem o mesmo comprimento; `.` é transparente;
+   - `cor <caractere> #rrggbb` define as cores (até 15 por sprite); `paleta tomate` reaproveita as cores de `assets/paletas/tomate.txt`;
+   - animação: separe os quadros com uma linha `quadro` e diga a duração de cada um com `ms 160`;
+   - `fundo #rrggbb` só muda o fundo do sprite na folha de prévia.
+2. Rode `sim/build.sh` (ou só `node assets/gerar.js`). Erros apontam arquivo e linha.
+3. Desenhe onde quiser em `ui.cpp`:
+
+   ```cpp
+   uiSprite(&SPR_REGADOR, x, y);                // escala 1, transparente
+   uiSprite(&SPR_REGADOR, x, y, 3, 0, BG);      // escala 3; transparente pintado com BG
+   uiSprite(&SPR_TOMATE_FIM, x, y, 2, uiSpriteFrame(&SPR_TOMATE_FIM, s.ms), BG);  // animação
+   ```
+
+   Passar a cor de fundo repinta o sprite por cima do anterior sem limpar a área antes (sem piscar).
+
+Para mudar um desenho existente, basta editar o `.txt`: o código não muda. A folha acima é gerada pelo simulador em `sim/out/assets.png`.
+
 ## Simulador das telas
 
-`sim/` compila o mesmo `ui.cpp` do firmware no PC (com [Zig](https://ziglang.org/)) e grava cada tela em PNG. Também roda um teste de redesenho: simula minutos passando, clima mudando e focos concluídos, e compara o resultado com um desenho feito do zero. Qualquer pixel diferente indica sobra de desenho na tela.
+`sim/` compila o mesmo `ui.cpp` do firmware no PC (com [Zig](https://ziglang.org/)) e grava cada tela em PNG, além da folha de prévia dos assets. Também roda um teste de redesenho: simula minutos passando, clima mudando e focos concluídos, e compara o resultado com um desenho feito do zero. Qualquer pixel diferente indica sobra de desenho na tela.
 
 ```
 sim/build.sh
@@ -62,8 +103,9 @@ arduino-cli compile --fqbn "esp8266:esp8266:generic:eesz=4M3M,xtal=160" --output
 ## Detalhes técnicos
 
 - **Layout da flash 4M3M**, o mesmo do firmware original (constantes do LittleFS encontradas no binário V9.0.50, offset `0x14d00`). Assim as fotos e GIFs existentes são lidos. O LittleFS é montado **sem formatação automática**: se não montar, nada é apagado.
-- **Tamanho do binário**: para conseguir voltar ao firmware original pelo painel, este firmware precisa ficar abaixo de ~530 KB (hoje ~511 KB).
+- **Tamanho do binário**: para conseguir voltar ao firmware original pelo painel, este firmware precisa ficar abaixo de ~530 KB (hoje ~513 KB).
 - **Fontes desenhadas por código**: os dígitos (pixel art 5×7, fonte vetorial "Geo" e os segmentos do DSEG7 como polígonos) não usam bitmaps na flash.
+- **Sprites** em `PROGMEM` com 4 bits por pixel, desenhados juntando pixels vizinhos iguais em retângulos (menos chamadas SPI).
 - **RAM**: o decodificador de GIF precisa de ~24 KB contíguos e o de JPEG de ~18 KB. Se faltar memória, a tela mostra um aviso em vez de travar.
 
 ### Pinagem

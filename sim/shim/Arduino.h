@@ -12,6 +12,7 @@
 typedef bool boolean;
 typedef uint8_t byte;
 #include "Print.h"
+#include "pgmspace.h"
 #ifdef _WIN32
 static inline struct tm *localtime_r(const time_t *t, struct tm *r) { return localtime_s(r, t) ? nullptr : r; }
 #endif

@@ -43,3 +43,13 @@ if (process.argv.length > 3) {
   });
   fs.writeFileSync(path.join(dir, out), png(w2, h2, sh2));
 }
+// Folha de prévia dos assets (tamanho livre: cabeçalho com largura e altura)
+const ab = path.join(dir, 'assets.bin');
+if (fs.existsSync(ab)) {
+  const b = fs.readFileSync(ab), w = b.readUInt16LE(0), h = b.readUInt16LE(2), rgb = Buffer.alloc(w * h * 3);
+  for (let i = 0; i < w * h; i++) {
+    const v = b.readUInt16LE(4 + i * 2);
+    rgb[i * 3] = ((v >> 11) & 31) * 255 / 31; rgb[i * 3 + 1] = ((v >> 5) & 63) * 255 / 63; rgb[i * 3 + 2] = (v & 31) * 255 / 31;
+  }
+  fs.writeFileSync(path.join(dir, 'assets.png'), png(w, h, rgb));
+}

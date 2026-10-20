@@ -1,0 +1,19 @@
+# Dormindo: Pomodoro pausado e cena Tomate à noite.
+paleta tomate
+
+......gGGg......
+....gGGGGGGg....
+...rRRgGGgRRr...
+..rRRRRggRRRRr..
+.rRhhRRRRRRRRRr.
+.rRhRRRRRRRRRRr.
+rRRRRRRRRRRRRRRr
+rRRRRRRRRRRRRRRr
+rRRRRRRRRRRRRRRr
+rRRRkkRRRRkkRRRr
+rRRRRRRRRRRRRRRr
+.rRRRRRRRRRRRRr.
+.rRRRRRkkRRRRRr.
+..rrRRRRRRRRrr..
+....rrrrrrrr....
+................

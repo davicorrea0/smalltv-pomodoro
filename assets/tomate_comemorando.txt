@@ -1,0 +1,21 @@
+# Tomate comemorando: meta diária de focos batida.
+paleta tomate
+cor Y #ffc428   # confete
+cor B #4f8dff   # confete
+
+.Y....gGGg....B.
+....gGGGGGGg....
+r..rRRgGGgRRr..r
+.rrRRRRggRRRRrr.
+.rRhhRRRRRRRRRr.
+BrRhRRRRRRRRRRrY
+rRRRRRRRRRRRRRRr
+rRRRRRRRRRRRRRRr
+rRRRRkRRRRkRRRRr
+rRRRkRkRRkRkRRRr
+rRRpRRRRRRRRpRRr
+.rRRRRkkkkRRRRr.
+.rRRRRkmmkRRRRr.
+..rrRRRkkRRRrr..
+....rrrrrrrr....
+................
