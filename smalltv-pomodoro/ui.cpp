@@ -860,7 +860,7 @@ static void themeFlip(const UiState &s, bool full) {
 
 // ---------- tema 6: LCD RETRÔ ----------
 // Relógio de pulso dos anos 80: tela verde-acinzentada, 7 segmentos com os apagados visíveis.
-static const uint16_t LCD_BG = uiRgb(166, 180, 140), LCD_ON = uiRgb(18, 24, 16), LCD_GHOST = uiRgb(157, 171, 132);  // fantasma = só um vestígio, como no LCD real
+static const uint16_t LCD_BG = uiRgb(166, 180, 140), LCD_ON = uiRgb(18, 24, 16), LCD_GHOST = uiRgb(161, 175, 136);  // fantasma = só um vestígio, como no LCD real
 static const uint8_t SEG7[10] = {0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07, 0x7F, 0x6F};
 
 // Segmentos hexagonais (pontas chanfradas) com inclinação itálica, como nos relógios Casio:
@@ -888,7 +888,7 @@ static void vseg(int x, int y, int len, int t, uint16_t c) {
 }
 
 // Cada segmento é pintado (aceso ou "fantasma"): troca de dígito sem limpar a área.
-static void seg7(int x, int y, int w, int h, int t, int d, uint16_t on, uint16_t off, float slant = 0.12f) {
+static void seg7(int x, int y, int w, int h, int t, int d, uint16_t on, uint16_t off, float slant = 0) {
   segK = slant;
   segYRef = y + h;
   uint8_t s = d < 0 ? 0 : SEG7[d];
@@ -906,7 +906,7 @@ static void seg7(int x, int y, int w, int h, int t, int d, uint16_t on, uint16_t
 
 // Quadradinho inclinado (dois-pontos do LCD)
 static void lcdDot(int x, int y, int sz, int yRef, uint16_t c) {
-  segK = 0.12f;
+  segK = 0;  // reto: a inclinação criava degraus nas bordas e deixava o dígito com cara de borrado
   segYRef = yRef;
   const int p[4][2] = {{x, y}, {x + sz - 1, y}, {x + sz - 1, y + sz - 1}, {x, y + sz - 1}};
   segPoly(p, 4, c);
@@ -962,20 +962,20 @@ static void themeLcd(const UiState &s, bool full) {
   const int X[4] = {12, 62, 128, 178}, Y = 62, H = 80;
   for (int i = 0; i < 4; i++)
     if (full || lastDig[i] != v[i]) {
-      seg7(X[i], Y, 44, H, 8, v[i], LCD_ON, LCD_GHOST);
+      seg7(X[i], Y, 44, H, 11, v[i], LCD_ON, LCD_GHOST);  // traço grosso: legível de longe
       lastDig[i] = v[i];
     }
   bool colon = !s.timeOk || s.now.tm_sec % 2 == 0;
   if (full || colon != lastColon) {
-    lcdDot(114, Y + 22, 7, Y + H, colon ? LCD_ON : LCD_GHOST);
-    lcdDot(114, Y + 51, 7, Y + H, colon ? LCD_ON : LCD_GHOST);
+    lcdDot(112, Y + 20, 10, Y + H, colon ? LCD_ON : LCD_GHOST);
+    lcdDot(112, Y + 50, 10, Y + H, colon ? LCD_ON : LCD_GHOST);
     lastColon = colon;
   }
   // segundos pequenos
   int sec = s.timeOk ? s.now.tm_sec : -1;
   if (full || sec != lastSecW) {
-    seg7(170, 156, 22, 38, 5, sec < 0 ? -1 : sec / 10, LCD_ON, LCD_GHOST);
-    seg7(196, 156, 22, 38, 5, sec < 0 ? -1 : sec % 10, LCD_ON, LCD_GHOST);
+    seg7(170, 156, 24, 40, 4, sec < 0 ? -1 : sec / 10, LCD_ON, LCD_GHOST);  // pequenos: traço fino com miolo aberto
+    seg7(198, 156, 24, 40, 4, sec < 0 ? -1 : sec % 10, LCD_ON, LCD_GHOST);
     lastSecW = sec;
   }
   // temperatura (7 segmentos médios) e focos com o tomate monocromático
@@ -984,15 +984,15 @@ static void themeLcd(const UiState &s, bool full) {
     if (s.weatherOn && s.wx.ok) {
       int t = (int)lroundf(s.wx.t);
       if (t >= 0 && t <= 99) {
-        seg7(20, 156, 20, 32, 4, t >= 10 ? t / 10 : -1, LCD_ON, LCD_GHOST);
-        seg7(44, 156, 20, 32, 4, t % 10, LCD_ON, LCD_GHOST);
+        seg7(20, 156, 22, 36, 4, t >= 10 ? t / 10 : -1, LCD_ON, LCD_GHOST);
+        seg7(46, 156, 22, 36, 4, t % 10, LCD_ON, LCD_GHOST);
       } else {
         char n[8];
         snprintf(n, sizeof n, "%d", t);
         text(20, 160, 3, LCD_ON, n);
       }
-      degree(72, 156, 1, LCD_ON);
-      text(80, 156, 2, LCD_ON, "C");
+      degree(74, 156, 1, LCD_ON);
+      text(82, 156, 2, LCD_ON, "C");
     }
     mascotMono(96, 158, 2, LCD_ON, LCD_BG);
     char f[12];

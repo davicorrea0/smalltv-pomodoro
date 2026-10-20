@@ -27,7 +27,7 @@
 #include "ui.h"
 #include "web.h"
 
-#define FW_VERSION "1.3.2"
+#define FW_VERSION "1.3.3"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
