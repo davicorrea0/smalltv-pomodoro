@@ -395,3 +395,11 @@ section[data-kind].first { border-top: 0; padding-top: 16px; }
 .shot.pomo .act-lead { border-top: 1px solid var(--line); padding-top: 10px; }
 .viewer .tabs.states { margin: 0; flex-wrap: wrap; overflow: visible; }
 .tabs.states button { padding: 6px 12px; font-size: 13px; }
+
+/* Ícone do GitHub em pixel art (traço de 1 px, como o tomate do LCD); pinta com a cor do link */
+.gh {
+  display: inline-block; width: 16px; height: 16px; margin-right: 6px; vertical-align: -3px;
+  background: currentColor; image-rendering: pixelated;
+  -webkit-mask: url(img/icons/github.svg) center / 16px 16px no-repeat;
+  mask: url(img/icons/github.svg) center / 16px 16px no-repeat;
+}
