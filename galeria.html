@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Galeria de mostradores — SmallTV Pomodoro</title>
+<meta name="description" content="Todos os mostradores do SmallTV Pomodoro para o GeekMagic SmallTV Ultra: os embutidos no firmware e os pacotes instaláveis.">
+<meta property="og:title" content="Galeria de mostradores — SmallTV Pomodoro">
+<meta property="og:image" content="https://davicorrea0.github.io/smalltv-pomodoro/img/mostradores.png">
+<meta name="theme-color" content="#0b0d10">
+<link rel="icon" href="img/tomate.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Silkscreen&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="./"><img class="px" src="img/tomate.svg" alt=""><span>SmallTV Pomodoro</span></a>
+    <nav class="nav">
+      <a href="./">Início</a>
+      <a href="galeria.html" aria-current="page">Galeria</a>
+      <a href="./#instalar">Instalar</a>
+      <a href="https://github.com/davicorrea0/smalltv-pomodoro">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="page-head">
+    <div class="wrap">
+      <div class="eyebrow">Galeria</div>
+      <h1>Mostradores</h1>
+      <p>As prévias são a tela do relógio em tamanho real (240×240), ampliadas pixel por pixel. Toque em uma para ver maior.</p>
+      <div class="tabs" role="group" aria-label="Filtrar mostradores">
+        <button type="button" data-filter="all" aria-pressed="true">Todos <span class="count" id="n-all"></span></button>
+        <button type="button" data-filter="builtin" aria-pressed="false">Embutidos <span class="count" id="n-builtin"></span></button>
+        <button type="button" data-filter="pkg" aria-pressed="false">Pacotes <span class="count" id="n-pkg"></span></button>
+      </div>
+    </div>
+  </div>
+
+  <section style="border:0;padding-top:16px">
+    <div class="wrap">
+      <div class="faces" id="faces"></div>
+    </div>
+  </section>
+
+  <section id="pacotes">
+    <div class="wrap">
+      <h2>Pacotes de mostradores</h2>
+      <p class="section-lead">Mostradores novos descritos em arquivos <code>.json</code> pequenos (camadas de texto, formas, sprites em pixel art, ícone de clima, ponteiros), instalados pelo painel do relógio sem gravar o firmware de novo.</p>
+      <div id="pkg-status"></div>
+      <div class="how">
+        <div class="card"><h3>Escolha</h3><p>Encontre um pacote aqui na galeria.</p></div>
+        <div class="card"><h3>Instale</h3><p>No painel do relógio, instale direto da galeria com um toque, ou baixe o <code>.json</code> e envie pelo painel.</p></div>
+        <div class="card"><h3>Use</h3><p>O mostrador aparece na lista do relógio junto com os embutidos.</p></div>
+      </div>
+      <p style="color:var(--muted);font-size:14px;margin-top:16px">Por que não instalar daqui direto? O relógio fala só <code>http</code> dentro da sua rede, e um site <code>https</code> não pode enviar arquivos para ele. Por isso a instalação parte do painel do relógio.</p>
+    </div>
+  </section>
+</main>
+
+<dialog class="zoom" id="zoom">
+  <img class="px" id="zoom-img" alt="" width="240" height="240">
+  <div class="bar">
+    <div>
+      <h3 id="zoom-name"></h3>
+      <p id="zoom-desc"></p>
+    </div>
+    <button type="button" class="btn small" id="zoom-close">Fechar</button>
+  </div>
+</dialog>
+
+<footer>
+  <div class="wrap">
+    <img class="px" src="img/tomate.svg" alt="">
+    <span>SmallTV Pomodoro · feito por Davi Mattos</span>
+    <div class="links">
+      <a href="./">Início</a>
+      <a href="https://github.com/davicorrea0/smalltv-pomodoro">Código no GitHub</a>
+      <a href="https://github.com/davicorrea0/smalltv-pomodoro/releases">Releases</a>
+    </div>
+  </div>
+</footer>
+
+<script src="faces.js"></script>
+<script src="galeria.js"></script>
+</body>
+</html>
