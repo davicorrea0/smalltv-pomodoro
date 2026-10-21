@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Silkscreen&display=swap">
-<link rel="stylesheet" href="style.css?v=6">
+<link rel="stylesheet" href="style.css?v=7">
 </head>
 <body>
 
@@ -25,7 +25,7 @@
     <nav class="nav">
       <a href="./" aria-current="page">Início</a>
       <a href="galeria.html">Galeria</a>
-      <a class="opt" href="#instalar">Instalar</a>
+      <a href="jogo.html">Jogo</a>
       <a class="opt" href="https://github.com/davicorrea0/smalltv-pomodoro">GitHub</a>
     </nav>
     <a class="lang" href="en/" hreflang="en" lang="en"><img class="px" src="img/icons/globo.svg" alt="">EN</a>
@@ -137,15 +137,15 @@
     <h2>Funções</h2>
     <p class="section-lead">Tudo cabe em menos de 500 KB e roda no próprio relógio.</p>
     <div class="grid three">
-      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/relogio.svg" alt=""></span>8 mostradores</h3><p>Matriz, Tomate, Analógico, Clima, Neon, Flip (com animação de virada de verdade), LCD retrô e Palavras (a hora por extenso, em português).</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/relogio.svg" alt=""></span>8 mostradores</h3><p>Matriz, Tomate, Analógico, Clima, Neon, Flip (com animação de virada de verdade), LCD retrô e Palavras (a hora por extenso).</p></div>
       <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/focado.svg" alt=""></span>Pomodoro com mascote</h3><p>O tomate fica focado, relaxa com um café na pausa, dorme quando o timer está pausado e pula de alegria quando uma fase termina.</p></div>
       <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/livro.svg" alt=""></span>Atividade do foco</h3><p>Escolha no painel o que vai fazer: ler, estudar, programar, tarefas ou desenhar. A tela mostra o objeto da atividade ao lado do tomate.</p></div>
       <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/sol.svg" alt=""></span>Clima</h3><p>Pelo <a href="https://open-meteo.com/">Open-Meteo</a>, sem cadastro nem chave de API. Na chuva o tomate abre o guarda-chuva; no frio põe cachecol; no calor, óculos escuros.</p></div>
       <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/foto.svg" alt=""></span>Fotos e GIFs</h3><p>Usa o álbum que já estava no relógio. Fotos novas vão pelo painel e são recortadas para 240×240 automaticamente.</p></div>
       <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/lua.svg" alt=""></span>Brilho noturno</h3><p>Escolha um horário para a tela ficar mais fraca à noite e não iluminar o quarto.</p></div>
-      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/celular.svg" alt=""></span>Painel web</h3><p>Abra no celular o IP que aparece na tela: galeria de mostradores, controle do Pomodoro, fotos e ajustes.</p></div>
-      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/cores.svg" alt=""></span>Ajuste de cor da tela</h3><p>Ordem de cor RGB/BGR, inversão e rotação 180°, com tela de teste de cores, porque isso varia entre unidades.</p></div>
-      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/seta.svg" alt=""></span>Atualização sem fio</h3><p>Versões novas são enviadas pelo painel em <code>/update</code>, que também serve para voltar ao firmware original.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/celular.svg" alt=""></span>Painel web</h3><p>Abra no celular ou no computador o IP que aparece na tela: mostradores, Pomodoro, fotos e ajustes, incluindo cor e rotação da tela. Em português, inglês ou espanhol.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="img/jogo/planta/dourada.svg" alt=""></span>Jogo do foco</h3><p>Sequência de dias com a meta batida, planta que cresce até o tomate dourado, horta do ano, 10 conquistas e cartão do dia para compartilhar. <a href="jogo.html">Ver o jogo</a>.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/seta.svg" alt=""></span>Atualização em um toque</h3><p>Quando sai uma versão nova, o painel avisa e atualiza o relógio com um toque (a partir da v1.8). Também dá para enviar um <code>.bin</code> e voltar ao firmware original.</p></div>
     </div>
   </div>
 </section>
@@ -159,24 +159,24 @@
         <button type="button" role="tab" data-shot="0" aria-selected="true" aria-pressed="true">Tomate</button>
         <button type="button" role="tab" data-shot="1" aria-selected="false" aria-pressed="false">Pomodoro</button>
         <button type="button" role="tab" data-shot="2" aria-selected="false" aria-pressed="false">Atividades</button>
-        <button type="button" role="tab" data-shot="3" aria-selected="false" aria-pressed="false">Flip</button>
+        <button type="button" role="tab" data-shot="3" aria-selected="false" aria-pressed="false">Jogo</button>
         <button type="button" role="tab" data-shot="4" aria-selected="false" aria-pressed="false">Desenhos</button>
       </div>
       <figure class="shot" role="tabpanel" data-shot="0">
         <img class="px" src="img/tomate.png" alt="Cena Tomate: dia, noite, chuva, neve, calor e meta batida" width="1480" height="990">
         <figcaption>Mostrador Tomate: dia, noite, chuva, frio, calor e meta do dia batida.</figcaption>
       </figure>
-      <figure class="shot" role="tabpanel" data-shot="1" hidden>
-        <img class="px" src="img/pomodoro.png" alt="Pomodoro: foco, pausado, fim de fase e tela de configuração" width="1010" height="260">
-        <figcaption>Pomodoro: foco, pausado, fim de fase e tela de configuração.</figcaption>
+      <figure class="shot one" role="tabpanel" data-shot="1" hidden>
+        <img class="px" src="img/pomodoro-foco.png" alt="Tela do Pomodoro em foco: anel de progresso, LENDO 10:12, o tomate com o livro e o horário de término" width="240" height="240">
+        <figcaption>Pomodoro em foco: anel de progresso, a atividade (aqui, ler), os focos do ciclo e o horário de término.</figcaption>
       </figure>
       <figure class="shot" role="tabpanel" data-shot="2" hidden>
         <img class="px" src="img/atividades.png" alt="Atividades do foco: ler, estudar, programar, tarefas e desenhar" width="1260" height="260">
         <figcaption>Atividades do foco: ler, estudar, programar, tarefas e desenhar.</figcaption>
       </figure>
-      <figure class="shot" role="tabpanel" data-shot="3" hidden>
-        <img class="px" src="img/flip.png" alt="Virada do mostrador Flip, quadro a quadro" width="1530" height="578">
-        <figcaption>Mostrador Flip: a plaquinha virando, quadro a quadro.</figcaption>
+      <figure class="shot one" role="tabpanel" data-shot="3" hidden>
+        <img class="px" src="img/jogo/tomate-7.png" alt="Mostrador Tomate com a planta dourada e 7 dias seguidos" width="240" height="240">
+        <figcaption>Cada dia seguido com a meta batida faz a planta crescer, até o tomate dourado. <a href="jogo.html">Conheça o jogo</a>.</figcaption>
       </figure>
       <figure class="shot" role="tabpanel" data-shot="4" hidden>
         <img class="px" src="img/assets.png" alt="Folha com todos os desenhos em pixel art do firmware" width="752" height="568">
@@ -231,13 +231,13 @@
       <li>
         <h3>Abra o painel</h3>
         <p>Digite no navegador o IP que aparece na tela do relógio. Escolha o mostrador, a cidade do clima e comece um foco.</p>
-        <p>Atualizações seguintes: <strong>Sistema → Atualizar firmware</strong>.</p>
+        <p>Atualizações seguintes: o painel avisa quando há versão nova; ou envie o arquivo em <strong>Ajustes → Atualizar firmware</strong>.</p>
       </li>
     </ol>
 
     <details class="note" id="voltar" style="margin-top:14px">
       <summary>Voltar ao firmware original</summary>
-      <p style="color:var(--muted)">Baixe o <code>.bin</code> oficial em <a href="https://github.com/GeekMagicClock/smalltv-ultra">GeekMagicClock/smalltv-ultra</a> e envie no painel do SmallTV Pomodoro em <strong>Sistema → Atualizar firmware</strong> (ou em <code>/update</code>, usuário <code>admin</code>).</p>
+      <p style="color:var(--muted)">Baixe o <code>.bin</code> oficial em <a href="https://github.com/GeekMagicClock/smalltv-ultra">GeekMagicClock/smalltv-ultra</a> e envie no painel do SmallTV Pomodoro em <strong>Ajustes → Atualizar firmware</strong> (ou em <code>/update</code>, usuário <code>admin</code>).</p>
       <p style="color:var(--muted);margin:0">Funciona porque o SmallTV Pomodoro usa o mesmo layout de memória do original e fica abaixo do tamanho limite (cerca de 530 KB). O sistema de arquivos é montado sem formatação automática: suas fotos não são apagadas.</p>
     </details>
   </div>
@@ -283,6 +283,6 @@
 </footer>
 
 <script src="faces.js?v=4"></script>
-<script src="site.js?v=4"></script>
+<script src="site.js?v=5"></script>
 </body>
 </html>

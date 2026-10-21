@@ -91,3 +91,18 @@
     });
   });
 })();
+
+// Horta de exemplo na página do jogo: 53 semanas x 7 dias, sempre o mesmo desenho
+(function () {
+  var g = document.getElementById("garden");
+  if (!g) return;
+  var seed = 7;
+  function rnd() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+  for (var i = 0; i < 53 * 7; i++) {
+    var c = document.createElement("i"), p = i / (53 * 7), r = rnd();
+    if (i > 53 * 7 - 9) c.className = "on";                  // sequência atual
+    else if (r < p * 0.55) c.className = "on";               // mais dias na meta perto de hoje
+    else if (r < p * 0.85) c.className = "some";
+    g.appendChild(c);
+  }
+})();

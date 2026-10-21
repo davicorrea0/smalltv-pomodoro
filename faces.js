@@ -19,8 +19,8 @@ window.BUILTIN_FACES = [
     name_en: "Flip",     desc_en: "Flipping cards in Bebas Neue" },
   { id: "lcd", tags: ["digital","retro"],     name: "LCD retrô", desc: "Relógio digital dos anos 80 (fonte DSEG7)",
     name_en: "Retro LCD", desc_en: "80s digital watch (DSEG7 font)" },
-  { id: "words", tags: ["digital"],   name: "Palavras",  desc: "A hora por extenso, em português",
-    name_en: "Words",    desc_en: "The time spelled out, in Portuguese" }
+  { id: "words", tags: ["digital"],   name: "Palavras",  desc: "A hora por extenso, no idioma do relógio",
+    name_en: "Words",    desc_en: "The time spelled out, in the clock's language" }
 ].map(function (f, i) {
   if (window.SITE_LANG === "en") { f.name = f.name_en; f.desc = f.desc_en; }
   f.num = i;

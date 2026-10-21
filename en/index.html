@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Silkscreen&display=swap">
-<link rel="stylesheet" href="../style.css?v=6">
+<link rel="stylesheet" href="../style.css?v=7">
 </head>
 <body>
 
@@ -25,7 +25,7 @@
     <nav class="nav">
       <a href="./" aria-current="page">Home</a>
       <a href="gallery.html">Gallery</a>
-      <a class="opt" href="#install">Install</a>
+      <a href="game.html">Game</a>
       <a class="opt" href="https://github.com/davicorrea0/smalltv-pomodoro">GitHub</a>
     </nav>
     <a class="lang" href="../" hreflang="pt-BR" lang="pt-BR"><img class="px" src="../img/icons/globo.svg" alt="">PT</a>
@@ -72,7 +72,7 @@
     </div>
     <figure class="shot" style="margin-top:14px">
       <img class="px" src="../img/mostradores.png" alt="The 8 built-in faces: Matrix, Tomato, Analog, Weather, Neon, Flip, Retro LCD and Words" width="1010" height="510" loading="lazy">
-      <figcaption>The 8 built-in faces (shown in Portuguese, the firmware's language). Images rendered by the project's simulator, which compiles the same drawing code as the firmware.</figcaption>
+      <figcaption>The 8 built-in faces. Images rendered by the project's simulator, which compiles the same drawing code as the firmware.</figcaption>
     </figure>
   </div>
 </section>
@@ -135,17 +135,17 @@
 <section id="features">
   <div class="wrap">
     <h2>Features</h2>
-    <p class="section-lead">It all fits in under 500 KB and runs on the clock itself. The firmware's screens and panel are in Brazilian Portuguese.</p>
+    <p class="section-lead">It all fits in under 500 KB and runs on the clock itself. Screens and panel in Portuguese, English or Spanish.</p>
     <div class="grid three">
-      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/relogio.svg" alt=""></span>8 clock faces</h3><p>Matrix, Tomato, Analog, Weather, Neon, Flip (with a real flipping animation), Retro LCD and Words (the time spelled out in Portuguese).</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/relogio.svg" alt=""></span>8 clock faces</h3><p>Matrix, Tomato, Analog, Weather, Neon, Flip (with a real flipping animation), Retro LCD and Words (the time spelled out).</p></div>
       <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/focado.svg" alt=""></span>Pomodoro with a mascot</h3><p>The tomato focuses, relaxes with a coffee on breaks, sleeps while the timer is paused and jumps for joy when a phase ends.</p></div>
       <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/livro.svg" alt=""></span>Focus activity</h3><p>Pick what you're doing in the panel: reading, studying, coding, chores or drawing. The screen shows the activity's object next to the tomato.</p></div>
       <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/sol.svg" alt=""></span>Weather</h3><p>From <a href="https://open-meteo.com/">Open-Meteo</a>, no sign-up or API key. In the rain the tomato opens an umbrella; in the cold it wears a scarf; in the heat, sunglasses.</p></div>
       <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/foto.svg" alt=""></span>Photos and GIFs</h3><p>Uses the album already on the clock. New photos go through the panel and are cropped to 240×240 automatically.</p></div>
       <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/lua.svg" alt=""></span>Night brightness</h3><p>Set a schedule to dim the screen at night so it doesn't light up the bedroom.</p></div>
-      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/celular.svg" alt=""></span>Web panel</h3><p>Open the IP shown on the screen from your phone: face gallery, Pomodoro controls, photos and settings.</p></div>
-      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/cores.svg" alt=""></span>Screen color tuning</h3><p>RGB/BGR color order, inversion and 180° rotation, with a color test screen, because this varies between units.</p></div>
-      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/seta.svg" alt=""></span>Wireless updates</h3><p>New versions are uploaded from the panel at <code>/update</code>, which also lets you go back to the original firmware.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/celular.svg" alt=""></span>Web panel</h3><p>Open the IP shown on the screen from your phone or computer: faces, Pomodoro, photos and settings, including screen color and rotation. In Portuguese, English or Spanish.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/jogo/planta/dourada.svg" alt=""></span>Focus game</h3><p>Day streaks with the goal reached, a plant that grows into the golden tomato, a yearly garden, 10 achievements and a shareable day card. <a href="game.html">See the game</a>.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/seta.svg" alt=""></span>One-tap updates</h3><p>When a new version is out, the panel tells you and updates the clock with one tap (from v1.8). You can also upload a <code>.bin</code> and go back to the original firmware.</p></div>
     </div>
   </div>
 </section>
@@ -159,24 +159,24 @@
         <button type="button" role="tab" data-shot="0" aria-selected="true" aria-pressed="true">Tomato</button>
         <button type="button" role="tab" data-shot="1" aria-selected="false" aria-pressed="false">Pomodoro</button>
         <button type="button" role="tab" data-shot="2" aria-selected="false" aria-pressed="false">Activities</button>
-        <button type="button" role="tab" data-shot="3" aria-selected="false" aria-pressed="false">Flip</button>
+        <button type="button" role="tab" data-shot="3" aria-selected="false" aria-pressed="false">Game</button>
         <button type="button" role="tab" data-shot="4" aria-selected="false" aria-pressed="false">Drawings</button>
       </div>
       <figure class="shot" role="tabpanel" data-shot="0">
         <img class="px" src="../img/tomate.png" alt="Tomato scene: day, night, rain, snow, heat and goal reached" width="1480" height="990">
         <figcaption>Tomato face: day, night, rain, cold, heat and daily goal reached.</figcaption>
       </figure>
-      <figure class="shot" role="tabpanel" data-shot="1" hidden>
-        <img class="px" src="../img/pomodoro.png" alt="Pomodoro: focus, paused, end of phase and setup screen" width="1010" height="260">
-        <figcaption>Pomodoro: focus, paused, end of phase and setup screen.</figcaption>
+      <figure class="shot one" role="tabpanel" data-shot="1" hidden>
+        <img class="px" src="../img/pomodoro-foco.png" alt="Pomodoro focus screen: progress ring, 10:12, the tomato with a book and the end time" width="240" height="240">
+        <figcaption>Pomodoro in focus: progress ring, the activity (reading, here), the cycle's sessions and the end time.</figcaption>
       </figure>
       <figure class="shot" role="tabpanel" data-shot="2" hidden>
         <img class="px" src="../img/atividades.png" alt="Focus activities: reading, studying, coding, chores and drawing" width="1260" height="260">
         <figcaption>Focus activities: reading, studying, coding, chores and drawing.</figcaption>
       </figure>
-      <figure class="shot" role="tabpanel" data-shot="3" hidden>
-        <img class="px" src="../img/flip.png" alt="Flip face turning, frame by frame" width="1530" height="578">
-        <figcaption>Flip face: the card turning, frame by frame.</figcaption>
+      <figure class="shot one" role="tabpanel" data-shot="3" hidden>
+        <img class="px" src="../img/jogo/tomate-7.png" alt="Tomato face with the golden plant and a 7 day streak" width="240" height="240">
+        <figcaption>Every day in a row with the goal reached grows the plant, up to the golden tomato. <a href="game.html">Meet the game</a>.</figcaption>
       </figure>
       <figure class="shot" role="tabpanel" data-shot="4" hidden>
         <img class="px" src="../img/assets.png" alt="Sheet with every pixel art drawing in the firmware" width="752" height="568">
@@ -231,13 +231,13 @@
       <li>
         <h3>Open the panel</h3>
         <p>Type the IP shown on the clock's screen into your browser. Pick a face, set your weather city and start a focus session.</p>
-        <p>Later updates: <strong>Sistema → Atualizar firmware</strong> (System → Update firmware).</p>
+        <p>Later updates: the panel tells you when a new version is out; or upload the file in <strong>Settings → Update firmware</strong>.</p>
       </li>
     </ol>
 
     <details class="note" id="revert" style="margin-top:14px">
       <summary>Going back to the original firmware</summary>
-      <p style="color:var(--muted)">Download the official <code>.bin</code> from <a href="https://github.com/GeekMagicClock/smalltv-ultra">GeekMagicClock/smalltv-ultra</a> and upload it in the SmallTV Pomodoro panel under <strong>Sistema → Atualizar firmware</strong> (or at <code>/update</code>, user <code>admin</code>).</p>
+      <p style="color:var(--muted)">Download the official <code>.bin</code> from <a href="https://github.com/GeekMagicClock/smalltv-ultra">GeekMagicClock/smalltv-ultra</a> and upload it in the SmallTV Pomodoro panel under <strong>Settings → Update firmware</strong> (or at <code>/update</code>, user <code>admin</code>).</p>
       <p style="color:var(--muted);margin:0">This works because SmallTV Pomodoro uses the same flash layout as the original and stays under the size limit (about 530 KB). The file system is mounted without automatic formatting: your photos are not erased.</p>
     </details>
   </div>
@@ -283,6 +283,6 @@
 </footer>
 
 <script src="../faces.js?v=4"></script>
-<script src="../site.js?v=4"></script>
+<script src="../site.js?v=5"></script>
 </body>
 </html>

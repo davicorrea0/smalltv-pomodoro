@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jogo do foco — SmallTV Pomodoro</title>
+<meta name="description" content="Sequência de dias, planta que cresce até o tomate dourado, horta do ano, 10 conquistas e cartão do dia para compartilhar: o jogo do foco do SmallTV Pomodoro.">
+<meta property="og:title" content="Jogo do foco — SmallTV Pomodoro">
+<meta property="og:image" content="https://davicorrea0.github.io/smalltv-pomodoro/img/jogo/cartao-pt.png">
+<meta name="theme-color" content="#0b0d10">
+<link rel="alternate" hreflang="pt-BR" href="https://davicorrea0.github.io/smalltv-pomodoro/jogo.html">
+<link rel="alternate" hreflang="en" href="https://davicorrea0.github.io/smalltv-pomodoro/en/game.html">
+<link rel="icon" href="img/tomate.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Silkscreen&display=swap">
+<link rel="stylesheet" href="style.css?v=7">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="./"><img class="px" src="img/tomate.svg" alt=""><span>SmallTV Pomodoro</span></a>
+    <nav class="nav">
+      <a href="./">Início</a>
+      <a href="galeria.html">Galeria</a>
+      <a href="jogo.html" aria-current="page">Jogo</a>
+      <a class="opt" href="https://github.com/davicorrea0/smalltv-pomodoro">GitHub</a>
+    </nav>
+    <a class="lang" href="en/game.html" hreflang="en" lang="en"><img class="px" src="img/icons/globo.svg" alt="">EN</a>
+  </div>
+</header>
+
+<main>
+
+<div class="hero">
+  <div class="wrap">
+    <div>
+      <div class="eyebrow">Novo na v1.8</div>
+      <h1>Seu foco vira <em>jogo</em>.</h1>
+      <p class="lead">Bata a meta de focos do dia e a sequência sobe. Ao lado do tomate, uma planta cresce a cada dia seguido até virar o tomate dourado. No painel ficam a horta do ano, 10 conquistas e um cartão do dia para mostrar para os amigos.</p>
+      <div class="btns">
+        <a class="btn primary" href="./#instalar">Atualizar o relógio</a>
+        <a class="btn" href="#planta">Ver a planta</a>
+      </div>
+      <p class="meta">Precisa do firmware v1.8.0 ou mais novo. Quem já está na v1.8 recebe as próximas versões com um toque no painel.</p>
+    </div>
+    <figure class="game-card">
+      <img class="px" src="img/jogo/cartao-pt.png" alt="Cartão do dia em pixel art: 8 de 8 focos, meta batida, 5 dias seguidos" width="360" height="450">
+      <figcaption>O cartão do dia, desenhado pelo próprio painel</figcaption>
+    </figure>
+  </div>
+</div>
+
+<section id="como">
+  <div class="wrap">
+    <h2>Como funciona</h2>
+    <div class="grid three">
+      <div class="card feature"><h3><span class="ico"><img class="px" src="img/jogo/conquistas/ic_alvo.svg" alt=""></span>Bata a meta</h3><p>Escolha a meta de focos do dia no painel (por exemplo, 8). Cada Pomodoro concluído conta um tomate.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="img/jogo/conquistas/chama.svg" alt=""></span>Mantenha a sequência</h3><p>Cada dia seguido com a meta batida soma 1 na sequência. A tela mostra uma chama com o número de dias. Pulou um dia, a sequência e a planta recomeçam.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="img/jogo/planta/dourada.svg" alt=""></span>Faça a planta crescer</h3><p>A planta muda com a sequência: de semente a tomate dourado em 7 dias. O relógio guarda um ano de histórico, mesmo se desligar.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="planta">
+  <div class="wrap">
+    <h2>A planta da sequência</h2>
+    <p class="section-lead">Aparece no mostrador Tomate, ao lado do mascote. Telas geradas pelo simulador do projeto.</p>
+    <div class="stages">
+      <figure><img class="px" src="img/jogo/tomate-0.png" alt="Semente" width="240" height="240" loading="lazy"><figcaption><img class="px" src="img/jogo/planta/semente.svg" alt=""><b>Semente</b><span>0 dias</span></figcaption></figure>
+      <figure><img class="px" src="img/jogo/tomate-1.png" alt="Broto" width="240" height="240" loading="lazy"><figcaption><img class="px" src="img/jogo/planta/broto.svg" alt=""><b>Broto</b><span>1 dia</span></figcaption></figure>
+      <figure><img class="px" src="img/jogo/tomate-2.png" alt="Flor" width="240" height="240" loading="lazy"><figcaption><img class="px" src="img/jogo/planta/flor.svg" alt=""><b>Flor</b><span>2 e 3 dias</span></figcaption></figure>
+      <figure><img class="px" src="img/jogo/tomate-4.png" alt="Tomate verde" width="240" height="240" loading="lazy"><figcaption><img class="px" src="img/jogo/planta/verde.svg" alt=""><b>Tomate verde</b><span>4 e 5 dias</span></figcaption></figure>
+      <figure><img class="px" src="img/jogo/tomate-6.png" alt="Tomate maduro" width="240" height="240" loading="lazy"><figcaption><img class="px" src="img/jogo/planta/madura.svg" alt=""><b>Maduro</b><span>6 dias</span></figcaption></figure>
+      <figure><img class="px" src="img/jogo/tomate-7.png" alt="Tomate dourado" width="240" height="240" loading="lazy"><figcaption><img class="px" src="img/jogo/planta/dourada.svg" alt=""><b>Dourado</b><span>7 dias ou mais</span></figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<section id="horta">
+  <div class="wrap">
+    <h2>Horta do ano</h2>
+    <p class="section-lead">Na aba <strong>Foco</strong> do painel, cada quadradinho é um dia do último ano; vermelho é dia com a meta batida. Embaixo aparecem o total de tomates, os dias com foco e o recorde de dias seguidos.</p>
+    <div class="card">
+      <div class="garden" id="garden" aria-label="Exemplo de horta: um ano de dias, os vermelhos com a meta batida"></div>
+      <p class="garden-sum">Exemplo · <b>412</b> tomates em <b>96</b> dias · recorde de <b>12</b> dias seguidos</p>
+    </div>
+  </div>
+</section>
+
+<section id="conquistas">
+  <div class="wrap">
+    <h2>Conquistas</h2>
+    <p class="section-lead">Dez conquistas em pixel art. As que você ainda não tem ficam apagadas, e cada nova aparece num aviso no painel.</p>
+    <div class="achs">
+      <div><img class="px" src="img/jogo/conquistas/t_feliz.svg" alt=""><b>Primeiro tomate</b><span>Complete um foco</span></div>
+      <div><img class="px" src="img/jogo/conquistas/ic_alvo.svg" alt=""><b>Meta batida</b><span>Bata a meta do dia uma vez</span></div>
+      <div><img class="px" src="img/jogo/conquistas/chama.svg" alt=""><b>Pegando fogo</b><span>3 dias seguidos na meta</span></div>
+      <div><img class="px" src="img/jogo/conquistas/gold.svg" alt=""><b>Tomate dourado</b><span>7 dias seguidos na meta</span></div>
+      <div><img class="px" src="img/jogo/conquistas/ic_diamante.svg" alt=""><b>Mês de ouro</b><span>30 dias seguidos na meta</span></div>
+      <div><img class="px" src="img/jogo/conquistas/p_broto.svg" alt=""><b>Horta começando</b><span>10 tomates no total</span></div>
+      <div><img class="px" src="img/jogo/conquistas/ic_cesta.svg" alt=""><b>Cesta cheia</b><span>100 tomates no total</span></div>
+      <div><img class="px" src="img/jogo/conquistas/ic_celeiro.svg" alt=""><b>Fazenda</b><span>500 tomates no total</span></div>
+      <div><img class="px" src="img/jogo/conquistas/ic_raio.svg" alt=""><b>Maratona</b><span>12 focos num dia</span></div>
+      <div><img class="px" src="img/jogo/conquistas/ic_calendario.svg" alt=""><b>Fim de semana focado</b><span>Meta no sábado e no domingo</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="cartao">
+  <div class="wrap">
+    <div class="split">
+      <figure class="game-card small">
+        <img class="px" src="img/jogo/cartao-pt.png" alt="Cartão do dia" width="360" height="450" loading="lazy">
+      </figure>
+      <div>
+        <h2>Cartão do dia</h2>
+        <p class="section-lead">Toque em <strong>Compartilhar meu dia</strong> na aba Foco. O painel desenha um cartão em pixel art com a cena do Tomate, a planta da sequência, os focos de hoje, os últimos 7 dias como tomatinhos e a chama.</p>
+        <ul class="list">
+          <li><strong>No celular:</strong> abre o menu de compartilhar do celular, para mandar a imagem para quem quiser.</li>
+          <li><strong>No computador:</strong> baixa um PNG de 1080×1350 (retrato, 4:5).</li>
+          <li>Quando a meta do dia é batida, o painel mostra um atalho para compartilhar.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="criadores">
+  <div class="wrap">
+    <div class="card feature">
+      <h3><span class="ico"><img class="px" src="img/icons/grade.svg" alt=""></span>Para quem cria mostradores</h3>
+      <p>Pacotes JSON podem mostrar a sequência com <code>{STREAK}</code> e o recorde com <code>{BEST}</code>, desenhar a planta com a camada <code>plant</code> e esconder ou mostrar camadas com a condição <code>streak</code>. Formato em <a href="https://github.com/davicorrea0/smalltv-pomodoro/blob/main/docs/PACOTES.md">docs/PACOTES.md</a>.</p>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-bottom">
+      <img class="px" src="img/tomate.svg" alt="">
+      <span>SmallTV Pomodoro · feito por Davi Mattos</span>
+      <div class="links">
+        <a href="./">Início</a>
+        <a href="galeria.html">Galeria</a>
+        <a href="https://github.com/davicorrea0/smalltv-pomodoro">Código no GitHub</a>
+        <a href="en/game.html" hreflang="en">English</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="faces.js?v=4"></script>
+<script src="site.js?v=5"></script>
+</body>
+</html>
