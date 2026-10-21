@@ -29,7 +29,7 @@
 #include "faces.h"
 #include "facepack.h"
 
-#define FW_VERSION "1.6.0"
+#define FW_VERSION "1.6.1"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
@@ -846,6 +846,7 @@ void setupWeb() {
   // painel comprimido (web/index.html -> web/build.js -> web.h); o navegador descompacta
   server.on("/", HTTP_GET, [] {
     server.sendHeader("Content-Encoding", "gzip");
+    server.sendHeader("Cache-Control", "no-cache");  // depois de atualizar o firmware, o navegador busca o painel novo
     server.send_P(200, "text/html", (PGM_P)INDEX_HTML_GZ, sizeof(INDEX_HTML_GZ));
   });
   server.on("/api/state", HTTP_GET, sendState);
