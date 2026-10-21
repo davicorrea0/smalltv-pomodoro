@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Silkscreen&display=swap">
-<link rel="stylesheet" href="../style.css?v=3">
+<link rel="stylesheet" href="../style.css?v=4">
 </head>
 <body>
 
@@ -42,10 +42,18 @@
         <button type="button" data-filter="pkg" aria-pressed="false">New <span class="count" id="n-pkg"></span></button>
         <button type="button" data-filter="builtin" aria-pressed="false">Built-in <span class="count" id="n-builtin"></span></button>
       </div>
+      <div class="tabs styles" role="group" aria-label="Filter by style">
+        <button type="button" data-style="all" aria-pressed="true">All styles</button>
+        <button type="button" data-style="analogico" aria-pressed="false">Analog</button>
+        <button type="button" data-style="digital" aria-pressed="false">Digital</button>
+        <button type="button" data-style="pixel" aria-pressed="false">Pixel art</button>
+        <button type="button" data-style="esportivo" aria-pressed="false">Sporty</button>
+        <button type="button" data-style="retro" aria-pressed="false">Retro</button>
+      </div>
     </div>
   </div>
 
-  <section style="border:0;padding-top:16px" id="new" data-kind="pkg">
+  <section class="first" id="new" data-kind="pkg">
     <div class="wrap">
       <div class="sub-head"><h2>New, ready to install</h2><span class="count" id="packs-count"></span></div>
       <p class="section-lead">Each one is a <code>.json</code> file of a few KB, described in layers (shapes, text, pixel art sprites, weather icon, clock hands). Like the built-in faces, they show the time, the weather and your focus sessions for the day. Dates on the clock appear in Portuguese.</p>
@@ -98,18 +106,20 @@
 
 <footer>
   <div class="wrap">
-    <img class="px" src="../img/tomate.svg" alt="">
-    <span>SmallTV Pomodoro · made by Davi Mattos</span>
-    <div class="links">
-      <a href="./">Home</a>
-      <a href="https://github.com/davicorrea0/smalltv-pomodoro">Code on GitHub</a>
-      <a href="https://github.com/davicorrea0/smalltv-pomodoro/releases">Releases</a>
-      <a href="../galeria.html" hreflang="pt-BR">Português</a>
+    <div class="foot-bottom">
+      <img class="px" src="../img/tomate.svg" alt="">
+      <span>SmallTV Pomodoro · made by Davi Mattos</span>
+      <div class="links">
+        <a href="./">Home</a>
+        <a href="https://github.com/davicorrea0/smalltv-pomodoro">Code on GitHub</a>
+        <a href="https://github.com/davicorrea0/smalltv-pomodoro/releases">Releases</a>
+        <a href="../galeria.html" hreflang="pt-BR">Português</a>
+      </div>
     </div>
   </div>
 </footer>
 
-<script src="../faces.js?v=3"></script>
-<script src="../galeria.js?v=4"></script>
+<script src="../faces.js?v=4"></script>
+<script src="../galeria.js?v=5"></script>
 </body>
 </html>

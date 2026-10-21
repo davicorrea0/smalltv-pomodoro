@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Silkscreen&display=swap">
-<link rel="stylesheet" href="../style.css?v=3">
+<link rel="stylesheet" href="../style.css?v=4">
 </head>
 <body>
 
@@ -191,12 +191,24 @@
     <h2>How to install</h2>
     <p class="section-lead">It takes about 5 minutes, with no cable and no software on your computer: everything happens in the browser.</p>
 
-    <div class="note warn" style="margin-bottom:14px">Only for the <strong>SmallTV Ultra</strong> (ESP8266). Do not flash it on the SmallTV Pro (ESP32) or other models.</div>
+    <div class="download" id="downloads">
+      <div>
+        <div class="ver" id="rel-ver">Latest version</div>
+        <h3 id="rel-name">SmallTV Pomodoro</h3>
+        <p id="rel-info"><code>.bin</code> file to upload from the clock's panel.</p>
+      </div>
+      <div class="btns">
+        <a class="btn primary" id="rel-bin" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/latest"><img class="px" src="../img/icons/download.svg" alt="">Download .bin</a>
+        <a class="btn" href="https://github.com/davicorrea0/smalltv-pomodoro/releases">All versions</a>
+      </div>
+    </div>
+
+    <div class="note warn" style="margin:14px 0">Only for the <strong>SmallTV Ultra</strong> (ESP8266). Do not flash it on the SmallTV Pro (ESP32) or other models.</div>
 
     <ol class="steps">
       <li>
         <h3>Download the firmware</h3>
-        <p>Get the latest <code>.bin</code> file from <a href="#downloads">Downloads</a>, below.</p>
+        <p>Get the <code>.bin</code> file from the button above.</p>
       </li>
       <li>
         <h3>Upload it from the factory panel</h3>
@@ -222,71 +234,12 @@
         <p>Later updates: <strong>Sistema → Atualizar firmware</strong> (System → Update firmware).</p>
       </li>
     </ol>
-  </div>
-</section>
 
-<section id="revert">
-  <div class="wrap">
-    <h2>Going back to the original firmware</h2>
-    <div class="card">
-      <p style="color:var(--muted)">Want GeekMagic's firmware back? Download the official <code>.bin</code> from <a href="https://github.com/GeekMagicClock/smalltv-ultra">GeekMagicClock/smalltv-ultra</a> and upload it in the SmallTV Pomodoro panel under <strong>Sistema → Atualizar firmware</strong> (or at <code>/update</code>, user <code>admin</code>).</p>
+    <details class="note" id="revert" style="margin-top:14px">
+      <summary>Going back to the original firmware</summary>
+      <p style="color:var(--muted)">Download the official <code>.bin</code> from <a href="https://github.com/GeekMagicClock/smalltv-ultra">GeekMagicClock/smalltv-ultra</a> and upload it in the SmallTV Pomodoro panel under <strong>Sistema → Atualizar firmware</strong> (or at <code>/update</code>, user <code>admin</code>).</p>
       <p style="color:var(--muted);margin:0">This works because SmallTV Pomodoro uses the same flash layout as the original and stays under the size limit (about 530 KB). The file system is mounted without automatic formatting: your photos are not erased.</p>
-    </div>
-  </div>
-</section>
-
-<section id="downloads">
-  <div class="wrap">
-    <h2>Downloads</h2>
-    <div class="download">
-      <div>
-        <div class="ver" id="rel-ver">Latest version</div>
-        <h3 id="rel-name">SmallTV Pomodoro</h3>
-        <p id="rel-info"><code>.bin</code> file to upload from the clock's panel.</p>
-      </div>
-      <div class="btns">
-        <a class="btn primary" id="rel-bin" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/latest">Download .bin</a>
-        <a class="btn" href="https://github.com/davicorrea0/smalltv-pomodoro/releases">All versions</a>
-      </div>
-    </div>
-    <div class="grid two" style="margin-top:14px">
-      <div class="card">
-        <h3>Loader (only for the space error)</h3>
-        <p style="color:var(--muted);margin-bottom:12px"><code>smalltv-mod-loader.bin</code>, from the giovi321/smalltv-mod project.</p>
-        <a class="btn small" href="https://github.com/giovi321/smalltv-mod/releases/tag/v2.8.2">Open release v2.8.2</a>
-      </div>
-      <div class="card">
-        <h3>Original GeekMagic firmware</h3>
-        <p style="color:var(--muted);margin-bottom:12px">To go back to what came from the factory.</p>
-        <a class="btn small" href="https://github.com/GeekMagicClock/smalltv-ultra">GeekMagicClock/smalltv-ultra</a>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section id="hack">
-  <div class="wrap">
-    <h2>For tinkerers</h2>
-    <div class="grid three">
-      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/grade.svg" alt=""></span>Make a clock face</h3><p>No compiling: a layered <code>.json</code>, like the ones in the <a href="gallery.html">gallery</a>. In the firmware: a <code>face_&lt;name&gt;.cpp</code> and one line in <code>faces_list.h</code> (<a href="https://github.com/davicorrea0/smalltv-pomodoro/blob/main/docs/CRIAR_MOSTRADOR.md">guide, in Portuguese</a>).</p></div>
-      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/paleta.svg" alt=""></span>Draw pixel art</h3><p>Each drawing is a <code>.txt</code> in <code>assets/</code>, with colors and animation frames. <a href="https://github.com/davicorrea0/smalltv-pomodoro#biblioteca-de-assets">How it works</a>.</p></div>
-      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/notebook.svg" alt=""></span>PC simulator</h3><p>The firmware's drawing code runs on your computer and renders the screens as images, without flashing the clock.</p></div>
-    </div>
-  </div>
-</section>
-
-<section id="credits">
-  <div class="wrap">
-    <h2>Credits and licenses</h2>
-    <ul class="list">
-      <li><strong>Device pinout:</strong> <a href="https://devices.esphome.io/devices/geekmagic-ultra/">ESPHome devices — GeekMagic Ultra</a>.</li>
-      <li><strong>Panel color order and the loader for the space error:</strong> <a href="https://github.com/giovi321/smalltv-mod">giovi321/smalltv-mod</a>.</li>
-      <li><strong>Retro LCD digits:</strong> <a href="https://github.com/keshikan/DSEG">DSEG7 Classic</a> font by keshikan, under the SIL Open Font License 1.1 (<a href="https://github.com/davicorrea0/smalltv-pomodoro/blob/main/licenses/DSEG-LICENSE.txt">license</a>). The segments were converted to polygons.</li>
-      <li><strong>Flip digits:</strong> <a href="https://github.com/dharmatype/Bebas-Neue">Bebas Neue</a> font by Dharma Type, under the SIL Open Font License 1.1 (<a href="https://github.com/davicorrea0/smalltv-pomodoro/blob/main/licenses/BebasNeue-OFL.txt">license</a>), also converted to polygons.</li>
-      <li><strong>Weather:</strong> <a href="https://open-meteo.com/">Open-Meteo</a>.</li>
-      <li><strong>Libraries:</strong> Adafruit GFX and ST7789, ArduinoJson, JPEGDEC and AnimatedGIF (bitbank2).</li>
-    </ul>
-    <p style="color:var(--muted);margin-top:16px;font-size:14px">GeekMagic and SmallTV are trademarks of their owners. This is an independent project, not affiliated with GeekMagic. Flashing other firmware is at your own risk.</p>
+    </details>
   </div>
 </section>
 
@@ -294,18 +247,42 @@
 
 <footer>
   <div class="wrap">
-    <img class="px" src="../img/tomate.svg" alt="">
-    <span>SmallTV Pomodoro · made by Davi Mattos</span>
-    <div class="links">
-      <a href="gallery.html">Gallery</a>
-      <a href="https://github.com/davicorrea0/smalltv-pomodoro">Code on GitHub</a>
-      <a href="https://github.com/davicorrea0/smalltv-pomodoro/releases">Releases</a>
-      <a href="../" hreflang="pt-BR">Português</a>
+    <div class="foot-grid">
+      <div id="hack">
+        <h3>For tinkerers</h3>
+        <ul>
+          <li><a href="https://github.com/davicorrea0/smalltv-pomodoro/blob/main/docs/PACOTES.md">Make a clock face in JSON</a>, no compiling (guide in Portuguese)</li>
+          <li><a href="https://github.com/davicorrea0/smalltv-pomodoro/blob/main/docs/CRIAR_MOSTRADOR.md">Make a face in the firmware</a> (C++)</li>
+          <li><a href="https://github.com/davicorrea0/smalltv-pomodoro#biblioteca-de-assets">Draw pixel art</a>: one <code>.txt</code> per sprite</li>
+          <li><a href="https://github.com/davicorrea0/smalltv-pomodoro#simulador-das-telas">PC simulator</a>, no flashing needed</li>
+        </ul>
+      </div>
+      <div id="credits">
+        <h3>Credits and licenses</h3>
+        <ul>
+          <li>Pinout: <a href="https://devices.esphome.io/devices/geekmagic-ultra/">ESPHome devices</a></li>
+          <li>Color order and loader: <a href="https://github.com/giovi321/smalltv-mod">giovi321/smalltv-mod</a></li>
+          <li><a href="https://github.com/keshikan/DSEG">DSEG7 Classic</a> (keshikan) and <a href="https://github.com/dharmatype/Bebas-Neue">Bebas Neue</a> (Dharma Type), SIL Open Font License 1.1 (<a href="https://github.com/davicorrea0/smalltv-pomodoro/tree/main/licenses">licenses</a>), converted to polygons</li>
+          <li>Weather: <a href="https://open-meteo.com/">Open-Meteo</a></li>
+          <li>Adafruit GFX and ST7789, ArduinoJson, JPEGDEC and AnimatedGIF (bitbank2)</li>
+        </ul>
+      </div>
+    </div>
+    <p class="fine">GeekMagic and SmallTV are trademarks of their owners. This is an independent project, not affiliated with GeekMagic. Flashing other firmware is at your own risk.</p>
+    <div class="foot-bottom">
+      <img class="px" src="../img/tomate.svg" alt="">
+      <span>SmallTV Pomodoro · made by Davi Mattos</span>
+      <div class="links">
+        <a href="gallery.html">Gallery</a>
+        <a href="https://github.com/davicorrea0/smalltv-pomodoro">Code on GitHub</a>
+        <a href="https://github.com/davicorrea0/smalltv-pomodoro/releases">Releases</a>
+        <a href="../" hreflang="pt-BR">Português</a>
+      </div>
     </div>
   </div>
 </footer>
 
-<script src="../faces.js?v=3"></script>
-<script src="../site.js?v=3"></script>
+<script src="../faces.js?v=4"></script>
+<script src="../site.js?v=4"></script>
 </body>
 </html>

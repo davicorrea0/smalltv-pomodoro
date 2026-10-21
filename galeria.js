@@ -1,18 +1,25 @@
 // Galeria: os pacotes do catálogo catalog/index.json (mostradores novos, instaláveis) e os
 // mostradores embutidos (faces.js). No catálogo, "preview" e "file" são relativos ao
-// próprio index.json (ou URLs completas); "name_en"/"desc_en" são usados na página em inglês.
+// próprio index.json (ou URLs completas); "name_en"/"desc_en" são usados na página em inglês,
+// "fw" é a versão mínima do firmware e "tags" os estilos do filtro.
 (function () {
   var en = window.SITE_LANG === "en", root = window.SITE_ROOT || "";
   var S = en ? {
-    zoom: "Enlarge ", preview: "Preview of ", by: "by ", builtin: "Built-in", pkg: "New",
+    zoom: "Enlarge ", preview: "Preview of ", by: "by ", builtin: "Built-in",
     inFw: " · comes with the firmware", dl: "Download .json", soonT: "Coming soon",
+    fw: function (v) { return "Requires firmware v" + v + " or newer"; },
+    none: "No faces in this style here.",
     soonP: "The first face packs are being prepared. Once published they show up here with a preview and a download button."
   } : {
-    zoom: "Ampliar ", preview: "Prévia do mostrador ", by: "por ", builtin: "Embutido", pkg: "Novo",
+    zoom: "Ampliar ", preview: "Prévia do mostrador ", by: "por ", builtin: "Embutido",
     inFw: " · já vem no firmware", dl: "Baixar .json", soonT: "Em breve",
+    fw: function (v) { return "Precisa do firmware v" + v + " ou mais novo"; },
+    none: "Nenhum mostrador deste estilo aqui.",
     soonP: "Os primeiros pacotes de mostradores estão sendo preparados. Quando forem publicados, aparecem aqui com prévia e botão para baixar."
   };
   var CATALOG = root + "catalog/index.json";
+  var lists = { packs: [], builtin: [] };
+  var kind = "all", style = "all";
 
   function el(tag, cls, text) {
     var e = document.createElement(tag);
@@ -40,8 +47,14 @@
     var body = el("div", "body");
     var title = el("div", "title");
     title.appendChild(el("h3", null, f.name));
-    if (f.kind === "builtin") title.appendChild(el("span", "num", "#" + f.num));
-    title.appendChild(el("span", f.kind === "pkg" ? "tag pkg" : "tag", f.kind === "pkg" ? S.pkg : S.builtin));
+    if (f.kind === "builtin") {
+      title.appendChild(el("span", "num", "#" + f.num));
+      title.appendChild(el("span", "tag", S.builtin));
+    } else if (f.fw) {
+      var t = el("span", "tag pkg", "v" + f.fw + "+");
+      t.title = S.fw(f.fw);
+      title.appendChild(t);
+    }
     body.appendChild(title);
     if (f.desc) body.appendChild(el("p", "desc", f.desc));
 
@@ -51,6 +64,7 @@
 
     if (f.kind === "pkg") {
       if (f.size) by.appendChild(document.createTextNode(" · " + (f.size / 1024).toFixed(1).replace(".", en ? "." : ",") + " KB"));
+      if (f.fw) body.appendChild(el("p", "req", S.fw(f.fw)));
       var actions = el("div", "actions");
       var dl = el("a", "btn small primary");
       var ico = new Image(16, 16);
@@ -69,38 +83,51 @@
     return c;
   }
 
-  // Filtro: Todos / Novos / Embutidos mostra ou esconde as seções marcadas com data-kind
-  var counts = { pkg: 0, builtin: 0 };
-  function setFilter(f) {
-    document.querySelectorAll(".tabs button").forEach(function (b) {
-      b.setAttribute("aria-pressed", String(b.dataset.filter === f));
-    });
+  function match(f) { return style === "all" || (f.tags || []).indexOf(style) >= 0; }
+
+  function fill(id) {
+    var grid = document.getElementById(id);
+    var list = lists[id].filter(match);
+    grid.textContent = "";
+    list.forEach(function (f) { grid.appendChild(card(f)); });
+    if (!list.length && lists[id].length) {
+      var p = el("p", null, S.none);
+      p.style.color = "var(--muted)";
+      grid.appendChild(p);
+    }
+    var n = document.getElementById(id + "-count");
+    if (n) n.textContent = list.length;
+    return list.length;
+  }
+
+  // Filtros: tipo (Todos / Novos / Embutidos) esconde as seções com data-kind;
+  // estilo (Analógico, Digital...) filtra os cartões das duas grades.
+  function render() {
+    var np = fill("packs"), nb = fill("builtin");
+    var set = function (id, v) { var e = document.getElementById(id); if (e) e.textContent = v; };
+    set("n-pkg", np);
+    set("n-builtin", nb);
+    set("n-all", np + nb);
     document.querySelectorAll("section[data-kind]").forEach(function (s) {
-      s.hidden = f !== "all" && s.dataset.kind !== f;
+      s.hidden = kind !== "all" && s.dataset.kind !== kind;
     });
     var first = document.querySelector("section[data-kind]:not([hidden])");
     document.querySelectorAll("section[data-kind]").forEach(function (s) {
-      s.style.borderTop = s === first ? "0" : "";
+      s.classList.toggle("first", s === first);
     });
   }
-  document.querySelectorAll(".tabs button").forEach(function (b) {
-    b.addEventListener("click", function () { setFilter(b.dataset.filter); });
-  });
-  function count(kind, n) {
-    counts[kind] = n;
-    var set = function (id, v) { var e = document.getElementById(id); if (e) e.textContent = v; };
-    set("n-" + kind, n);
-    set("n-all", counts.pkg + counts.builtin);
+  function bind(attr, apply) {
+    var buttons = document.querySelectorAll(".tabs [" + attr + "]");
+    buttons.forEach(function (b) {
+      b.addEventListener("click", function () {
+        buttons.forEach(function (o) { o.setAttribute("aria-pressed", String(o === b)); });
+        apply(b.getAttribute(attr));
+        render();
+      });
+    });
   }
-
-  function fill(id, list) {
-    var grid = document.getElementById(id);
-    grid.textContent = "";
-    list.forEach(function (f) { grid.appendChild(card(f)); });
-    var n = document.getElementById(id + "-count");
-    if (n) n.textContent = list.length;
-    count(id === "packs" ? "pkg" : "builtin", list.length);
-  }
+  bind("data-filter", function (v) { kind = v; });
+  bind("data-style", function (v) { style = v; });
 
   // Visualização ampliada
   var dlg = document.getElementById("zoom");
@@ -109,7 +136,8 @@
     img.src = f.preview;
     img.alt = S.preview + f.name;
     document.getElementById("zoom-name").textContent = f.name;
-    document.getElementById("zoom-desc").textContent = (f.desc || "") + (f.author ? " · " + S.by + f.author : "");
+    document.getElementById("zoom-desc").textContent = (f.desc || "") + (f.author ? " · " + S.by + f.author : "") +
+      (f.fw ? " · " + S.fw(f.fw) : "");
     var dl = document.getElementById("zoom-dl");
     dl.hidden = f.kind !== "pkg";
     if (f.kind === "pkg") {
@@ -137,13 +165,14 @@
     grid.appendChild(box);
   }
 
-  fill("builtin", (window.BUILTIN_FACES || []).map(function (f) { return Object.assign({ kind: "builtin" }, f); }));
+  lists.builtin = (window.BUILTIN_FACES || []).map(function (f) { return Object.assign({ kind: "builtin" }, f); });
+  render();
   fetch(CATALOG, { cache: "no-cache" })
     .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
     .then(function (data) {
       var base = new URL(CATALOG, location.href);
       var items = Array.isArray(data) ? data : (data.faces || []);
-      var packs = items.filter(function (f) { return f && f.name && f.file; }).map(function (f) {
+      lists.packs = items.filter(function (f) { return f && f.name && f.file; }).map(function (f) {
         return {
           kind: "pkg",
           id: f.id,
@@ -151,12 +180,14 @@
           desc: (en && f.desc_en) || f.desc,
           author: f.author,
           size: f.size,
+          fw: f.fw,
+          tags: f.tags,
           preview: f.preview ? new URL(f.preview, base).href : root + "img/tomate.svg",
           file: new URL(f.file, base).href
         };
       });
-      if (!packs.length) return soon();
-      fill("packs", packs);
+      if (!lists.packs.length) return soon();
+      render();
       if (location.hash.length > 1) {
         var t = document.getElementById(decodeURIComponent(location.hash.slice(1)));
         if (t) t.scrollIntoView();

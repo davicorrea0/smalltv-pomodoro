@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Silkscreen&display=swap">
-<link rel="stylesheet" href="style.css?v=3">
+<link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
 
@@ -42,10 +42,18 @@
         <button type="button" data-filter="pkg" aria-pressed="false">Novos <span class="count" id="n-pkg"></span></button>
         <button type="button" data-filter="builtin" aria-pressed="false">Embutidos <span class="count" id="n-builtin"></span></button>
       </div>
+      <div class="tabs styles" role="group" aria-label="Filtrar por estilo">
+        <button type="button" data-style="all" aria-pressed="true">Todos os estilos</button>
+        <button type="button" data-style="analogico" aria-pressed="false">Analógico</button>
+        <button type="button" data-style="digital" aria-pressed="false">Digital</button>
+        <button type="button" data-style="pixel" aria-pressed="false">Pixel art</button>
+        <button type="button" data-style="esportivo" aria-pressed="false">Esportivo</button>
+        <button type="button" data-style="retro" aria-pressed="false">Retrô</button>
+      </div>
     </div>
   </div>
 
-  <section style="border:0;padding-top:16px" id="novos" data-kind="pkg">
+  <section class="first" id="novos" data-kind="pkg">
     <div class="wrap">
       <div class="sub-head"><h2>Novos para instalar</h2><span class="count" id="packs-count"></span></div>
       <p class="section-lead">Cada um é um arquivo <code>.json</code> de poucos KB, descrito em camadas (formas, textos, sprites em pixel art, ícone de clima, ponteiros). Mostram a hora, o clima e os seus focos do dia como os embutidos.</p>
@@ -98,18 +106,20 @@
 
 <footer>
   <div class="wrap">
-    <img class="px" src="img/tomate.svg" alt="">
-    <span>SmallTV Pomodoro · feito por Davi Mattos</span>
-    <div class="links">
-      <a href="./">Início</a>
-      <a href="https://github.com/davicorrea0/smalltv-pomodoro">Código no GitHub</a>
-      <a href="https://github.com/davicorrea0/smalltv-pomodoro/releases">Releases</a>
-      <a href="en/gallery.html" hreflang="en">English</a>
+    <div class="foot-bottom">
+      <img class="px" src="img/tomate.svg" alt="">
+      <span>SmallTV Pomodoro · feito por Davi Mattos</span>
+      <div class="links">
+        <a href="./">Início</a>
+        <a href="https://github.com/davicorrea0/smalltv-pomodoro">Código no GitHub</a>
+        <a href="https://github.com/davicorrea0/smalltv-pomodoro/releases">Releases</a>
+        <a href="en/gallery.html" hreflang="en">English</a>
+      </div>
     </div>
   </div>
 </footer>
 
-<script src="faces.js?v=3"></script>
-<script src="galeria.js?v=4"></script>
+<script src="faces.js?v=4"></script>
+<script src="galeria.js?v=5"></script>
 </body>
 </html>
