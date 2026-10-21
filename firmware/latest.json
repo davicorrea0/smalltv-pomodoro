@@ -1,11 +1,11 @@
 {
-  "version": "1.8.1",
+  "version": "1.9.0",
   "date": "2026-10-21",
   "file": "smalltv-pomodoro.bin",
-  "size": 527200,
+  "size": 513952,
   "notes": {
-    "pt": ["Conquistas com ícones em pixel art", "Cartão do dia para compartilhar redesenhado, todo em pixel art"],
-    "en": ["Achievements with pixel art icons", "Redesigned share card, all in pixel art"],
-    "es": ["Logros con íconos en pixel art", "Tarjeta del día para compartir rediseñada, toda en pixel art"]
+    "pt": ["Modo de recuperação: ligue e desligue 3 vezes seguidas se o relógio travar", "A atualização confere o arquivo antes de trocar de firmware", "Backup e restauração de ajustes, histórico e mostradores", "Firmware 14 KB menor"],
+    "en": ["Recovery mode: unplug and plug back in 3 times in a row if the clock gets stuck", "Updates check the file before switching firmware", "Backup and restore of settings, history and faces", "Firmware 14 KB smaller"],
+    "es": ["Modo de recuperación: desconecta y conecta 3 veces seguidas si el reloj se traba", "La actualización revisa el archivo antes de cambiar de firmware", "Copia y restauración de ajustes, historial y esferas", "Firmware 14 KB más pequeño"]
   }
 }
