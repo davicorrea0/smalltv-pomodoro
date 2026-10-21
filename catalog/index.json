@@ -154,6 +154,116 @@
       "file": "radar-analogico.json",
       "preview": "radar-analogico.png",
       "size": 3146
+    },
+    {
+      "id": "aneis",
+      "name": "Anéis",
+      "author": "davicorrea0",
+      "desc": "Três anéis de progresso: focos do dia, minutos da hora e horas do dia",
+      "name_en": "Rings",
+      "desc_en": "Three progress rings: daily focus, minutes of the hour and hours of the day",
+      "file": "aneis.json",
+      "preview": "aneis.png",
+      "size": 1718
+    },
+    {
+      "id": "modular",
+      "name": "Modular",
+      "author": "davicorrea0",
+      "desc": "Grade de complicações: hora, clima grande e três dados embaixo",
+      "name_en": "Modular",
+      "desc_en": "Complication grid: time, large weather and three stats below",
+      "file": "modular.json",
+      "preview": "modular.png",
+      "size": 3391
+    },
+    {
+      "id": "infografico",
+      "name": "Infográfico",
+      "author": "davicorrea0",
+      "desc": "Analógico com mostradores menores e dados nos quatro cantos",
+      "name_en": "Infograph",
+      "desc_en": "Analog dial with subdials and stats in all four corners",
+      "file": "infografico.json",
+      "preview": "infografico.png",
+      "size": 3083
+    },
+    {
+      "id": "romano",
+      "name": "Romano",
+      "author": "davicorrea0",
+      "desc": "Mostrador creme clássico com algarismos romanos",
+      "name_en": "Roman",
+      "desc_en": "Classic cream dial with Roman numerals",
+      "file": "romano.json",
+      "preview": "romano.png",
+      "size": 3598
+    },
+    {
+      "id": "duo",
+      "name": "Duo",
+      "author": "davicorrea0",
+      "desc": "Hora e minutos gigantes, um em cima do outro",
+      "name_en": "Duo",
+      "desc_en": "Giant hours stacked over minutes",
+      "file": "duo.json",
+      "preview": "duo.png",
+      "size": 966
+    },
+    {
+      "id": "gradiente",
+      "name": "Gradiente",
+      "author": "davicorrea0",
+      "desc": "Degradê radial suave com ponteiros brancos",
+      "name_en": "Gradient",
+      "desc_en": "Soft radial gradient with white hands",
+      "file": "gradiente.json",
+      "preview": "gradiente.png",
+      "size": 2355
+    },
+    {
+      "id": "fitness",
+      "name": "Fitness",
+      "author": "davicorrea0",
+      "desc": "Estilo pulseira esportiva: hora grande e barras coloridas de progresso",
+      "name_en": "Fitness",
+      "desc_en": "Fitness band style: big time and colorful progress bars",
+      "file": "fitness.json",
+      "preview": "fitness.png",
+      "size": 2253
+    },
+    {
+      "id": "astronauta",
+      "name": "Astronauta",
+      "author": "davicorrea0",
+      "desc": "Astronauta em pixel art flutuando perto de um planeta",
+      "name_en": "Astronaut",
+      "desc_en": "Pixel art astronaut floating near a planet",
+      "file": "astronauta.json",
+      "preview": "astronauta.png",
+      "size": 3435
+    },
+    {
+      "id": "listras",
+      "name": "Listras",
+      "author": "davicorrea0",
+      "desc": "Faixas diagonais coloridas com a hora num cartão preto",
+      "name_en": "Stripes",
+      "desc_en": "Colorful diagonal stripes with the time on a black card",
+      "file": "listras.json",
+      "preview": "listras.png",
+      "size": 2116
+    },
+    {
+      "id": "pilula",
+      "name": "Pílula",
+      "author": "davicorrea0",
+      "desc": "Tela em cápsula de pulseira, hora empilhada e dados nas laterais",
+      "name_en": "Pill",
+      "desc_en": "Band-style capsule screen, stacked time and stats on the sides",
+      "file": "pilula.json",
+      "preview": "pilula.png",
+      "size": 2343
     }
   ]
 }

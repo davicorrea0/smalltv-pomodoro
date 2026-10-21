@@ -1,0 +1,129 @@
+{
+  "format": 1,
+  "author": "davicorrea0",
+  "id": "pilula",
+  "name": "Pílula",
+  "desc": "Tela em cápsula de pulseira, hora empilhada e dados nas laterais",
+  "name_en": "Pill",
+  "desc_en": "Band-style capsule screen, stacked time and stats on the sides",
+  "bg": "#000000",
+  "layers": [
+    {
+      "type": "rect",
+      "x": 62,
+      "y": 4,
+      "w": 116,
+      "h": 232,
+      "r": 58,
+      "color": "#1a1d2e"
+    },
+    {
+      "type": "text",
+      "x": 120,
+      "y": 30,
+      "text": "{WD} {DD}",
+      "font": "pixel",
+      "size": 1,
+      "align": "center",
+      "color": "#8e8e93"
+    },
+    {
+      "type": "text",
+      "x": 120,
+      "y": 46,
+      "font": "bebas",
+      "size": 76,
+      "align": "center",
+      "color": "accent",
+      "bg": "#1a1d2e",
+      "text": "{HH}"
+    },
+    {
+      "type": "text",
+      "x": 120,
+      "y": 128,
+      "font": "bebas",
+      "size": 76,
+      "align": "center",
+      "color": "#ffffff",
+      "bg": "#1a1d2e",
+      "text": "{MM}"
+    },
+    {
+      "type": "bar",
+      "x": 90,
+      "y": 214,
+      "w": 60,
+      "h": 6,
+      "r": 3,
+      "value": "sec",
+      "color": "accent",
+      "track": "#2c3048"
+    },
+    {
+      "type": "weather",
+      "x": 31,
+      "y": 58,
+      "size": 6,
+      "when": "weather"
+    },
+    {
+      "type": "text",
+      "x": 31,
+      "y": 86,
+      "text": "{TEMP}°",
+      "font": "pixel",
+      "size": 2,
+      "align": "center",
+      "color": "#ffffff",
+      "when": "weather"
+    },
+    {
+      "type": "text",
+      "x": 31,
+      "y": 170,
+      "text": "{HUM}%",
+      "font": "pixel",
+      "size": 1,
+      "align": "center",
+      "color": "#64d2ff"
+    },
+    {
+      "type": "text",
+      "x": 31,
+      "y": 182,
+      "text": "UMID",
+      "font": "pixel",
+      "size": 1,
+      "align": "center",
+      "color": "#5a5a66"
+    },
+    {
+      "type": "text",
+      "x": 209,
+      "y": 54,
+      "text": "{FOCOS}",
+      "font": "pixel",
+      "size": 3,
+      "align": "center",
+      "color": "#ff375f"
+    },
+    {
+      "type": "text",
+      "x": 209,
+      "y": 84,
+      "text": "FOCOS",
+      "font": "pixel",
+      "size": 1,
+      "align": "center",
+      "color": "#5a5a66"
+    },
+    {
+      "type": "mascot",
+      "x": 201,
+      "y": 166,
+      "size": 1,
+      "mood": "auto"
+    }
+  ]
+}
