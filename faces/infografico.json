@@ -1,0 +1,174 @@
+{
+  "format": 1,
+  "author": "davicorrea0",
+  "id": "infografico",
+  "name": "Infográfico",
+  "desc": "Analógico com mostradores menores e dados nos quatro cantos",
+  "name_en": "Infograph",
+  "desc_en": "Analog dial with subdials and stats in all four corners",
+  "bg": "#000000",
+  "layers": [
+    {
+      "type": "ticks",
+      "x": 120,
+      "y": 120,
+      "r": 116,
+      "len": 5,
+      "count": 60,
+      "size": 1,
+      "color": "#4a4a4a"
+    },
+    {
+      "type": "ticks",
+      "x": 120,
+      "y": 120,
+      "r": 116,
+      "len": 12,
+      "count": 12,
+      "size": 3,
+      "color": "#ffffff"
+    },
+    {
+      "type": "weather",
+      "x": 120,
+      "y": 70,
+      "size": 6,
+      "when": "weather"
+    },
+    {
+      "type": "arc",
+      "x": 70,
+      "y": 124,
+      "r": 24,
+      "size": 5,
+      "value": "hum",
+      "color": "#64d2ff",
+      "track": "#14323d"
+    },
+    {
+      "type": "text",
+      "x": 70,
+      "y": 120,
+      "text": "{HUM}",
+      "font": "pixel",
+      "size": 1,
+      "align": "center",
+      "color": "#64d2ff"
+    },
+    {
+      "type": "arc",
+      "x": 170,
+      "y": 124,
+      "r": 24,
+      "size": 5,
+      "value": "focos",
+      "color": "#30d158",
+      "track": "#0f3a1a"
+    },
+    {
+      "type": "text",
+      "x": 170,
+      "y": 120,
+      "text": "{FOCOS}",
+      "font": "pixel",
+      "size": 1,
+      "align": "center",
+      "color": "#30d158"
+    },
+    {
+      "type": "text",
+      "x": 120,
+      "y": 166,
+      "text": "{WD} {DD}",
+      "font": "pixel",
+      "size": 1,
+      "align": "center",
+      "color": "#ff453a"
+    },
+    {
+      "type": "text",
+      "x": 4,
+      "y": 4,
+      "text": "{TEMP}°",
+      "font": "pixel",
+      "size": 2,
+      "color": "#64d2ff",
+      "when": "weather"
+    },
+    {
+      "type": "text",
+      "x": 236,
+      "y": 4,
+      "text": "{MON}",
+      "font": "pixel",
+      "size": 2,
+      "align": "right",
+      "color": "#ff9f0a"
+    },
+    {
+      "type": "text",
+      "x": 4,
+      "y": 222,
+      "text": "{TMIN}°",
+      "font": "pixel",
+      "size": 1,
+      "color": "#8e8e93",
+      "when": "weather"
+    },
+    {
+      "type": "text",
+      "x": 236,
+      "y": 222,
+      "text": "{TMAX}°",
+      "font": "pixel",
+      "size": 1,
+      "align": "right",
+      "color": "#8e8e93",
+      "when": "weather"
+    },
+    {
+      "type": "hand",
+      "x": 120,
+      "y": 120,
+      "value": "hour",
+      "len": 56,
+      "tail": 8,
+      "size": 7,
+      "color": "#ffffff"
+    },
+    {
+      "type": "hand",
+      "x": 120,
+      "y": 120,
+      "value": "min",
+      "len": 90,
+      "tail": 10,
+      "size": 5,
+      "color": "#ffffff"
+    },
+    {
+      "type": "hand",
+      "x": 120,
+      "y": 120,
+      "value": "sec",
+      "len": 100,
+      "tail": 18,
+      "size": 1,
+      "color": "#ff9500"
+    },
+    {
+      "type": "circle",
+      "x": 120,
+      "y": 120,
+      "r": 5,
+      "color": "#ff9500"
+    },
+    {
+      "type": "circle",
+      "x": 120,
+      "y": 120,
+      "r": 2,
+      "color": "#000000"
+    }
+  ]
+}

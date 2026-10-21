@@ -1,0 +1,91 @@
+{
+  "format": 1,
+  "author": "davicorrea0",
+  "id": "mono",
+  "name": "Mono",
+  "desc": "Preto e branco em blocos, com os segmentos apagados à mostra e um ponto vermelho",
+  "name_en": "Mono",
+  "desc_en": "Black and white blocks with unlit segments showing and one red dot",
+  "bg": "#000000",
+  "layers": [
+    {
+      "type": "text",
+      "x": 12,
+      "y": 18,
+      "font": "pixel",
+      "size": 1,
+      "color": "#bdbdbd",
+      "text": "{WD}  {DD} {MON}"
+    },
+    {
+      "type": "circle",
+      "x": 222,
+      "y": 22,
+      "r": 5,
+      "color": "#ff1f1f"
+    },
+    {
+      "type": "text",
+      "x": 120,
+      "y": 64,
+      "font": "dm",
+      "size": 8,
+      "color": "#ffffff",
+      "text": "{HH}:{MM}",
+      "align": "center",
+      "off": "#1c1c1c"
+    },
+    {
+      "type": "bar",
+      "x": 12,
+      "y": 150,
+      "w": 216,
+      "h": 3,
+      "value": "sec",
+      "color": "#ffffff",
+      "track": "#262626"
+    },
+    {
+      "type": "text",
+      "x": 12,
+      "y": 176,
+      "font": "dm",
+      "size": 4,
+      "color": "#ffffff",
+      "text": "{TEMP}",
+      "off": "#1c1c1c",
+      "when": "weather"
+    },
+    {
+      "type": "text",
+      "x": 12,
+      "y": 210,
+      "font": "pixel",
+      "size": 1,
+      "color": "#8a8a8a",
+      "text": "GRAUS",
+      "when": "weather"
+    },
+    {
+      "type": "text",
+      "x": 228,
+      "y": 176,
+      "font": "dm",
+      "size": 4,
+      "color": "#ff1f1f",
+      "text": "{FOCOS}",
+      "align": "right",
+      "off": "#1c1c1c"
+    },
+    {
+      "type": "text",
+      "x": 228,
+      "y": 210,
+      "font": "pixel",
+      "size": 1,
+      "color": "#8a8a8a",
+      "text": "FOCOS",
+      "align": "right"
+    }
+  ]
+}

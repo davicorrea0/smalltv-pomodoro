@@ -1,0 +1,121 @@
+{
+  "format": 1,
+  "author": "davicorrea0",
+  "id": "bento",
+  "name": "Bento",
+  "desc": "Cartões em grade, como widgets: hora, clima e focos",
+  "name_en": "Bento",
+  "desc_en": "Widget-style grid of cards: time, weather and focus",
+  "bg": "#0e0e12",
+  "layers": [
+    {
+      "type": "rect",
+      "x": 8,
+      "y": 8,
+      "w": 224,
+      "h": 112,
+      "color": "#1c1c24",
+      "r": 16
+    },
+    {
+      "type": "text",
+      "x": 120,
+      "y": 24,
+      "font": "outfit",
+      "size": 58,
+      "color": "#f4f4f8",
+      "text": "{HH}:{MM}",
+      "align": "center"
+    },
+    {
+      "type": "text",
+      "x": 120,
+      "y": 94,
+      "font": "pixel",
+      "size": 2,
+      "color": "#8a8aa0",
+      "text": "{WD} {DD} {MON}",
+      "align": "center"
+    },
+    {
+      "type": "rect",
+      "x": 8,
+      "y": 128,
+      "w": 108,
+      "h": 104,
+      "color": "#ffd166",
+      "r": 16
+    },
+    {
+      "type": "weather",
+      "x": 62,
+      "y": 156,
+      "size": 8,
+      "bg": "#ffd166",
+      "when": "weather"
+    },
+    {
+      "type": "text",
+      "x": 62,
+      "y": 182,
+      "font": "outfit",
+      "size": 40,
+      "color": "#1a1a1a",
+      "text": "{TEMP}°",
+      "align": "center",
+      "when": "weather",
+      "bg": "#ffd166"
+    },
+    {
+      "type": "text",
+      "x": 62,
+      "y": 172,
+      "font": "pixel",
+      "size": 2,
+      "color": "#1a1a1a",
+      "text": "--",
+      "align": "center",
+      "when": "noweather"
+    },
+    {
+      "type": "rect",
+      "x": 124,
+      "y": 128,
+      "w": 108,
+      "h": 104,
+      "color": "#ff5a47",
+      "r": 16
+    },
+    {
+      "type": "text",
+      "x": 138,
+      "y": 140,
+      "font": "pixel",
+      "size": 2,
+      "color": "#4a120c",
+      "text": "FOCOS"
+    },
+    {
+      "type": "text",
+      "x": 178,
+      "y": 162,
+      "font": "outfit",
+      "size": 44,
+      "color": "#ffffff",
+      "text": "{FOCOS}",
+      "align": "center",
+      "bg": "#ff5a47"
+    },
+    {
+      "type": "bar",
+      "x": 138,
+      "y": 214,
+      "w": 80,
+      "h": 8,
+      "r": 4,
+      "value": "focos",
+      "color": "#ffffff",
+      "track": "#c23a2c"
+    }
+  ]
+}

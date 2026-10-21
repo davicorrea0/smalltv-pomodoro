@@ -1,0 +1,197 @@
+{
+  "format": 1,
+  "author": "davicorrea0",
+  "id": "astronauta",
+  "name": "Astronauta",
+  "desc": "Astronauta em pixel art flutuando perto de um planeta",
+  "name_en": "Astronaut",
+  "desc_en": "Pixel art astronaut floating near a planet",
+  "bg": "#0b1026",
+  "sprites": {
+    "astro": {
+      "pal": {
+        "k": "#1b1e2e",
+        "w": "#f1f1f1",
+        "g": "#9aa0a6",
+        "v": "#2ec4b6",
+        "h": "#bff5ee",
+        "o": "#f4a261",
+        "d": "#4a4e69"
+      },
+      "px": [
+        ".....kkkkkk.....",
+        "....kwwwwwwk....",
+        "...kwwvvvvwwk...",
+        "..kgwvhhvvvwgk..",
+        "..kgwvhvvvvwgk..",
+        "..kgwvvvvvvwgk..",
+        "...kwwvvvvwwk...",
+        "....kwwwwwwk....",
+        "..kkkwwwwwwkkk..",
+        ".kwwkwwoowwkwwk.",
+        ".kwwkwwddwwkwwk.",
+        ".kggkwwwwwwkggk.",
+        "..kk.kwwwwk.kk..",
+        ".....kwkkwk.....",
+        "....kgwk.kwgk...",
+        "....kkkk.kkkk..."
+      ]
+    }
+  },
+  "layers": [
+    {
+      "type": "rect",
+      "x": 20,
+      "y": 20,
+      "w": 3,
+      "h": 3,
+      "color": "#9fb4ff"
+    },
+    {
+      "type": "rect",
+      "x": 60,
+      "y": 12,
+      "w": 2,
+      "h": 2,
+      "color": "#ffffff"
+    },
+    {
+      "type": "rect",
+      "x": 200,
+      "y": 30,
+      "w": 2,
+      "h": 2,
+      "color": "#9fb4ff"
+    },
+    {
+      "type": "rect",
+      "x": 228,
+      "y": 70,
+      "w": 3,
+      "h": 3,
+      "color": "#ffffff"
+    },
+    {
+      "type": "rect",
+      "x": 16,
+      "y": 110,
+      "w": 2,
+      "h": 2,
+      "color": "#9fb4ff"
+    },
+    {
+      "type": "rect",
+      "x": 100,
+      "y": 214,
+      "w": 2,
+      "h": 2,
+      "color": "#ffffff"
+    },
+    {
+      "type": "rect",
+      "x": 36,
+      "y": 220,
+      "w": 3,
+      "h": 3,
+      "color": "#9fb4ff"
+    },
+    {
+      "type": "rect",
+      "x": 150,
+      "y": 112,
+      "w": 2,
+      "h": 2,
+      "color": "#ffffff"
+    },
+    {
+      "type": "rect",
+      "x": 214,
+      "y": 120,
+      "w": 2,
+      "h": 2,
+      "color": "#9fb4ff"
+    },
+    {
+      "type": "rect",
+      "x": 8,
+      "y": 170,
+      "w": 3,
+      "h": 3,
+      "color": "#ffffff"
+    },
+    {
+      "type": "circle",
+      "x": 206,
+      "y": 222,
+      "r": 62,
+      "color": "#e76f51"
+    },
+    {
+      "type": "circle",
+      "x": 182,
+      "y": 196,
+      "r": 10,
+      "color": "#c8553d"
+    },
+    {
+      "type": "circle",
+      "x": 222,
+      "y": 186,
+      "r": 6,
+      "color": "#c8553d"
+    },
+    {
+      "type": "circle",
+      "x": 210,
+      "y": 220,
+      "r": 13,
+      "color": "#c8553d"
+    },
+    {
+      "type": "text",
+      "x": 120,
+      "y": 16,
+      "font": "outfit",
+      "size": 56,
+      "align": "center",
+      "color": "#ffffff",
+      "text": "{HH}:{MM}"
+    },
+    {
+      "type": "text",
+      "x": 120,
+      "y": 82,
+      "text": "{WD} {DD} {MON}",
+      "font": "pixel",
+      "size": 2,
+      "align": "center",
+      "color": "#9fb4ff"
+    },
+    {
+      "type": "sprite",
+      "x": 18,
+      "y": 116,
+      "sprite": "astro",
+      "size": 5
+    },
+    {
+      "type": "text",
+      "x": 112,
+      "y": 126,
+      "text": "{TEMP}°",
+      "font": "pixel",
+      "size": 3,
+      "color": "#ffffff",
+      "when": "weather"
+    },
+    {
+      "type": "text",
+      "x": 112,
+      "y": 156,
+      "text": "{FOCOS} focos",
+      "font": "pixel",
+      "size": 1,
+      "color": "#9fb4ff"
+    }
+  ]
+}

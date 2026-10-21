@@ -1,0 +1,210 @@
+{
+  "format": 1,
+  "author": "davicorrea0",
+  "id": "aurora",
+  "name": "Aurora",
+  "desc": "Faixas da aurora boreal sobre montanhas, com a hora em Geo",
+  "name_en": "Aurora",
+  "desc_en": "Northern lights bands over mountains, with the time in Geo",
+  "bg": "#060b1a",
+  "layers": [
+    {
+      "type": "rect",
+      "x": 0,
+      "y": 0,
+      "w": 240,
+      "h": 12,
+      "color": "#060b1a"
+    },
+    {
+      "type": "rect",
+      "x": 0,
+      "y": 12,
+      "w": 240,
+      "h": 12,
+      "color": "#081322"
+    },
+    {
+      "type": "rect",
+      "x": 0,
+      "y": 24,
+      "w": 240,
+      "h": 12,
+      "color": "#0a1b2a"
+    },
+    {
+      "type": "rect",
+      "x": 0,
+      "y": 36,
+      "w": 240,
+      "h": 12,
+      "color": "#0b2332"
+    },
+    {
+      "type": "rect",
+      "x": 0,
+      "y": 48,
+      "w": 240,
+      "h": 12,
+      "color": "#0d2b3a"
+    },
+    {
+      "type": "rect",
+      "x": 0,
+      "y": 60,
+      "w": 240,
+      "h": 10,
+      "color": "#13c08f"
+    },
+    {
+      "type": "rect",
+      "x": 0,
+      "y": 70,
+      "w": 240,
+      "h": 10,
+      "color": "#22ab9b"
+    },
+    {
+      "type": "rect",
+      "x": 0,
+      "y": 80,
+      "w": 240,
+      "h": 10,
+      "color": "#3095a7"
+    },
+    {
+      "type": "rect",
+      "x": 0,
+      "y": 90,
+      "w": 240,
+      "h": 10,
+      "color": "#3f80b3"
+    },
+    {
+      "type": "rect",
+      "x": 0,
+      "y": 100,
+      "w": 240,
+      "h": 10,
+      "color": "#4d6abe"
+    },
+    {
+      "type": "rect",
+      "x": 0,
+      "y": 110,
+      "w": 240,
+      "h": 10,
+      "color": "#5c55ca"
+    },
+    {
+      "type": "rect",
+      "x": 0,
+      "y": 120,
+      "w": 240,
+      "h": 10,
+      "color": "#6a3fd6"
+    },
+    {
+      "type": "rect",
+      "x": 0,
+      "y": 130,
+      "w": 240,
+      "h": 10,
+      "color": "#2a1a5e"
+    },
+    {
+      "type": "rect",
+      "x": 0,
+      "y": 140,
+      "w": 240,
+      "h": 10,
+      "color": "#1f174c"
+    },
+    {
+      "type": "rect",
+      "x": 0,
+      "y": 150,
+      "w": 240,
+      "h": 10,
+      "color": "#15133a"
+    },
+    {
+      "type": "rect",
+      "x": 0,
+      "y": 160,
+      "w": 240,
+      "h": 10,
+      "color": "#0a1028"
+    },
+    {
+      "type": "text",
+      "x": 120,
+      "y": 30,
+      "font": "geo",
+      "size": 60,
+      "color": "#ffffff",
+      "text": "{HH}:{MM}",
+      "align": "center",
+      "w": 6
+    },
+    {
+      "type": "text",
+      "x": 120,
+      "y": 104,
+      "font": "pixel",
+      "size": 2,
+      "color": "#e6fff6",
+      "text": "{WD} {DD} {MON}",
+      "align": "center"
+    },
+    {
+      "type": "circle",
+      "x": 40,
+      "y": 230,
+      "r": 70,
+      "color": "#0b1430"
+    },
+    {
+      "type": "circle",
+      "x": 180,
+      "y": 240,
+      "r": 84,
+      "color": "#0f1a3d"
+    },
+    {
+      "type": "circle",
+      "x": 110,
+      "y": 250,
+      "r": 60,
+      "color": "#121f48"
+    },
+    {
+      "type": "rect",
+      "x": 0,
+      "y": 200,
+      "w": 240,
+      "h": 40,
+      "color": "#121f48"
+    },
+    {
+      "type": "text",
+      "x": 20,
+      "y": 214,
+      "font": "pixel",
+      "size": 2,
+      "color": "#bfe9ff",
+      "text": "{TEMP}°",
+      "when": "weather"
+    },
+    {
+      "type": "text",
+      "x": 220,
+      "y": 214,
+      "font": "pixel",
+      "size": 2,
+      "color": "#bfe9ff",
+      "text": "{FOCOS}/{META}",
+      "align": "right"
+    }
+  ]
+}

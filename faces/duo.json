@@ -1,0 +1,52 @@
+{
+  "format": 1,
+  "author": "davicorrea0",
+  "id": "duo",
+  "name": "Duo",
+  "desc": "Hora e minutos gigantes, um em cima do outro",
+  "name_en": "Duo",
+  "desc_en": "Giant hours stacked over minutes",
+  "bg": "#000000",
+  "layers": [
+    {
+      "type": "text",
+      "x": 120,
+      "y": 12,
+      "font": "outfit",
+      "size": 98,
+      "align": "center",
+      "color": "#ff9f0a",
+      "text": "{HH}"
+    },
+    {
+      "type": "text",
+      "x": 120,
+      "y": 124,
+      "font": "outfit",
+      "size": 98,
+      "align": "center",
+      "color": "#ffffff",
+      "text": "{MM}"
+    },
+    {
+      "type": "text",
+      "x": 4,
+      "y": 228,
+      "text": "{WD} {DD}",
+      "font": "pixel",
+      "size": 1,
+      "color": "#8e8e93"
+    },
+    {
+      "type": "text",
+      "x": 236,
+      "y": 228,
+      "text": "{TEMP}°",
+      "font": "pixel",
+      "size": 1,
+      "align": "right",
+      "color": "#8e8e93",
+      "when": "weather"
+    }
+  ]
+}

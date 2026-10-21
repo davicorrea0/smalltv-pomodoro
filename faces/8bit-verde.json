@@ -1,0 +1,222 @@
+{
+  "format": 1,
+  "author": "davicorrea0",
+  "id": "8bit-verde",
+  "name": "8-bit Verde",
+  "desc": "Os quatro tons de verde dos portáteis antigos, com o tomate repintado",
+  "name_en": "8-bit Green",
+  "desc_en": "The four greens of classic handhelds, with a repainted tomato",
+  "bg": "#9bbc0f",
+  "sprites": {
+    "tomate": {
+      "pal": {
+        "g": "#0f380f",
+        "G": "#306230",
+        "r": "#0f380f",
+        "R": "#8bac0f",
+        "h": "#c8e07a",
+        "k": "#0f380f",
+        "p": "#306230"
+      },
+      "px": [
+        "......gGGg......",
+        "....gGGGGGGg....",
+        "...rRRgGGgRRr...",
+        "..rRRRRggRRRRr..",
+        ".rRhhRRRRRRRRRr.",
+        ".rRhRRRRRRRRRRr.",
+        "rRRRRRRRRRRRRRRr",
+        "rRRRRRRRRRRRRRRr",
+        "rRRRRkRRRRkRRRRr",
+        "rRRRRkRRRRkRRRRr",
+        "rRRpRRRRRRRRpRRr",
+        ".rRRRRkRRkRRRRr.",
+        ".rRRRRRkkRRRRRr.",
+        "..rrRRRRRRRRrr..",
+        "....rrrrrrrr....",
+        "................"
+      ]
+    },
+    "dorme": {
+      "pal": {
+        "g": "#0f380f",
+        "G": "#306230",
+        "r": "#0f380f",
+        "R": "#8bac0f",
+        "h": "#c8e07a",
+        "k": "#0f380f"
+      },
+      "px": [
+        "......gGGg......",
+        "....gGGGGGGg....",
+        "...rRRgGGgRRr...",
+        "..rRRRRggRRRRr..",
+        ".rRhhRRRRRRRRRr.",
+        ".rRhRRRRRRRRRRr.",
+        "rRRRRRRRRRRRRRRr",
+        "rRRRRRRRRRRRRRRr",
+        "rRRRRRRRRRRRRRRr",
+        "rRRRkkRRRRkkRRRr",
+        "rRRRRRRRRRRRRRRr",
+        ".rRRRRRRRRRRRRr.",
+        ".rRRRRRkkRRRRRr.",
+        "..rrRRRRRRRRrr..",
+        "....rrrrrrrr....",
+        "................"
+      ]
+    },
+    "nuvem": {
+      "pal": {
+        "o": "#306230",
+        "w": "#9bbc0f",
+        "W": "#8bac0f"
+      },
+      "px": [
+        "......oooo......",
+        "....oowwwwo.....",
+        "...owwwwwwwooo..",
+        ".ooowwwwwwwwwwo.",
+        "owwwwwwwwwwwwwwo",
+        "owwwwwwwwwwwwwwo",
+        "oWwwwwwwwwwwwwWo",
+        ".oWWWWWWWWWWWWo.",
+        "..oooooooooooo.."
+      ]
+    },
+    "lua": {
+      "pal": {
+        "o": "#306230",
+        "m": "#9bbc0f",
+        "w": "#9bbc0f",
+        "M": "#8bac0f"
+      },
+      "px": [
+        "................",
+        ".....oooooo.....",
+        "...oommmmo......",
+        "..ommmmoo...w...",
+        ".ommMmo....www..",
+        ".ommmo......w...",
+        "ommmmo..........",
+        "ommMo...........",
+        "ommmo...........",
+        "ommmmo..........",
+        ".ommmo..........",
+        ".ommMmo.........",
+        "..ommmmoo.......",
+        "...oommmmo......",
+        ".....oooooo.....",
+        "................"
+      ]
+    }
+  },
+  "layers": [
+    {
+      "type": "rect",
+      "x": 6,
+      "y": 6,
+      "w": 228,
+      "h": 228,
+      "color": "none",
+      "stroke": "#306230"
+    },
+    {
+      "type": "text",
+      "x": 120,
+      "y": 18,
+      "font": "pixel",
+      "size": 5,
+      "color": "#0f380f",
+      "text": "{HH}:{MM}",
+      "align": "center"
+    },
+    {
+      "type": "text",
+      "x": 120,
+      "y": 64,
+      "font": "pixel",
+      "size": 1,
+      "color": "#306230",
+      "text": "{WD} {DD} {MON}",
+      "align": "center"
+    },
+    {
+      "type": "sprite",
+      "x": 24,
+      "y": 92,
+      "size": 2,
+      "sprite": "nuvem",
+      "when": "day"
+    },
+    {
+      "type": "sprite",
+      "x": 176,
+      "y": 84,
+      "size": 2,
+      "sprite": "lua",
+      "when": "night"
+    },
+    {
+      "type": "sprite",
+      "x": 72,
+      "y": 112,
+      "size": 4,
+      "sprite": "tomate",
+      "when": "day"
+    },
+    {
+      "type": "sprite",
+      "x": 72,
+      "y": 112,
+      "size": 4,
+      "sprite": "dorme",
+      "when": "night"
+    },
+    {
+      "type": "rect",
+      "x": 7,
+      "y": 176,
+      "w": 226,
+      "h": 4,
+      "color": "#306230"
+    },
+    {
+      "type": "rect",
+      "x": 7,
+      "y": 180,
+      "w": 226,
+      "h": 53,
+      "color": "#8bac0f"
+    },
+    {
+      "type": "text",
+      "x": 20,
+      "y": 192,
+      "font": "pixel",
+      "size": 2,
+      "color": "#0f380f",
+      "text": "{TEMP}°",
+      "when": "weather"
+    },
+    {
+      "type": "text",
+      "x": 220,
+      "y": 192,
+      "font": "pixel",
+      "size": 2,
+      "color": "#0f380f",
+      "text": "{FOCOS}/{META}",
+      "align": "right"
+    },
+    {
+      "type": "bar",
+      "x": 20,
+      "y": 216,
+      "w": 200,
+      "h": 6,
+      "value": "focos",
+      "color": "#0f380f",
+      "track": "#9bbc0f"
+    }
+  ]
+}

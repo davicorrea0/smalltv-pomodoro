@@ -1,0 +1,180 @@
+{
+  "format": 1,
+  "author": "davicorrea0",
+  "id": "estacao",
+  "name": "Estação",
+  "desc": "Relógio de estação de trem: barras pretas e segundos em vermelho",
+  "name_en": "Station",
+  "desc_en": "Railway station clock: bold black bars and a red seconds hand",
+  "bg": "#202124",
+  "layers": [
+    {
+      "type": "circle",
+      "x": 120,
+      "y": 120,
+      "r": 116,
+      "color": "#f7f7f4"
+    },
+    {
+      "type": "line",
+      "x": 120,
+      "y": 16,
+      "x2": 120,
+      "y2": 38,
+      "size": 8,
+      "color": "#111111"
+    },
+    {
+      "type": "line",
+      "x": 172,
+      "y": 30,
+      "x2": 161,
+      "y2": 49,
+      "size": 8,
+      "color": "#111111"
+    },
+    {
+      "type": "line",
+      "x": 210,
+      "y": 68,
+      "x2": 191,
+      "y2": 79,
+      "size": 8,
+      "color": "#111111"
+    },
+    {
+      "type": "line",
+      "x": 224,
+      "y": 120,
+      "x2": 202,
+      "y2": 120,
+      "size": 8,
+      "color": "#111111"
+    },
+    {
+      "type": "line",
+      "x": 210,
+      "y": 172,
+      "x2": 191,
+      "y2": 161,
+      "size": 8,
+      "color": "#111111"
+    },
+    {
+      "type": "line",
+      "x": 172,
+      "y": 210,
+      "x2": 161,
+      "y2": 191,
+      "size": 8,
+      "color": "#111111"
+    },
+    {
+      "type": "line",
+      "x": 120,
+      "y": 224,
+      "x2": 120,
+      "y2": 202,
+      "size": 8,
+      "color": "#111111"
+    },
+    {
+      "type": "line",
+      "x": 68,
+      "y": 210,
+      "x2": 79,
+      "y2": 191,
+      "size": 8,
+      "color": "#111111"
+    },
+    {
+      "type": "line",
+      "x": 30,
+      "y": 172,
+      "x2": 49,
+      "y2": 161,
+      "size": 8,
+      "color": "#111111"
+    },
+    {
+      "type": "line",
+      "x": 16,
+      "y": 120,
+      "x2": 38,
+      "y2": 120,
+      "size": 8,
+      "color": "#111111"
+    },
+    {
+      "type": "line",
+      "x": 30,
+      "y": 68,
+      "x2": 49,
+      "y2": 79,
+      "size": 8,
+      "color": "#111111"
+    },
+    {
+      "type": "line",
+      "x": 68,
+      "y": 30,
+      "x2": 79,
+      "y2": 49,
+      "size": 8,
+      "color": "#111111"
+    },
+    {
+      "type": "circle",
+      "x": 120,
+      "y": 120,
+      "r": 108,
+      "color": "none",
+      "stroke": "#111111"
+    },
+    {
+      "type": "circle",
+      "x": 120,
+      "y": 120,
+      "r": 107,
+      "color": "none",
+      "stroke": "#111111"
+    },
+    {
+      "type": "hand",
+      "x": 120,
+      "y": 120,
+      "value": "hour",
+      "len": 58,
+      "tail": 16,
+      "size": 10,
+      "color": "#111111"
+    },
+    {
+      "type": "hand",
+      "x": 120,
+      "y": 120,
+      "value": "min",
+      "len": 94,
+      "tail": 20,
+      "size": 7,
+      "color": "#111111"
+    },
+    {
+      "type": "hand",
+      "x": 120,
+      "y": 120,
+      "value": "sec",
+      "len": 72,
+      "tail": 26,
+      "size": 2,
+      "color": "#d4271f"
+    },
+    {
+      "type": "circle",
+      "x": 120,
+      "y": 120,
+      "r": 5,
+      "color": "#d4271f"
+    }
+  ]
+}

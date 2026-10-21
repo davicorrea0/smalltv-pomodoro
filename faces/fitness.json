@@ -1,0 +1,123 @@
+{
+  "format": 1,
+  "author": "davicorrea0",
+  "id": "fitness",
+  "name": "Fitness",
+  "desc": "Estilo pulseira esportiva: hora grande e barras coloridas de progresso",
+  "name_en": "Fitness",
+  "desc_en": "Fitness band style: big time and colorful progress bars",
+  "bg": "#000000",
+  "layers": [
+    {
+      "type": "text",
+      "x": 120,
+      "y": 10,
+      "font": "bebas",
+      "size": 90,
+      "align": "center",
+      "color": "#ffffff",
+      "text": "{HH}:{MM}"
+    },
+    {
+      "type": "text",
+      "x": 120,
+      "y": 108,
+      "text": "{WD} {DD} {MON}",
+      "font": "pixel",
+      "size": 2,
+      "align": "center",
+      "color": "#8e8e93"
+    },
+    {
+      "type": "text",
+      "x": 16,
+      "y": 136,
+      "text": "FOCOS",
+      "font": "pixel",
+      "size": 1,
+      "color": "#ff375f"
+    },
+    {
+      "type": "text",
+      "x": 224,
+      "y": 136,
+      "text": "{FOCOS}/{META}",
+      "font": "pixel",
+      "size": 1,
+      "align": "right",
+      "color": "#ffffff"
+    },
+    {
+      "type": "bar",
+      "x": 16,
+      "y": 148,
+      "w": 208,
+      "h": 10,
+      "r": 5,
+      "value": "focos",
+      "color": "#ff375f",
+      "track": "#3a0d18"
+    },
+    {
+      "type": "text",
+      "x": 16,
+      "y": 170,
+      "text": "UMIDADE",
+      "font": "pixel",
+      "size": 1,
+      "color": "#64d2ff"
+    },
+    {
+      "type": "text",
+      "x": 224,
+      "y": 170,
+      "text": "{HUM}%",
+      "font": "pixel",
+      "size": 1,
+      "align": "right",
+      "color": "#ffffff"
+    },
+    {
+      "type": "bar",
+      "x": 16,
+      "y": 182,
+      "w": 208,
+      "h": 10,
+      "r": 5,
+      "value": "hum",
+      "color": "#64d2ff",
+      "track": "#12313d"
+    },
+    {
+      "type": "text",
+      "x": 16,
+      "y": 204,
+      "text": "DIA",
+      "font": "pixel",
+      "size": 1,
+      "color": "#ffd60a"
+    },
+    {
+      "type": "text",
+      "x": 224,
+      "y": 204,
+      "text": "{H}H",
+      "font": "pixel",
+      "size": 1,
+      "align": "right",
+      "color": "#ffffff"
+    },
+    {
+      "type": "bar",
+      "x": 16,
+      "y": 216,
+      "w": 208,
+      "h": 10,
+      "r": 5,
+      "value": "hour",
+      "color": "#ffd60a",
+      "track": "#3d3305",
+      "max": 24
+    }
+  ]
+}

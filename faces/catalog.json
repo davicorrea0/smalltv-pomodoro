@@ -2,6 +2,42 @@
   "format": 1,
   "faces": [
     {
+      "id": "8bit-verde",
+      "name": "8-bit Verde",
+      "author": "davicorrea0",
+      "desc": "Os quatro tons de verde dos portáteis antigos, com o tomate repintado",
+      "file": "8bit-verde.json",
+      "preview": "8bit-verde.png",
+      "size": 4496
+    },
+    {
+      "id": "aquario",
+      "name": "Aquário",
+      "author": "davicorrea0",
+      "desc": "Um aquário em pixel art; bata a meta do dia e aparece o peixe dourado",
+      "file": "aquario.json",
+      "preview": "aquario.png",
+      "size": 5726
+    },
+    {
+      "id": "aurora",
+      "name": "Aurora",
+      "author": "davicorrea0",
+      "desc": "Faixas da aurora boreal sobre montanhas, com a hora em Geo",
+      "file": "aurora.json",
+      "preview": "aurora.png",
+      "size": 3419
+    },
+    {
+      "id": "bauhaus",
+      "name": "Bauhaus",
+      "author": "davicorrea0",
+      "desc": "Formas e cores primárias da escola Bauhaus",
+      "file": "bauhaus.json",
+      "preview": "bauhaus.png",
+      "size": 1669
+    },
+    {
       "id": "bebas-gigante",
       "name": "Bebas Gigante",
       "author": "davicorrea0",
@@ -9,6 +45,24 @@
       "file": "bebas-gigante.json",
       "preview": "bebas-gigante.png",
       "size": 1755
+    },
+    {
+      "id": "bento",
+      "name": "Bento",
+      "author": "davicorrea0",
+      "desc": "Cartões em grade, como widgets: hora, clima e focos",
+      "file": "bento.json",
+      "preview": "bento.png",
+      "size": 2173
+    },
+    {
+      "id": "brutal",
+      "name": "Brutal",
+      "author": "davicorrea0",
+      "desc": "Neo-brutalismo: cores chapadas, bordas pretas e sombras duras",
+      "file": "brutal.json",
+      "preview": "brutal.png",
+      "size": 2575
     },
     {
       "id": "cafe-pixel",
@@ -20,6 +74,33 @@
       "size": 2595
     },
     {
+      "id": "estacao",
+      "name": "Estação",
+      "author": "davicorrea0",
+      "desc": "Relógio de estação de trem: barras pretas e segundos em vermelho",
+      "file": "estacao.json",
+      "preview": "estacao.png",
+      "size": 2989
+    },
+    {
+      "id": "mono",
+      "name": "Mono",
+      "author": "davicorrea0",
+      "desc": "Preto e branco em blocos, com os segmentos apagados à mostra e um ponto vermelho",
+      "file": "mono.json",
+      "preview": "mono.png",
+      "size": 1719
+    },
+    {
+      "id": "orbita",
+      "name": "Órbita",
+      "author": "davicorrea0",
+      "desc": "Ponteiros como órbitas em volta do sol, num céu estrelado",
+      "file": "orbita.json",
+      "preview": "orbita.png",
+      "size": 2688
+    },
+    {
       "id": "radar-analogico",
       "name": "Radar",
       "author": "davicorrea0",
@@ -27,6 +108,114 @@
       "file": "radar-analogico.json",
       "preview": "radar-analogico.png",
       "size": 3146
+    },
+    {
+      "id": "synthwave",
+      "name": "Synthwave",
+      "author": "davicorrea0",
+      "desc": "Pôr do sol retrô dos anos 80, com grade neon em perspectiva",
+      "file": "synthwave.json",
+      "preview": "synthwave.png",
+      "size": 3793
+    },
+    {
+      "id": "terminal",
+      "name": "Terminal",
+      "author": "davicorrea0",
+      "desc": "O relógio como uma sessão de terminal, em verde fósforo",
+      "file": "terminal.json",
+      "preview": "terminal.png",
+      "size": 2509
+    },
+    {
+      "id": "aneis",
+      "name": "Anéis",
+      "author": "davicorrea0",
+      "desc": "Três anéis de progresso: focos do dia, minutos da hora e horas do dia",
+      "file": "aneis.json",
+      "preview": "aneis.png",
+      "size": 1718
+    },
+    {
+      "id": "modular",
+      "name": "Modular",
+      "author": "davicorrea0",
+      "desc": "Grade de complicações: hora, clima grande e três dados embaixo",
+      "file": "modular.json",
+      "preview": "modular.png",
+      "size": 3391
+    },
+    {
+      "id": "infografico",
+      "name": "Infográfico",
+      "author": "davicorrea0",
+      "desc": "Analógico com mostradores menores e dados nos quatro cantos",
+      "file": "infografico.json",
+      "preview": "infografico.png",
+      "size": 3083
+    },
+    {
+      "id": "romano",
+      "name": "Romano",
+      "author": "davicorrea0",
+      "desc": "Mostrador creme clássico com algarismos romanos",
+      "file": "romano.json",
+      "preview": "romano.png",
+      "size": 3598
+    },
+    {
+      "id": "duo",
+      "name": "Duo",
+      "author": "davicorrea0",
+      "desc": "Hora e minutos gigantes, um em cima do outro",
+      "file": "duo.json",
+      "preview": "duo.png",
+      "size": 966
+    },
+    {
+      "id": "gradiente",
+      "name": "Gradiente",
+      "author": "davicorrea0",
+      "desc": "Degradê radial suave com ponteiros brancos",
+      "file": "gradiente.json",
+      "preview": "gradiente.png",
+      "size": 2355
+    },
+    {
+      "id": "fitness",
+      "name": "Fitness",
+      "author": "davicorrea0",
+      "desc": "Estilo pulseira esportiva: hora grande e barras coloridas de progresso",
+      "file": "fitness.json",
+      "preview": "fitness.png",
+      "size": 2253
+    },
+    {
+      "id": "astronauta",
+      "name": "Astronauta",
+      "author": "davicorrea0",
+      "desc": "Astronauta em pixel art flutuando perto de um planeta",
+      "file": "astronauta.json",
+      "preview": "astronauta.png",
+      "size": 3435
+    },
+    {
+      "id": "listras",
+      "name": "Listras",
+      "author": "davicorrea0",
+      "desc": "Faixas diagonais coloridas com a hora num cartão preto",
+      "file": "listras.json",
+      "preview": "listras.png",
+      "size": 2116
+    },
+    {
+      "id": "pilula",
+      "name": "Pílula",
+      "author": "davicorrea0",
+      "desc": "Tela em cápsula de pulseira, hora empilhada e dados nas laterais",
+      "file": "pilula.json",
+      "preview": "pilula.png",
+      "size": 2343
     }
   ]
 }
