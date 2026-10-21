@@ -384,3 +384,6 @@ section[data-kind].first { border-top: 0; padding-top: 16px; }
 .shot.one img { max-width: 360px; margin: 0 auto; background: #000; }
 .shot.one { background: #000; }
 .shot.one figcaption { background: var(--card); }
+.acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.acts span { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 6px; border-radius: 999px; background: var(--card-2); border: 1px solid var(--line); color: var(--text); font-size: 13px; }
+.acts img { width: 20px; height: 20px; }

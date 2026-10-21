@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Silkscreen&display=swap">
-<link rel="stylesheet" href="style.css?v=7">
+<link rel="stylesheet" href="style.css?v=8">
 </head>
 <body>
 
@@ -158,7 +158,6 @@
       <div class="tabs" role="tablist" aria-label="Telas">
         <button type="button" role="tab" data-shot="0" aria-selected="true" aria-pressed="true">Tomate</button>
         <button type="button" role="tab" data-shot="1" aria-selected="false" aria-pressed="false">Pomodoro</button>
-        <button type="button" role="tab" data-shot="2" aria-selected="false" aria-pressed="false">Atividades</button>
         <button type="button" role="tab" data-shot="3" aria-selected="false" aria-pressed="false">Jogo</button>
         <button type="button" role="tab" data-shot="4" aria-selected="false" aria-pressed="false">Desenhos</button>
       </div>
@@ -168,11 +167,9 @@
       </figure>
       <figure class="shot one" role="tabpanel" data-shot="1" hidden>
         <img class="px" src="img/pomodoro-foco.png" alt="Tela do Pomodoro em foco: anel de progresso, LENDO 10:12, o tomate com o livro e o horário de término" width="240" height="240">
-        <figcaption>Pomodoro em foco: anel de progresso, a atividade (aqui, ler), os focos do ciclo e o horário de término.</figcaption>
-      </figure>
-      <figure class="shot" role="tabpanel" data-shot="2" hidden>
-        <img class="px" src="img/atividades.png" alt="Atividades do foco: ler, estudar, programar, tarefas e desenhar" width="1260" height="260">
-        <figcaption>Atividades do foco: ler, estudar, programar, tarefas e desenhar.</figcaption>
+        <figcaption>Pomodoro em foco: anel de progresso, os focos do ciclo e o horário de término. No painel você escolhe a atividade, e o objeto dela aparece ao lado do tomate:
+          <span class="acts"><span><img class="px" src="img/icons/livro.svg" alt="">Ler</span><span><img class="px" src="img/icons/caderno.svg" alt="">Estudar</span><span><img class="px" src="img/icons/notebook.svg" alt="">Programar</span><span><img class="px" src="img/icons/prancheta.svg" alt="">Tarefas</span><span><img class="px" src="img/icons/paleta.svg" alt="">Desenhar</span></span>
+        </figcaption>
       </figure>
       <figure class="shot one" role="tabpanel" data-shot="3" hidden>
         <img class="px" src="img/jogo/tomate-7.png" alt="Mostrador Tomate com a planta dourada e 7 dias seguidos" width="240" height="240">
