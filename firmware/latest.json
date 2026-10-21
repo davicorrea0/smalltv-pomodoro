@@ -1,11 +1,29 @@
 {
-  "version": "1.9.0",
+  "version": "1.9.1",
   "date": "2026-10-21",
   "file": "smalltv-pomodoro.bin",
-  "size": 513952,
+  "size": 514016,
   "notes": {
-    "pt": ["Modo de recuperação: ligue e desligue 3 vezes seguidas se o relógio travar", "A atualização confere o arquivo antes de trocar de firmware", "Backup e restauração de ajustes, histórico e mostradores", "Firmware 14 KB menor"],
-    "en": ["Recovery mode: unplug and plug back in 3 times in a row if the clock gets stuck", "Updates check the file before switching firmware", "Backup and restore of settings, history and faces", "Firmware 14 KB smaller"],
-    "es": ["Modo de recuperación: desconecta y conecta 3 veces seguidas si el reloj se traba", "La actualización revisa el archivo antes de cambiar de firmware", "Copia y restauración de ajustes, historial y esferas", "Firmware 14 KB más pequeño"]
+    "pt": [
+      "O selo \"em uso\" do painel agora segue o idioma escolhido",
+      "Modo de recuperação: ligue e desligue 3 vezes seguidas se o relógio travar",
+      "A atualização confere o arquivo antes de trocar de firmware",
+      "Backup e restauração de ajustes, histórico e mostradores",
+      "Firmware 14 KB menor"
+    ],
+    "en": [
+      "The panel's \"in use\" tag now follows the chosen language",
+      "Recovery mode: unplug and plug back in 3 times in a row if the clock gets stuck",
+      "Updates check the file before switching firmware",
+      "Backup and restore of settings, history and faces",
+      "Firmware 14 KB smaller"
+    ],
+    "es": [
+      "La etiqueta \"en uso\" del panel ahora sigue el idioma elegido",
+      "Modo de recuperación: desconecta y conecta 3 veces seguidas si el reloj se traba",
+      "La actualización revisa el archivo antes de cambiar de firmware",
+      "Copia y restauración de ajustes, historial y esferas",
+      "Firmware 14 KB más pequeño"
+    ]
   }
 }
