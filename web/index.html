@@ -72,6 +72,33 @@ nav button.on svg{stroke:var(--ac)}
 #sheet .scr{width:min(240px,64vw);margin:4px auto 14px}#sheet h3{margin:0;text-align:center;font-size:20px}#sheet p{text-align:center;color:var(--mut);margin:6px 0 16px}
 #toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--card2);border:1px solid var(--line);padding:10px 16px;border-radius:12px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:9;white-space:nowrap}
 #toast.v{opacity:1}
+/* computador: barra lateral, colunas e folha centralizada */
+@media (min-width:900px){
+ body{padding-left:92px}
+ main,header{max-width:1180px;padding-left:32px;padding-right:32px}
+ main{padding-bottom:40px}
+ header{padding-top:20px;padding-bottom:16px}header b{font-size:22px}
+ nav{top:0;right:auto;width:92px;border-top:0;border-right:1px solid var(--line);padding:20px 0}
+ nav div{flex-direction:column;gap:6px;max-width:none}
+ nav button{flex:none;padding:12px 0;margin:0 10px;border-radius:14px;font-size:12px}
+ nav button:hover{background:var(--card2);color:var(--fg)}nav button.on{background:var(--card2)}
+ .tab.on{display:grid;column-gap:28px;align-items:start}
+ #t0.on{grid-template-columns:300px minmax(0,1fr);grid-template-rows:auto 1fr}
+ #t0 #pvbar{grid-column:1/-1}
+ #t0 .side{grid-column:1;margin-top:22px}#t0 .body{grid-column:2;grid-row:span 2}#t0 .side2{grid-column:1}
+ #t0 .side,#t0 .side2{position:sticky;top:76px}
+ .hero{flex-direction:column;align-items:stretch;text-align:center}.hero .scr{width:100%}
+ .faces{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px}
+ .face:hover .scr{border-color:#4a4a52}.face.cur:hover .scr{border-color:var(--ac)}
+ #t1.on{grid-template-columns:minmax(0,1fr) minmax(0,1fr);margin-top:22px}
+ #t1 .stats{padding:26px 18px}#t1 .stats b{font-size:34px}
+ .ring{width:300px}
+ #t2.on{display:block;margin-top:22px}.grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px}
+ #t2 .btn.p{width:auto;padding:13px 28px}
+ #t3.on{display:block;columns:2;column-gap:28px}.grp{break-inside:avoid;display:inline-block;width:100%}
+ #sheet{align-items:center}#sheet>div{max-width:440px;border-radius:22px;animation:fade .2s}
+ #toast{bottom:28px}
+}
 </style></head><body>
 <header><b>SmallTV</b><span><i id="net"></i><span id="clock">--:--</span></span></header>
 <main>
@@ -79,7 +106,10 @@ nav button.on svg{stroke:var(--ac)}
 <!-- ============ RELÓGIO ============ -->
 <section class="tab" id="t0">
  <div id="pvbar"></div>
+ <div class="side">
  <div class="card hero"><div class="scr"><img id="curimg" alt=""></div><div><small>Mostrador atual</small><b id="curname">—</b><p id="curdesc"></p></div></div>
+ </div>
+ <div class="body">
  <h2>Nativos</h2>
  <div class="faces" id="faces"></div>
  <h2>Baixados</h2>
@@ -92,6 +122,8 @@ nav button.on svg{stroke:var(--ac)}
   <label>Instalar de um arquivo<input id="pkf" type="file" multiple></label>
   <small>Escolha o .json do mostrador (e, se tiver, a prévia .png). Ele fica guardado no relógio, sem atualizar o firmware. Mais mostradores e como criar o seu: <a href="https://davicorrea0.github.io/smalltv-pomodoro/" target="_blank" rel="noopener">site do projeto</a>.</small>
  </div>
+ </div>
+ <div class="side2">
  <h2>Aparência</h2>
  <div class="card">
   <label>Cor dos números<input data-k="color" type="color"></label>
@@ -99,10 +131,12 @@ nav button.on svg{stroke:var(--ac)}
   <label>O que mostrar<select data-k="mode"><option value="0">Só o relógio</option><option value="1">Álbum de fotos</option><option value="2">Alternar relógio e álbum</option></select></label>
   <label>Segundos por item<input data-k="delay" type="number" min="3" max="255"></label>
  </div>
+ </div>
 </section>
 
 <!-- ============ FOCO ============ -->
 <section class="tab" id="t1">
+ <div class="side">
  <div class="card">
   <div class="tabs"><button data-p="work" onclick="cmd('focus')">Foco</button><button data-p="short" onclick="cmd('short')">Pausa</button><button data-p="long" onclick="cmd('long')">Pausa longa</button></div>
   <div class="ring"><svg viewBox="0 0 120 120"><circle id="trk" cx="60" cy="60" r="54"/><circle id="arc" cx="60" cy="60" r="54" stroke-dasharray="339.3" stroke-dashoffset="339.3"/></svg>
@@ -110,6 +144,8 @@ nav button.on svg{stroke:var(--ac)}
   <div class="ctl"><button class="ic" title="Zerar" onclick="cmd('reset')">&#8634;</button><button id="go" title="Iniciar/pausar (espaço)" onclick="cmd('toggle')">&#9654;</button><button class="ic" title="Pular fase" onclick="cmd('skip')">&#9197;</button></div>
  </div>
  <div class="card"><label>O que vou fazer no foco<select data-k="act"><option value="0">&#128214; Ler</option><option value="1">&#128211; Estudar</option><option value="2">&#128187; Programar</option><option value="3">&#128203; Tarefas</option><option value="4">&#127912; Desenhar</option></select></label></div>
+ </div>
+ <div class="body">
  <div class="card stats"><div><b id="today">0</b><span>focos hoje</span></div><div><b id="goal">8</b><span>meta</span></div><div><b id="mins">0</b><span>min focados</span></div></div>
  <h2>Tempos</h2>
  <div class="card">
@@ -119,6 +155,7 @@ nav button.on svg{stroke:var(--ac)}
   <label>Pausa longa a cada<input data-k="every" type="number" min="1" max="8"></label>
   <label>Meta diária de focos<input data-k="goal" type="number" min="1" max="30"></label>
   <label>Iniciar a próxima fase sozinho<input data-k="auto" type="checkbox"></label>
+ </div>
  </div>
 </section>
 
@@ -135,6 +172,7 @@ nav button.on svg{stroke:var(--ac)}
 
 <!-- ============ AJUSTES ============ -->
 <section class="tab" id="t3">
+ <div class="grp">
  <h2>Clima</h2>
  <div class="card">
   <div id="wx" hidden><b id="wt"></b><div><div id="wd"></div><small id="wm"></small></div></div>
@@ -143,6 +181,8 @@ nav button.on svg{stroke:var(--ac)}
   <label>Buscar cidade<input id="q" type="search" placeholder="ex.: Campinas"></label>
   <div id="res"></div>
  </div>
+ </div>
+ <div class="grp">
  <h2>Brilho</h2>
  <div class="card">
   <label>Brilho<input data-k="bri" type="range" min="5" max="100"></label>
@@ -151,6 +191,8 @@ nav button.on svg{stroke:var(--ac)}
   <label>Até (hora)<input data-k="nend" type="number" min="0" max="23"></label>
   <label>Brilho à noite<input data-k="nbri" type="range" min="1" max="100"></label>
  </div>
+ </div>
+ <div class="grp">
  <h2>Tela do aparelho</h2>
  <div class="card">
   <label>Ordem de cor<select data-k="bgr"><option value="0">RGB (padrão)</option><option value="1">BGR</option></select></label>
@@ -159,11 +201,15 @@ nav button.on svg{stroke:var(--ac)}
   <p><button class="btn" onclick="cmd('colortest');toast('Teste de cores por 10 s no relógio')">Testar cores no relógio</button></p>
   <small>No teste, a 1ª barra deve ser vermelha e o fundo preto. Vermelho e azul trocados: mude a ordem de cor. Fundo branco ou cores negativas: alterne "Inverter cores".</small>
  </div>
+ </div>
+ <div class="grp">
  <h2>Data e hora</h2>
  <div class="card">
   <label>Fuso (POSIX TZ)<input data-k="tz" type="text" spellcheck="false"></label>
   <small>Brasília: &lt;-03&gt;3 · Manaus: &lt;-04&gt;4 · Lisboa: WET0WEST,M3.5.0/1,M10.5.0</small>
  </div>
+ </div>
+ <div class="grp">
  <h2>Sistema</h2>
  <div class="card">
   <form id="op">
@@ -175,6 +221,7 @@ nav button.on svg{stroke:var(--ac)}
   <button class="btn" onclick="if(confirm('Apagar Wi-Fi salvo e reiniciar?'))post('/api/wifireset').then(()=>toast('Reiniciando...'))">Resetar Wi-Fi</button></div>
   <p><button class="btn" id="fmt" hidden onclick="if(confirm('Formatar a memória? Todas as fotos e GIFs serão apagados.'))post('/api/format').then(r=>r.text()).then(t=>{toast(t);files()})">Formatar memória de arquivos</button></p>
   <small>Usuário do /update: admin. Para voltar ao firmware original, envie o .bin da GeekMagic em "Atualizar firmware". Versão <span id="ver"></span> · RAM livre <span id="heap"></span></small>
+ </div>
  </div>
 </section>
 </main>
