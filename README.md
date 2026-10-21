@@ -139,4 +139,5 @@ arduino-cli compile --fqbn "esp8266:esp8266:generic:eesz=4M3M,xtal=160,ip=lm2n" 
 - Ordem de cor do painel e carregador para o erro de espaço: [giovi321/smalltv-mod](https://github.com/giovi321/smalltv-mod)
 - Fonte dos dígitos do mostrador LCD: [DSEG7 Classic](https://github.com/keshikan/DSEG) (keshikan, SIL Open Font License 1.1 — ver `licenses/DSEG-LICENSE.txt`); os contornos dos segmentos foram extraídos da fonte e são desenhados como polígonos
 - Fonte dos dígitos do mostrador Flip: [Bebas Neue](https://github.com/dharmatype/Bebas-Neue) (Dharma Type, SIL Open Font License 1.1 — ver `licenses/BebasNeue-OFL.txt`), também convertida em polígonos
+- Fontes dos pacotes `outfit` e `righteous`: [Outfit](https://github.com/Outfitio/Outfit-Fonts) (The Outfit Project Authors) e [Righteous](https://fonts.google.com/specimen/Righteous) (Astigmatic), SIL Open Font License 1.1 — ver `licenses/`; contornos dos dígitos gerados por `sim/fontgen.js`
 - Bibliotecas: Adafruit GFX e ST7789, ArduinoJson, JPEGDEC e AnimatedGIF (bitbank2)

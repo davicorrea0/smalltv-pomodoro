@@ -15,7 +15,7 @@
 
 // Bebas Neue (Dharma Type, SIL Open Font License 1.1): contornos dos dígitos 0-9 com as curvas
 // convertidas em segmentos. Unidades da fonte: célula de 400 x 720, y a partir do topo.
-static const int16_t FLIP_PT[580][2] PROGMEM = {
+static const int16_t FLIP_PT[588][2] PROGMEM = {
   {200, 720}, {162, 717}, {129, 709}, {100, 694}, {76, 674}, {57, 649}, {44, 619}, {36, 584},
   {33, 544}, {33, 544}, {33, 176}, {36, 136}, {44, 102}, {57, 71}, {76, 46}, {100, 26},
   {129, 12}, {162, 3}, {200, 0}, {200, 0}, {238, 3}, {272, 12}, {300, 26}, {324, 46},
@@ -89,9 +89,13 @@ static const int16_t FLIP_PT[580][2] PROGMEM = {
   {196, 720}, {197, 361}, {229, 353}, {248, 330}, {254, 292}, {254, 292}, {254, 168}, {248, 130},
   {229, 108}, {197, 100}, {197, 100}, {165, 108}, {146, 130}, {140, 168}, {140, 168}, {140, 292},
   {146, 330}, {165, 353}, {197, 361}, {197, 361},
+  {50, 216}, {130, 216}, {130, 296}, {50, 296}, {50, 424}, {130, 424}, {130, 504}, {50, 504},  // ':' (dois quadrados)
 };
-static const uint16_t FLIP_CEND[16] PROGMEM = {39, 58, 72, 138, 225, 237, 242, 301, 365, 384, 392, 455, 474, 497, 561, 580};  // fim (exclusivo) de cada contorno
+static const uint16_t FLIP_CEND[18] PROGMEM = {39, 58, 72, 138, 225, 237, 242, 301, 365, 384, 392, 455, 474, 497, 561, 580, 584, 588};  // fim (exclusivo) de cada contorno
 static const uint8_t FLIP_DIG[11] = {0, 2, 3, 4, 5, 7, 8, 10, 11, 14, 16};  // primeiro contorno de cada dígito
+static const uint8_t BEBAS_GLYPH[12] PROGMEM = {0, 2, 3, 4, 5, 7, 8, 10, 11, 14, 16, 18};  // + ':'
+static const uint16_t BEBAS_ADV[11] PROGMEM = {400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 180};
+const VecFont VF_BEBAS = {FLIP_PT, FLIP_CEND, BEBAS_GLYPH, BEBAS_ADV};  // pacotes de mostrador (fonts.cpp)
 static const int FLIP_CW = 400, FLIP_CH = 720;
 
 
@@ -108,7 +112,7 @@ static uint8_t flCov[FL_BW];
 static uint16_t flRowBuf[FL_BW];
 
 // Mistura inteira de cores RGB565: n/16 de b sobre a.
-static uint16_t mix16(uint16_t a, uint16_t b, int n) {
+uint16_t mix16(uint16_t a, uint16_t b, int n) {
   if (n <= 0) return a;
   if (n >= 16) return b;
   int ar = (a >> 11) & 31, ag = (a >> 5) & 63, ab = a & 31;
@@ -267,84 +271,6 @@ static void flipAnimate(int n, const int *cx, const int *oldV, const int *newV) 
     t = uiMillis ? (float)(uiMillis() - t0) : t + 20;
   }
   for (int i = 0; i < n; i++) flipStatic(cx[i], newV[i]);
-}
-
-// ---------- Bebas Neue genérico (usado pelos pacotes de mostrador) ----------
-// Só dígitos, ':' e espaço. Altura h px; largura de cada dígito = 400·h/720 (dígitos tabulares).
-static int bbAdv(char ch, int h) { return ch == ':' ? h / 4 : ch == ' ' ? 200 * h / 720 : 400 * h / 720; }
-
-int bebasWidth(const char *s, int h) {
-  int w = 0;
-  for (; *s; s++) w += bbAdv(*s, h);
-  return w;
-}
-
-static void bbSpan(uint8_t *cov, int n, int a, int b) {
-  if (a < 0) a = 0;
-  if (b > n * 16) b = n * 16;
-  if (b <= a) return;
-  int ia = a >> 4, ib = b >> 4;
-  if (ia == ib) {
-    cov[ia] += b - a;
-    return;
-  }
-  cov[ia] += 16 - (a & 15);
-  for (int i = ia + 1; i < ib; i++) cov[i] += 16;
-  if (ib < n) cov[ib] += b & 15;
-}
-
-// Texto suavizado sobre "bg", desenhado linha a linha pelo caminho rápido (blit).
-void bebasText(int x, int y, int h, const char *s, uint16_t fg, uint16_t bg) {
-  int W = bebasWidth(s, h);
-  if (W > 240) W = 240;
-  if (W <= 0 || h <= 0) return;
-  // buffers só durante o desenho (RAM fixa é escassa: o GIF do álbum precisa de ~24 KB contíguos)
-  uint8_t *cov = (uint8_t *)malloc(W * 3 + 2);  // cobertura (W) + linha RGB565 alinhada (2W)
-  if (!cov) return;
-  uint16_t *row = (uint16_t *)(cov + ((W + 1) & ~1));
-  uint16_t pal[17];
-  for (int i = 0; i <= 16; i++) pal[i] = mix16(bg, fg, i);
-  const int dot = h / 9 > 1 ? h / 9 : 2;
-  for (int r = 0; r < h; r++) {
-    memset(cov, 0, W);
-    int ox = 0;
-    for (const char *p = s; *p; ox += bbAdv(*p, h), p++) {
-      char ch = *p;
-      if (ch == ':') {  // dois-pontos: dois quadrados
-        int cx = ox + bbAdv(':', h) / 2 - dot / 2;
-        if ((r >= h * 3 / 10 && r < h * 3 / 10 + dot) || (r >= h * 7 / 10 - dot && r < h * 7 / 10))
-          for (int i = cx; i < cx + dot && i < W; i++) cov[i] = 64;
-        continue;
-      }
-      if (ch < '0' || ch > '9') continue;
-      int d = ch - '0';
-      for (int j = 0; j < 4; j++) {
-        int sy = (int)((r + (j + 0.5f) / 4) * FLIP_CH / h);
-        int xs[24], n = 0;
-        for (int c = FLIP_DIG[d]; c < FLIP_DIG[d + 1]; c++) {
-          int s0 = c ? pgm_read_word(&FLIP_CEND[c - 1]) : 0, e = pgm_read_word(&FLIP_CEND[c]);
-          for (int i = s0; i < e; i++) {
-            int k = i + 1 < e ? i + 1 : s0;
-            int ay = (int16_t)pgm_read_word(&FLIP_PT[i][1]), by = (int16_t)pgm_read_word(&FLIP_PT[k][1]);
-            if ((ay <= sy && sy < by) || (by <= sy && sy < ay)) {
-              int ax = (int16_t)pgm_read_word(&FLIP_PT[i][0]), bx = (int16_t)pgm_read_word(&FLIP_PT[k][0]);
-              if (n < 24) xs[n++] = ax * 16 + (sy - ay) * (bx - ax) * 16 / (by - ay);
-            }
-          }
-        }
-        for (int i = 1; i < n; i++)
-          for (int k = i; k > 0 && xs[k] < xs[k - 1]; k--) {
-            int t = xs[k];
-            xs[k] = xs[k - 1];
-            xs[k - 1] = t;
-          }
-        for (int k = 0; k + 1 < n; k += 2) bbSpan(cov, W, ox * 16 + xs[k] * h / FLIP_CH, ox * 16 + xs[k + 1] * h / FLIP_CH);
-      }
-    }
-    for (int i = 0; i < W; i++) row[i] = pal[(cov[i] > 64 ? 64 : cov[i]) / 4];
-    blit(x, y + r, row, W, 1);
-  }
-  free(cov);
 }
 
 static void pill(int x, int w) { G->fillRoundRect(x, 186, w, 28, 14, CARD); }

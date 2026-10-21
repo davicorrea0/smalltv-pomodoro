@@ -73,6 +73,8 @@ Toda camada aceita `"when"` para aparecer só em certas condições: `day`, `nig
 | `geo` | altura em px | dígitos e `:`; `w` muda a espessura do traço |
 | `dseg` | altura em px | 7 segmentos de LCD; `off` mostra os segmentos apagados |
 | `bebas` | altura em px | dígitos e `:` suavizados; `bg` é a cor de fundo da suavização (padrão: `bg` do pacote) |
+| `outfit` | altura em px | geométrica limpa, estilo widget (Outfit SemiBold); igual a `bebas` no resto (requer firmware 1.6.5+) |
+| `righteous` | altura em px | geométrica arredondada, estilo Bauhaus/art déco (Righteous); igual a `bebas` (requer firmware 1.6.5+) |
 
 ## Sprites
 

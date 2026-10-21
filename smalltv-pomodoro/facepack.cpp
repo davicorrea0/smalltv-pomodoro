@@ -14,12 +14,12 @@
 bool (*uiDrawImage)(const char *path, int x, int y) = nullptr;
 
 enum : uint8_t { L_RECT, L_CIRCLE, L_LINE, L_TEXT, L_SPRITE, L_MASCOT, L_WEATHER, L_BAR, L_HAND, L_IMAGE, L_TYPES };
-enum : uint8_t { F_PIXEL, F_DM, F_GEO, F_DSEG, F_BEBAS, F_FONTS };
+enum : uint8_t { F_PIXEL, F_DM, F_GEO, F_DSEG, F_BEBAS, F_OUTFIT, F_RIGHTEOUS, F_FONTS };
 enum : uint8_t { A_LEFT, A_CENTER, A_RIGHT };
 enum : uint8_t { W_ALWAYS, W_DAY, W_NIGHT, W_RAIN, W_DRY, W_WX, W_NOWX, W_GOAL, W_NOGOAL, W_WHENS };
 enum : uint8_t { V_SEC, V_MIN, V_HOUR, V_FOCOS, V_HUM, V_VARS };
 static const char *const TYPES[L_TYPES] = {"rect", "circle", "line", "text", "sprite", "mascot", "weather", "bar", "hand", "image"};
-static const char *const FONTS[F_FONTS] = {"pixel", "dm", "geo", "dseg", "bebas"};
+static const char *const FONTS[F_FONTS] = {"pixel", "dm", "geo", "dseg", "bebas", "outfit", "righteous"};
 static const char *const ALIGNS[3] = {"left", "center", "right"};
 static const char *const WHENS[W_WHENS] = {"always", "day", "night", "rain", "dry", "weather", "noweather", "goal", "nogoal"};
 static const char *const VARS[V_VARS] = {"sec", "min", "hour", "focos", "hum"};
@@ -368,7 +368,7 @@ static float handAngle(const Layer &L, const UiState &s) {
 
 static uint16_t col(int32_t c, const UiState &s) { return c == C_ACCENT ? s.accent : (uint16_t)c; }
 
-// ---------- texto nas 5 fontes ----------
+// ---------- texto nas 7 fontes ----------
 // Percorre o texto; desenha se draw = true. Devolve a largura.
 static int runText(const Layer &L, const char *str, int x, int y, bool draw, uint16_t fg, int32_t c2) {
   const int sz = L.size, x0 = x;
@@ -433,10 +433,13 @@ static int runText(const Layer &L, const char *str, int x, int y, bool draw, uin
         } else x += adv;
         break;
       }
-      case F_BEBAS: {
+      case F_BEBAS:
+      case F_OUTFIT:
+      case F_RIGHTEOUS: {
+        const VecFont &vf = L.font == F_BEBAS ? VF_BEBAS : L.font == F_OUTFIT ? VF_OUTFIT : VF_RIGHTEOUS;
         char one[2] = {(char)ch, 0};
-        int w = bebasWidth(one, sz);
-        if (draw && (ch == ':' || (ch >= '0' && ch <= '9'))) bebasText(x, y, sz, one, fg, c2 == C_NONE ? bgColor : (uint16_t)c2);
+        int w = vecWidth(vf, one, sz);
+        if (draw && (ch == ':' || (ch >= '0' && ch <= '9'))) vecText(vf, x, y, sz, one, fg, c2 == C_NONE ? bgColor : (uint16_t)c2);
         x += w;
         break;
       }
