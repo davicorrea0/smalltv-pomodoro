@@ -1,156 +1,192 @@
 # SmallTV Pomodoro 🍅
 
-Firmware alternativo para o **GeekMagic SmallTV Ultra** (ESP8266, tela ST7789 240×240): relógio com 8 mostradores, Pomodoro, clima, álbum de fotos/GIFs e um mascote tomate em pixel art.
+Alternative firmware for the **GeekMagic SmallTV Ultra** (ESP8266, 240×240 ST7789 screen): a clock with 8 faces, a Pomodoro timer, weather, a photo/GIF album and a pixel art tomato mascot that grows a plant as you keep your focus streak.
 
-🌐 **Site do projeto:** [davicorrea0.github.io/smalltv-pomodoro](https://davicorrea0.github.io/smalltv-pomodoro/) — o que muda no relógio, como instalar e a [galeria de mostradores](https://davicorrea0.github.io/smalltv-pomodoro/galeria.html).
+🌐 **Project website:** [davicorrea0.github.io/smalltv-pomodoro](https://davicorrea0.github.io/smalltv-pomodoro/): what changes on the clock, how to install it, and the [face gallery](https://davicorrea0.github.io/smalltv-pomodoro/galeria.html).
 
-![Os 8 mostradores](docs/mostradores.png)
+![The 8 built-in clock faces](docs/clock-faces.png)
 
-<sub>Imagens geradas pelo simulador do projeto, que compila o mesmo código de desenho do firmware.</sub>
+<sub>Screens are rendered by the project's simulator, which compiles the same drawing code as the firmware.</sub>
 
-## Funções
+## Features
 
-- **8 mostradores**: Matriz, Tomate (cena em pixel art que muda com a hora e o clima; o tomate abre o guarda-chuva na chuva, põe cachecol no frio, óculos escuros no calor e comemora a meta do dia), Analógico, Clima, Neon, Flip (com animação de virada de verdade), LCD retrô e Palavras (hora por extenso em português, inglês ou espanhol)
-- **Pomodoro** com anel de progresso, horário de término e o tomate mudando de expressão (focado, relaxando com um café, dormindo quando pausado); você escolhe no painel o que vai fazer no foco (ler, estudar, programar, tarefas ou desenhar) e a tela mostra a atividade e o objeto dela ao lado do tomate e pulando de alegria quando uma fase termina; contador de focos do dia com meta diária
-- **Sequência e conquistas**: o relógio guarda um ano de focos por dia; a planta ao lado do tomate cresce a cada dia seguido batendo a meta (até o tomate dourado, com 7 dias) e uma chama mostra a sequência. No painel: horta com o ano inteiro, 10 conquistas e um cartão em pixel art do dia para compartilhar (no celular abre o menu de compartilhar)
-- **Aviso de versão nova**: o painel confere o site e, se houver firmware novo, mostra o que mudou e atualiza com um toque
-- **Clima** via [Open-Meteo](https://open-meteo.com/) (sem chave de API), com busca de cidade pelo painel
-- **Álbum de fotos e GIFs**: lê os arquivos já gravados pelo firmware original; envio pelo painel com recorte automático para 240×240
-- **Brilho noturno** por horário
-- **Painel web** no IP mostrado na tela, em 4 abas (Relógio, Foco, Fotos, Ajustes): galeria dos mostradores com prévia ("Ver no relógio" mostra o mostrador por 15 s sem salvar), controle do Pomodoro, fotos e ajustes que salvam sozinhos
-- **Português, inglês e espanhol**: o idioma escolhido em Ajustes vale para o painel e para os textos da tela (datas, clima, Pomodoro, mostrador Palavras)
-- **Ajustes do painel** (ordem de cor RGB/BGR, inversão, rotação 180°) com tela de teste de cores, porque isso varia entre unidades
-- **Atualização OTA** em `/update` (usuário `admin`, senha opcional), que também serve para voltar ao firmware original. O relógio confere o arquivo antes de trocar de firmware (cabeçalho do ESP8266, tamanho e CRC gravados na imagem): arquivo truncado, corrompido ou de outro aparelho é recusado e o firmware atual continua
-- **Modo de recuperação** sem botão: ligar e desligar o relógio 3 vezes seguidas (ou um firmware que trava logo ao ligar) abre a rede `SmallTV-Recuperacao` com atualização sem senha, ajustes de fábrica, esquecer o Wi-Fi e baixar o histórico
-- **Backup** em *Ajustes → Sistema*: um `.json` com os ajustes, o histórico de focos e a lista de mostradores baixados (sem senhas nem Wi-Fi); a restauração reinstala da galeria os mostradores que faltarem
+- **8 clock faces:** Matrix, Tomato (a pixel art scene that changes with the time and weather: the tomato opens an umbrella in the rain, wears a scarf in the cold and sunglasses in the heat, and cheers when you hit your daily goal), Analog, Weather, Neon, Flip (with a real flip animation), Retro LCD, and Words (the time spelled out in English, Portuguese or Spanish).
+- **Pomodoro** with a progress ring, the end time, and the tomato changing expression (focused, relaxing with a coffee, asleep when paused). Pick what you will do while focusing (read, study, code, tasks or draw) and the screen shows that activity next to the tomato, which jumps for joy when a phase ends. A daily session counter with a goal.
+- **Streak and achievements:** the clock keeps a year of daily focus sessions. A plant next to the tomato grows with every day in a row you hit your goal, up to a golden tomato at 7 days, and a flame shows your streak. In the web panel: a garden of the whole year, 10 achievements, and a pixel art card of your day to share (on a phone it opens the share menu).
+- **Downloadable faces:** small `.json` packages installed from the panel without updating the firmware. 24 faces in the online gallery, including Apple Watch and Mi Band inspired ones.
+- **Weather** from [Open-Meteo](https://open-meteo.com/) (no API key), with city search in the panel.
+- **Photo and GIF album:** reads the files already saved by the original firmware; uploads from the panel are cropped to 240×240 in the browser.
+- **Night brightness** on a schedule.
+- **English, Portuguese and Spanish:** the language you choose applies to both the panel and the clock's screen (dates, weather, Pomodoro, the Words face).
+- **Web panel** at the IP shown on the screen, with 4 tabs (Clock, Focus, Photos, Settings). It has its own layouts for phones and computers.
+- **One-tap updates:** the panel checks the website for new firmware, shows what changed and installs it with one tap.
+- **Safe updates:** before switching firmware, the clock checks the file's ESP8266 header, size and the CRC stored in the image, and that it fits. A truncated, corrupted or wrong file is refused and the current firmware keeps running. The original GeekMagic firmware is still accepted, so you can always go back.
+- **Recovery mode without a button:** unplug and plug the clock back in 3 times in a row (or a firmware that crashes right after boot) and it opens its own Wi-Fi network for a password-free update, factory settings, forgetting Wi-Fi or downloading your focus history.
+- **Backup and restore** of settings, focus history and downloaded faces in a `.json` file (no passwords or Wi-Fi details).
+- **Panel adjustments** for colour order (RGB/BGR), inversion and 180° rotation, with a colour test screen, because these vary between units.
 
-![Cena Tomate: dia, noite, chuva, neve, calor e meta batida](docs/tomate.png)
+### Tomato scene
 
-![Virada do mostrador Flip, quadro a quadro](docs/flip.png)
+![Tomato scene: day, night, rain, snow, heat and goal reached](docs/tomato-scene.png)
 
-![Pomodoro (foco, pausado, fim de fase) e tela de configuração](docs/pomodoro.png)
+### Streak: the plant grows with every day you hit your goal
 
-![Atividades do foco: ler, estudar, programar, tarefas e desenhar](docs/atividades.png)
+![Plant stages from seed to golden tomato](docs/streak.png)
 
-## Instalar
-
-1. Baixe o `.bin` mais recente em [Releases](../../releases).
-2. No painel web do firmware original, abra **Firmware Upgrade** e envie o arquivo.
-   - Se aparecer `ERROR[4]: Not Enough Space`: o espaço de atualização de fábrica varia entre unidades. Envie antes o carregador [`smalltv-mod-loader.bin`](https://github.com/giovi321/smalltv-mod/releases/tag/v2.8.2) (giovi321/smalltv-mod v2.8.2), conecte-se à rede aberta `SmallTV-Loader` e envie este firmware em `http://192.168.4.1/update`.
-3. Se o relógio não conectar sozinho na sua rede, conecte-se à rede `SmallTV-Pomodoro` e abra `http://192.168.4.1` (só redes **2,4 GHz**).
-4. Abra o IP que aparece na tela para usar o painel. Atualizações seguintes: *Sistema → Atualizar firmware*.
-
-### Se algo der errado
-
-Se o relógio travar ou ficar reiniciando (por exemplo, depois de uma atualização), **tire da tomada e ligue de novo 3 vezes seguidas, deixando ligado menos de 30 segundos em cada vez**. Na terceira, ele abre o **modo de recuperação**: conecte-se à rede `SmallTV-Recuperacao` e abra `http://192.168.4.1` para enviar um firmware (sem senha), voltar aos ajustes de fábrica, esquecer o Wi-Fi ou baixar o histórico de focos. *Reiniciar normalmente* volta ao relógio.
-
-Para voltar ao firmware original, envie o `.bin` da GeekMagic ([GeekMagicClock/smalltv-ultra](https://github.com/GeekMagicClock/smalltv-ultra)) em *Sistema → Atualizar firmware*.
-
-> ⚠️ Use só no **SmallTV Ultra** (ESP8266). Não grave no SmallTV Pro (ESP32) nem em outros modelos.
-
-## Estrutura
-
-| Pasta | Conteúdo |
+| Share card of your day | Panel on a phone |
 |---|---|
-| `smalltv-pomodoro/` | Firmware (Arduino/ESP8266). `main.cpp`: Wi-Fi, clima, álbum, Pomodoro e servidor web. `ui.cpp` + `ui_kit.h`: núcleo e kit de desenho. `face_*.cpp`: um arquivo por mostrador, registrados em `faces_list.h`. `assets.h` é gerado a partir de `assets/` |
-| `web/` | Painel web: edite `web/index.html`; `web/build.js` gera o `web.h` comprimido (gzip) |
-| `assets/` | Sprites em pixel art (um `.txt` por sprite), paletas e o gerador `gerar.js` |
-| `sim/` | Simulador das telas no PC; `sim/faces.js` gera as prévias da galeria em `docs/faces/` (o site as publica em `img/faces/` e o painel carrega de lá) |
-| `docs/` | Imagens do README |
+| ![Pixel art share card](docs/share-card.png) | ![Focus tab on a phone: streak, garden and achievements](docs/panel-focus-phone.png) |
 
-## Biblioteca de assets
+### Pomodoro
 
-Todos os desenhos em pixel art (o tomate e suas expressões, café, livro, caderno, notebook, prancheta, paleta de pintor, sol, lua, nuvens e a animação de fim de Pomodoro) são arquivos de texto em `assets/`, um por sprite. O `assets/gerar.js` converte todos em `smalltv-pomodoro/assets.h`: cada sprite vira `SPR_<NOME>` na flash (4 bits por pixel, ~130 bytes um sprite 16×16), sem gastar RAM.
+![Pomodoro: focus, paused, long break and phase done](docs/pomodoro.png)
 
-![Folha de prévia dos assets](docs/assets.png)
+![Focus activities: read, study, code, tasks and draw](docs/activities.png)
 
-### Adicionar um asset
+### Flip animation
 
-1. Crie `assets/<nome>.txt` (só `a-z`, `0-9` e `_`), por exemplo `assets/regador.txt`:
+![Flip face, frame by frame](docs/flip.png)
+
+### Three languages
+
+![The Words and Weather faces in Portuguese, English and Spanish](docs/languages.png)
+
+## Web panel
+
+Open the IP shown on the clock in any browser on the same network. Settings save as you change them.
+
+![Panel on a computer: Clock tab](docs/panel-desktop.png)
+
+![Panel on a computer: Focus tab](docs/panel-focus-desktop.png)
+
+<img src="docs/panel-phone.png" width="300" alt="Panel on a phone: Clock tab">
+
+## Install
+
+1. Download the latest `.bin` from [Releases](../../releases).
+2. In the original firmware's web page, open **Firmware Upgrade** and upload the file.
+   - If you get `ERROR[4]: Not Enough Space`: the factory update space varies between units. First upload the loader [`smalltv-mod-loader.bin`](https://github.com/giovi321/smalltv-mod/releases/tag/v2.8.2) (giovi321/smalltv-mod v2.8.2), join the open network `SmallTV-Loader` and upload this firmware at `http://192.168.4.1/update`.
+3. If the clock does not join your network by itself, connect to the `SmallTV-Pomodoro` network and open `http://192.168.4.1` (**2.4 GHz** networks only).
+4. Open the IP shown on the screen to use the panel. Later updates: the panel offers them with one tap, or use *Settings → Update firmware*.
+
+### If something goes wrong
+
+If the clock freezes or keeps restarting (for example after an update), **unplug it and plug it back in 3 times in a row, leaving it on for less than 30 seconds each time**. On the third time it opens **recovery mode**: join the `SmallTV-Recuperacao` network and open `http://192.168.4.1` to upload a firmware (no password needed), reset the settings to defaults, forget the Wi-Fi or download your focus history. *Restart normally* goes back to the clock.
+
+To go back to the original firmware, upload GeekMagic's `.bin` ([GeekMagicClock/smalltv-ultra](https://github.com/GeekMagicClock/smalltv-ultra)) in *Settings → Update firmware*.
+
+> ⚠️ Only for the **SmallTV Ultra** (ESP8266). Do not flash it on the SmallTV Pro (ESP32) or other models.
+
+## Repository layout
+
+| Folder | Contents |
+|---|---|
+| `smalltv-pomodoro/` | Firmware (Arduino/ESP8266). `main.cpp`: Wi-Fi, weather, album, Pomodoro, history, updates, recovery and the web server. `ui.cpp` + `ui_kit.h`: the drawing core and kit. `face_*.cpp`: one file per face, registered in `faces_list.h`. `facepack.cpp`: the engine for downloadable faces. `fonts.cpp`: anti-aliased vector fonts. `assets.h` is generated from `assets/` |
+| `web/` | Web panel: edit `web/index.html`; `web/build.js` minifies it and generates the gzip-compressed `web.h` |
+| `assets/` | Pixel art sprites (one `.txt` per sprite), palettes and the `gerar.js` generator |
+| `faces/` | Downloadable face packages (`.json`), their previews and `catalog.json` |
+| `sim/` | Screen simulator for the PC, redraw tests, and the face preview and font generators |
+| `docs/` | README images and the guides for face packages and built-in faces |
+
+## Asset library
+
+Every pixel art drawing (the tomato and its expressions, the plant stages, the flame, coffee, book, notebook, laptop, clipboard, paint palette, sun, moon, clouds and the end-of-Pomodoro animation) is a text file in `assets/`, one per sprite. `assets/gerar.js` turns them all into `smalltv-pomodoro/assets.h`: each sprite becomes `SPR_<NAME>` in flash (4 bits per pixel, ~130 bytes for a 16×16 sprite), using no RAM.
+
+![Asset preview sheet](docs/assets.png)
+
+### Adding an asset
+
+1. Create `assets/<name>.txt` (only `a-z`, `0-9` and `_`), for example `assets/regador.txt`:
 
    ```
-   # Regador: aparece quando ...
-   cor o #2a3a4a   # contorno
-   cor B #4f8dff   # corpo
-   cor b #9cc0ff   # brilho
-   cor A #5aaaff   # água
+   # Watering can: shown when ...
+   cor o #2a3a4a   # outline
+   cor B #4f8dff   # body
+   cor b #9cc0ff   # highlight
+   cor A #5aaaff   # water
 
    ..........A.....
    ...ooooo...A....
    ..oBBbBBo.A.....
-   (mais linhas, até completar o desenho)
+   (more rows, until the drawing is complete)
    ```
 
-   - cada linha de pixels tem o mesmo comprimento; `.` é transparente;
-   - `cor <caractere> #rrggbb` define as cores (até 15 por sprite); `paleta tomate` reaproveita as cores de `assets/paletas/tomate.txt`;
-   - animação: separe os quadros com uma linha `quadro` e diga a duração de cada um com `ms 160`;
-   - `fundo #rrggbb` só muda o fundo do sprite na folha de prévia.
-2. Rode `sim/build.sh` (ou só `node assets/gerar.js`). Erros apontam arquivo e linha.
-3. Desenhe onde quiser em `ui.cpp`:
+   - every pixel row has the same length; `.` is transparent;
+   - `cor <character> #rrggbb` defines a colour (up to 15 per sprite); `paleta tomate` reuses the colours in `assets/paletas/tomate.txt`;
+   - animation: separate frames with a `quadro` line and set each frame's duration with `ms 160`;
+   - `fundo #rrggbb` only changes the sprite's background on the preview sheet.
+
+   (The keywords are Portuguese: `cor` = colour, `paleta` = palette, `quadro` = frame, `fundo` = background.)
+2. Run `sim/build.sh` (or just `node assets/gerar.js`). Errors point to the file and line.
+3. Draw it anywhere in `ui.cpp`:
 
    ```cpp
-   uiSprite(&SPR_REGADOR, x, y);                // escala 1, transparente
-   uiSprite(&SPR_REGADOR, x, y, 3, 0, BG);      // escala 3; transparente pintado com BG
-   uiSprite(&SPR_TOMATE_FIM, x, y, 2, uiSpriteFrame(&SPR_TOMATE_FIM, s.ms), BG);  // animação
+   uiSprite(&SPR_REGADOR, x, y);                // scale 1, transparent
+   uiSprite(&SPR_REGADOR, x, y, 3, 0, BG);      // scale 3; transparent pixels painted with BG
+   uiSprite(&SPR_TOMATE_FIM, x, y, 2, uiSpriteFrame(&SPR_TOMATE_FIM, s.ms), BG);  // animation
    ```
 
-   Passar a cor de fundo repinta o sprite por cima do anterior sem limpar a área antes (sem piscar).
+   Passing a background colour repaints the sprite over the previous one without clearing the area first (no flicker).
 
-Para mudar um desenho existente, basta editar o `.txt`: o código não muda. A folha acima é gerada pelo simulador em `sim/out/assets.png`.
+To change an existing drawing, just edit its `.txt`: no code changes. The sheet above is generated by the simulator in `sim/out/assets.png`.
 
-## Mostradores instaláveis (sem atualizar o firmware)
+## Downloadable faces (no firmware update)
 
-Além dos 8 mostradores embutidos, o relógio aceita **pacotes**: arquivos `.json` de poucos KB que descrevem o mostrador em camadas (textos com variáveis como `{HH}:{MM}` e `{TEMP}`, as fontes do projeto, sprites em pixel art, ícone do clima, barras e ponteiros). Instale pelo painel em *Relógio → Mais mostradores*: pela galeria online ou escolhendo o arquivo. Formato e exemplos: **[docs/PACOTES.md](docs/PACOTES.md)** e a pasta [`faces/`](faces).
+Besides the 8 built-in faces, the clock accepts **packages**: `.json` files of a few KB that describe a face in layers (text with variables such as `{HH}:{MM}`, `{TEMP}` and `{STREAK}`, the project's fonts, pixel art sprites, the weather icon, bars, progress rings, dial ticks, hands and the streak plant). Install them from the panel under *Clock → More faces*, from the online gallery or by picking the file. Format and examples (in Portuguese): **[docs/PACOTES.md](docs/PACOTES.md)** and the [`faces/`](faces) folder.
 
-![Pacotes de exemplo](docs/pacotes.png)
+![Some of the downloadable faces in the gallery](docs/packages.png)
 
-## Criar um mostrador embutido
+## Creating a built-in face
 
-Um arquivo `face_<nome>.cpp` e uma linha em `faces_list.h`: a galeria do painel, a prévia e os testes saem sozinhos. Passo a passo, modelo e o que o kit oferece: **[docs/CRIAR_MOSTRADOR.md](docs/CRIAR_MOSTRADOR.md)**.
+One `face_<name>.cpp` file and one line in `faces_list.h`: the panel gallery, the preview and the tests follow automatically. Step by step guide, template and what the drawing kit offers (in Portuguese): **[docs/CRIAR_MOSTRADOR.md](docs/CRIAR_MOSTRADOR.md)**.
 
-## Simulador das telas
+## Screen simulator
 
-`sim/` compila o mesmo `ui.cpp` do firmware no PC (com [Zig](https://ziglang.org/)) e grava cada tela em PNG, além da folha de prévia dos assets. Também roda um teste de redesenho: simula minutos passando, clima mudando e focos concluídos, e compara o resultado com um desenho feito do zero. Qualquer pixel diferente indica sobra de desenho na tela.
+`sim/` compiles the firmware's `ui.cpp`, faces and package engine on the PC (with [Zig](https://ziglang.org/)) and saves each screen as a PNG, plus the asset preview sheet. It also runs a redraw test: it simulates minutes passing, weather changing and sessions being completed, and compares the result with a drawing made from scratch. Any different pixel means something was left behind on the screen. `SIM_LANG=1` (English) or `SIM_LANG=2` (Spanish) renders the screens in another language.
 
 ```
 sim/build.sh
 ```
 
-## Compilar
+## Building
 
 ```
 arduino-cli core install esp8266:esp8266 --additional-urls https://arduino.esp8266.com/stable/package_esp8266com_index.json
 arduino-cli lib install "Adafruit GFX Library" "Adafruit ST7735 and ST7789 Library" "ArduinoJson" "JPEGDEC" "AnimatedGIF"
-sim/build.sh   # gera assets.h e web.h, confere o código e testa as telas no simulador
-./compilar.sh  # compila em build/ e confere o tamanho
+sim/build.sh   # generates assets.h and web.h, checks the code and tests the screens in the simulator
+./compilar.sh  # builds into build/ and checks the size
 ```
 
-`compilar.sh` compila sem o printf/scanf de números decimais da newlib (`--build-property build.float=`, ~7 KB): o firmware não usa `%f` nem lê decimais com ela, e o `sim/build.sh` recusa código que use.
+`compilar.sh` builds without newlib's decimal number printf/scanf (`--build-property build.float=`, ~7 KB): the firmware never uses `%f` or parses decimals with it, and `sim/build.sh` rejects code that does.
 
-## Detalhes técnicos
+## Technical details
 
-- **Layout da flash 4M3M**, o mesmo do firmware original (constantes do LittleFS encontradas no binário V9.0.50, offset `0x14d00`). Assim as fotos e GIFs existentes são lidos. O LittleFS é montado **sem formatação automática**: se não montar, nada é apagado.
-- **Tamanho do binário**: para conseguir voltar ao firmware original pelo painel, este firmware precisa deixar espaço para o maior binário original (V9.0.31: 509.792 bytes) na atualização OTA: no máximo 532.480 bytes (hoje ~513 KB; o `compilar.sh` confere). As prévias dos mostradores embutidos ficam no site, não na flash.
-- **Painel comprimido**: o HTML vai com gzip na flash (~24 KB → ~9 KB) e a pilha de rede usa a variante leve do lwIP (`ip=lm2n`, sem recursos que o relógio não usa, como PPP e roteamento)
-- **Fontes desenhadas por código**: os dígitos (pixel art 5×7, fonte vetorial "Geo" e os segmentos do DSEG7 como polígonos) não usam bitmaps na flash.
-- **Sprites** em `PROGMEM` com 4 bits por pixel, desenhados juntando pixels vizinhos iguais em retângulos (menos chamadas SPI).
-- **Textos traduzidos na flash**: `tr("pt", "en", "es")` guarda os três textos com `PSTR` e copia só o do idioma atual para um buffer pequeno, sem gastar a RAM que o GIF precisa.
-- **RAM**: o decodificador de GIF precisa de ~24 KB contíguos e o de JPEG de ~18 KB. Se faltar memória, a tela mostra um aviso em vez de travar.
+- **4M3M flash layout**, the same as the original firmware (LittleFS constants found in the V9.0.50 binary at offset `0x14d00`), so existing photos and GIFs are read. LittleFS is mounted **without auto-format**: if it fails to mount, nothing is erased.
+- **Binary size:** to be able to go back to the original firmware from the panel, this firmware must leave room for the largest original binary (V9.0.31: 509,792 bytes) during the OTA update, which means at most 532,480 bytes (about 514 KB today; `compilar.sh` checks it). The previews of the built-in faces live on the website, not in flash.
+- **Update checks:** the elf2bin tool writes the image size and a CRC32 into every ESP8266 Arduino image (offsets 4112 and 4116); all original V9.0.x firmwares have them too. `/update` checks them while the file arrives and only switches firmware if everything matches.
+- **Recovery:** a boot counter stored in EEPROM after the settings (it survives power loss, unlike RTC memory). Three boots shorter than 30 s in a row open recovery mode; staying on for 30 s, or a deliberate restart, resets it.
+- **Focus history:** one count per day in a 371-day ring (`/stats.bin` on LittleFS, ~380 bytes). Only the header stays in RAM.
+- **Compressed panel:** the HTML is minified and gzipped in flash (~70 KB → ~23 KB), and the network stack uses the light lwIP variant (`ip=lm2n`, without features the clock does not use, such as PPP and routing).
+- **Fonts drawn by code:** the digits (5×7 pixel art, the "Geo" vector font, the DSEG7 segments, and Bebas Neue, Outfit and Righteous outlines) are polygons rather than bitmaps.
+- **Sprites** in `PROGMEM` at 4 bits per pixel, drawn by merging neighbouring pixels of the same colour into rectangles (fewer SPI calls).
+- **Translated text in flash:** `tr("pt", "en", "es")` keeps the three strings in flash with `PSTR` and copies only the current language into a small buffer, leaving the RAM the GIF decoder needs.
+- **RAM:** the GIF decoder needs ~24 KB of contiguous memory and the JPEG decoder ~18 KB. If memory runs short, the screen shows a notice instead of crashing.
 
-### Pinagem
+### Pinout
 
-| Função | GPIO |
+| Function | GPIO |
 |---|---|
 | SPI CLK / MOSI | 14 / 13 |
 | Display DC | 0 |
 | Display RST | 2 |
-| Backlight (PWM invertido) | 5 |
+| Backlight (inverted PWM) | 5 |
 
-## Créditos
+## Credits
 
-- Pinagem: [ESPHome devices — GeekMagic Ultra](https://devices.esphome.io/devices/geekmagic-ultra/)
-- Ordem de cor do painel e carregador para o erro de espaço: [giovi321/smalltv-mod](https://github.com/giovi321/smalltv-mod)
-- Fonte dos dígitos do mostrador LCD: [DSEG7 Classic](https://github.com/keshikan/DSEG) (keshikan, SIL Open Font License 1.1 — ver `licenses/DSEG-LICENSE.txt`); os contornos dos segmentos foram extraídos da fonte e são desenhados como polígonos
-- Fonte dos dígitos do mostrador Flip: [Bebas Neue](https://github.com/dharmatype/Bebas-Neue) (Dharma Type, SIL Open Font License 1.1 — ver `licenses/BebasNeue-OFL.txt`), também convertida em polígonos
-- Fontes dos pacotes `outfit` e `righteous`: [Outfit](https://github.com/Outfitio/Outfit-Fonts) (The Outfit Project Authors) e [Righteous](https://fonts.google.com/specimen/Righteous) (Astigmatic), SIL Open Font License 1.1 — ver `licenses/`; contornos dos dígitos gerados por `sim/fontgen.js`
-- Bibliotecas: Adafruit GFX e ST7789, ArduinoJson, JPEGDEC e AnimatedGIF (bitbank2)
+- Pinout: [ESPHome devices — GeekMagic Ultra](https://devices.esphome.io/devices/geekmagic-ultra/)
+- Panel colour order and the loader for the space error: [giovi321/smalltv-mod](https://github.com/giovi321/smalltv-mod)
+- Ideas for recovery mode, update checks, backup and flash savings: [michaeldale/smartclock-oss](https://github.com/michaeldale/smartclock-oss) (reimplemented; no code copied)
+- LCD face digits: [DSEG7 Classic](https://github.com/keshikan/DSEG) (keshikan, SIL Open Font License 1.1 — see `licenses/DSEG-LICENSE.txt`); the segment outlines were extracted from the font and are drawn as polygons
+- Flip face digits: [Bebas Neue](https://github.com/dharmatype/Bebas-Neue) (Dharma Type, SIL Open Font License 1.1 — see `licenses/BebasNeue-OFL.txt`), also converted to polygons
+- `outfit` and `righteous` package fonts: [Outfit](https://github.com/Outfitio/Outfit-Fonts) (The Outfit Project Authors) and [Righteous](https://fonts.google.com/specimen/Righteous) (Astigmatic), SIL Open Font License 1.1 — see `licenses/`; digit outlines generated by `sim/fontgen.js`
+- Libraries: Adafruit GFX and ST7789, ArduinoJson, JPEGDEC and AnimatedGIF (bitbank2)

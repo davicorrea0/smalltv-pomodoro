@@ -27,7 +27,7 @@
 #include "web.h"
 #include "facepack.h"
 
-#define FW_VERSION "1.9.0"
+#define FW_VERSION "1.9.1"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
