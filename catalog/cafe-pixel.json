@@ -1,0 +1,140 @@
+{
+  "format": 1,
+  "id": "cafe-pixel",
+  "name": "Café Pixel",
+  "author": "davicorrea0",
+  "desc": "Uma mesa de café em pixel art: janela que muda com o dia e o tomate com humor do clima",
+  "bg": "#2b1d16",
+  "sprites": {
+    "xicara": {
+      "pal": {
+        "o": "#3a2a20",
+        "w": "#f5f5f5",
+        "s": "#cfcfcf",
+        "c": "#6f4e37",
+        "v": "#e8e8e8"
+      },
+      "px": [
+        "....v...v.......",
+        "...v...v........",
+        "....v...v.......",
+        "................",
+        ".oooooooooooo...",
+        ".occcccccccco...",
+        ".owwwwwwwwwwooo.",
+        ".owwwwwwwwwwo.o.",
+        ".owwwwwwwwwwo.o.",
+        ".owwwwwwwwwwooo.",
+        ".owwwwwwwwwso...",
+        "..owwwwwwwso....",
+        "...oooooooo.....",
+        "oooooooooooooo..",
+        ".osssssssssso...",
+        "..oooooooooo...."
+      ]
+    }
+  },
+  "layers": [
+    {
+      "type": "rect",
+      "x": 16,
+      "y": 14,
+      "w": 208,
+      "h": 96,
+      "r": 10,
+      "color": "#8ecae6",
+      "when": "day"
+    },
+    {
+      "type": "rect",
+      "x": 16,
+      "y": 14,
+      "w": 208,
+      "h": 96,
+      "r": 10,
+      "color": "#1d2b53",
+      "when": "night"
+    },
+    {
+      "type": "rect",
+      "x": 16,
+      "y": 14,
+      "w": 208,
+      "h": 96,
+      "r": 10,
+      "color": "none",
+      "stroke": "#5c3d2e"
+    },
+    {
+      "type": "text",
+      "x": 120,
+      "y": 36,
+      "font": "dm",
+      "size": 6,
+      "align": "center",
+      "color": "#fefae0",
+      "text": "{HH}:{MM}"
+    },
+    {
+      "type": "text",
+      "x": 120,
+      "y": 88,
+      "font": "pixel",
+      "size": 1,
+      "align": "center",
+      "color": "#fefae0",
+      "text": "{WD} {DD} {MON}"
+    },
+    {
+      "type": "rect",
+      "x": 0,
+      "y": 164,
+      "w": 240,
+      "h": 76,
+      "color": "#6b4226"
+    },
+    {
+      "type": "rect",
+      "x": 0,
+      "y": 164,
+      "w": 240,
+      "h": 6,
+      "color": "#8b5a2b"
+    },
+    {
+      "type": "sprite",
+      "x": 30,
+      "y": 118,
+      "size": 3,
+      "sprite": "xicara"
+    },
+    {
+      "type": "mascot",
+      "x": 156,
+      "y": 118,
+      "size": 3,
+      "mood": "auto"
+    },
+    {
+      "type": "text",
+      "x": 120,
+      "y": 184,
+      "font": "pixel",
+      "size": 2,
+      "align": "center",
+      "color": "#fefae0",
+      "text": "{FOCOS}/{META} focos"
+    },
+    {
+      "type": "text",
+      "x": 120,
+      "y": 212,
+      "font": "pixel",
+      "size": 1,
+      "align": "center",
+      "color": "#d4a373",
+      "text": "{TEMP}° {WX}",
+      "when": "weather"
+    }
+  ]
+}

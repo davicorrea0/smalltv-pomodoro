@@ -121,6 +121,39 @@
       "file": "mono.json",
       "preview": "mono.png",
       "size": 1719
+    },
+    {
+      "id": "bebas-gigante",
+      "name": "Bebas Gigante",
+      "author": "davicorrea0",
+      "desc": "A hora enorme em Bebas Neue, com clima e barra de focos",
+      "name_en": "Giant Bebas",
+      "desc_en": "The time huge in Bebas Neue, with weather and a focus bar",
+      "file": "bebas-gigante.json",
+      "preview": "bebas-gigante.png",
+      "size": 1755
+    },
+    {
+      "id": "cafe-pixel",
+      "name": "Café Pixel",
+      "author": "davicorrea0",
+      "desc": "Uma mesa de café em pixel art: janela que muda com o dia e o tomate com humor do clima",
+      "name_en": "Pixel Café",
+      "desc_en": "A pixel art café table: a window that follows the day and a tomato that reacts to the weather",
+      "file": "cafe-pixel.json",
+      "preview": "cafe-pixel.png",
+      "size": 2595
+    },
+    {
+      "id": "radar-analogico",
+      "name": "Radar",
+      "author": "davicorrea0",
+      "desc": "Analógico azul-noite com ponteiro de segundos",
+      "name_en": "Radar",
+      "desc_en": "Night-blue analog with a seconds hand",
+      "file": "radar-analogico.json",
+      "preview": "radar-analogico.png",
+      "size": 3146
     }
   ]
 }

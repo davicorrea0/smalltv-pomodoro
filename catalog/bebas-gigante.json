@@ -1,0 +1,97 @@
+{
+  "format": 1,
+  "id": "bebas-gigante",
+  "name": "Bebas Gigante",
+  "author": "davicorrea0",
+  "desc": "A hora enorme em Bebas Neue, com clima e barra de focos",
+  "bg": "#000000",
+  "layers": [
+    {
+      "type": "text",
+      "x": 120,
+      "y": 14,
+      "font": "pixel",
+      "size": 2,
+      "align": "center",
+      "color": "muted",
+      "text": "{WD} {DD} {MON}"
+    },
+    {
+      "type": "text",
+      "x": 120,
+      "y": 42,
+      "font": "bebas",
+      "size": 96,
+      "align": "center",
+      "color": "accent",
+      "text": "{HH}:{MM}"
+    },
+    {
+      "type": "rect",
+      "x": 20,
+      "y": 154,
+      "w": 200,
+      "h": 2,
+      "color": "card2"
+    },
+    {
+      "type": "weather",
+      "x": 52,
+      "y": 192,
+      "size": 8,
+      "when": "weather"
+    },
+    {
+      "type": "text",
+      "x": 84,
+      "y": 172,
+      "font": "bebas",
+      "size": 40,
+      "color": "text",
+      "text": "{TEMP}°",
+      "when": "weather"
+    },
+    {
+      "type": "text",
+      "x": 146,
+      "y": 178,
+      "font": "pixel",
+      "size": 1,
+      "color": "muted",
+      "text": "{WX}",
+      "when": "weather"
+    },
+    {
+      "type": "text",
+      "x": 146,
+      "y": 194,
+      "font": "pixel",
+      "size": 1,
+      "color": "muted",
+      "text": "{TMIN}° / {TMAX}°",
+      "when": "weather"
+    },
+    {
+      "type": "text",
+      "x": 120,
+      "y": 186,
+      "font": "pixel",
+      "size": 1,
+      "align": "center",
+      "color": "muted",
+      "text": "defina a cidade no painel",
+      "when": "noweather"
+    },
+    {
+      "type": "bar",
+      "x": 20,
+      "y": 222,
+      "w": 200,
+      "h": 5,
+      "r": 2,
+      "value": "focos",
+      "color": "work",
+      "track": "card2"
+    }
+  ]
+}
