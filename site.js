@@ -106,3 +106,33 @@
     g.appendChild(c);
   }
 })();
+
+// Pomodoro animado ("Veja de perto"): cada estado é uma faixa de quadros do simulador
+(function () {
+  var box = document.getElementById("pomo-anim");
+  if (!box) return;
+  var cap = document.getElementById("pomo-cap"), buttons = box.parentNode.querySelectorAll("[data-state]");
+  var still = window.matchMedia("(prefers-reduced-motion: reduce)").matches, timer = null;
+  function play(b) {
+    var n = +b.dataset.n, ms = +b.dataset.ms, i = 0;
+    buttons.forEach(function (o) { o.setAttribute("aria-pressed", String(o === b)); });
+    box.style.backgroundImage = "url(" + box.dataset.src + b.dataset.state + ".png)";
+    box.style.backgroundSize = n * 100 + "% 100%";
+    box.style.backgroundPosition = "0 0";
+    cap.textContent = b.dataset.cap + " ";
+    if (b.dataset.sub) {
+      var s = document.createElement("span");
+      s.className = "sub";
+      s.textContent = "(" + b.dataset.sub + ")";
+      cap.appendChild(s);
+    }
+    clearInterval(timer);
+    if (still) return;
+    timer = setInterval(function () {
+      i = (i + 1) % n;
+      box.style.backgroundPosition = (i * 100 / (n - 1)) + "% 0";
+    }, ms);
+  }
+  buttons.forEach(function (b) { b.addEventListener("click", function () { play(b); }); });
+  play(buttons[0]);
+})();

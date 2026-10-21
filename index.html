@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Silkscreen&display=swap">
-<link rel="stylesheet" href="style.css?v=8">
+<link rel="stylesheet" href="style.css?v=9">
 </head>
 <body>
 
@@ -165,9 +165,18 @@
         <img class="px" src="img/tomate.png" alt="Cena Tomate: dia, noite, chuva, neve, calor e meta batida" width="1480" height="990">
         <figcaption>Mostrador Tomate: dia, noite, chuva, frio, calor e meta do dia batida.</figcaption>
       </figure>
-      <figure class="shot one" role="tabpanel" data-shot="1" hidden>
-        <img class="px" src="img/pomodoro-foco.png" alt="Tela do Pomodoro em foco: anel de progresso, LENDO 10:12, o tomate com o livro e o horário de término" width="240" height="240">
-        <figcaption>Pomodoro em foco: anel de progresso, os focos do ciclo e o horário de término. No painel você escolhe a atividade, e o objeto dela aparece ao lado do tomate:
+      <figure class="shot one pomo" role="tabpanel" data-shot="1" hidden>
+        <div class="anim" id="pomo-anim" role="img" aria-label="Tela do Pomodoro animada" data-src="img/pomodoro/pt-" style="background-image:url(img/pomodoro/pt-foco.png);background-size:1200% 100%"></div>
+        <figcaption>
+          <div class="tabs states" role="group">
+            <button type="button" data-state="foco" data-n="12" data-ms="350" data-cap="Foco: o anel vermelho enche até o fim da fase, com a contagem regressiva e o horário de término. O tomate fica concentrado ao lado do objeto da atividade." data-sub="acelerado" aria-pressed="true">Foco</button>
+            <button type="button" data-state="pausa" data-n="12" data-ms="350" data-cap="Pausa curta: anel verde e o tomate relaxando com um café." data-sub="acelerado" aria-pressed="false">Pausa</button>
+            <button type="button" data-state="longa" data-n="12" data-ms="350" data-cap="Pausa longa: anel azul, depois de completar o ciclo de focos (as bolinhas)." data-sub="acelerado" aria-pressed="false">Pausa longa</button>
+            <button type="button" data-state="pausado" data-n="2" data-ms="1000" data-cap="Pausado: o tempo pisca a cada segundo e o tomate cochila até você continuar." aria-pressed="false">Pausado</button>
+            <button type="button" data-state="fim" data-n="6" data-ms="160" data-cap="Fim de fase: o tomate pula de alegria e a próxima fase já aparece." aria-pressed="false">Fim de fase</button>
+          </div>
+          <p id="pomo-cap">Foco: o anel vermelho enche até o fim da fase, com a contagem regressiva e o horário de término. O tomate fica concentrado ao lado do objeto da atividade. <span class="sub">(acelerado)</span></p>
+          <p class="act-lead">No painel você escolhe a atividade do foco, e o objeto dela aparece ao lado do tomate:</p>
           <span class="acts"><span><img class="px" src="img/icons/livro.svg" alt="">Ler</span><span><img class="px" src="img/icons/caderno.svg" alt="">Estudar</span><span><img class="px" src="img/icons/notebook.svg" alt="">Programar</span><span><img class="px" src="img/icons/prancheta.svg" alt="">Tarefas</span><span><img class="px" src="img/icons/paleta.svg" alt="">Desenhar</span></span>
         </figcaption>
       </figure>
@@ -280,6 +289,6 @@
 </footer>
 
 <script src="faces.js?v=4"></script>
-<script src="site.js?v=5"></script>
+<script src="site.js?v=6"></script>
 </body>
 </html>

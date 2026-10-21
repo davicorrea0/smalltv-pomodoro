@@ -387,3 +387,11 @@ section[data-kind].first { border-top: 0; padding-top: 16px; }
 .acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .acts span { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 6px; border-radius: 999px; background: var(--card-2); border: 1px solid var(--line); color: var(--text); font-size: 13px; }
 .acts img { width: 20px; height: 20px; }
+
+/* Pomodoro animado: a faixa de quadros (240x240 cada) passa um a um */
+.shot.pomo .anim { width: 100%; max-width: 360px; aspect-ratio: 1; margin: 0 auto; background-color: #000; background-repeat: no-repeat; background-position: 0 0; image-rendering: pixelated; }
+.shot.pomo figcaption p { margin: 10px 0 0; }
+.shot.pomo .sub { font-family: var(--pixel); font-size: 11px; color: var(--accent); }
+.shot.pomo .act-lead { border-top: 1px solid var(--line); padding-top: 10px; }
+.tabs.states { margin: 0; }
+.tabs.states button { padding: 6px 12px; font-size: 13px; }

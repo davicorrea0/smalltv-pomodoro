@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Silkscreen&display=swap">
-<link rel="stylesheet" href="../style.css?v=8">
+<link rel="stylesheet" href="../style.css?v=9">
 </head>
 <body>
 
@@ -165,9 +165,18 @@
         <img class="px" src="../img/tomate.png" alt="Tomato scene: day, night, rain, snow, heat and goal reached" width="1480" height="990">
         <figcaption>Tomato face: day, night, rain, cold, heat and daily goal reached.</figcaption>
       </figure>
-      <figure class="shot one" role="tabpanel" data-shot="1" hidden>
-        <img class="px" src="../img/pomodoro-foco.png" alt="Pomodoro focus screen: progress ring, 10:12, the tomato with a book and the end time" width="240" height="240">
-        <figcaption>Pomodoro in focus: progress ring, the cycle's sessions and the end time. In the panel you pick the activity, and its object shows up next to the tomato:
+      <figure class="shot one pomo" role="tabpanel" data-shot="1" hidden>
+        <div class="anim" id="pomo-anim" role="img" aria-label="Animated Pomodoro screen" data-src="../img/pomodoro/en-" style="background-image:url(../img/pomodoro/en-foco.png);background-size:1200% 100%"></div>
+        <figcaption>
+          <div class="tabs states" role="group">
+            <button type="button" data-state="foco" data-n="12" data-ms="350" data-cap="Focus: the red ring fills up until the end of the phase, with the countdown and the end time. The tomato concentrates next to the activity's object." data-sub="sped up" aria-pressed="true">Focus</button>
+            <button type="button" data-state="pausa" data-n="12" data-ms="350" data-cap="Short break: green ring and the tomato relaxing with a coffee." data-sub="sped up" aria-pressed="false">Break</button>
+            <button type="button" data-state="longa" data-n="12" data-ms="350" data-cap="Long break: blue ring, after finishing the cycle of sessions (the dots)." data-sub="sped up" aria-pressed="false">Long break</button>
+            <button type="button" data-state="pausado" data-n="2" data-ms="1000" data-cap="Paused: the time blinks every second and the tomato naps until you resume." aria-pressed="false">Paused</button>
+            <button type="button" data-state="fim" data-n="6" data-ms="160" data-cap="Phase end: the tomato jumps for joy and the next phase shows up." aria-pressed="false">Phase end</button>
+          </div>
+          <p id="pomo-cap">Focus: the red ring fills up until the end of the phase, with the countdown and the end time. The tomato concentrates next to the activity's object. <span class="sub">(sped up)</span></p>
+          <p class="act-lead">In the panel you pick the focus activity, and its object shows up next to the tomato:</p>
           <span class="acts"><span><img class="px" src="../img/icons/livro.svg" alt="">Read</span><span><img class="px" src="../img/icons/caderno.svg" alt="">Study</span><span><img class="px" src="../img/icons/notebook.svg" alt="">Code</span><span><img class="px" src="../img/icons/prancheta.svg" alt="">Chores</span><span><img class="px" src="../img/icons/paleta.svg" alt="">Draw</span></span>
         </figcaption>
       </figure>
@@ -280,6 +289,6 @@
 </footer>
 
 <script src="../faces.js?v=4"></script>
-<script src="../site.js?v=5"></script>
+<script src="../site.js?v=6"></script>
 </body>
 </html>
