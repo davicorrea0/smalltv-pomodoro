@@ -27,7 +27,8 @@ body {
   overflow-x: hidden;
 }
 img { max-width: 100%; height: auto; display: block; }
-.px { image-rendering: pixelated; image-rendering: crisp-edges; }
+.px { image-rendering: pixelated; }
+[id] { scroll-margin-top: 72px; }
 a { color: var(--accent-2); }
 a:hover { color: #ffb08f; }
 code, kbd {
