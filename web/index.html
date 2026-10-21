@@ -206,8 +206,19 @@ const fkey=f=>f.pkg?'p:'+f.pkg:'t:'+f.t;  // embutido "t:N" ou pacote "p:id"
 const curKey=s=>s.cfg.theme==200?'p:'+s.cfg.pkg:'t:'+s.cfg.theme;
 const faceSrc=f=>f.src||(f.pkg?'/face?pkg='+encodeURIComponent(f.pkg):'/face?t='+f.t);
 // sem prévia guardada no relógio: tenta a do site (mesmo id); se não houver, mostra o nome
-function img(f){const i=new Image();i.alt=f.n;i.src=faceSrc(f);let site=!f.pkg;
- i.onerror=()=>{if(!site){site=true;i.src=CATALOG+encodeURIComponent(f.pkg)+'.png';return}const d=document.createElement('div');d.className='noimg';d.textContent=f.n;i.replaceWith(d)};return i}
+// Fila de imagens do relógio: o servidor do ESP8266 atende uma conexão por vez e derruba parte
+// das requisições quando o navegador pede várias de uma vez. Carrega uma por vez e tenta de novo.
+const imgQ=[];let imgBusy=false;
+function qload(i,src,fail){imgQ.push({i,src,fail,tries:0});pump()}
+function pump(){if(imgBusy||!imgQ.length)return;imgBusy=true;const t=imgQ.shift();
+ t.i.onload=()=>{imgBusy=false;pump()};
+ t.i.onerror=()=>{imgBusy=false;if(++t.tries<3)setTimeout(()=>{imgQ.push(t);pump()},300);else t.fail();pump()};
+ t.i.src=t.src}
+function img(f){const i=new Image();i.alt=f.n;
+ const tile=()=>{const d=document.createElement('div');d.className='noimg';d.textContent=f.n;i.replaceWith(d)};
+ if(f.src){i.onerror=tile;i.src=f.src;return i}  // imagem de fora (site): o navegador baixa direto
+ // sem prévia guardada no relógio: tenta a do site (mesmo id); se não houver, mostra o nome
+ qload(i,faceSrc(f),f.pkg?()=>{i.onerror=tile;i.src=CATALOG+encodeURIComponent(f.pkg)+'.png'}:tile);return i}
 // mesmo id que o relógio calcula (facepack.cpp: safeId)
 const safeId=s=>{let o='';for(let c of String(s||'').toLowerCase()){if(/[a-z0-9_-]/.test(c))o+=c;else if(c==' '&&o&&!o.endsWith('-'))o+='-';if(o.length>=23)break}return o}
 function el(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
@@ -289,7 +300,7 @@ let qt;$('q').oninput=()=>{clearTimeout(qt);const q=$('q').value.trim();if(q.len
 // ---------- fotos ----------
 function files(){fetch('/api/files').then(r=>r.json()).then(j=>{const g=$('grid');g.innerHTML='';
  j.files.forEach(x=>{const d=document.createElement('div');d.dataset.n=x.n;d.innerHTML='<img loading="lazy">'+(x.n.toLowerCase().endsWith('.gif')?'<span>GIF</span>':'');
-  d.firstChild.src='/fs?f='+encodeURIComponent(x.n);d.onclick=()=>photoSheet(x);g.appendChild(d)});
+  qload(d.firstChild,'/fs?f='+encodeURIComponent(x.n),()=>{});d.onclick=()=>photoSheet(x);g.appendChild(d)});
  if(!j.files.length)g.innerHTML='<small style="grid-column:1/-1">Nenhuma foto ainda.</small>'})}
 function photoSheet(x){const c=$('sheetc');c.innerHTML='';const s=document.createElement('div');s.className='scr';const i=new Image();i.src='/fs?f='+encodeURIComponent(x.n);s.appendChild(i);
  const h=document.createElement('p');h.textContent=x.n.split('/').pop()+' · '+kb(x.s);const r=document.createElement('div');r.className='row';
