@@ -9,6 +9,8 @@
 <meta property="og:description" content="Firmware alternativo para o GeekMagic SmallTV Ultra: 8 mostradores, Pomodoro com mascote tomate, clima e álbum de fotos.">
 <meta property="og:image" content="https://davicorrea0.github.io/smalltv-pomodoro/img/mostradores.png">
 <meta name="theme-color" content="#0b0d10">
+<link rel="alternate" hreflang="pt-BR" href="https://davicorrea0.github.io/smalltv-pomodoro/">
+<link rel="alternate" hreflang="en" href="https://davicorrea0.github.io/smalltv-pomodoro/en/">
 <link rel="icon" href="img/tomate.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,9 +25,10 @@
     <nav class="nav">
       <a href="./" aria-current="page">Início</a>
       <a href="galeria.html">Galeria</a>
-      <a href="#instalar">Instalar</a>
-      <a href="https://github.com/davicorrea0/smalltv-pomodoro">GitHub</a>
+      <a class="opt" href="#instalar">Instalar</a>
+      <a class="opt" href="https://github.com/davicorrea0/smalltv-pomodoro">GitHub</a>
     </nav>
+    <a class="lang" href="en/" hreflang="en" lang="en"><img class="px" src="img/icons/globo.svg" alt="">EN</a>
   </div>
 </header>
 
@@ -74,6 +77,16 @@
   </div>
 </section>
 
+<section id="galeria-nova">
+  <div class="wrap">
+    <div class="eyebrow">Galeria nova</div>
+    <h2>Mostradores novos para instalar</h2>
+    <p class="section-lead">Além dos 8 embutidos, há uma galeria de mostradores que não vêm no firmware: Bento, Synthwave, Terminal, Aquário, Estação e outros. Cada um é um arquivo pequeno que o relógio instala sem regravar o firmware.</p>
+    <div class="shelf" id="shelf"><div class="ph"></div><div class="ph"></div><div class="ph"></div><div class="ph"></div></div>
+    <a class="btn primary" href="galeria.html">Ver a galeria (<span id="shelf-count">…</span> novos)</a>
+  </div>
+</section>
+
 <section id="antes-depois">
   <div class="wrap">
     <h2>O que muda em relação ao firmware de fábrica</h2>
@@ -83,7 +96,7 @@
       <div class="row">
         <div class="topic">Mostradores</div>
         <div class="was">Temas de fábrica</div>
-        <div class="now">8 mostradores novos, com galeria e prévia no painel; "Ver no relógio" testa por 15 s sem salvar</div>
+        <div class="now">8 mostradores embutidos e uma <a href="galeria.html">galeria de novos</a> para instalar; prévia no painel e "Ver no relógio" testa por 15 s sem salvar</div>
       </div>
       <div class="row">
         <div class="topic">Foco</div>
@@ -124,15 +137,15 @@
     <h2>Funções</h2>
     <p class="section-lead">Tudo cabe em menos de 500 KB e roda no próprio relógio.</p>
     <div class="grid three">
-      <div class="card feature"><h3><span class="ico">🕒</span>8 mostradores</h3><p>Matriz, Tomate, Analógico, Clima, Neon, Flip (com animação de virada de verdade), LCD retrô e Palavras (a hora por extenso, em português).</p></div>
-      <div class="card feature"><h3><span class="ico">🍅</span>Pomodoro com mascote</h3><p>O tomate fica focado, relaxa com um café na pausa, dorme quando o timer está pausado e pula de alegria quando uma fase termina.</p></div>
-      <div class="card feature"><h3><span class="ico">📚</span>Atividade do foco</h3><p>Escolha no painel o que vai fazer: ler, estudar, programar, tarefas ou desenhar. A tela mostra o objeto da atividade ao lado do tomate.</p></div>
-      <div class="card feature"><h3><span class="ico">⛅</span>Clima</h3><p>Pelo <a href="https://open-meteo.com/">Open-Meteo</a>, sem cadastro nem chave de API. Na chuva o tomate abre o guarda-chuva; no frio põe cachecol; no calor, óculos escuros.</p></div>
-      <div class="card feature"><h3><span class="ico">🖼️</span>Fotos e GIFs</h3><p>Usa o álbum que já estava no relógio. Fotos novas vão pelo painel e são recortadas para 240×240 automaticamente.</p></div>
-      <div class="card feature"><h3><span class="ico">🌙</span>Brilho noturno</h3><p>Escolha um horário para a tela ficar mais fraca à noite e não iluminar o quarto.</p></div>
-      <div class="card feature"><h3><span class="ico">📱</span>Painel web</h3><p>Abra no celular o IP que aparece na tela: galeria de mostradores, controle do Pomodoro, fotos e ajustes.</p></div>
-      <div class="card feature"><h3><span class="ico">🎨</span>Ajuste de cor da tela</h3><p>Ordem de cor RGB/BGR, inversão e rotação 180°, com tela de teste de cores, porque isso varia entre unidades.</p></div>
-      <div class="card feature"><h3><span class="ico">⬆️</span>Atualização sem fio</h3><p>Versões novas são enviadas pelo painel em <code>/update</code>, que também serve para voltar ao firmware original.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/relogio.svg" alt=""></span>8 mostradores</h3><p>Matriz, Tomate, Analógico, Clima, Neon, Flip (com animação de virada de verdade), LCD retrô e Palavras (a hora por extenso, em português).</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/focado.svg" alt=""></span>Pomodoro com mascote</h3><p>O tomate fica focado, relaxa com um café na pausa, dorme quando o timer está pausado e pula de alegria quando uma fase termina.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/livro.svg" alt=""></span>Atividade do foco</h3><p>Escolha no painel o que vai fazer: ler, estudar, programar, tarefas ou desenhar. A tela mostra o objeto da atividade ao lado do tomate.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/sol.svg" alt=""></span>Clima</h3><p>Pelo <a href="https://open-meteo.com/">Open-Meteo</a>, sem cadastro nem chave de API. Na chuva o tomate abre o guarda-chuva; no frio põe cachecol; no calor, óculos escuros.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/foto.svg" alt=""></span>Fotos e GIFs</h3><p>Usa o álbum que já estava no relógio. Fotos novas vão pelo painel e são recortadas para 240×240 automaticamente.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/lua.svg" alt=""></span>Brilho noturno</h3><p>Escolha um horário para a tela ficar mais fraca à noite e não iluminar o quarto.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/celular.svg" alt=""></span>Painel web</h3><p>Abra no celular o IP que aparece na tela: galeria de mostradores, controle do Pomodoro, fotos e ajustes.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/cores.svg" alt=""></span>Ajuste de cor da tela</h3><p>Ordem de cor RGB/BGR, inversão e rotação 180°, com tela de teste de cores, porque isso varia entre unidades.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/seta.svg" alt=""></span>Atualização sem fio</h3><p>Versões novas são enviadas pelo painel em <code>/update</code>, que também serve para voltar ao firmware original.</p></div>
     </div>
 
     <div class="shots">
@@ -165,7 +178,7 @@
     <h2>Como instalar</h2>
     <p class="section-lead">Leva uns 5 minutos e não precisa de cabo nem de programas no computador: tudo acontece pelo navegador.</p>
 
-    <div class="note warn" style="margin-bottom:14px">⚠️ Use só no <strong>SmallTV Ultra</strong> (ESP8266). Não grave no SmallTV Pro (ESP32) nem em outros modelos.</div>
+    <div class="note warn" style="margin-bottom:14px">Use só no <strong>SmallTV Ultra</strong> (ESP8266). Não grave no SmallTV Pro (ESP32) nem em outros modelos.</div>
 
     <ol class="steps">
       <li>
@@ -242,9 +255,9 @@
   <div class="wrap">
     <h2>Para quem quer mexer</h2>
     <div class="grid three">
-      <div class="card feature"><h3><span class="ico">🧩</span>Criar um mostrador</h3><p>Um arquivo <code>face_&lt;nome&gt;.cpp</code> e uma linha em <code>faces_list.h</code>. <a href="https://github.com/davicorrea0/smalltv-pomodoro/blob/main/docs/CRIAR_MOSTRADOR.md">Guia passo a passo</a>.</p></div>
-      <div class="card feature"><h3><span class="ico">👾</span>Desenhar em pixel art</h3><p>Cada desenho é um <code>.txt</code> em <code>assets/</code>, com cores e quadros de animação. <a href="https://github.com/davicorrea0/smalltv-pomodoro#biblioteca-de-assets">Como funciona</a>.</p></div>
-      <div class="card feature"><h3><span class="ico">🖥️</span>Simulador no PC</h3><p>O mesmo código de desenho do firmware roda no computador e gera as imagens das telas, sem precisar gravar o relógio.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/grade.svg" alt=""></span>Criar um mostrador</h3><p>Sem compilar: um <code>.json</code> em camadas, como os da <a href="galeria.html">galeria</a>. No firmware: um <code>face_&lt;nome&gt;.cpp</code> e uma linha em <code>faces_list.h</code> (<a href="https://github.com/davicorrea0/smalltv-pomodoro/blob/main/docs/CRIAR_MOSTRADOR.md">guia</a>).</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/paleta.svg" alt=""></span>Desenhar em pixel art</h3><p>Cada desenho é um <code>.txt</code> em <code>assets/</code>, com cores e quadros de animação. <a href="https://github.com/davicorrea0/smalltv-pomodoro#biblioteca-de-assets">Como funciona</a>.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/notebook.svg" alt=""></span>Simulador no PC</h3><p>O mesmo código de desenho do firmware roda no computador e gera as imagens das telas, sem precisar gravar o relógio.</p></div>
     </div>
   </div>
 </section>
@@ -274,6 +287,7 @@
       <a href="galeria.html">Galeria</a>
       <a href="https://github.com/davicorrea0/smalltv-pomodoro">Código no GitHub</a>
       <a href="https://github.com/davicorrea0/smalltv-pomodoro/releases">Releases</a>
+      <a href="en/" hreflang="en">English</a>
     </div>
   </div>
 </footer>

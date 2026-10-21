@@ -1,0 +1,161 @@
+{
+  "format": 1,
+  "author": "davicorrea0",
+  "id": "orbita",
+  "name": "Órbita",
+  "desc": "Ponteiros como órbitas em volta do sol, num céu estrelado",
+  "name_en": "Orbit",
+  "desc_en": "Hands as orbits around the sun, under a starry sky",
+  "bg": "#05060f",
+  "layers": [
+    {
+      "type": "circle",
+      "x": 22,
+      "y": 30,
+      "r": 1,
+      "color": "#c8d0ff"
+    },
+    {
+      "type": "circle",
+      "x": 60,
+      "y": 14,
+      "r": 0,
+      "color": "#c8d0ff"
+    },
+    {
+      "type": "circle",
+      "x": 204,
+      "y": 40,
+      "r": 0,
+      "color": "#c8d0ff"
+    },
+    {
+      "type": "circle",
+      "x": 226,
+      "y": 96,
+      "r": 1,
+      "color": "#c8d0ff"
+    },
+    {
+      "type": "circle",
+      "x": 14,
+      "y": 150,
+      "r": 0,
+      "color": "#c8d0ff"
+    },
+    {
+      "type": "circle",
+      "x": 40,
+      "y": 210,
+      "r": 0,
+      "color": "#c8d0ff"
+    },
+    {
+      "type": "circle",
+      "x": 196,
+      "y": 214,
+      "r": 1,
+      "color": "#c8d0ff"
+    },
+    {
+      "type": "circle",
+      "x": 228,
+      "y": 180,
+      "r": 0,
+      "color": "#c8d0ff"
+    },
+    {
+      "type": "circle",
+      "x": 104,
+      "y": 228,
+      "r": 0,
+      "color": "#c8d0ff"
+    },
+    {
+      "type": "circle",
+      "x": 150,
+      "y": 10,
+      "r": 1,
+      "color": "#c8d0ff"
+    },
+    {
+      "type": "circle",
+      "x": 120,
+      "y": 120,
+      "r": 104,
+      "color": "none",
+      "stroke": "#1f2550"
+    },
+    {
+      "type": "circle",
+      "x": 120,
+      "y": 120,
+      "r": 74,
+      "color": "none",
+      "stroke": "#2a2f66"
+    },
+    {
+      "type": "circle",
+      "x": 120,
+      "y": 120,
+      "r": 46,
+      "color": "none",
+      "stroke": "#343a7a"
+    },
+    {
+      "type": "hand",
+      "x": 120,
+      "y": 120,
+      "value": "sec",
+      "len": 104,
+      "tail": 0,
+      "size": 1,
+      "color": "#5a6290"
+    },
+    {
+      "type": "hand",
+      "x": 120,
+      "y": 120,
+      "value": "min",
+      "len": 74,
+      "tail": 0,
+      "size": 3,
+      "color": "#4cc9f0"
+    },
+    {
+      "type": "hand",
+      "x": 120,
+      "y": 120,
+      "value": "hour",
+      "len": 46,
+      "tail": 0,
+      "size": 5,
+      "color": "#f72585"
+    },
+    {
+      "type": "circle",
+      "x": 120,
+      "y": 120,
+      "r": 16,
+      "color": "#ffb703"
+    },
+    {
+      "type": "circle",
+      "x": 120,
+      "y": 120,
+      "r": 20,
+      "color": "none",
+      "stroke": "#fb8500"
+    },
+    {
+      "type": "text",
+      "x": 120,
+      "y": 196,
+      "font": "pixel",
+      "size": 1,
+      "color": "#8890c0",
+      "text": "{HH}:{MM}  {WD} {DD}",
+      "align": "center"
+    }
+  ]
+}

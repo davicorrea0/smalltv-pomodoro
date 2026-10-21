@@ -68,8 +68,10 @@ p { margin: 0 0 1em; }
 }
 .nav a:hover { color: var(--text); background: var(--card); }
 .nav a[aria-current="page"] { color: var(--text); background: var(--card-2); }
-@media (max-width: 420px) {
+@media (max-width: 520px) {
   .brand span { display: none; }
+  .nav a { padding: 8px 7px; font-size: 14px; }
+  .nav .opt { display: none; }
 }
 
 /* ---------- Botões ---------- */
@@ -150,7 +152,26 @@ section + section { border-top: 1px solid var(--line); }
   display: grid; place-items: center; font-size: 18px;
   background: rgba(255, 90, 71, 0.12);
 }
+.feature .ico img { width: 24px; height: 24px; }
 .feature p { color: var(--muted); margin: 0; font-size: 15px; }
+.btn img { width: 16px; height: 16px; }
+
+/* Vitrine de pacotes na página inicial */
+.shelf { display: grid; gap: 10px; grid-template-columns: repeat(4, 1fr); margin: 18px 0; }
+.shelf a { display: block; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); background: #000; transition: transform 0.15s; }
+.shelf a:hover { transform: translateY(-3px); }
+.shelf img { width: 100%; aspect-ratio: 1; }
+@media (min-width: 760px) { .shelf { grid-template-columns: repeat(8, 1fr); } }
+.shelf .ph { aspect-ratio: 1; border-radius: 12px; background: var(--card); border: 1px dashed var(--line); }
+
+/* Troca de idioma */
+.lang {
+  display: inline-flex; align-items: center; gap: 6px;
+  color: var(--muted); text-decoration: none; font: 600 13px var(--sans);
+  border: 1px solid var(--line); border-radius: 999px; padding: 5px 10px; margin-left: 4px; white-space: nowrap;
+}
+.lang img { width: 16px; height: 16px; }
+.lang:hover { color: var(--text); background: var(--card); }
 
 .shot {
   margin: 0; background: var(--card); border: 1px solid var(--line);
@@ -244,6 +265,9 @@ details.note li + li { margin-top: 4px; }
   background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
   overflow: hidden; display: flex; flex-direction: column;
 }
+.face:target { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255, 90, 71, 0.25); }
+.sub-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.sub-head .count { font-family: var(--pixel); color: var(--accent); font-size: 14px; }
 .face .prev {
   display: block; width: 100%; padding: 0; border: 0; cursor: zoom-in;
   background: #000; aspect-ratio: 1; position: relative;
@@ -309,3 +333,5 @@ footer a:hover { color: var(--text); }
   html { scroll-behavior: auto; }
   .device .screen img { transition: none; }
 }
+
+[hidden] { display: none !important; }

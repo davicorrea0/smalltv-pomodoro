@@ -1,0 +1,95 @@
+{
+  "format": 1,
+  "author": "davicorrea0",
+  "id": "bauhaus",
+  "name": "Bauhaus",
+  "desc": "Formas e cores primárias da escola Bauhaus",
+  "name_en": "Bauhaus",
+  "desc_en": "Primary shapes and colors from the Bauhaus school",
+  "bg": "#f1ece2",
+  "layers": [
+    {
+      "type": "rect",
+      "x": 0,
+      "y": 0,
+      "w": 120,
+      "h": 112,
+      "color": "#1d4e89"
+    },
+    {
+      "type": "circle",
+      "x": 60,
+      "y": 56,
+      "r": 38,
+      "color": "#f7b801"
+    },
+    {
+      "type": "rect",
+      "x": 120,
+      "y": 0,
+      "w": 120,
+      "h": 112,
+      "color": "#d62828"
+    },
+    {
+      "type": "text",
+      "x": 180,
+      "y": 18,
+      "font": "pixel",
+      "size": 3,
+      "color": "#ffffff",
+      "text": "{WD}",
+      "align": "center"
+    },
+    {
+      "type": "text",
+      "x": 180,
+      "y": 54,
+      "font": "geo",
+      "size": 40,
+      "color": "#ffffff",
+      "text": "{DD}",
+      "align": "center",
+      "w": 5
+    },
+    {
+      "type": "rect",
+      "x": 0,
+      "y": 112,
+      "w": 240,
+      "h": 6,
+      "color": "#111111"
+    },
+    {
+      "type": "text",
+      "x": 120,
+      "y": 132,
+      "font": "geo",
+      "size": 64,
+      "color": "#111111",
+      "text": "{HH}:{MM}",
+      "align": "center",
+      "w": 7
+    },
+    {
+      "type": "text",
+      "x": 16,
+      "y": 214,
+      "font": "pixel",
+      "size": 2,
+      "color": "#111111",
+      "text": "{TEMP}°",
+      "when": "weather"
+    },
+    {
+      "type": "bar",
+      "x": 116,
+      "y": 218,
+      "w": 108,
+      "h": 8,
+      "value": "focos",
+      "color": "#d62828",
+      "track": "#d9d0bd"
+    }
+  ]
+}

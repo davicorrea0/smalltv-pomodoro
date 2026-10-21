@@ -4,10 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Galeria de mostradores — SmallTV Pomodoro</title>
-<meta name="description" content="Todos os mostradores do SmallTV Pomodoro para o GeekMagic SmallTV Ultra: os embutidos no firmware e os pacotes instaláveis.">
+<meta name="description" content="Mostradores novos para instalar no GeekMagic SmallTV Ultra com o firmware SmallTV Pomodoro, e os 8 que já vêm no firmware.">
 <meta property="og:title" content="Galeria de mostradores — SmallTV Pomodoro">
 <meta property="og:image" content="https://davicorrea0.github.io/smalltv-pomodoro/img/mostradores.png">
 <meta name="theme-color" content="#0b0d10">
+<link rel="alternate" hreflang="pt-BR" href="https://davicorrea0.github.io/smalltv-pomodoro/galeria.html">
+<link rel="alternate" hreflang="en" href="https://davicorrea0.github.io/smalltv-pomodoro/en/gallery.html">
 <link rel="icon" href="img/tomate.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,9 +24,10 @@
     <nav class="nav">
       <a href="./">Início</a>
       <a href="galeria.html" aria-current="page">Galeria</a>
-      <a href="./#instalar">Instalar</a>
-      <a href="https://github.com/davicorrea0/smalltv-pomodoro">GitHub</a>
+      <a class="opt" href="./#instalar">Instalar</a>
+      <a class="opt" href="https://github.com/davicorrea0/smalltv-pomodoro">GitHub</a>
     </nav>
+    <a class="lang" href="en/gallery.html" hreflang="en" lang="en"><img class="px" src="img/icons/globo.svg" alt="">EN</a>
   </div>
 </header>
 
@@ -33,32 +36,45 @@
     <div class="wrap">
       <div class="eyebrow">Galeria</div>
       <h1>Mostradores</h1>
-      <p>As prévias são a tela do relógio em tamanho real (240×240), ampliadas pixel por pixel. Toque em uma para ver maior.</p>
-      <div class="tabs" role="group" aria-label="Filtrar mostradores">
-        <button type="button" data-filter="all" aria-pressed="true">Todos <span class="count" id="n-all"></span></button>
-        <button type="button" data-filter="builtin" aria-pressed="false">Embutidos <span class="count" id="n-builtin"></span></button>
-        <button type="button" data-filter="pkg" aria-pressed="false">Pacotes <span class="count" id="n-pkg"></span></button>
-      </div>
+      <p>Mostradores novos para instalar, além dos 8 que já vêm no firmware. As prévias são a tela do relógio em tamanho real (240×240), geradas pelo mesmo motor de desenho do firmware e ampliadas pixel por pixel. Toque em uma para ver maior.</p>
     </div>
   </div>
 
-  <section style="border:0;padding-top:16px">
+  <section style="border:0;padding-top:16px" id="novos">
     <div class="wrap">
-      <div class="faces" id="faces"></div>
+      <div class="sub-head"><h2>Novos para instalar</h2><span class="count" id="packs-count"></span></div>
+      <p class="section-lead">Cada um é um arquivo <code>.json</code> de poucos KB, descrito em camadas (formas, textos, sprites em pixel art, ícone de clima, ponteiros). Mostram a hora, o clima e os seus focos do dia como os embutidos.</p>
+      <div class="faces" id="packs"><p style="color:var(--muted)">Carregando…</p></div>
     </div>
   </section>
 
-  <section id="pacotes">
+  <section id="como-instalar">
     <div class="wrap">
-      <h2>Pacotes de mostradores</h2>
-      <p class="section-lead">Mostradores novos descritos em arquivos <code>.json</code> pequenos (camadas de texto, formas, sprites em pixel art, ícone de clima, ponteiros), instalados pelo painel do relógio sem gravar o firmware de novo.</p>
-      <div id="pkg-status"></div>
+      <h2>Como instalar um mostrador novo</h2>
       <div class="how">
-        <div class="card"><h3>Escolha</h3><p>Encontre um pacote aqui na galeria.</p></div>
-        <div class="card"><h3>Instale</h3><p>No painel do relógio, instale direto da galeria com um toque, ou baixe o <code>.json</code> e envie pelo painel.</p></div>
-        <div class="card"><h3>Use</h3><p>O mostrador aparece na lista do relógio junto com os embutidos.</p></div>
+        <div class="card"><h3>Escolha</h3><p>Encontre um mostrador aqui e toque em <strong>Baixar</strong> para salvar o <code>.json</code>.</p></div>
+        <div class="card"><h3>Envie</h3><p>No painel do relógio, aba <strong>Relógio</strong>, envie o arquivo, ou instale direto da galeria com um toque.</p></div>
+        <div class="card"><h3>Use</h3><p>O mostrador entra na lista do relógio junto com os embutidos, sem gravar o firmware de novo.</p></div>
       </div>
-      <p style="color:var(--muted);font-size:14px;margin-top:16px">Por que não instalar daqui direto? O relógio fala só <code>http</code> dentro da sua rede, e um site <code>https</code> não pode enviar arquivos para ele. Por isso a instalação parte do painel do relógio.</p>
+      <div class="note" style="margin-top:14px">A instalação de pacotes pelo painel chega na <strong>próxima versão do firmware</strong> (depois da v1.5.0). Os arquivos já podem ser baixados.</div>
+      <p style="color:var(--muted);font-size:14px;margin-top:14px">Por que não instalar direto daqui? O relógio fala só <code>http</code> dentro da sua rede, e um site <code>https</code> não pode enviar arquivos para ele. Por isso a instalação parte do painel do relógio, que busca o catálogo deste site.</p>
+    </div>
+  </section>
+
+  <section id="embutidos">
+    <div class="wrap">
+      <div class="sub-head"><h2>Já vêm no firmware</h2><span class="count" id="builtin-count"></span></div>
+      <p class="section-lead">Escolha no painel do relógio; "Ver no relógio" mostra cada um por 15 segundos sem salvar.</p>
+      <div class="faces" id="builtin"></div>
+    </div>
+  </section>
+
+  <section id="criar">
+    <div class="wrap">
+      <div class="card feature">
+        <h3><span class="ico"><img class="px" src="img/icons/grade.svg" alt=""></span>Crie o seu</h3>
+        <p>Um mostrador é só um arquivo JSON com camadas. Pegue um destes como modelo, mude cores e posições e mande para o catálogo pelo <a href="https://github.com/davicorrea0/smalltv-pomodoro">GitHub</a>.</p>
+      </div>
     </div>
   </section>
 </main>
@@ -70,6 +86,7 @@
       <h3 id="zoom-name"></h3>
       <p id="zoom-desc"></p>
     </div>
+    <a class="btn small primary" id="zoom-dl" hidden><img class="px" src="img/icons/download.svg" alt="">Baixar</a>
     <button type="button" class="btn small" id="zoom-close">Fechar</button>
   </div>
 </dialog>
@@ -82,6 +99,7 @@
       <a href="./">Início</a>
       <a href="https://github.com/davicorrea0/smalltv-pomodoro">Código no GitHub</a>
       <a href="https://github.com/davicorrea0/smalltv-pomodoro/releases">Releases</a>
+      <a href="en/gallery.html" hreflang="en">English</a>
     </div>
   </div>
 </footer>

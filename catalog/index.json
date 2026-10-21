@@ -1,4 +1,126 @@
 {
-  "version": 1,
-  "faces": []
+  "format": 1,
+  "faces": [
+    {
+      "id": "bento",
+      "name": "Bento",
+      "author": "davicorrea0",
+      "desc": "Cartões em grade, como widgets: hora, clima e focos",
+      "name_en": "Bento",
+      "desc_en": "Widget-style grid of cards: time, weather and focus",
+      "file": "bento.json",
+      "preview": "bento.png",
+      "size": 2319
+    },
+    {
+      "id": "synthwave",
+      "name": "Synthwave",
+      "author": "davicorrea0",
+      "desc": "Pôr do sol retrô dos anos 80, com grade neon em perspectiva",
+      "name_en": "Synthwave",
+      "desc_en": "80s retro sunset with a neon perspective grid",
+      "file": "synthwave.json",
+      "preview": "synthwave.png",
+      "size": 3793
+    },
+    {
+      "id": "aquario",
+      "name": "Aquário",
+      "author": "davicorrea0",
+      "desc": "Um aquário em pixel art; bata a meta do dia e aparece o peixe dourado",
+      "name_en": "Aquarium",
+      "desc_en": "A pixel art aquarium; hit your daily goal and the golden fish shows up",
+      "file": "aquario.json",
+      "preview": "aquario.png",
+      "size": 5726
+    },
+    {
+      "id": "terminal",
+      "name": "Terminal",
+      "author": "davicorrea0",
+      "desc": "O relógio como uma sessão de terminal, em verde fósforo",
+      "name_en": "Terminal",
+      "desc_en": "The clock as a shell session, in phosphor green",
+      "file": "terminal.json",
+      "preview": "terminal.png",
+      "size": 2509
+    },
+    {
+      "id": "brutal",
+      "name": "Brutal",
+      "author": "davicorrea0",
+      "desc": "Neo-brutalismo: cores chapadas, bordas pretas e sombras duras",
+      "name_en": "Brutal",
+      "desc_en": "Neo-brutalism: flat colors, black borders and hard shadows",
+      "file": "brutal.json",
+      "preview": "brutal.png",
+      "size": 2575
+    },
+    {
+      "id": "estacao",
+      "name": "Estação",
+      "author": "davicorrea0",
+      "desc": "Relógio de estação de trem: barras pretas e segundos em vermelho",
+      "name_en": "Station",
+      "desc_en": "Railway station clock: bold black bars and a red seconds hand",
+      "file": "estacao.json",
+      "preview": "estacao.png",
+      "size": 2989
+    },
+    {
+      "id": "8bit-verde",
+      "name": "8-bit Verde",
+      "author": "davicorrea0",
+      "desc": "Os quatro tons de verde dos portáteis antigos, com o tomate repintado",
+      "name_en": "8-bit Green",
+      "desc_en": "The four greens of classic handhelds, with a repainted tomato",
+      "file": "8bit-verde.json",
+      "preview": "8bit-verde.png",
+      "size": 4496
+    },
+    {
+      "id": "aurora",
+      "name": "Aurora",
+      "author": "davicorrea0",
+      "desc": "Faixas da aurora boreal sobre montanhas, com a hora em Geo",
+      "name_en": "Aurora",
+      "desc_en": "Northern lights bands over mountains, with the time in Geo",
+      "file": "aurora.json",
+      "preview": "aurora.png",
+      "size": 3419
+    },
+    {
+      "id": "orbita",
+      "name": "Órbita",
+      "author": "davicorrea0",
+      "desc": "Ponteiros como órbitas em volta do sol, num céu estrelado",
+      "name_en": "Orbit",
+      "desc_en": "Hands as orbits around the sun, under a starry sky",
+      "file": "orbita.json",
+      "preview": "orbita.png",
+      "size": 2688
+    },
+    {
+      "id": "bauhaus",
+      "name": "Bauhaus",
+      "author": "davicorrea0",
+      "desc": "Formas e cores primárias da escola Bauhaus",
+      "name_en": "Bauhaus",
+      "desc_en": "Primary shapes and colors from the Bauhaus school",
+      "file": "bauhaus.json",
+      "preview": "bauhaus.png",
+      "size": 1657
+    },
+    {
+      "id": "mono",
+      "name": "Mono",
+      "author": "davicorrea0",
+      "desc": "Preto e branco em blocos, com os segmentos apagados à mostra e um ponto vermelho",
+      "name_en": "Mono",
+      "desc_en": "Black and white blocks with unlit segments showing and one red dot",
+      "file": "mono.json",
+      "preview": "mono.png",
+      "size": 1719
+    }
+  ]
 }

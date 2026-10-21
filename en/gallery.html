@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en" data-root="../">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clock face gallery — SmallTV Pomodoro</title>
+<meta name="description" content="New clock faces to install on the GeekMagic SmallTV Ultra with the SmallTV Pomodoro firmware, plus the 8 built-in ones.">
+<meta property="og:title" content="Clock face gallery — SmallTV Pomodoro">
+<meta property="og:image" content="https://davicorrea0.github.io/smalltv-pomodoro/img/mostradores.png">
+<meta name="theme-color" content="#0b0d10">
+<link rel="alternate" hreflang="pt-BR" href="https://davicorrea0.github.io/smalltv-pomodoro/galeria.html">
+<link rel="alternate" hreflang="en" href="https://davicorrea0.github.io/smalltv-pomodoro/en/gallery.html">
+<link rel="icon" href="../img/tomate.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Silkscreen&display=swap">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="./"><img class="px" src="../img/tomate.svg" alt=""><span>SmallTV Pomodoro</span></a>
+    <nav class="nav">
+      <a href="./">Home</a>
+      <a href="gallery.html" aria-current="page">Gallery</a>
+      <a class="opt" href="./#install">Install</a>
+      <a class="opt" href="https://github.com/davicorrea0/smalltv-pomodoro">GitHub</a>
+    </nav>
+    <a class="lang" href="../galeria.html" hreflang="pt-BR" lang="pt-BR"><img class="px" src="../img/icons/globo.svg" alt="">PT</a>
+  </div>
+</header>
+
+<main>
+  <div class="page-head">
+    <div class="wrap">
+      <div class="eyebrow">Gallery</div>
+      <h1>Clock faces</h1>
+      <p>New faces to install, plus the 8 that ship with the firmware. Previews are the clock's screen at real size (240×240), rendered by the same drawing engine as the firmware and scaled up pixel by pixel. Tap one to see it bigger.</p>
+    </div>
+  </div>
+
+  <section style="border:0;padding-top:16px" id="new">
+    <div class="wrap">
+      <div class="sub-head"><h2>New, ready to install</h2><span class="count" id="packs-count"></span></div>
+      <p class="section-lead">Each one is a <code>.json</code> file of a few KB, described in layers (shapes, text, pixel art sprites, weather icon, clock hands). Like the built-in faces, they show the time, the weather and your focus sessions for the day. Dates on the clock appear in Portuguese.</p>
+      <div class="faces" id="packs"><p style="color:var(--muted)">Loading…</p></div>
+    </div>
+  </section>
+
+  <section id="how-to-install">
+    <div class="wrap">
+      <h2>How to install a new face</h2>
+      <div class="how">
+        <div class="card"><h3>Pick</h3><p>Find a face here and tap <strong>Download</strong> to save the <code>.json</code>.</p></div>
+        <div class="card"><h3>Send</h3><p>In the clock's panel, <strong>Relógio</strong> (Clock) tab, upload the file, or install straight from the gallery with one tap.</p></div>
+        <div class="card"><h3>Use</h3><p>The face joins the clock's list next to the built-in ones, with no reflashing.</p></div>
+      </div>
+      <div class="note" style="margin-top:14px">Installing packs from the panel arrives in the <strong>next firmware version</strong> (after v1.5.0). The files can already be downloaded.</div>
+      <p style="color:var(--muted);font-size:14px;margin-top:14px">Why not install straight from here? The clock only speaks <code>http</code> on your local network, and an <code>https</code> site can't send files to it. So installing starts from the clock's panel, which fetches this site's catalog.</p>
+    </div>
+  </section>
+
+  <section id="built-in">
+    <div class="wrap">
+      <div class="sub-head"><h2>Built into the firmware</h2><span class="count" id="builtin-count"></span></div>
+      <p class="section-lead">Pick one in the clock's panel; "Ver no relógio" (show on clock) displays it for 15 seconds without saving.</p>
+      <div class="faces" id="builtin"></div>
+    </div>
+  </section>
+
+  <section id="make">
+    <div class="wrap">
+      <div class="card feature">
+        <h3><span class="ico"><img class="px" src="../img/icons/grade.svg" alt=""></span>Make your own</h3>
+        <p>A clock face is just a JSON file with layers. Take one of these as a template, change colors and positions and send it to the catalog on <a href="https://github.com/davicorrea0/smalltv-pomodoro">GitHub</a>.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<dialog class="zoom" id="zoom">
+  <img class="px" id="zoom-img" alt="" width="240" height="240">
+  <div class="bar">
+    <div>
+      <h3 id="zoom-name"></h3>
+      <p id="zoom-desc"></p>
+    </div>
+    <a class="btn small primary" id="zoom-dl" hidden><img class="px" src="../img/icons/download.svg" alt="">Download</a>
+    <button type="button" class="btn small" id="zoom-close">Close</button>
+  </div>
+</dialog>
+
+<footer>
+  <div class="wrap">
+    <img class="px" src="../img/tomate.svg" alt="">
+    <span>SmallTV Pomodoro · made by Davi Mattos</span>
+    <div class="links">
+      <a href="./">Home</a>
+      <a href="https://github.com/davicorrea0/smalltv-pomodoro">Code on GitHub</a>
+      <a href="https://github.com/davicorrea0/smalltv-pomodoro/releases">Releases</a>
+      <a href="../galeria.html" hreflang="pt-BR">Português</a>
+    </div>
+  </div>
+</footer>
+
+<script src="../faces.js"></script>
+<script src="../galeria.js"></script>
+</body>
+</html>

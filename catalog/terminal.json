@@ -1,0 +1,139 @@
+{
+  "format": 1,
+  "author": "davicorrea0",
+  "id": "terminal",
+  "name": "Terminal",
+  "desc": "O relógio como uma sessão de terminal, em verde fósforo",
+  "name_en": "Terminal",
+  "desc_en": "The clock as a shell session, in phosphor green",
+  "bg": "#060b07",
+  "layers": [
+    {
+      "type": "text",
+      "x": 10,
+      "y": 10,
+      "font": "pixel",
+      "size": 1,
+      "color": "#1f8a3f",
+      "text": "tomate@smalltv:~$ date"
+    },
+    {
+      "type": "text",
+      "x": 10,
+      "y": 24,
+      "font": "pixel",
+      "size": 1,
+      "color": "#33ff66",
+      "text": "{WD} {DD} {MON} {YYYY}"
+    },
+    {
+      "type": "text",
+      "x": 10,
+      "y": 44,
+      "font": "pixel",
+      "size": 6,
+      "color": "#33ff66",
+      "text": "{HH}:{MM}"
+    },
+    {
+      "type": "rect",
+      "x": 196,
+      "y": 44,
+      "w": 20,
+      "h": 48,
+      "color": "#33ff66"
+    },
+    {
+      "type": "text",
+      "x": 10,
+      "y": 106,
+      "font": "pixel",
+      "size": 1,
+      "color": "#1f8a3f",
+      "text": "$ clima"
+    },
+    {
+      "type": "text",
+      "x": 10,
+      "y": 120,
+      "font": "pixel",
+      "size": 1,
+      "color": "#33ff66",
+      "text": "{TEMP}C {WX}",
+      "when": "weather"
+    },
+    {
+      "type": "text",
+      "x": 10,
+      "y": 120,
+      "font": "pixel",
+      "size": 1,
+      "color": "#ff5a47",
+      "text": "erro: sem dados",
+      "when": "noweather"
+    },
+    {
+      "type": "text",
+      "x": 10,
+      "y": 144,
+      "font": "pixel",
+      "size": 1,
+      "color": "#1f8a3f",
+      "text": "$ foco --hoje"
+    },
+    {
+      "type": "text",
+      "x": 10,
+      "y": 158,
+      "font": "pixel",
+      "size": 1,
+      "color": "#33ff66",
+      "text": "[{FOCOS}/{META}]"
+    },
+    {
+      "type": "bar",
+      "x": 62,
+      "y": 158,
+      "w": 168,
+      "h": 7,
+      "value": "focos",
+      "color": "#33ff66",
+      "track": "#0f2e17"
+    },
+    {
+      "type": "text",
+      "x": 10,
+      "y": 182,
+      "font": "pixel",
+      "size": 1,
+      "color": "#1f8a3f",
+      "text": "$ ip"
+    },
+    {
+      "type": "text",
+      "x": 10,
+      "y": 196,
+      "font": "pixel",
+      "size": 1,
+      "color": "#33ff66",
+      "text": "{IP}"
+    },
+    {
+      "type": "text",
+      "x": 10,
+      "y": 222,
+      "font": "pixel",
+      "size": 1,
+      "color": "#1f8a3f",
+      "text": "$"
+    },
+    {
+      "type": "rect",
+      "x": 22,
+      "y": 220,
+      "w": 8,
+      "h": 12,
+      "color": "#33ff66"
+    }
+  ]
+}

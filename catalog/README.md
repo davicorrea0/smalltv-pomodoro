@@ -1,25 +1,29 @@
 # Catálogo de mostradores
 
-`index.json` lista os pacotes de mostradores instaláveis. A galeria do site
-(`galeria.html`) e o painel do relógio leem este arquivo.
+`index.json` lista os pacotes de mostradores instaláveis (formato 1 do motor `facepack` do
+firmware). A galeria do site (`galeria.html`, `en/gallery.html`) e o painel do relógio leem
+este arquivo.
 
 ```json
 {
-  "version": 1,
+  "format": 1,
   "faces": [
     {
-      "id": "praia",
-      "name": "Praia",
-      "author": "Fulano",
-      "desc": "Sol, mar e a hora em DSEG7",
-      "preview": "praia.png",
-      "file": "praia.json"
+      "id": "bento",
+      "name": "Bento",
+      "author": "davicorrea0",
+      "desc": "Cartões em grade, como widgets: hora, clima e focos",
+      "name_en": "Bento",
+      "desc_en": "Widget-style grid of cards: time, weather and focus",
+      "file": "bento.json",
+      "preview": "bento.png",
+      "size": 2317
     }
   ]
 }
 ```
 
-- `preview`: PNG 240×240 (a tela em tamanho real; o site amplia sem borrar).
-- `file`: o pacote `.json` do mostrador.
-- Os dois caminhos são relativos a este `index.json` (ou URLs completas).
-- Entradas sem `name` ou `file` são ignoradas.
+- `file`: o pacote `.json` do mostrador (o mesmo formato de `faces/*.json` na `main`).
+- `preview`: PNG 240×240 renderizado pelo simulador (`sim/build.sh` na `main`); o site amplia sem borrar.
+- `name_en` / `desc_en`: opcionais, usados na página em inglês.
+- Caminhos relativos a este `index.json` (ou URLs completas). Entradas sem `name` ou `file` são ignoradas.
