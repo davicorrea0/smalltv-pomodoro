@@ -105,7 +105,7 @@ static void tomatoBottom(const UiState &s) {
   G->fillRect(0, GROUND_Y + 10, 240, 240 - GROUND_Y - 10, soil);
   for (int i = 0; i < 14; i++) G->fillRect((i * 29 + 7) % 236, GROUND_Y + 12 + (i * 7) % 24, 3, 3, uiRgb(74, 47, 33));
   char b[40];
-  snprintf(b, sizeof b, "%u %s hoje  %s", s.today, s.today == 1 ? "foco" : "focos", s.ip ? s.ip : "");
+  snprintf(b, sizeof b, tr("%u %s hoje  %s", "%u %s today  %s", "%u %s hoy  %s"), s.today, s.today == 1 ? tr("foco", "session", "foco") : tr("focos", "sessions", "focos"), s.ip ? s.ip : "");
   // texto com contorno escuro para ler por cima da textura da terra
   textC(121, GROUND_Y + 22, 1, uiRgb(50, 30, 20), b);
   textC(120, GROUND_Y + 21, 1, uiRgb(255, 226, 190), b);

@@ -64,7 +64,7 @@ void themeNeon(const UiState &s, bool full) {
   if (full || lastToday != s.today) {
     G->fillRect(0, 186, 240, 24, BG);
     char f[24];
-    snprintf(f, sizeof f, "%u %s hoje", s.today, s.today == 1 ? "foco" : "focos");
+    snprintf(f, sizeof f, tr("%u %s hoje", "%u %s today", "%u %s hoy"), s.today, s.today == 1 ? tr("foco", "session", "foco") : tr("focos", "sessions", "focos"));
     int w = textW(f, 2) + 22;
     mascot(120 - w / 2, 188, 1, s.dailyGoal && s.today >= s.dailyGoal ? FACE_CHEER : FACE_HAPPY);
     text(120 - w / 2 + 22, 191, 2, NEON_A, f);

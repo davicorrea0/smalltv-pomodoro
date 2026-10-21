@@ -29,7 +29,7 @@
 #include "faces.h"
 #include "facepack.h"
 
-#define FW_VERSION "1.6.8"
+#define FW_VERSION "1.7.0"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
@@ -71,6 +71,7 @@ struct Settings {
   uint8_t dailyGoal;    // meta de focos por dia
   uint8_t activity;     // atividade do foco (UiActivity); campo novo no fim: unidades antigas leem lixo e caem no padrão
   char facePkg[24];     // pacote de mostrador ativo (/faces/<id>.json) quando theme == THEME_PACK; idem: lixo vira ""
+  uint8_t lang;         // idioma da tela e do painel: 0 português, 1 inglês, 2 espanhol; idem: lixo vira 0
 };
 const uint32_t SETTINGS_MAGIC = 0x504F4D34;     // "POM4"
 const uint32_t SETTINGS_MAGIC_V3 = 0x504F4D33;  // "POM3": mesmos campos, sem os do v4
@@ -92,7 +93,7 @@ void loadSettings() {
     cfg.magic = SETTINGS_MAGIC;
   } else if (cfg.magic != SETTINGS_MAGIC) {
     cfg = Settings{SETTINGS_MAGIC, 25, 5, 15, 4, 80, 0, 0, "<-03>3", "", 0, -1,
-                   THEME_MATRIX, 0, 10, 0, 22, 7, 15, 1, 242, 242, 242, 0, 0, "", 0, 1, 0, 8, ACT_READ, ""};
+                   THEME_MATRIX, 0, 10, 0, 22, 7, 15, 1, 242, 242, 242, 0, 0, "", 0, 1, 0, 8, ACT_READ, "", 0};
   }
   cfg.facePkg[sizeof(cfg.facePkg) - 1] = 0;
   for (char *p = cfg.facePkg; *p; p++)  // id inválido (memória antiga): sem pacote
@@ -103,6 +104,7 @@ void loadSettings() {
   if (cfg.theme >= THEME_COUNT && !(cfg.theme == THEME_PACK && cfg.facePkg[0])) cfg.theme = THEME_MATRIX;
   if (!cfg.dailyGoal) cfg.dailyGoal = 8;
   if (cfg.activity >= ACT_COUNT) cfg.activity = ACT_READ;
+  if (cfg.lang > 2) cfg.lang = 0;
   cfg.tz[sizeof(cfg.tz) - 1] = 0;
   cfg.otaPass[sizeof(cfg.otaPass) - 1] = 0;
   cfg.city[sizeof(cfg.city) - 1] = 0;
@@ -540,21 +542,21 @@ bool showAlbumItem(const String &f) {
   if (isGif(f)) {
     gif = new (std::nothrow) AnimatedGIF();  // ~24 KB contíguos de RAM
     if (!gif) {
-      uiError("Sem memoria p/ GIF");
+      uiError(tr("Sem memoria p/ GIF", "No memory for GIF", "Sin memoria p/ GIF"));
       return true;  // mantém a tela de aviso até o próximo item
     }
     gif->begin(GIF_PALETTE_RGB565_LE);
     if (!gif->open(f.c_str(), mediaOpen, mediaClose, gifRead, gifSeek, gifDraw)) {
       delete gif;
       gif = nullptr;
-      uiError("GIF invalido");
+      uiError(tr("GIF invalido", "Invalid GIF", "GIF invalido"));
       return false;
     }
     gifOffX = max(0, (240 - gif->getCanvasWidth()) / 2);
     gifOffY = max(0, (240 - gif->getCanvasHeight()) / 2);
     nextFrameAt = 0;
   } else {
-    if (!drawJpg(f)) uiError("JPG invalido");
+    if (!drawJpg(f)) uiError(tr("JPG invalido", "Invalid JPG", "JPG invalido"));
   }
   return true;
 }
@@ -764,6 +766,8 @@ void sendState() {
   j += cfg.dailyGoal;
   j += F(",\"act\":");
   j += cfg.activity;
+  j += F(",\"lang\":");
+  j += cfg.lang;
   j += F("},\"pv\":");
   j += previewActive() ? (previewUntil - millis()) / 1000 + 1 : 0;
   j += F(",\"heap\":");
@@ -935,6 +939,8 @@ void setupWeb() {
     }
     cfg.dailyGoal = argRange("goal", cfg.dailyGoal, 1, 30);
     cfg.activity = argRange("act", cfg.activity, 0, ACT_COUNT - 1);
+    uint8_t lang = argRange("lang", cfg.lang, 0, 2);
+    if (lang != cfg.lang) uiSetLang(cfg.lang = lang);
     uint8_t bgr = argRange("bgr", cfg.bgr, 0, 1), inv = argRange("inv", cfg.invert, 0, 1),
             flip = argRange("flip", cfg.flip, 0, 1);
     bool panelChanged = bgr != cfg.bgr || inv != cfg.invert || flip != cfg.flip;
@@ -1137,7 +1143,7 @@ void startPortal() {
   WiFi.mode(WIFI_AP_STA);
   WiFi.softAP(AP_NAME);
   dns.start(53, "*", WiFi.softAPIP());
-  message("Configure o Wi-Fi", AP_NAME, "Conecte nessa rede e abra", "http://192.168.4.1");
+  message(tr("Configure o Wi-Fi", "Set up Wi-Fi", "Configura el Wi-Fi"), AP_NAME, tr("Conecte nessa rede e abra", "Join this network and open", "Conectate a esta red y abre"), "http://192.168.4.1");
   server.on("/", HTTP_GET, [] {
     int n = WiFi.scanNetworks();
     String opts;
@@ -1146,14 +1152,24 @@ void startPortal() {
                  "<title>SmallTV Wi-Fi</title><style>body{font:16px system-ui;background:#111;color:#eee;max-width:380px;margin:auto;padding:20px}"
                  "input,button{width:100%;padding:12px;margin:6px 0 14px;border-radius:10px;border:1px solid #333;background:#1c1c1c;color:#eee;font:inherit}"
                  "button{background:#ff5a47;border:0;font-weight:700}</style><h2>SmallTV Wi-Fi</h2><form method=post action=/save>"
-                 "Rede<input name=s list=l required><datalist id=l>");
+                 );
+    p += tr("Rede", "Network", "Red");
+    p += F("<input name=s list=l required><datalist id=l>");
     p += opts;
-    p += F("</datalist>Senha<input name=p type=password><button>Conectar</button></form>");
+    p += F("</datalist>");
+    p += tr("Senha", "Password", "Contrase&ntilde;a");
+    p += F("<input name=p type=password><button>");
+    p += tr("Conectar", "Connect", "Conectar");
+    p += F("</button></form>");
     server.send(200, "text/html", p);
   });
   server.on("/save", HTTP_POST, [] {
-    server.send(200, "text/html", F("<meta charset=utf-8><body style='font:16px system-ui;background:#111;color:#eee;padding:20px'>"
-                                    "Conectando... O relógio vai reiniciar e mostrar o endereço do painel na tela."));
+    String p = F("<meta charset=utf-8><body style='font:16px system-ui;background:#111;color:#eee;padding:20px'>");
+    PGM_P done[3] = {PSTR("Conectando... O rel&oacute;gio vai reiniciar e mostrar o endere&ccedil;o do painel na tela."),
+                     PSTR("Connecting... The clock will restart and show the panel address on screen."),
+                     PSTR("Conectando... El reloj se reiniciar&aacute; y mostrar&aacute; la direcci&oacute;n del panel en la pantalla.")};
+    p += FPSTR(done[cfg.lang]);  // longo demais para o buffer do tr()
+    server.send(200, "text/html", p);
     delay(500);
     WiFi.persistent(true);
     WiFi.begin(server.arg("s").c_str(), server.arg("p").c_str());
@@ -1177,6 +1193,7 @@ void setup() {
   tft.init(240, 240, SPI_MODE3);
   tft.setSPISpeed(40000000);
   uiBegin(&tft);
+  uiSetLang(cfg.lang);
   // entre os quadros de animação (virada do Flip): cede tempo ao Wi-Fi e dá ritmo à virada
   uiFrameHook = [] { yield(); };  // a animação é guiada pelo relógio: só cede tempo ao Wi-Fi
   uiMillis = [] { return (uint32_t)millis(); };
@@ -1193,7 +1210,7 @@ void setup() {
   if (cfg.theme == THEME_PACK) restoreActivePack();  // pacote ausente/inválido: volta ao Matriz
   rebuildAlbum();
 
-  message("SmallTV Pomodoro", "Conectando Wi-Fi", "v" FW_VERSION);
+  message("SmallTV Pomodoro", tr("Conectando Wi-Fi", "Connecting Wi-Fi", "Conectando Wi-Fi"), "v" FW_VERSION);
 
   // Usa a rede salva no ESP8266 (inclusive a que o firmware original já tinha configurado).
   if (!connectStored(20000)) {

@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #define UI_ASSET_LIST  // assets.h inclui a lista com o nome de cada asset (para a folha de prévia)
 #include "../smalltv-pomodoro/ui_kit.h"
 #include "../smalltv-pomodoro/assets.h"
@@ -210,6 +211,7 @@ static int testPackages(const UiState &pomo) {
 }
 
 int main() {
+  if (const char *l = getenv("SIM_LANG")) uiSetLang(atoi(l));  // 1 = inglês, 2 = espanhol (as prévias oficiais ficam em português)
   // ---- relógio: temas ----
   UiState s = base(14, 37, 25);
   s.theme = THEME_MATRIX;              shot("01_matriz", s, false);

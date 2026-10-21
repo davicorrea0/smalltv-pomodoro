@@ -28,8 +28,9 @@ static const uint16_t CLOUD  = uiRgb(214, 220, 230);
 static const uint16_t DCLOUD = uiRgb(120, 126, 138);
 static const uint16_t RAIN   = uiRgb(90, 170, 255);
 
-extern const char *const WD[7];   // "DOM".."SAB"
-extern const char *const MO[12];  // "JAN".."DEZ"
+// ---------- idioma (uiSetLang) ----------
+extern char WD[7][4];   // dia da semana abreviado no idioma atual ("TER", "TUE", "MAR")
+extern char MO[12][4];  // mês abreviado ("OUT", "OCT", "OCT")
 
 // ---------- texto (fonte 6x8 embutida, escala inteira; só ASCII) ----------
 int textW(const char *s, uint8_t sz);

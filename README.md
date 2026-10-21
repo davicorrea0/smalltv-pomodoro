@@ -10,12 +10,13 @@ Firmware alternativo para o **GeekMagic SmallTV Ultra** (ESP8266, tela ST7789 24
 
 ## Funções
 
-- **8 mostradores**: Matriz, Tomate (cena em pixel art que muda com a hora e o clima; o tomate abre o guarda-chuva na chuva, põe cachecol no frio, óculos escuros no calor e comemora a meta do dia), Analógico, Clima, Neon, Flip (com animação de virada de verdade), LCD retrô e Palavras (hora por extenso em português)
+- **8 mostradores**: Matriz, Tomate (cena em pixel art que muda com a hora e o clima; o tomate abre o guarda-chuva na chuva, põe cachecol no frio, óculos escuros no calor e comemora a meta do dia), Analógico, Clima, Neon, Flip (com animação de virada de verdade), LCD retrô e Palavras (hora por extenso em português, inglês ou espanhol)
 - **Pomodoro** com anel de progresso, horário de término e o tomate mudando de expressão (focado, relaxando com um café, dormindo quando pausado); você escolhe no painel o que vai fazer no foco (ler, estudar, programar, tarefas ou desenhar) e a tela mostra a atividade e o objeto dela ao lado do tomate e pulando de alegria quando uma fase termina; contador de focos do dia com meta diária
 - **Clima** via [Open-Meteo](https://open-meteo.com/) (sem chave de API), com busca de cidade pelo painel
 - **Álbum de fotos e GIFs**: lê os arquivos já gravados pelo firmware original; envio pelo painel com recorte automático para 240×240
 - **Brilho noturno** por horário
 - **Painel web** no IP mostrado na tela, em 4 abas (Relógio, Foco, Fotos, Ajustes): galeria dos mostradores com prévia ("Ver no relógio" mostra o mostrador por 15 s sem salvar), controle do Pomodoro, fotos e ajustes que salvam sozinhos
+- **Português, inglês e espanhol**: o idioma escolhido em Ajustes vale para o painel e para os textos da tela (datas, clima, Pomodoro, mostrador Palavras)
 - **Ajustes do painel** (ordem de cor RGB/BGR, inversão, rotação 180°) com tela de teste de cores, porque isso varia entre unidades
 - **Atualização OTA** em `/update` (usuário `admin`, senha opcional), que também serve para voltar ao firmware original
 
@@ -118,10 +119,11 @@ arduino-cli compile --fqbn "esp8266:esp8266:generic:eesz=4M3M,xtal=160,ip=lm2n" 
 ## Detalhes técnicos
 
 - **Layout da flash 4M3M**, o mesmo do firmware original (constantes do LittleFS encontradas no binário V9.0.50, offset `0x14d00`). Assim as fotos e GIFs existentes são lidos. O LittleFS é montado **sem formatação automática**: se não montar, nada é apagado.
-- **Tamanho do binário**: para conseguir voltar ao firmware original pelo painel, este firmware precisa ficar abaixo de ~530 KB (hoje ~491 KB).
+- **Tamanho do binário**: para conseguir voltar ao firmware original pelo painel, este firmware precisa deixar espaço para o binário original (V9.0.50: 505.200 bytes) na atualização OTA, o que dá um limite de ~540 KB (hoje ~534 KB).
 - **Painel comprimido**: o HTML vai com gzip na flash (~24 KB → ~9 KB) e a pilha de rede usa a variante leve do lwIP (`ip=lm2n`, sem recursos que o relógio não usa, como PPP e roteamento)
 - **Fontes desenhadas por código**: os dígitos (pixel art 5×7, fonte vetorial "Geo" e os segmentos do DSEG7 como polígonos) não usam bitmaps na flash.
 - **Sprites** em `PROGMEM` com 4 bits por pixel, desenhados juntando pixels vizinhos iguais em retângulos (menos chamadas SPI).
+- **Textos traduzidos na flash**: `tr("pt", "en", "es")` guarda os três textos com `PSTR` e copia só o do idioma atual para um buffer pequeno, sem gastar a RAM que o GIF precisa.
 - **RAM**: o decodificador de GIF precisa de ~24 KB contíguos e o de JPEG de ~18 KB. Se faltar memória, a tela mostra um aviso em vez de travar.
 
 ### Pinagem

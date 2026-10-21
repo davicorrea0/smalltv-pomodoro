@@ -10,7 +10,7 @@ static void weatherCard(const UiState &s, int x, int y) {
   const int w = 108, h = 120, cx = x + w / 2;
   G->fillRoundRect(x, y, w, h, 12, CARD);
   char label[16];
-  snprintf(label, sizeof label, "%.15s", s.city && s.city[0] ? s.city : "CLIMA");
+  snprintf(label, sizeof label, "%.15s", s.city && s.city[0] ? s.city : tr("CLIMA", "WEATHER", "CLIMA"));
   text(x + 12, y + 10, 1, MUTED, label);
   if (s.weatherOn && s.wx.ok) {
     weatherIcon(cx, y + 42, 0.8f, s.wx.code, s.wx.day, CARD);
@@ -20,14 +20,14 @@ static void weatherCard(const UiState &s, int x, int y) {
     textC(cx, y + 102, 1, MUTED, mm);
   } else {
     textC(cx, y + 50, 3, DIM, "--");
-    textC(cx, y + 92, 1, MUTED, s.weatherOn ? "buscando..." : "desligado");
+    textC(cx, y + 92, 1, MUTED, s.weatherOn ? tr("buscando...", "loading...", "buscando...") : tr("desligado", "off", "apagado"));
   }
 }
 
 static void focusCard(const UiState &s, int x, int y) {
   const int w = 108, h = 120, cx = x + w / 2;
   G->fillRoundRect(x, y, w, h, 12, CARD);
-  text(x + 12, y + 10, 1, MUTED, "FOCOS HOJE");
+  text(x + 12, y + 10, 1, MUTED, tr("FOCOS HOJE", "FOCUS TODAY", "FOCOS HOY"));
   int goal = s.dailyGoal ? s.dailyGoal : 1;
   bool done = s.today >= goal;
   char n[8];
@@ -40,15 +40,15 @@ static void focusCard(const UiState &s, int x, int y) {
     textC(cx, y + 30, 5, TEXT, n);
   }
   char g[20];
-  snprintf(g, sizeof g, "meta %d", goal);
+  snprintf(g, sizeof g, tr("meta %d", "goal %d", "meta %d"), goal);
   textC(cx, y + 76, 1, MUTED, g);
   const int bx = x + 12, bw = w - 24, by = y + 92;
   G->fillRoundRect(bx, by, bw, 8, 4, CARD2);
   int fill = (done ? goal : s.today) * bw / goal;
   if (fill > 0) G->fillRoundRect(bx, by, fill < 8 ? 8 : fill, 8, 4, done ? SHORT : WORK);
-  if (done) textC(cx, y + 106, 1, SHORT, "meta batida!");
+  if (done) textC(cx, y + 106, 1, SHORT, tr("meta batida!", "goal met!", "meta lograda!"));
   else {
-    snprintf(g, sizeof g, "faltam %d", goal - s.today);
+    snprintf(g, sizeof g, tr("faltam %d", "%d to go", "faltan %d"), goal - s.today);
     textC(cx, y + 106, 1, MUTED, g);
   }
 }

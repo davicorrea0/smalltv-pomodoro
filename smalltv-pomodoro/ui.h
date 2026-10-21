@@ -86,6 +86,13 @@ extern UiClip uiClip;
 void uiClipBegin(int x0, int y0, int x1, int y1);
 void uiClipEnd();
 void uiInvalidate();                         // redesenha tudo na próxima chamada
+void uiSetLang(uint8_t lang);                // textos da tela: 0 português, 1 inglês, 2 espanhol
+extern uint8_t uiLang;
+// tr("pt", "en", "es"): os três textos ficam na flash (PSTR) e o do idioma atual é copiado para um
+// de 6 buffers rotativos de 48 bytes (RAM é escassa: o GIF do álbum precisa de ~22 KB contíguos).
+// O ponteiro vale até mais 5 chamadas de tr(); quem guarda o texto deve copiar.
+const char *trP(PGM_P pt, PGM_P en, PGM_P es);
+#define tr(pt, en, es) trP(PSTR(pt), PSTR(en), PSTR(es))
 void uiRenderClock(const UiState &s);        // tela de relógio no tema escolhido
 void uiRenderPomodoro(const UiState &s);     // anel de progresso do Pomodoro
 void uiMessage(const char *title, const char *l1, const char *l2, const char *l3);

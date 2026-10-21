@@ -18,9 +18,34 @@ Adafruit_GFX *G = nullptr;
 #include <string.h>
 
 
-const char *const WD[7] = {"DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SAB"};
-const char *const MO[12] = {"JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"};
-static const char *PHASE_LABEL[4] = {"", "FOCO", "PAUSA", "PAUSA LONGA"};
+// ---------- idioma ----------
+static const char WD_L[3][7][4] PROGMEM = {{"DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SAB"},
+                                           {"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"},
+                                           {"DOM", "LUN", "MAR", "MIE", "JUE", "VIE", "SAB"}};
+static const char MO_L[3][12][4] PROGMEM = {{"JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"},
+                                            {"JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"},
+                                            {"ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"}};
+uint8_t uiLang = 0;
+char WD[7][4] = {"DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SAB"};  // português até o uiSetLang
+char MO[12][4] = {"JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"};
+void uiSetLang(uint8_t lang) {
+  uiLang = lang < 3 ? lang : 0;
+  memcpy_P(WD, WD_L[uiLang], sizeof WD);
+  memcpy_P(MO, MO_L[uiLang], sizeof MO);
+  uiInvalidate();
+}
+const char *trP(PGM_P pt, PGM_P en, PGM_P es) {
+  static char buf[6][48];
+  static uint8_t k = 0;
+  char *b = buf[k++ % 6];
+  strncpy_P(b, uiLang == 1 ? en : uiLang == 2 ? es : pt, sizeof buf[0] - 1);
+  b[sizeof buf[0] - 1] = 0;
+  return b;
+}
+// rótulos dentro do anel do Pomodoro: até 11 caracteres
+static const char *phaseLabel(uint8_t p) {
+  return p == PH_WORK ? tr("FOCO", "FOCUS", "FOCO") : p == PH_SHORT ? tr("PAUSA", "BREAK", "PAUSA") : p == PH_LONG ? tr("PAUSA LONGA", "LONG BREAK", "PAUSA LARGA") : "";
+}
 
 // ---------- texto (fonte 6x8 embutida) ----------
 int textW(const char *s, uint8_t sz) {
@@ -159,7 +184,7 @@ int displayHour(const UiState &s) {
 
 void dateLabel(const UiState &s, char *out, size_t n) {
   if (s.timeOk) snprintf(out, n, "%s %02d %s", WD[s.now.tm_wday], s.now.tm_mday, MO[s.now.tm_mon]);
-  else snprintf(out, n, "SINCRONIZANDO");
+  else snprintf(out, n, "%s", tr("SINCRONIZANDO", "SYNCING", "SINCRONIZANDO"));
 }
 
 // Barra superior: data à esquerda, texto livre (IP/hora) à direita.
@@ -226,14 +251,14 @@ void weatherIcon(int cx, int cy, float s, int c, bool day, uint16_t bg) {
 }
 
 const char *weatherText(int c) {
-  if (c == 0) return "Ceu limpo";
-  if (c <= 2) return "Poucas nuvens";
-  if (c == 3) return "Nublado";
-  if (c == 45 || c == 48) return "Neblina";
-  if (c >= 51 && c <= 57) return "Garoa";
-  if ((c >= 61 && c <= 67) || (c >= 80 && c <= 82)) return "Chuva";
-  if ((c >= 71 && c <= 77) || c == 85 || c == 86) return "Neve";
-  if (c >= 95) return "Tempestade";
+  if (c == 0) return tr("Ceu limpo", "Clear sky", "Despejado");
+  if (c <= 2) return tr("Poucas nuvens", "Few clouds", "Poco nuboso");
+  if (c == 3) return tr("Nublado", "Cloudy", "Nublado");
+  if (c == 45 || c == 48) return tr("Neblina", "Fog", "Niebla");
+  if (c >= 51 && c <= 57) return tr("Garoa", "Drizzle", "Llovizna");
+  if ((c >= 61 && c <= 67) || (c >= 80 && c <= 82)) return tr("Chuva", "Rain", "Lluvia");
+  if ((c >= 71 && c <= 77) || c == 85 || c == 86) return tr("Neve", "Snow", "Nieve");
+  if (c >= 95) return tr("Tempestade", "Storm", "Tormenta");
   return "";
 }
 
@@ -266,7 +291,15 @@ void mascot(int x, int y, int sc, uint8_t face, int32_t bg) { uiSprite(FACES[fac
 
 // Atividades do foco (UiActivity): objeto ao lado do tomate e título da tela do Pomodoro.
 static const UiSprite *const ACTIVITY_SPRITE[ACT_COUNT] = {&SPR_LIVRO, &SPR_CADERNO, &SPR_NOTEBOOK, &SPR_PRANCHETA, &SPR_PALETA_PINTOR};
-static const char *const ACTIVITY_LABEL[ACT_COUNT] = {"LENDO", "ESTUDANDO", "PROGRAMANDO", "TAREFAS", "DESENHANDO"};
+static const char *activityLabel(uint8_t a) {
+  switch (a) {
+    case 1: return tr("ESTUDANDO", "STUDYING", "ESTUDIANDO");
+    case 2: return tr("PROGRAMANDO", "CODING", "PROGRAMANDO");
+    case 3: return tr("TAREFAS", "TASKS", "TAREAS");
+    case 4: return tr("DESENHANDO", "DRAWING", "DIBUJANDO");
+  }
+  return tr("LENDO", "READING", "LEYENDO");
+}
 
 void (*uiFrameHook)() = nullptr;     // o firmware usa para ceder tempo ao Wi-Fi entre quadros
 uint32_t (*uiMillis)() = nullptr;    // relógio em ms (firmware: millis); sem ele, passos fixos de 20 ms
@@ -452,7 +485,7 @@ void uiRenderPomodoro(const UiState &s) {
   if (target > lastRing) lastRing = target;
 
   uint8_t act = s.activity < ACT_COUNT ? s.activity : ACT_READ;
-  const char *label = s.phase == PH_WORK ? ACTIVITY_LABEL[act] : PHASE_LABEL[s.phase];
+  const char *label = s.phase == PH_WORK ? activityLabel(act) : phaseLabel(s.phase);
   if (changed(cA, label)) {
     G->fillRect(50, 44, 140, 18, BG);  // dentro do anel (raio interno 104)
     textC(120, 46, 2, col, label);
@@ -493,12 +526,12 @@ void uiRenderPomodoro(const UiState &s) {
   }
 
   char st[24];
-  if (!s.running) snprintf(st, sizeof st, "PAUSADO");
+  if (!s.running) snprintf(st, sizeof st, "%s", tr("PAUSADO", "PAUSED", "PAUSADO"));
   else if (s.timeOk) {
     struct tm t = s.now, e;
     time_t end = mktime(&t) + secs;
     localtime_r(&end, &e);
-    snprintf(st, sizeof st, "termina %02d:%02d", e.tm_hour, e.tm_min);
+    snprintf(st, sizeof st, tr("termina %02d:%02d", "ends %02d:%02d", "termina %02d:%02d"), e.tm_hour, e.tm_min);
   } else st[0] = 0;
   if (changed(cB, st)) {
     G->fillRect(50, 184, 140, 10, BG);
@@ -520,15 +553,15 @@ void uiMessage(const char *title, const char *l1, const char *l2, const char *l3
 void uiColorTest() {
   screen = 21;
   G->fillScreen(BG);
-  textC(120, 8, 1, TEXT, "TESTE DE CORES");
+  textC(120, 8, 1, TEXT, tr("TESTE DE CORES", "COLOR TEST", "PRUEBA DE COLOR"));
   const uint16_t c[4] = {0xF800, 0x07E0, 0x001F, 0xFFFF};
-  const char *n[4] = {"VERMELHO", "VERDE", "AZUL", "BRANCO"};
+  const char *n[4] = {tr("VERMELHO", "RED", "ROJO"), tr("VERDE", "GREEN", "VERDE"), tr("AZUL", "BLUE", "AZUL"), tr("BRANCO", "WHITE", "BLANCO")};
   for (int i = 0; i < 4; i++) {
     G->fillRect(i * 60 + 4, 26, 52, 160, c[i]);
     textC(i * 60 + 30, 194, 1, TEXT, n[i]);
   }
-  textC(120, 218, 1, MUTED, "o 1o deve ser vermelho e o");
-  textC(120, 228, 1, MUTED, "fundo preto");
+  textC(120, 218, 1, MUTED, tr("o 1o deve ser vermelho e o", "the 1st should be red and the", "la 1a debe ser roja y el"));
+  textC(120, 228, 1, MUTED, tr("fundo preto", "background black", "fondo negro"));
 }
 
 void uiError(const char *msg) {

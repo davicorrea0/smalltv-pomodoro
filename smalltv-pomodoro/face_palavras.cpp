@@ -5,21 +5,26 @@
 
 // ---------- tema 7: PALAVRAS ----------
 // A hora por extenso ("SAO DUAS E MEIA DA TARDE"), arredondada a 5 minutos.
-// Acentos: '\x01' = Ê, '\x02' = Ã, '\x03' = É (a fonte embutida só tem ASCII; o sinal é desenhado).
+// Em inglês ("IT'S HALF PAST TWO IN THE AFTERNOON") e espanhol ("SON LAS DOS Y MEDIA DE LA TARDE") conforme uiLang.
+// Acentos: '\x01' = Ê, '\x02' = Ã, '\x03' = É, '\x04' = Ñ (a fonte embutida só tem ASCII; o sinal é desenhado).
 struct Tok { const char *s; uint16_t c; };
 static const char *HOURW[12] = {"", "UMA", "DUAS", "TR\x01S", "QUATRO", "CINCO", "SEIS", "SETE", "OITO", "NOVE", "DEZ", "ONZE"};
 static const char *const MIN_E[7][4] = {{}, {"E", "CINCO"}, {"E", "DEZ"}, {"E", "QUINZE"}, {"E", "VINTE"}, {"E", "VINTE", "E", "CINCO"}, {"E", "MEIA"}};
 static const char *const MIN_PARA[5][3] = {{"VINTE", "E", "CINCO"}, {"VINTE"}, {"QUINZE"}, {"DEZ"}, {"CINCO"}};
+static const char *const HOUR_EN[12] = {"TWELVE", "ONE", "TWO", "THREE", "FOUR", "FIVE", "SIX", "SEVEN", "EIGHT", "NINE", "TEN", "ELEVEN"};
+static const char *const MIN_EN[7][2] = {{}, {"FIVE"}, {"TEN"}, {"QUARTER"}, {"TWENTY"}, {"TWENTY", "FIVE"}, {"HALF"}};
+static const char *const HOUR_ES[12] = {"DOCE", "UNA", "DOS", "TRES", "CUATRO", "CINCO", "SEIS", "SIETE", "OCHO", "NUEVE", "DIEZ", "ONCE"};
+static const char *const MIN_ES[7] = {"", "CINCO", "DIEZ", "CUARTO", "VEINTE", "VEINTICINCO", "MEDIA"};
 
 static void wordText(int x, int y, uint8_t sz, uint16_t c, const char *str) {
   for (const char *p = str; *p; p++, x += 6 * sz) {
-    char ch = *p, base = ch == '\x01' || ch == '\x03' ? 'E' : ch == '\x02' ? 'A' : ch;
+    char ch = *p, base = ch == '\x01' || ch == '\x03' ? 'E' : ch == '\x02' ? 'A' : ch == '\x04' ? 'N' : ch;
     G->drawChar(x, y, base, c, c, sz);
     float u = sz;
     if (ch == '\x01') {  // circunflexo
       thickLine(x + 0.8f * u, y - 2, x + 2.5f * u, y - 2 - 1.6f * u, 2, c);
       thickLine(x + 2.5f * u, y - 2 - 1.6f * u, x + 4.2f * u, y - 2, 2, c);
-    } else if (ch == '\x02') {  // til
+    } else if (ch == '\x02' || ch == '\x04') {  // til
       thickLine(x + 0.5f * u, y - 3, x + 1.6f * u, y - 2 - 1.5f * u, 2, c);
       thickLine(x + 1.6f * u, y - 2 - 1.5f * u, x + 3.2f * u, y - 3, 2, c);
       thickLine(x + 3.2f * u, y - 3, x + 4.4f * u, y - 2 - 1.5f * u, 2, c);
@@ -29,10 +34,63 @@ static void wordText(int x, int y, uint8_t sz, uint16_t c, const char *str) {
   }
 }
 
+// "IT'S TEN PAST NINE IN THE MORNING" / "IT'S QUARTER TO NOON"
+static int phraseEn(int h, int r, Tok *t, uint16_t hourC) {
+  int n = 0;
+  bool to = r >= 35;
+  int hh = to ? (h + 1) % 24 : h, m = to ? (60 - r) / 5 : r / 5;
+  const char *hw = hh == 0 ? "MIDNIGHT" : hh == 12 ? "NOON" : HOUR_EN[hh % 12];
+  t[n++] = {"IT'S", MUTED};
+  if (r) {
+    for (int i = 0; i < 2 && MIN_EN[m][i]; i++) t[n++] = {MIN_EN[m][i], TEXT};
+    t[n++] = {to ? "TO" : "PAST", MUTED};
+  }
+  t[n++] = {hw, hourC};
+  if (hh != 0 && hh != 12) {
+    if (!r) t[n++] = {"O'CLOCK", MUTED};
+    if (hh < 5) t[n++] = {"AT", MUTED}, t[n++] = {"NIGHT", MUTED};
+    else {
+      t[n++] = {"IN", MUTED};
+      t[n++] = {"THE", MUTED};
+      t[n++] = {hh < 12 ? "MORNING" : hh < 18 ? "AFTERNOON" : "EVENING", MUTED};
+    }
+  }
+  return n;
+}
+
+// "SON LAS DOS Y MEDIA DE LA TARDE" / "ES LA UNA MENOS CUARTO" / "ES MEDIODIA"
+static int phraseEs(int h, int r, Tok *t, uint16_t hourC) {
+  int n = 0;
+  bool menos = r >= 35;
+  int hh = menos ? (h + 1) % 24 : h, m = menos ? (60 - r) / 5 : r / 5;
+  if (!r && (hh == 0 || hh == 12)) {
+    t[n++] = {"ES", MUTED};
+    t[n++] = {hh ? "MEDIODIA" : "MEDIANOCHE", hourC};
+    return n;
+  }
+  bool una = hh % 12 == 1;
+  t[n++] = {una ? "ES" : "SON", MUTED};
+  t[n++] = {una ? "LA" : "LAS", MUTED};
+  t[n++] = {HOUR_ES[hh % 12], hourC};
+  if (!r) t[n++] = {"EN PUNTO", MUTED};
+  else {
+    t[n++] = {menos ? "MENOS" : "Y", MUTED};
+    t[n++] = {MIN_ES[m], TEXT};
+  }
+  if (hh != 0 && hh != 12) {
+    t[n++] = {"DE", MUTED};
+    t[n++] = {"LA", MUTED};
+    t[n++] = {hh < 5 ? "MADRUGADA" : hh < 12 ? "MA\x04ANA" : hh < 19 ? "TARDE" : "NOCHE", MUTED};
+  }
+  return n;
+}
+
 static int buildPhrase(const UiState &s, Tok *t, uint16_t hourC) {
   int n = 0;
   int h = s.now.tm_hour, r = (s.now.tm_min + 2) / 5 * 5;
   if (r == 60) { r = 0; h = (h + 1) % 24; }
+  if (uiLang == 1) return phraseEn(h, r, t, hourC);
+  if (uiLang == 2) return phraseEs(h, r, t, hourC);
   bool para = r >= 35;
   int hh = para ? (h + 1) % 24 : h;
   const char *hw = hh == 0 ? "MEIA-NOITE" : hh == 12 ? "MEIO-DIA" : HOURW[hh % 12];
@@ -64,7 +122,7 @@ void themeWords(const UiState &s, bool full) {
   if (!s.timeOk) return;
   Tok t[16];
   int n = buildPhrase(s, t, WORK);
-  char key[40] = "";
+  char key[64] = "";
   for (int i = 0; i < n; i++) {
     strncat(key, t[i].s, sizeof key - strlen(key) - 2);
     strncat(key, " ", sizeof key - strlen(key) - 1);

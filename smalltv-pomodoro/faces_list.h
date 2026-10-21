@@ -14,4 +14,4 @@
   X(NEON, themeNeon, "Neon", "Tubos rosa e ciano com brilho")                              \
   X(FLIP, themeFlip, "Flip", "Plaquinhas que viram, com a fonte Bebas Neue")               \
   X(LCD, themeLcd, "LCD retrô", "Relógio digital dos anos 80 (fonte DSEG7)")               \
-  X(WORDS, themeWords, "Palavras", "A hora por extenso, em português")
+  X(WORDS, themeWords, "Palavras", "A hora por extenso, no idioma do relógio")

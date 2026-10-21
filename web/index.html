@@ -83,10 +83,10 @@ nav button.on svg{stroke:var(--ac)}
  nav button{flex:none;padding:12px 0;margin:0 10px;border-radius:14px;font-size:12px}
  nav button:hover{background:var(--card2);color:var(--fg)}nav button.on{background:var(--card2)}
  .tab.on{display:grid;column-gap:28px;align-items:start}
- #t0.on{grid-template-columns:300px minmax(0,1fr);grid-template-rows:auto 1fr}
+ #t0.on{grid-template-columns:320px minmax(0,1fr);grid-template-rows:auto 1fr}
  #t0 #pvbar{grid-column:1/-1}
  #t0 .side{grid-column:1;margin-top:22px}#t0 .body{grid-column:2;grid-row:span 2}#t0 .side2{grid-column:1}
- #t0 .side,#t0 .side2{position:sticky;top:76px}
+ #t0 .side2 select{width:150px}#t0 .side2 label{white-space:nowrap}
  .hero{flex-direction:column;align-items:stretch;text-align:center}.hero .scr{width:100%}
  .faces{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px}
  .face:hover .scr{border-color:#4a4a52}.face.cur:hover .scr{border-color:var(--ac)}
@@ -173,6 +173,12 @@ nav button.on svg{stroke:var(--ac)}
 <!-- ============ AJUSTES ============ -->
 <section class="tab" id="t3">
  <div class="grp">
+ <h2>Idioma</h2>
+ <div class="card">
+  <label>Idioma do painel e do relógio<select data-k="lang"><option value="0">Português</option><option value="1">English</option><option value="2">Español</option></select></label>
+ </div>
+ </div>
+ <div class="grp">
  <h2>Clima</h2>
  <div class="card">
   <div id="wx" hidden><b id="wt"></b><div><div id="wd"></div><small id="wm"></small></div></div>
@@ -198,7 +204,7 @@ nav button.on svg{stroke:var(--ac)}
   <label>Ordem de cor<select data-k="bgr"><option value="0">RGB (padrão)</option><option value="1">BGR</option></select></label>
   <label>Inverter cores<input data-k="inv" type="checkbox"></label>
   <label>Girar 180°<input data-k="flip" type="checkbox"></label>
-  <p><button class="btn" onclick="cmd('colortest');toast('Teste de cores por 10 s no relógio')">Testar cores no relógio</button></p>
+  <p><button class="btn" onclick="cmd('colortest');toast(t('Teste de cores por 10 s no relógio'))">Testar cores no relógio</button></p>
   <small>No teste, a 1ª barra deve ser vermelha e o fundo preto. Vermelho e azul trocados: mude a ordem de cor. Fundo branco ou cores negativas: alterne "Inverter cores".</small>
  </div>
  </div>
@@ -218,8 +224,8 @@ nav button.on svg{stroke:var(--ac)}
    <p><button class="btn" type="submit">Salvar senha</button></p>
   </form>
   <div class="row"><button class="btn" onclick="location='/update'">Atualizar firmware</button>
-  <button class="btn" onclick="if(confirm('Apagar Wi-Fi salvo e reiniciar?'))post('/api/wifireset').then(()=>toast('Reiniciando...'))">Resetar Wi-Fi</button></div>
-  <p><button class="btn" id="fmt" hidden onclick="if(confirm('Formatar a memória? Todas as fotos e GIFs serão apagados.'))post('/api/format').then(r=>r.text()).then(t=>{toast(t);files()})">Formatar memória de arquivos</button></p>
+  <button class="btn" onclick="if(confirm(t('Apagar Wi-Fi salvo e reiniciar?')))post('/api/wifireset').then(()=>toast(t('Reiniciando...')))">Resetar Wi-Fi</button></div>
+  <p><button class="btn" id="fmt" hidden onclick="if(confirm(t('Formatar a memória? Todas as fotos e GIFs serão apagados.')))post('/api/format').then(r=>r.text()).then(x=>{toast(t(x));files()})">Formatar memória de arquivos</button></p>
   <small>Usuário do /update: admin. Para voltar ao firmware original, envie o .bin da GeekMagic em "Atualizar firmware". Versão <span id="ver"></span> · RAM livre <span id="heap"></span></small>
  </div>
  </div>
@@ -239,6 +245,19 @@ nav button.on svg{stroke:var(--ac)}
 <script>
 const $=id=>document.getElementById(id),C=339.3;
 const LBL={work:'FOCO',short:'PAUSA',long:'PAUSA LONGA',idle:'PRONTO'};
+// ---------- idioma (pt/en/es; o relógio guarda em cfg.lang) ----------
+const LANGS=['pt','en','es'],I18N={"Mostrador atual":["Current face","Esfera actual"],"Nativos":["Built-in","Incluidas"],"Baixados":["Downloaded","Descargadas"],"Nenhum mostrador baixado ainda. Abra a galeria online logo abaixo e toque em um para instalar.":["No downloaded faces yet. Open the online gallery below and tap one to install it.","Aún no hay esferas descargadas. Abre la galería en línea abajo y toca una para instalarla."],"Mais mostradores":["More faces","Más esferas"],"Ver a galeria online":["Open the online gallery","Ver la galería en línea"],"Instalar de um arquivo":["Install from a file","Instalar desde un archivo"],"Escolha o .json do mostrador (e, se tiver, a prévia .png). Ele fica guardado no relógio, sem atualizar o firmware. Mais mostradores e como criar o seu:":["Pick the face .json (and its .png preview, if you have it). It is stored on the clock, no firmware update needed. More faces and how to make your own:","Elige el .json de la esfera (y su vista previa .png, si la tienes). Se guarda en el reloj, sin actualizar el firmware. Más esferas y cómo crear la tuya:"],"site do projeto":["project website","sitio del proyecto"],"Aparência":["Appearance","Apariencia"],"Cor dos números":["Digit color","Color de los números"],"Formato 12 h":["12-hour format","Formato 12 h"],"O que mostrar":["What to show","Qué mostrar"],"Só o relógio":["Clock only","Solo el reloj"],"Álbum de fotos":["Photo album","Álbum de fotos"],"Alternar relógio e álbum":["Alternate clock and album","Alternar reloj y álbum"],"Segundos por item":["Seconds per item","Segundos por elemento"],"Foco":["Focus","Foco"],"Pausa":["Break","Pausa"],"Pausa longa":["Long break","Pausa larga"],"O que vou fazer no foco":["What I will do while focusing","Qué haré durante el foco"],"📖 Ler":["📖 Read","📖 Leer"],"📓 Estudar":["📓 Study","📓 Estudiar"],"💻 Programar":["💻 Code","💻 Programar"],"📋 Tarefas":["📋 Tasks","📋 Tareas"],"🎨 Desenhar":["🎨 Draw","🎨 Dibujar"],"focos hoje":["sessions today","focos hoy"],"meta":["goal","meta"],"min focados":["min focused","min de foco"],"Tempos":["Durations","Tiempos"],"Foco (min)":["Focus (min)","Foco (min)"],"Pausa curta (min)":["Short break (min)","Pausa corta (min)"],"Pausa longa (min)":["Long break (min)","Pausa larga (min)"],"Pausa longa a cada":["Long break every","Pausa larga cada"],"Meta diária de focos":["Daily focus goal","Meta diaria de focos"],"Iniciar a próxima fase sozinho":["Start the next phase automatically","Iniciar la siguiente fase sola"],"Enviar fotos ou GIFs":["Upload photos or GIFs","Subir fotos o GIFs"],"Fotos são recortadas para 240×240 no seu navegador antes de enviar. GIFs vão como estão (ideal 240×240). Para exibir, escolha \"Álbum\" ou \"Alternar\" em Relógio → Aparência.":["Photos are cropped to 240×240 in your browser before uploading. GIFs are sent as they are (240×240 is ideal). To show them, pick \"Album\" or \"Alternate\" in Clock → Appearance.","Las fotos se recortan a 240×240 en tu navegador antes de subirlas. Los GIF se envían tal cual (ideal 240×240). Para mostrarlos, elige \"Álbum\" o \"Alternar\" en Reloj → Apariencia."],"Idioma":["Language","Idioma"],"Idioma do painel e do relógio":["Panel and clock language","Idioma del panel y del reloj"],"Clima":["Weather","Clima"],"Mostrar clima":["Show weather","Mostrar clima"],"Cidade":["City","Ciudad"],"Buscar cidade":["Search city","Buscar ciudad"],"Brilho":["Brightness","Brillo"],"Brilho noturno":["Night brightness","Brillo nocturno"],"Das (hora)":["From (hour)","Desde (hora)"],"Até (hora)":["Until (hour)","Hasta (hora)"],"Brilho à noite":["Brightness at night","Brillo de noche"],"Tela do aparelho":["Device screen","Pantalla del aparato"],"Ordem de cor":["Color order","Orden de color"],"RGB (padrão)":["RGB (default)","RGB (predeterminado)"],"Inverter cores":["Invert colors","Invertir colores"],"Girar 180°":["Rotate 180°","Girar 180°"],"Testar cores no relógio":["Test colors on the clock","Probar colores en el reloj"],"No teste, a 1ª barra deve ser vermelha e o fundo preto. Vermelho e azul trocados: mude a ordem de cor. Fundo branco ou cores negativas: alterne \"Inverter cores\".":["In the test, the 1st bar should be red and the background black. Red and blue swapped: change the color order. White background or negative colors: toggle \"Invert colors\".","En la prueba, la 1ª barra debe ser roja y el fondo negro. Rojo y azul intercambiados: cambia el orden de color. Fondo blanco o colores negativos: alterna \"Invertir colores\"."],"Data e hora":["Date and time","Fecha y hora"],"Fuso (POSIX TZ)":["Time zone (POSIX TZ)","Huso horario (POSIX TZ)"],"Sistema":["System","Sistema"],"Senha atual":["Current password","Contraseña actual"],"Senha do /update":["/update password","Contraseña de /update"],"Salvar senha":["Save password","Guardar contraseña"],"Atualizar firmware":["Update firmware","Actualizar firmware"],"Resetar Wi-Fi":["Reset Wi-Fi","Restablecer Wi-Fi"],"Formatar memória de arquivos":["Format file storage","Formatear la memoria de archivos"],"Usuário do /update: admin. Para voltar ao firmware original, envie o .bin da GeekMagic em \"Atualizar firmware\". Versão":["/update user: admin. To go back to the original firmware, upload the GeekMagic .bin in \"Update firmware\". Version","Usuario de /update: admin. Para volver al firmware original, sube el .bin de GeekMagic en \"Actualizar firmware\". Versión"],"· RAM livre":["· free RAM","· RAM libre"],"Relógio":["Clock","Reloj"],"Fotos":["Photos","Fotos"],"Ajustes":["Settings","Ajustes"],"Zerar":["Reset","Reiniciar"],"Iniciar/pausar (espaço)":["Start/pause (space)","Iniciar/pausar (espacio)"],"Pular fase":["Skip phase","Saltar fase"],"ex.: Campinas":["e.g. Lisbon","ej.: Madrid"],"vazio = sem senha":["empty = no password","vacío = sin contraseña"],"FOCO":["FOCUS","FOCO"],"PAUSA":["BREAK","PAUSA"],"PAUSA LONGA":["LONG BREAK","PAUSA LARGA"],"PRONTO":["READY","LISTO"],"PAUSADO":["PAUSED","PAUSADO"],"por":["by","por"],"instalado":["installed","instalada"],"requer":["requires","requiere"],"Durante o Pomodoro o relógio mostra o timer; a prévia aparece quando ele parar.":["During a Pomodoro the clock shows the timer; the preview appears when it stops.","Durante el Pomodoro el reloj muestra el temporizador; la vista previa aparece cuando se detenga."],"Ver no relógio (15 s)":["Preview on clock (15 s)","Ver en el reloj (15 s)"],"Prévia no relógio por 15 s":["Preview on the clock for 15 s","Vista previa en el reloj por 15 s"],"Em uso":["In use","En uso"],"Usar este":["Use this","Usar esta"],"no relógio":["on the clock","en el reloj"],"Remover do relógio":["Remove from clock","Quitar del reloj"],"Remover":["Remove","Quitar"],"Removido":["Removed","Quitada"],"Instalando no relógio... (alguns segundos)":["Installing on the clock... (a few seconds)","Instalando en el reloj... (unos segundos)"],"instalado e em uso":["installed and in use","instalada y en uso"],"Escolha o arquivo .json do mostrador":["Pick the face .json file","Elige el archivo .json de la esfera"],"Carregando a galeria...":["Loading the gallery...","Cargando la galería..."],"A galeria ainda está vazia.":["The gallery is still empty.","La galería aún está vacía."],"Sem internet no navegador":["No internet in the browser","Sin internet en el navegador"],"Este mostrador precisa do firmware {0} ou mais novo (o relógio está na {1}).":["This face needs firmware {0} or newer (the clock is on {1}).","Esta esfera necesita el firmware {0} o más nuevo (el reloj tiene la {1})."],"Reinstalar e usar":["Reinstall and use","Reinstalar y usar"],"Instalar e usar no relógio":["Install and use on the clock","Instalar y usar en el reloj"],"Baixando...":["Downloading...","Descargando..."],"Falha ao baixar":["Download failed","Error al descargar"],"Salvo":["Saved","Guardado"],"bloco":["block","bloque"],"Prévia no relógio por mais {0} s · depois ele volta para {1}":["Preview on the clock for {0} more s · then it goes back to {1}","Vista previa en el reloj {0} s más · después vuelve a {1}"],"o mostrador salvo":["the saved face","la esfera guardada"],"Mín":["Min","Mín"],"Máx":["Max","Máx"],"Umidade":["Humidity","Humedad"],"{0} usados de {1}":["{0} used of {1}","{0} usados de {1}"],"Memória de arquivos indisponível":["File storage unavailable","Memoria de archivos no disponible"],"Cidade: ":["City: ","Ciudad: "],"Nenhuma cidade encontrada":["No city found","No se encontró ninguna ciudad"],"Nenhuma foto ainda.":["No photos yet.","Aún no hay fotos."],"Mostrar agora":["Show now","Mostrar ahora"],"Mostrando no relógio":["Showing on the clock","Mostrando en el reloj"],"Apagar":["Delete","Borrar"],"Apagado":["Deleted","Borrado"],"Enviando {0}...":["Uploading {0}...","Subiendo {0}..."],"Falha: ":["Failed: ","Error: "],"{0} arquivo(s) enviado(s)":["{0} file(s) uploaded","{0} archivo(s) subido(s)"],"Apagar Wi-Fi salvo e reiniciar?":["Erase saved Wi-Fi and restart?","¿Borrar el Wi-Fi guardado y reiniciar?"],"Reiniciando...":["Restarting...","Reiniciando..."],"Teste de cores por 10 s no relógio":["Color test on the clock for 10 s","Prueba de color en el reloj por 10 s"],"Formatar a memória? Todas as fotos e GIFs serão apagados.":["Format the storage? All photos and GIFs will be erased.","¿Formatear la memoria? Se borrarán todas las fotos y GIFs."],"Senha removida":["Password removed","Contraseña eliminada"],"Senha definida (usuario: admin)":["Password set (user: admin)","Contraseña definida (usuario: admin)"],"Senha atual incorreta":["Wrong current password","Contraseña actual incorrecta"],"Senha muito longa (max 23)":["Password too long (max 23)","Contraseña demasiado larga (máx. 23)"],"Memoria cheia":["Storage full","Memoria llena"],"Pomodoro em andamento":["Pomodoro in progress","Pomodoro en curso"],"Arquivo invalido":["Invalid file","Archivo no válido"],"Pacote nao encontrado":["Face not found","Esfera no encontrada"],"Nao foi possivel apagar":["Could not delete","No se pudo borrar"],"Sistema de arquivos indisponivel":["File system unavailable","Sistema de archivos no disponible"]},BUILTIN=[[["Matrix","Pixel art with weather and daily focus cards"],["Matriz","Pixel art con tarjetas de clima y focos del día"]],[["Tomato","Pixel art scene that changes with the time and weather"],["Tomate","Escena en pixel art que cambia con la hora y el clima"]],[["Analog","Baton hands and bold markers"],["Analógico","Agujas de bastón y marcas gruesas"]],[["Weather","Big temperature and mini cards"],["Clima","Temperatura grande y mini tarjetas"]],[["Neon","Pink and cyan glowing tubes"],["Neón","Tubos rosa y cian con brillo"]],[["Flip","Flipping cards with the Bebas Neue font"],["Flip","Tarjetas que giran, con la fuente Bebas Neue"]],[["Retro LCD","80s digital watch (DSEG7 font)"],["LCD retro","Reloj digital de los 80 (fuente DSEG7)"]],[["Words","The time spelled out, in the clock language"],["Palabras","La hora en palabras, en el idioma del reloj"]]];
+let LG=0;try{LG=+localStorage.lang||0}catch(e){}
+// t('texto {0}',a,b): tradução do texto em português, com {0}, {1}... trocados
+const t=(s,...a)=>(LG&&I18N[s]?I18N[s][LG-1]:s).replace(/\{(\d)\}/g,(m,i)=>a[i]);
+const tName=e=>LG==1?e.name_en||e.name:LG==2?e.name_es||e.name:e.name,tDesc=e=>LG==1?e.desc_en||e.desc:LG==2?e.desc_es||e.desc:e.desc;
+// textos fixos da página: guarda o original (português) e troca pelo do idioma
+function i18n(){document.documentElement.lang=LANGS[LG];
+ const tw=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);for(let n;n=tw.nextNode();){if(n._pt==null){const k=n.nodeValue.trim();if(!I18N[k])continue;n._pt=n.nodeValue}const k=n._pt.trim();n.nodeValue=n._pt.replace(k,t(k))}
+ document.querySelectorAll('[placeholder],[title]').forEach(e=>['placeholder','title'].forEach(a=>{if(!e.hasAttribute(a))return;if(e['_'+a]==null)e['_'+a]=e.getAttribute(a);e.setAttribute(a,t(e['_'+a]))}))}
+// chamado por load() antes de desenhar o estado: não chama load de novo
+function setLang(l){if(l==LG)return;LG=l;try{localStorage.lang=l}catch(e){}i18n();buildFaces();$('curimg').dataset.k='';if(curTab==2)files();if($('cat').children.length)catalog()}
+
 let FACES=[];  // vem do firmware (/api/faces): embutidos (faces_list.h) + pacotes instalados
 // catálogo da galeria online (faces/ do repositório); localStorage.catalog troca a origem (testes)
 // mesma galeria do site (gh-pages/catalog/index.json); o site libera CORS para o painel ler
@@ -270,103 +289,103 @@ function img(f){const i=new Image();i.alt=f.n;
 const safeId=s=>{let o='';for(let c of String(s||'').toLowerCase()){if(/[a-z0-9_-]/.test(c))o+=c;else if(c==' '&&o&&!o.endsWith('-'))o+='-';if(o.length>=23)break}return o}
 function el(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
 // ---------- mostradores ----------
-function loadFaces(){return fetch('/api/faces').then(r=>r.json()).then(j=>{let t=0;FACES=j.map(f=>({n:f.n,d:f.d,a:f.a||'',pkg:f.pkg,t:f.pkg?null:t++}));buildFaces();$('curimg').dataset.k='';if(st)load(st)})}
-function buildFaces(){const g=$('faces'),d=$('dl');g.innerHTML='';d.innerHTML='';FACES.forEach(f=>{const b=el('button','face');b.dataset.k=fkey(f);
+function loadFaces(){return fetch('/api/faces').then(r=>r.json()).then(j=>{let t=0;FACES=j.map(f=>({n0:f.n,d0:f.d,n:f.n,d:f.d,a:f.a||'',pkg:f.pkg,t:f.pkg?null:t++}));buildFaces();$('curimg').dataset.k='';if(st)load(st)})}
+function buildFaces(){FACES.forEach(f=>{const b=f.pkg==null&&LG&&BUILTIN[f.t];f.n=b?b[LG-1][0]:f.n0;f.d=b?b[LG-1][1]:f.d0});const g=$('faces'),d=$('dl');g.innerHTML='';d.innerHTML='';FACES.forEach(f=>{const b=el('button','face');b.dataset.k=fkey(f);
  const s=el('div','scr');s.appendChild(img(f));b.appendChild(s);b.appendChild(el('span',null,f.n));b.onclick=()=>faceSheet(f);(f.pkg?d:g).appendChild(b)});
  $('dlnone').hidden=!!d.children.length}
 function faceSheet(f){const c=$('sheetc');c.innerHTML='';const s=el('div','scr');s.appendChild(img(f));c.appendChild(s);
- c.append(el('h3',null,f.n),el('p',null,f.d+(f.a?' · por '+f.a:'')+(f.pkg?' · instalado':'')));
- if(st&&st.phase!='idle')c.appendChild(el('p',null,'Durante o Pomodoro o relógio mostra o timer; a prévia aparece quando ele parar.'));
- const r=el('div','row'),a=el('button','btn','Ver no relógio (15 s)');
- a.onclick=()=>{post('/api/cmd',new URLSearchParams(f.pkg?{c:'preview',pkg:f.pkg}:{c:'preview',t:f.t})).then(r=>r.json()).then(load);toast('Prévia no relógio por 15 s')};
- const u=el('button','btn p',st&&curKey(st)==fkey(f)?'Em uso':'Usar este');
- u.onclick=()=>save(f.pkg?{pkg:f.pkg}:{theme:f.t}).then(()=>{closeSheet();toast(f.n+' no relógio')});r.append(a,u);c.appendChild(r);
- if(f.pkg){const d=el('button','btn','Remover do relógio');d.style.marginTop='8px';
-  d.onclick=()=>{if(confirm('Remover '+f.n+'?'))post('/api/facedelete',new URLSearchParams({pkg:f.pkg})).then(r=>r.text()).then(t=>{toast(t=='ok'?'Removido':t);closeSheet();loadFaces()})};c.appendChild(d)}
+ c.append(el('h3',null,f.n),el('p',null,f.d+(f.a?' · '+t('por')+' '+f.a:'')+(f.pkg?' · '+t('instalado'):'')));
+ if(st&&st.phase!='idle')c.appendChild(el('p',null,t('Durante o Pomodoro o relógio mostra o timer; a prévia aparece quando ele parar.')));
+ const r=el('div','row'),a=el('button','btn',t('Ver no relógio (15 s)'));
+ a.onclick=()=>{post('/api/cmd',new URLSearchParams(f.pkg?{c:'preview',pkg:f.pkg}:{c:'preview',t:f.t})).then(r=>r.json()).then(load);toast(t('Prévia no relógio por 15 s'))};
+ const u=el('button','btn p',st&&curKey(st)==fkey(f)?t('Em uso'):t('Usar este'));
+ u.onclick=()=>save(f.pkg?{pkg:f.pkg}:{theme:f.t}).then(()=>{closeSheet();toast(f.n+' '+t('no relógio'))});r.append(a,u);c.appendChild(r);
+ if(f.pkg){const d=el('button','btn',t('Remover do relógio'));d.style.marginTop='8px';
+  d.onclick=()=>{if(confirm(t('Remover')+' '+f.n+'?'))post('/api/facedelete',new URLSearchParams({pkg:f.pkg})).then(r=>r.text()).then(x=>{toast(x=='ok'?t('Removido'):t(x));closeSheet();loadFaces()})};c.appendChild(d)}
  $('sheet').classList.add('v')}
 // ---------- instalar pacotes (sem atualizar o firmware) ----------
-function install(json,png){const fd=new FormData();fd.append('face',json,'face.json');if(png)fd.append('preview',png,'preview.png');toast('Instalando no relógio... (alguns segundos)');
- return fetch('/api/faceinstall',{method:'POST',body:fd}).then(async r=>{const t=await r.text();if(!r.ok)throw t;const j=JSON.parse(t);await save({pkg:j.id});toast(j.name+' instalado e em uso');return loadFaces()}).catch(e=>toast(String(e)))}
+function install(json,png){const fd=new FormData();fd.append('face',json,'face.json');if(png)fd.append('preview',png,'preview.png');toast(t('Instalando no relógio... (alguns segundos)'));
+ return fetch('/api/faceinstall',{method:'POST',body:fd}).then(async r=>{const x=await r.text();if(!r.ok)throw x;const j=JSON.parse(x);await save({pkg:j.id});toast(j.name+' '+t('instalado e em uso'));return loadFaces()}).catch(e=>toast(t(String(e))))}
 $('pkf').onchange=e=>{const fl=[...e.target.files];e.target.value='';const p=fl.find(f=>/\.png$/i.test(f.name)),j=fl.find(f=>/\.json$/i.test(f.name))||fl.find(f=>f!==p);  // celular pode salvar como .json.txt: o relógio valida o conteúdo
- if(!j)return toast('Escolha o arquivo .json do mostrador');
+ if(!j)return toast(t('Escolha o arquivo .json do mostrador'));
  // só o .json: busca a prévia no site pelo id, para o relógio guardar junto (funciona sem internet depois)
  if(p)return install(j,p);j.text().then(async t=>{let pv=null;try{const k=JSON.parse(t),id=safeId(k.id||k.name);
   if(id){const r=await fetch(CATALOG+id+'.png');if(r.ok)pv=await r.blob()}}catch(x){}install(j,pv)})};
 // o pacote pede uma versão mínima do firmware (campo fw do catálogo)?
 const vnum=v=>String(v||'0').split('.').reduce((a,x)=>a*1000+(+x||0),0),old=e=>e.fw&&st&&vnum(st.ver)<vnum(e.fw);
-function catalog(){toast('Carregando a galeria...');fetch(CATALOG+'index.json',{cache:'no-store'}).then(r=>r.json()).then(c=>{const g=$('cat');g.innerHTML='';
- (c.faces||[]).forEach(e=>{const inst=FACES.some(f=>f.pkg==e.id),b=el('button','face'),s=el('div','scr');s.appendChild(img({n:e.name,src:CATALOG+e.preview}));
-  b.append(s,el('span',null,e.name+(inst?' · instalado':old(e)?' · requer v'+e.fw:'')));b.onclick=()=>catSheet(e,inst);g.appendChild(b)});
- if(!g.children.length)g.textContent='A galeria ainda está vazia.'}).catch(()=>toast('Sem internet no navegador'))}
-function catSheet(e,inst){const c=$('sheetc');c.innerHTML='';const s=el('div','scr');s.appendChild(img({n:e.name,src:CATALOG+e.preview}));c.appendChild(s);
- c.append(el('h3',null,e.name),el('p',null,e.desc+(e.author?' · por '+e.author:'')+' · '+kb(e.size||0)));
- if(old(e)){c.append(el('p',null,'Este mostrador precisa do firmware '+e.fw+' ou mais novo (o relógio está na '+st.ver+').'));const u=el('button','btn p','Atualizar firmware');u.onclick=()=>location='/update';c.appendChild(u);$('sheet').classList.add('v');return}
- const b=el('button','btn p',inst?'Reinstalar e usar':'Instalar e usar no relógio');
- b.onclick=async()=>{try{toast('Baixando...');const j=await (await fetch(CATALOG+e.file)).blob();let p=null;try{const r=await fetch(CATALOG+e.preview);if(r.ok)p=await r.blob()}catch(x){}
-  await install(j,p);closeSheet();catalog()}catch(x){toast('Falha ao baixar')}};c.appendChild(b);$('sheet').classList.add('v')}
+function catalog(){toast(t('Carregando a galeria...'));fetch(CATALOG+'index.json',{cache:'no-store'}).then(r=>r.json()).then(c=>{const g=$('cat');g.innerHTML='';
+ (c.faces||[]).forEach(e=>{const inst=FACES.some(f=>f.pkg==e.id),b=el('button','face'),s=el('div','scr');s.appendChild(img({n:tName(e),src:CATALOG+e.preview}));
+  b.append(s,el('span',null,tName(e)+(inst?' · '+t('instalado'):old(e)?' · '+t('requer')+' v'+e.fw:'')));b.onclick=()=>catSheet(e,inst);g.appendChild(b)});
+ if(!g.children.length)g.textContent=t('A galeria ainda está vazia.')}).catch(()=>toast(t('Sem internet no navegador')))}
+function catSheet(e,inst){const c=$('sheetc');c.innerHTML='';const s=el('div','scr');s.appendChild(img({n:tName(e),src:CATALOG+e.preview}));c.appendChild(s);
+ c.append(el('h3',null,tName(e)),el('p',null,tDesc(e)+(e.author?' · '+t('por')+' '+e.author:'')+' · '+kb(e.size||0)));
+ if(old(e)){c.append(el('p',null,t('Este mostrador precisa do firmware {0} ou mais novo (o relógio está na {1}).',e.fw,st.ver)));const u=el('button','btn p',t('Atualizar firmware'));u.onclick=()=>location='/update';c.appendChild(u);$('sheet').classList.add('v');return}
+ const b=el('button','btn p',inst?t('Reinstalar e usar'):t('Instalar e usar no relógio'));
+ b.onclick=async()=>{try{toast(t('Baixando...'));const j=await (await fetch(CATALOG+e.file)).blob();let p=null;try{const r=await fetch(CATALOG+e.preview);if(r.ok)p=await r.blob()}catch(x){}
+  await install(j,p);closeSheet();catalog()}catch(x){toast(t('Falha ao baixar'))}};c.appendChild(b);$('sheet').classList.add('v')}
 function closeSheet(){$('sheet').classList.remove('v')}
 // ---------- configurações (salva sozinho) ----------
 function save(o){return post('/api/settings',new URLSearchParams(o)).then(r=>r.json()).then(s=>{filled=false;load(s);return s})}
-document.querySelectorAll('[data-k]').forEach(e=>{e.onchange=()=>{const v=e.type=='checkbox'?(e.checked?1:0):e.value;save({[e.dataset.k]:v}).then(()=>toast('Salvo'))}});
+document.querySelectorAll('[data-k]').forEach(e=>{e.onchange=()=>{const v=e.type=='checkbox'?(e.checked?1:0):e.value;save({[e.dataset.k]:v}).then(()=>toast(t('Salvo')))}});
 // ---------- estado ----------
 function beep(){try{actx=actx||new AudioContext();[0,.25,.5].forEach(d=>{const o=actx.createOscillator(),g=actx.createGain();
  o.frequency.value=880;g.gain.setValueAtTime(.2,actx.currentTime+d);g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+d+.2);
  o.connect(g).connect(actx.destination);o.start(actx.currentTime+d);o.stop(actx.currentTime+d+.2)})}catch(e){}}
 function cmd(c){try{actx=actx||new AudioContext()}catch(e){}post('/api/cmd',new URLSearchParams({c})).then(r=>r.json()).then(load)}
-function load(s){if(lastPhase&&s.phase!=lastPhase&&s.phase!='idle'&&lastPhase!='idle')beep();lastPhase=s.phase;st=s;at=Date.now();$('net').className='on';
+function load(s){if(s.cfg.lang!=null&&s.cfg.lang!=LG)setLang(s.cfg.lang);if(lastPhase&&s.phase!=lastPhase&&s.phase!='idle'&&lastPhase!='idle')beep();lastPhase=s.phase;st=s;at=Date.now();$('net').className='on';
  document.documentElement.style.setProperty('--ac','var(--'+(s.phase=='idle'?'work':s.phase)+')');
  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('sel',b.dataset.p==s.phase));
  const n=s.cfg.every,d=s.phase=='long'?n:s.cycle%n;$('dots').innerHTML='<i class="f"></i>'.repeat(d)+'<i></i>'.repeat(n-d);
  $('go').innerHTML=s.running?'&#10074;&#10074;':'&#9654;';$('today').textContent=s.today;$('goal').textContent=s.cfg.goal;$('mins').textContent=s.today*s.cfg.work;
- $('clock').textContent=s.clock;$('ver').textContent=s.ver;$('heap').textContent=kb(s.heap)+' (bloco '+kb(s.blk)+')';$('oldl').style.display=s.cfg.lock?'':'none';
+ $('clock').textContent=s.clock;$('ver').textContent=s.ver;$('heap').textContent=kb(s.heap)+' ('+t('bloco')+' '+kb(s.blk)+')';$('oldl').style.display=s.cfg.lock?'':'none';
  // mostrador atual
  const ck=curKey(s),cf=FACES.find(f=>fkey(f)==ck);
  if(cf&&$('curimg').dataset.k!=ck){$('curimg').dataset.k=ck;$('curimg').onerror=cf.pkg?()=>{$('curimg').onerror=null;$('curimg').src=CATALOG+encodeURIComponent(cf.pkg)+'.png'}:null;$('curimg').src=faceSrc(cf);$('curname').textContent=cf.n;$('curdesc').textContent=cf.d}
  document.querySelectorAll('#faces .face,#dl .face').forEach(b=>b.classList.toggle('cur',b.dataset.k==ck));
- $('pvbar').style.display=s.pv?'block':'none';if(s.pv)$('pvbar').textContent='Prévia no relógio por mais '+s.pv+' s · depois ele volta para '+(cf?cf.n:'o mostrador salvo');
+ $('pvbar').style.display=s.pv?'block':'none';if(s.pv)$('pvbar').textContent=t('Prévia no relógio por mais {0} s · depois ele volta para {1}',s.pv,cf?cf.n:t('o mostrador salvo'));
  // clima
  $('city').textContent=s.cfg.city||'—';$('wx').hidden=!(s.cfg.won&&s.wx.ok);
- if(s.wx.ok){$('wt').textContent=Math.round(s.wx.t)+'°';$('wd').textContent=(s.cfg.city?s.cfg.city+' · ':'')+s.wx.desc;$('wm').textContent='Mín '+Math.round(s.wx.min)+'° · Máx '+Math.round(s.wx.max)+'° · Umidade '+s.wx.h+'%'}
+ if(s.wx.ok){$('wt').textContent=Math.round(s.wx.t)+'°';$('wd').textContent=(s.cfg.city?s.cfg.city+' · ':'')+s.wx.desc;$('wm').textContent=t('Mín')+' '+Math.round(s.wx.min)+'° · '+t('Máx')+' '+Math.round(s.wx.max)+'° · '+t('Umidade')+' '+s.wx.h+'%'}
  // fotos
- $('fsinfo').textContent=s.fs.ok?kb(s.fs.used)+' usados de '+kb(s.fs.total):'Memória de arquivos indisponível';
+ $('fsinfo').textContent=s.fs.ok?t('{0} usados de {1}',kb(s.fs.used),kb(s.fs.total)):t('Memória de arquivos indisponível');
  $('fsbar').style.width=(s.fs.total?s.fs.used/s.fs.total*100:0)+'%';$('fmt').hidden=!!s.fs.ok;
  document.querySelectorAll('#grid div').forEach(e=>e.classList.toggle('on',e.dataset.n==s.showing));
  if(!filled){filled=true;document.querySelectorAll('[data-k]').forEach(e=>{const v=s.cfg[e.dataset.k];if(v===undefined)return;if(e.type=='checkbox')e.checked=!!v;else e.value=v})}
  draw()}
 function draw(){if(!st)return;const s=st,idle=s.phase=='idle';
  const rem=idle?s.cfg.work*60000:Math.max(0,s.remaining-(s.running?Date.now()-at:0)),sec=Math.ceil(rem/1000);
- const t=String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0');
- $('time').textContent=t;$('phase').textContent=LBL[s.phase]+(!idle&&!s.running?' · PAUSADO':'');
- $('arc').style.strokeDashoffset=idle||!s.total?C:C*rem/s.total;document.title=idle?'SmallTV':t+' · '+LBL[s.phase]}
+ const tm=String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0');
+ $('time').textContent=tm;$('phase').textContent=t(LBL[s.phase])+(!idle&&!s.running?' · '+t('PAUSADO'):'');
+ $('arc').style.strokeDashoffset=idle||!s.total?C:C*rem/s.total;document.title=idle?'SmallTV':tm+' · '+t(LBL[s.phase])}
 setInterval(draw,250);
 // ---------- cidade (busca direto do navegador; o relógio guarda só lat/lon) ----------
 let qt;$('q').oninput=()=>{clearTimeout(qt);const q=$('q').value.trim();if(q.length<2){$('res').innerHTML='';return}
- qt=setTimeout(()=>fetch('https://geocoding-api.open-meteo.com/v1/search?count=5&language=pt&name='+encodeURIComponent(q)).then(r=>r.json()).then(j=>{
+ qt=setTimeout(()=>fetch('https://geocoding-api.open-meteo.com/v1/search?count=5&language='+LANGS[LG]+'&name='+encodeURIComponent(q)).then(r=>r.json()).then(j=>{
   const r=$('res');r.innerHTML='';(j.results||[]).forEach(p=>{const b=document.createElement('button');b.type='button';
    b.textContent=[p.name,p.admin1,p.country].filter(Boolean).join(', ');
    b.onclick=()=>{const name=p.name.normalize('NFD').replace(/[^\x20-\x7e]/g,'').replace(/["\\]/g,'').slice(0,31);
-    save({lat:p.latitude,lon:p.longitude,city:name,won:1}).then(()=>toast('Cidade: '+name));r.innerHTML='';$('q').value=''};r.appendChild(b)});
-  if(!r.children.length)r.textContent='Nenhuma cidade encontrada'}).catch(()=>toast('Sem internet no navegador')),400)};
+    save({lat:p.latitude,lon:p.longitude,city:name,won:1}).then(()=>toast(t('Cidade: ')+name));r.innerHTML='';$('q').value=''};r.appendChild(b)});
+  if(!r.children.length)r.textContent=t('Nenhuma cidade encontrada')}).catch(()=>toast(t('Sem internet no navegador'))),400)};
 // ---------- fotos ----------
 function files(){fetch('/api/files').then(r=>r.json()).then(j=>{const g=$('grid');g.innerHTML='';
  j.files.forEach(x=>{const d=document.createElement('div');d.dataset.n=x.n;d.innerHTML='<img loading="lazy">'+(x.n.toLowerCase().endsWith('.gif')?'<span>GIF</span>':'');
   qload(d.firstChild,'/fs?f='+encodeURIComponent(x.n),()=>{});d.onclick=()=>photoSheet(x);g.appendChild(d)});
- if(!j.files.length)g.innerHTML='<small style="grid-column:1/-1">Nenhuma foto ainda.</small>'})}
+ if(!j.files.length)g.innerHTML='<small style="grid-column:1/-1">'+t('Nenhuma foto ainda.')+'</small>'})}
 function photoSheet(x){const c=$('sheetc');c.innerHTML='';const s=document.createElement('div');s.className='scr';const i=new Image();i.src='/fs?f='+encodeURIComponent(x.n);s.appendChild(i);
  const h=document.createElement('p');h.textContent=x.n.split('/').pop()+' · '+kb(x.s);const r=document.createElement('div');r.className='row';
- const a=document.createElement('button');a.className='btn p';a.textContent='Mostrar agora';a.onclick=()=>post('/api/show',new URLSearchParams({f:x.n})).then(r=>r.text()).then(t=>{toast(t=='ok'?'Mostrando no relógio':t);closeSheet()});
- const d=document.createElement('button');d.className='btn';d.textContent='Apagar';d.onclick=()=>{if(confirm('Apagar '+x.n.split('/').pop()+'?'))post('/api/delete',new URLSearchParams({f:x.n})).then(r=>r.text()).then(t=>{toast(t=='ok'?'Apagado':t);closeSheet();files()})};
+ const a=document.createElement('button');a.className='btn p';a.textContent=t('Mostrar agora');a.onclick=()=>post('/api/show',new URLSearchParams({f:x.n})).then(r=>r.text()).then(x=>{toast(x=='ok'?t('Mostrando no relógio'):t(x));closeSheet()});
+ const d=document.createElement('button');d.className='btn';d.textContent=t('Apagar');d.onclick=()=>{if(confirm(t('Apagar')+' '+x.n.split('/').pop()+'?'))post('/api/delete',new URLSearchParams({f:x.n})).then(r=>r.text()).then(y=>{toast(y=='ok'?t('Apagado'):t(y));closeSheet();files()})};
  r.append(a,d);c.append(s,h,r);$('sheet').classList.add('v')}
 async function prep(file){if(file.type=='image/gif')return{blob:file,name:file.name};
  const im=await createImageBitmap(file),c=document.createElement('canvas');c.width=c.height=240;
  const k=Math.max(240/im.width,240/im.height),w=im.width*k,h=im.height*k;c.getContext('2d').drawImage(im,(240-w)/2,(240-h)/2,w,h);
  const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',.85));return{blob,name:file.name.replace(/\.[^.]+$/,'')+'.jpg'}}
 $('up').onchange=async e=>{const fs=[...e.target.files];e.target.value='';let ok=0;
- for(const file of fs){try{toast('Enviando '+file.name+'...');const p=await prep(file),fd=new FormData();fd.append('f',p.blob,p.name);
-  const r=await fetch('/api/upload',{method:'POST',body:fd});if(r.ok)ok++;else toast(await r.text())}catch(x){toast('Falha: '+file.name)}}
- if(ok)toast(ok+' arquivo(s) enviado(s)');files()};
-$('op').onsubmit=e=>{e.preventDefault();const o=e.target;post('/api/otapass',new URLSearchParams(new FormData(o))).then(r=>r.text()).then(t=>{toast(t);o.reset()})};
+ for(const file of fs){try{toast(t('Enviando {0}...',file.name));const p=await prep(file),fd=new FormData();fd.append('f',p.blob,p.name);
+  const r=await fetch('/api/upload',{method:'POST',body:fd});if(r.ok)ok++;else toast(t(await r.text()))}catch(x){toast(t('Falha: ')+file.name)}}
+ if(ok)toast(t('{0} arquivo(s) enviado(s)',ok));files()};
+$('op').onsubmit=e=>{e.preventDefault();const o=e.target;post('/api/otapass',new URLSearchParams(new FormData(o))).then(r=>r.text()).then(x=>{toast(t(x));o.reset()})};
 document.onkeydown=e=>{if(e.code=='Space'&&curTab==1&&!/INPUT|BUTTON|SELECT/.test(e.target.tagName)){e.preventDefault();cmd('toggle')}};
 function poll(){fetch('/api/state').then(r=>r.json()).then(load).catch(()=>$('net').className='off').finally(()=>setTimeout(poll,1000))}
-loadFaces();let t0=0;try{t0=+localStorage.tab||0}catch(e){}tab(t0);poll();
+i18n();loadFaces();let t0=0;try{t0=+localStorage.tab||0}catch(e){}tab(t0);poll();
 </script></body></html>

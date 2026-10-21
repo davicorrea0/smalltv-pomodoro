@@ -31,8 +31,8 @@ void themeWeather(const UiState &s, bool full) {
   lastWxOn = s.weatherOn;
   G->fillRect(0, 24, 240, 216, BG);
   if (!(s.weatherOn && s.wx.ok)) {
-    textC(120, 96, 2, MUTED, s.weatherOn ? "Buscando clima" : "Clima desligado");
-    textC(120, 124, 1, MUTED, "defina a cidade no painel");
+    textC(120, 96, 2, MUTED, s.weatherOn ? tr("Buscando clima", "Fetching weather", "Buscando clima") : tr("Clima desligado", "Weather off", "Clima apagado"));
+    textC(120, 124, 1, MUTED, tr("defina a cidade no painel", "set the city in the panel", "elige la ciudad en el panel"));
     return;
   }
   weatherIcon(64, 82, 1.6f, s.wx.code, s.wx.day, BG);
@@ -65,6 +65,6 @@ void themeWeather(const UiState &s, bool full) {
   snprintf(h, sizeof h, "%d%%", s.wx.hum);
   miniCard(8, "MIN", a, true);
   miniCard(85, "MAX", b, true);
-  miniCard(162, "UMIDADE", h, false);
+  miniCard(162, tr("UMIDADE", "HUMIDITY", "HUMEDAD"), h, false);
 }
 

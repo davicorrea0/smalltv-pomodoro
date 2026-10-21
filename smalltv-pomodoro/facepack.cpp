@@ -646,7 +646,7 @@ static void addDirty(Box *d, int &n, Box b) {
 
 void facePackRender(const UiState &s, bool full) {
   if (!lay) {
-    if (full) textC(120, 112, 2, MUTED, "Pacote ausente");
+    if (full) textC(120, 112, 2, MUTED, tr("Pacote ausente", "Face missing", "Esfera ausente"));
     return;
   }
   char txt[48];

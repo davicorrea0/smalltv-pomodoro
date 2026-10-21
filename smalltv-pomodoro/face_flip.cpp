@@ -303,7 +303,7 @@ void themeFlip(const UiState &s, bool full) {
     if (s.weatherOn && s.wx.ok) {
       weatherIcon(34, 199, 0.42f, s.wx.code, s.wx.day, CARD);
       tempText(80, 193, 2, TEXT, s.wx.t);
-    } else textC(62, 197, 1, MUTED, "sem clima");
+    } else textC(62, 197, 1, MUTED, tr("sem clima", "no weather", "sin clima"));
     lastWx = s.wx.version;
     lastWxOn = s.weatherOn;
   }

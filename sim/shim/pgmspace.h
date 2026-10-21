@@ -5,3 +5,7 @@
 #define pgm_read_byte(addr) (*(const unsigned char *)(addr))
 #define pgm_read_word(addr) (*(const unsigned short *)(addr))
 #define memcpy_P memcpy
+#define strncpy_P strncpy
+#define PSTR(s) (s)
+#define FPSTR(s) (s)
+typedef const char *PGM_P;
