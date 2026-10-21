@@ -8,6 +8,10 @@ if [ -z "$ZIG" ] && [ -n "$LOCALAPPDATA" ]; then  # Windows: zig instalado pelo 
 fi
 [ -z "$ZIG" ] && { echo "zig não encontrado"; exit 1; }
 node ../assets/gerar.js || exit 1  # assets/*.txt -> smalltv-pomodoro/assets.h
+# o firmware é compilado sem printf/scanf de float (compilar.sh): %f e companhia não imprimiriam nada
+if grep -nE "%[-+ #0-9.]*[fFeEgG]|toFloat|atof|strtod|scanf" ../smalltv-pomodoro/*.cpp ../smalltv-pomodoro/*.h; then
+  echo "use números inteiros ou String(x, casas) em vez de float no printf/scanf"; exit 1
+fi
 GFX="${GFX:-$HOME/Documents/Arduino/libraries/Adafruit_GFX_Library}"
 mkdir -p out
 "$ZIG" c++ -target x86-windows-gnu -O1 -std=c++17 -DARDUINO=100 -DARDUINOJSON_ENABLE_ARDUINO_STRING=0 -DARDUINOJSON_ENABLE_ARDUINO_STREAM=0 -DARDUINOJSON_ENABLE_ARDUINO_PRINT=0 -DARDUINOJSON_ENABLE_PROGMEM=0 -Ishim -I"$GFX" -I"${JSON:-$HOME/Documents/Arduino/libraries/ArduinoJson/src}" sim.cpp ../smalltv-pomodoro/ui.cpp ../smalltv-pomodoro/face_*.cpp ../smalltv-pomodoro/facepack.cpp ../smalltv-pomodoro/fonts.cpp "$GFX/Adafruit_GFX.cpp" -o sim.exe || exit 1

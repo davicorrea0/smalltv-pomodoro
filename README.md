@@ -20,7 +20,9 @@ Firmware alternativo para o **GeekMagic SmallTV Ultra** (ESP8266, tela ST7789 24
 - **Painel web** no IP mostrado na tela, em 4 abas (Relógio, Foco, Fotos, Ajustes): galeria dos mostradores com prévia ("Ver no relógio" mostra o mostrador por 15 s sem salvar), controle do Pomodoro, fotos e ajustes que salvam sozinhos
 - **Português, inglês e espanhol**: o idioma escolhido em Ajustes vale para o painel e para os textos da tela (datas, clima, Pomodoro, mostrador Palavras)
 - **Ajustes do painel** (ordem de cor RGB/BGR, inversão, rotação 180°) com tela de teste de cores, porque isso varia entre unidades
-- **Atualização OTA** em `/update` (usuário `admin`, senha opcional), que também serve para voltar ao firmware original
+- **Atualização OTA** em `/update` (usuário `admin`, senha opcional), que também serve para voltar ao firmware original. O relógio confere o arquivo antes de trocar de firmware (cabeçalho do ESP8266, tamanho e CRC gravados na imagem): arquivo truncado, corrompido ou de outro aparelho é recusado e o firmware atual continua
+- **Modo de recuperação** sem botão: ligar e desligar o relógio 3 vezes seguidas (ou um firmware que trava logo ao ligar) abre a rede `SmallTV-Recuperacao` com atualização sem senha, ajustes de fábrica, esquecer o Wi-Fi e baixar o histórico
+- **Backup** em *Ajustes → Sistema*: um `.json` com os ajustes, o histórico de focos e a lista de mostradores baixados (sem senhas nem Wi-Fi); a restauração reinstala da galeria os mostradores que faltarem
 
 ![Cena Tomate: dia, noite, chuva, neve, calor e meta batida](docs/tomate.png)
 
@@ -37,6 +39,10 @@ Firmware alternativo para o **GeekMagic SmallTV Ultra** (ESP8266, tela ST7789 24
    - Se aparecer `ERROR[4]: Not Enough Space`: o espaço de atualização de fábrica varia entre unidades. Envie antes o carregador [`smalltv-mod-loader.bin`](https://github.com/giovi321/smalltv-mod/releases/tag/v2.8.2) (giovi321/smalltv-mod v2.8.2), conecte-se à rede aberta `SmallTV-Loader` e envie este firmware em `http://192.168.4.1/update`.
 3. Se o relógio não conectar sozinho na sua rede, conecte-se à rede `SmallTV-Pomodoro` e abra `http://192.168.4.1` (só redes **2,4 GHz**).
 4. Abra o IP que aparece na tela para usar o painel. Atualizações seguintes: *Sistema → Atualizar firmware*.
+
+### Se algo der errado
+
+Se o relógio travar ou ficar reiniciando (por exemplo, depois de uma atualização), **tire da tomada e ligue de novo 3 vezes seguidas, deixando ligado menos de 30 segundos em cada vez**. Na terceira, ele abre o **modo de recuperação**: conecte-se à rede `SmallTV-Recuperacao` e abra `http://192.168.4.1` para enviar um firmware (sem senha), voltar aos ajustes de fábrica, esquecer o Wi-Fi ou baixar o histórico de focos. *Reiniciar normalmente* volta ao relógio.
 
 Para voltar ao firmware original, envie o `.bin` da GeekMagic ([GeekMagicClock/smalltv-ultra](https://github.com/GeekMagicClock/smalltv-ultra)) em *Sistema → Atualizar firmware*.
 
@@ -115,13 +121,16 @@ sim/build.sh
 ```
 arduino-cli core install esp8266:esp8266 --additional-urls https://arduino.esp8266.com/stable/package_esp8266com_index.json
 arduino-cli lib install "Adafruit GFX Library" "Adafruit ST7735 and ST7789 Library" "ArduinoJson" "JPEGDEC" "AnimatedGIF"
-arduino-cli compile --fqbn "esp8266:esp8266:generic:eesz=4M3M,xtal=160,ip=lm2n" --output-dir build smalltv-pomodoro
+sim/build.sh   # gera assets.h e web.h, confere o código e testa as telas no simulador
+./compilar.sh  # compila em build/ e confere o tamanho
 ```
+
+`compilar.sh` compila sem o printf/scanf de números decimais da newlib (`--build-property build.float=`, ~7 KB): o firmware não usa `%f` nem lê decimais com ela, e o `sim/build.sh` recusa código que use.
 
 ## Detalhes técnicos
 
 - **Layout da flash 4M3M**, o mesmo do firmware original (constantes do LittleFS encontradas no binário V9.0.50, offset `0x14d00`). Assim as fotos e GIFs existentes são lidos. O LittleFS é montado **sem formatação automática**: se não montar, nada é apagado.
-- **Tamanho do binário**: para conseguir voltar ao firmware original pelo painel, este firmware precisa deixar espaço para o binário original (V9.0.50: 505.200 bytes) na atualização OTA, o que dá um limite de ~536 KB (hoje ~525 KB). As prévias dos mostradores embutidos ficam no site, não na flash.
+- **Tamanho do binário**: para conseguir voltar ao firmware original pelo painel, este firmware precisa deixar espaço para o maior binário original (V9.0.31: 509.792 bytes) na atualização OTA: no máximo 532.480 bytes (hoje ~513 KB; o `compilar.sh` confere). As prévias dos mostradores embutidos ficam no site, não na flash.
 - **Painel comprimido**: o HTML vai com gzip na flash (~24 KB → ~9 KB) e a pilha de rede usa a variante leve do lwIP (`ip=lm2n`, sem recursos que o relógio não usa, como PPP e roteamento)
 - **Fontes desenhadas por código**: os dígitos (pixel art 5×7, fonte vetorial "Geo" e os segmentos do DSEG7 como polígonos) não usam bitmaps na flash.
 - **Sprites** em `PROGMEM` com 4 bits por pixel, desenhados juntando pixels vizinhos iguais em retângulos (menos chamadas SPI).

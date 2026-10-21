@@ -10,7 +10,6 @@
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
-#include <ESP8266HTTPUpdateServer.h>
 #include <ESP8266HTTPClient.h>
 #include <DNSServer.h>
 #include <EEPROM.h>
@@ -28,7 +27,7 @@
 #include "web.h"
 #include "facepack.h"
 
-#define FW_VERSION "1.8.1"
+#define FW_VERSION "1.9.0"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
@@ -39,7 +38,6 @@
 
 Adafruit_ST7789 tft(-1, PIN_DC, PIN_RST);
 ESP8266WebServer server(80);
-ESP8266HTTPUpdateServer updater;
 
 // ---------- cores ----------
 constexpr uint16_t rgb(uint8_t r, uint8_t g, uint8_t b) { return uiRgb(r, g, b); }
@@ -76,8 +74,38 @@ const uint32_t SETTINGS_MAGIC = 0x504F4D34;     // "POM4"
 const uint32_t SETTINGS_MAGIC_V3 = 0x504F4D33;  // "POM3": mesmos campos, sem os do v4
 Settings cfg;
 
+void defaultSettings() {
+  cfg = Settings{SETTINGS_MAGIC, 25, 5, 15, 4, 80, 0, 0, "<-03>3", "", 0, -1,
+                 THEME_MATRIX, 0, 10, 0, 22, 7, 15, 1, 242, 242, 242, 0, 0, "", 0, 1, 0, 8, ACT_READ, "", 0};
+}
+
+// ---------- recuperação: 3 inicializações curtas seguidas ----------
+// O aparelho não tem botão: ligar e desligar 3 vezes seguidas (cada vez por menos de 30 s), ou um
+// firmware que trava logo ao ligar, abre o modo de recuperação (rede própria, atualização sem senha,
+// ajustes de fábrica). O contador fica na EEPROM, depois das configurações: sobrevive a tirar da
+// tomada, ao contrário da memória RTC. 30 s ligado zeram a contagem.
+const int BOOT_OFF = 400;
+static_assert(sizeof(Settings) <= BOOT_OFF, "as configuracoes invadiriam o contador de inicializacoes");
+struct BootCount { uint32_t magic; uint8_t n; };
+const uint32_t BOOT_MAGIC = 0x424F4F54;  // "BOOT"
+uint8_t bootCount = 0;
+bool recoveryMode = false;
+
+void setBootCount(uint8_t n) {
+  BootCount b = {BOOT_MAGIC, n};
+  EEPROM.put(BOOT_OFF, b);
+  EEPROM.commit();
+  bootCount = n;
+}
+
+// reinício pedido (Wi-Fi, atualização...): não conta como inicialização curta
+void safeRestart() {
+  if (bootCount) setBootCount(0);
+  ESP.restart();
+}
+
 void loadSettings() {
-  EEPROM.begin(sizeof(Settings));
+  EEPROM.begin(BOOT_OFF + sizeof(BootCount));
   EEPROM.get(0, cfg);
   if (cfg.magic == SETTINGS_MAGIC_V3) {
     // v3 -> v4: mantém tudo, completa os campos novos e remapeia os temas
@@ -91,8 +119,7 @@ void loadSettings() {
     cfg.activity = ACT_READ;
     cfg.magic = SETTINGS_MAGIC;
   } else if (cfg.magic != SETTINGS_MAGIC) {
-    cfg = Settings{SETTINGS_MAGIC, 25, 5, 15, 4, 80, 0, 0, "<-03>3", "", 0, -1,
-                   THEME_MATRIX, 0, 10, 0, 22, 7, 15, 1, 242, 242, 242, 0, 0, "", 0, 1, 0, 8, ACT_READ, "", 0};
+    defaultSettings();
   }
   cfg.facePkg[sizeof(cfg.facePkg) - 1] = 0;
   for (char *p = cfg.facePkg; *p; p++)  // id inválido (memória antiga): sem pacote
@@ -373,6 +400,8 @@ uint32_t colorTestUntil = 0;
 
 // ---------- álbum: fotos (JPG) e GIFs no LittleFS ----------
 bool fsOk = false;
+void sendStats();
+void setupUpdate();
 
 // ---------- histórico de focos (/stats.bin) ----------
 // Um contador por dia num anel de 371 dias (53 semanas): dá a sequência de dias com a meta batida,
@@ -436,6 +465,31 @@ void statsWrite(uint16_t day, uint8_t count) {
   f.seek(0);
   f.write((const uint8_t *)&stats, sizeof stats);
   f.close();
+}
+
+// histórico (o mais antigo primeiro) para o jardim, as conquistas, o cartão de compartilhar e o backup
+void sendStats() {
+  uint8_t d[STATS_DAYS];
+  bool ok = stats.magic == STATS_MAGIC && statsRead(d);
+  String j;
+  j.reserve(STATS_DAYS * 3 + 96);
+  j = F("{\"day\":");
+  j += stats.lastDay;
+  j += F(",\"goal\":");
+  j += cfg.dailyGoal;
+  j += F(",\"streak\":");
+  j += statsStreak;
+  j += F(",\"best\":");
+  j += statsBest;
+  j += F(",\"total\":");
+  j += stats.total;
+  j += F(",\"days\":[");
+  for (int i = 0; i < STATS_DAYS; i++) {
+    if (i) j += ',';
+    j += ok ? d[i] : 0;
+  }
+  j += "]}";
+  server.send(200, "application/json", j);
 }
 
 void statsLoad() {
@@ -848,6 +902,10 @@ void sendState() {
   j += cfg.nightBri;
   j += F(",\"won\":");
   j += cfg.weatherOn;
+  j += F(",\"lat\":");
+  j += String(cfg.lat, 4);
+  j += F(",\"lon\":");
+  j += String(cfg.lon, 4);
   j += F(",\"city\":\"");
   j += jsonEscape(cfg.city);
   j += F("\",\"bgr\":");
@@ -872,6 +930,18 @@ void sendState() {
   j += ESP.getMaxFreeBlockSize();
   j += F(",\"ver\":\"" FW_VERSION "\"}");
   server.send(200, "application/json", j);
+}
+
+// "-23.5478" -> -23.5478. Lê só o que o painel manda (latitude/longitude), sem a leitura de decimais da newlib.
+float parseDec(const String &s) {
+  const char *p = s.c_str();
+  bool neg = *p == '-';
+  if (*p == '-' || *p == '+') p++;
+  float v = 0, k = 1;
+  for (; *p >= '0' && *p <= '9'; p++) v = v * 10 + (*p - '0');
+  if (*p == '.')
+    for (p++; *p >= '0' && *p <= '9'; p++) v += (*p - '0') * (k /= 10);
+  return neg ? -v : v;
 }
 
 uint8_t argRange(const char *name, uint8_t cur, int lo, int hi) {
@@ -950,29 +1020,38 @@ void setupWeb() {
     server.send_P(200, "text/html", (PGM_P)INDEX_HTML_GZ, sizeof(INDEX_HTML_GZ));
   });
   server.on("/api/state", HTTP_GET, sendState);
-  // histórico (o mais antigo primeiro) para o jardim, as conquistas e o cartão de compartilhar do painel
-  server.on("/api/stats", HTTP_GET, [] {
-    uint8_t d[STATS_DAYS];
-    bool ok = stats.magic == STATS_MAGIC && statsRead(d);
-    String j;
-    j.reserve(STATS_DAYS * 3 + 96);
-    j = F("{\"day\":");
-    j += stats.lastDay;
-    j += F(",\"goal\":");
-    j += cfg.dailyGoal;
-    j += F(",\"streak\":");
-    j += statsStreak;
-    j += F(",\"best\":");
-    j += statsBest;
-    j += F(",\"total\":");
-    j += stats.total;
-    j += F(",\"days\":[");
-    for (int i = 0; i < STATS_DAYS; i++) {
-      if (i) j += ',';
-      j += ok ? d[i] : 0;
+  server.on("/api/stats", HTTP_GET, sendStats);
+  // restaura o histórico de um backup: "days" = contagens do mais antigo ao dia "day"
+  server.on("/api/statsimport", HTTP_POST, [] {
+    if (!fsOk || !server.hasArg("days") || !server.hasArg("day")) {
+      server.send(400, "text/plain", "Backup invalido");
+      return;
     }
-    j += "]}";
-    server.send(200, "application/json", j);
+    String d = server.arg("days");
+    uint16_t day = server.arg("day").toInt();
+    std::vector<uint8_t> v;
+    for (int i = 0; i < (int)d.length();) {
+      int e = d.indexOf(',', i);
+      if (e < 0) e = d.length();
+      int n = d.substring(i, e).toInt();
+      v.push_back(n < 0 ? 0 : n > 255 ? 255 : n);
+      i = e + 1;
+    }
+    if (v.empty() || v.size() > STATS_DAYS) {
+      server.send(400, "text/plain", "Backup invalido");
+      return;
+    }
+    stats = {STATS_MAGIC, day, (uint16_t)server.arg("best").toInt(), (uint32_t)server.arg("total").toInt()};
+    File fh = LittleFS.open("/stats.bin", "w");
+    if (fh) {
+      uint8_t ring[STATS_DAYS] = {0};
+      for (size_t i = 0; i < v.size(); i++) ring[(day - (v.size() - 1) + i) % STATS_DAYS] = v[i];
+      fh.write((const uint8_t *)&stats, sizeof stats);
+      fh.write(ring, STATS_DAYS);
+      fh.close();
+    }
+    statsCompute();
+    server.send(fh ? 200 : 500, "text/plain", fh ? "ok" : "falhou");
   });
   // lista dos mostradores para a galeria do painel (vem de faces_list.h)
   server.on("/api/faces", HTTP_GET, [] {
@@ -1095,8 +1174,8 @@ void setupWeb() {
     }
     bool newPlace = false;
     if (server.hasArg("lat") && server.hasArg("lon") && safeText(server.arg("city"))) {
-      cfg.lat = server.arg("lat").toFloat();
-      cfg.lon = server.arg("lon").toFloat();
+      cfg.lat = parseDec(server.arg("lat"));
+      cfg.lon = parseDec(server.arg("lon"));
       strlcpy(cfg.city, server.arg("city").c_str(), sizeof(cfg.city));
       newPlace = true;
     }
@@ -1221,7 +1300,6 @@ void setupWeb() {
     }
     strlcpy(cfg.otaPass, p.c_str(), sizeof(cfg.otaPass));
     saveSettings();
-    updater.updateCredentials("admin", cfg.otaPass);
     server.send(200, "text/plain", p.length() ? "Senha definida (usuario: admin)" : "Senha removida");
   });
   server.on("/api/wifireset", HTTP_POST, [] {
@@ -1229,11 +1307,142 @@ void setupWeb() {
     delay(300);
     WiFi.persistent(true);
     WiFi.disconnect(true);  // com persistent, apaga a rede salva
-    ESP.restart();
+    safeRestart();
   });
-  // /update aceita qualquer .bin, inclusive o firmware original da GeekMagic (para voltar ao de fábrica).
-  // Usuário "admin"; senha vazia desativa a autenticação.
-  updater.setup(&server, "/update", "admin", cfg.otaPass);
+  setupUpdate();
+  server.begin();
+}
+
+// ---------- atualização do firmware (/update) ----------
+// Aceita o nosso firmware e o original da GeekMagic (para voltar ao de fábrica), mas confere o arquivo
+// antes de trocar: imagem do ESP8266 (0xE9 no início e no aplicativo), o tamanho e o CRC32 que o elf2bin
+// grava no cabeçalho (offsets 4112 e 4116; todas as versões V9.0.x originais também têm) e se cabe no
+// espaço livre. Arquivo truncado, corrompido ou de outro aparelho é recusado e o firmware atual fica.
+// Usuário "admin"; senha vazia (ou o modo de recuperação) dispensa a autenticação.
+struct OtaCheck { uint32_t got, size, want, crc; uint8_t field[8]; String err; bool authOk; } ota;
+
+void otaConsume(const uint8_t *p, size_t n) {
+  for (size_t i = 0; i < n && !ota.err.length(); i++, ota.got++) {
+    uint32_t o = ota.got;
+    uint8_t v = p[i];
+    if ((o == 0 || o == 4096) && v != 0xE9) ota.err = F("nao e um firmware do ESP8266");
+    if (o >= 4112 && o < 4120) {
+      ota.field[o - 4112] = v;
+      v = 0;  // os campos de tamanho e CRC entram zerados na conta
+      if (o == 4119) {
+        memcpy(&ota.size, ota.field, 4);
+        memcpy(&ota.want, ota.field + 4, 4);
+        uint32_t room = (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000;
+        if (ota.size < 4120 || ota.size > room) ota.err = F("tamanho invalido ou sem espaco");
+      }
+    }
+    if (ota.size && o >= ota.size) ota.err = F("arquivo maior que o indicado");
+    ota.crc ^= (uint32_t)v << 24;
+    for (int k = 0; k < 8; k++) ota.crc = (ota.crc << 1) ^ (ota.crc & 0x80000000 ? 0x04C11DB7 : 0);
+  }
+}
+
+void setupUpdate() {
+  auto authOk = [] { return recoveryMode || !cfg.otaPass[0] || server.authenticate("admin", cfg.otaPass); };
+  server.on("/update", HTTP_GET, [authOk] {
+    if (!authOk()) return server.requestAuthentication();
+    String p = F("<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>SmallTV</title>"
+                 "<style>body{font:16px system-ui;background:#111;color:#eee;max-width:420px;margin:auto;padding:20px}"
+                 "input,button{width:100%;padding:12px;margin:8px 0;border-radius:10px;border:1px solid #333;background:#1c1c1c;color:#eee;font:inherit}"
+                 "button{background:#ff5a47;border:0;font-weight:700}</style><h2>");
+    p += tr("Atualizar firmware", "Update firmware", "Actualizar firmware");
+    p += F("</h2><form method=post enctype=multipart/form-data><input type=file name=firmware accept=.bin required><button>");
+    p += tr("Enviar", "Upload", "Enviar");
+    p += F("</button></form><small>v" FW_VERSION "</small>");
+    server.send(200, "text/html", p);
+  });
+  server.on("/update", HTTP_POST, [] {
+      if (!ota.authOk) return server.requestAuthentication();
+      if (ota.err.length()) {
+        server.send(400, "text/plain", "Update error: " + ota.err);
+        return;
+      }
+      server.send(200, "text/html", F("<meta http-equiv=refresh content='20;URL=/'>Update Success! Rebooting..."));
+      delay(200);
+      safeRestart();
+    }, [authOk] {
+      HTTPUpload &up = server.upload();
+      if (up.status == UPLOAD_FILE_START) {
+        ota = {0, 0, 0, 0xFFFFFFFF, {0}, String(), authOk()};
+        if (!ota.authOk) ota.err = F("senha");
+        else {
+          if (inAlbum) stopAlbum();  // libera RAM e o LittleFS durante a gravação
+          if (!Update.begin((ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000, U_FLASH)) ota.err = Update.getErrorString();
+        }
+      } else if (up.status == UPLOAD_FILE_WRITE && !ota.err.length()) {
+        otaConsume(up.buf, up.currentSize);
+        if (!ota.err.length() && Update.write(up.buf, up.currentSize) != up.currentSize) ota.err = Update.getErrorString();
+        if (ota.err.length()) Update.end();  // desiste: o firmware atual continua
+      } else if (up.status == UPLOAD_FILE_END && !ota.err.length()) {
+        if (ota.got < 4120 || ota.got != ota.size) ota.err = F("arquivo incompleto");
+        else if (ota.crc != ota.want) ota.err = F("arquivo corrompido (CRC)");
+        if (ota.err.length()) Update.end();
+        else if (!Update.end(true)) ota.err = Update.getErrorString();
+      } else if (up.status == UPLOAD_FILE_ABORTED) {
+        Update.end();
+        ota.err = F("envio interrompido");
+      }
+      yield();
+    });
+}
+
+// ---------- modo de recuperação ----------
+#define RECOVERY_AP "SmallTV-Recuperacao"
+void startRecovery() {
+  WiFi.mode(WIFI_AP_STA);
+  WiFi.softAP(RECOVERY_AP);
+  WiFi.begin();  // tenta também a rede salva: o painel de recuperação abre pelo IP de casa
+  message(tr("Modo de recuperacao", "Recovery mode", "Modo de recuperacion"), RECOVERY_AP,
+          tr("Conecte nessa rede e abra", "Join this network and open", "Conectate a esta red y abre"), "http://192.168.4.1");
+  server.on("/", HTTP_GET, [] {
+    String p = F("<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>SmallTV</title>"
+                 "<style>body{font:16px system-ui;background:#111;color:#eee;max-width:420px;margin:auto;padding:20px}"
+                 "button,a{display:block;width:100%;box-sizing:border-box;text-align:center;padding:12px;margin:8px 0;border-radius:10px;"
+                 "border:1px solid #333;background:#1c1c1c;color:#eee;font:inherit;text-decoration:none}.p{background:#ff5a47;border:0;font-weight:700}</style><h2>");
+    p += tr("Modo de recuperacao", "Recovery mode", "Modo de recuperacion");
+    p += F("</h2><p>v" FW_VERSION " &middot; ");
+    p += WiFi.status() == WL_CONNECTED ? WiFi.localIP().toString() : String(F("192.168.4.1"));
+    p += F("</p><a class=p href=/update>");
+    p += tr("Atualizar firmware", "Update firmware", "Actualizar firmware");
+    p += F("</a><a href=/api/stats download=historico.json>");
+    p += tr("Baixar historico de focos", "Download focus history", "Descargar historial");
+    p += F("</a><form method=post action=/rec/factory><button>");
+    p += tr("Voltar aos ajustes de fabrica", "Reset settings to defaults", "Restablecer ajustes");
+    p += F("</button></form><form method=post action=/rec/wifi><button>");
+    p += tr("Esquecer o Wi-Fi", "Forget Wi-Fi", "Olvidar el Wi-Fi");
+    p += F("</button></form><form method=post action=/rec/restart><button class=p>");
+    p += tr("Reiniciar normalmente", "Restart normally", "Reiniciar normalmente");
+    p += F("</button></form>");
+    server.send(200, "text/html", p);
+  });
+  auto done = [](const __FlashStringHelper *msg) {
+    server.sendHeader("Location", "/");
+    server.send(303, "text/plain", msg);
+  };
+  server.on("/rec/factory", HTTP_POST, [done] {
+    uint8_t lang = cfg.lang;
+    defaultSettings();
+    cfg.lang = lang;
+    saveSettings();
+    done(F("ok"));
+  });
+  server.on("/rec/wifi", HTTP_POST, [done] {
+    WiFi.persistent(true);
+    WiFi.disconnect(true);
+    done(F("ok"));
+  });
+  server.on("/rec/restart", HTTP_POST, [] {
+    server.send(200, "text/plain", "ok");
+    delay(300);
+    safeRestart();
+  });
+  server.on("/api/stats", HTTP_GET, sendStats);
+  setupUpdate();
   server.begin();
 }
 
@@ -1299,7 +1508,7 @@ void startPortal() {
     WiFi.persistent(true);
     WiFi.begin(server.arg("s").c_str(), server.arg("p").c_str());
     delay(1000);
-    ESP.restart();
+    safeRestart();
   });
   // qualquer outro endereço cai no formulário (portal cativo do celular)
   server.onNotFound([] {
@@ -1313,6 +1522,11 @@ void startPortal() {
 void setup() {
   pinMode(PIN_BL, OUTPUT);
   loadSettings();
+  BootCount bc;
+  EEPROM.get(BOOT_OFF, bc);
+  uint8_t boots = bc.magic == BOOT_MAGIC ? bc.n : 0;
+  recoveryMode = boots + 1 >= 3;
+  setBootCount(recoveryMode ? 0 : boots + 1);  // a recuperação vale uma vez; o próximo reinício é normal
   updateBrightness(true);
 
   tft.init(240, 240, SPI_MODE3);
@@ -1332,6 +1546,10 @@ void setup() {
   LittleFS.setConfig(fcfg);
   fsOk = LittleFS.begin();
   statsLoad();
+  if (recoveryMode) {  // sem pacotes, álbum nem clima: só o necessário para consertar
+    startRecovery();
+    return;
+  }
   uiDrawImage = drawJpgAt;
   if (cfg.theme == THEME_PACK) restoreActivePack();  // pacote ausente/inválido: volta ao Matriz
   rebuildAlbum();
@@ -1350,11 +1568,16 @@ void setup() {
 uint32_t lastRender = 0, lastBriCheck = 0;
 
 void loop() {
+  if (bootCount && millis() > 30000) setBootCount(0);  // ficou ligado: não foi uma inicialização curta
+  if (recoveryMode) {
+    server.handleClient();
+    return;
+  }
   if (portalMode) {
     dns.processNextRequest();
     server.handleClient();
     // sem configuração em 5 min (ex.: roteador estava desligado): reinicia e tenta a rede salva de novo
-    if (millis() > 300000) ESP.restart();
+    if (millis() > 300000) safeRestart();
     return;
   }
   server.handleClient();
