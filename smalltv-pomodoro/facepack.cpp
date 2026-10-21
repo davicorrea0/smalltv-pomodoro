@@ -13,12 +13,12 @@
 
 bool (*uiDrawImage)(const char *path, int x, int y) = nullptr;
 
-enum : uint8_t { L_RECT, L_CIRCLE, L_LINE, L_TEXT, L_SPRITE, L_MASCOT, L_WEATHER, L_BAR, L_HAND, L_IMAGE, L_TYPES };
+enum : uint8_t { L_RECT, L_CIRCLE, L_LINE, L_TEXT, L_SPRITE, L_MASCOT, L_WEATHER, L_BAR, L_HAND, L_IMAGE, L_ARC, L_TICKS, L_TYPES };
 enum : uint8_t { F_PIXEL, F_DM, F_GEO, F_DSEG, F_BEBAS, F_OUTFIT, F_RIGHTEOUS, F_FONTS };
 enum : uint8_t { A_LEFT, A_CENTER, A_RIGHT };
 enum : uint8_t { W_ALWAYS, W_DAY, W_NIGHT, W_RAIN, W_DRY, W_WX, W_NOWX, W_GOAL, W_NOGOAL, W_WHENS };
 enum : uint8_t { V_SEC, V_MIN, V_HOUR, V_FOCOS, V_HUM, V_VARS };
-static const char *const TYPES[L_TYPES] = {"rect", "circle", "line", "text", "sprite", "mascot", "weather", "bar", "hand", "image"};
+static const char *const TYPES[L_TYPES] = {"rect", "circle", "line", "text", "sprite", "mascot", "weather", "bar", "hand", "image", "arc", "ticks"};
 static const char *const FONTS[F_FONTS] = {"pixel", "dm", "geo", "dseg", "bebas", "outfit", "righteous"};
 static const char *const ALIGNS[3] = {"left", "center", "right"};
 static const char *const WHENS[W_WHENS] = {"always", "day", "night", "rain", "dry", "weather", "noweather", "goal", "nogoal"};
@@ -222,8 +222,11 @@ bool facePackLoad(char *json, size_t len, char *err, size_t errLen) {
     } else if (L.type == L_HAND) {
       L.w = l["len"] | 60;
       L.h = l["tail"] | 0;
+    } else if (L.type == L_TICKS) {
+      L.w = l["len"] | 8;
+      L.mx = l["count"] | 12;
     }
-    uint8_t defSize = L.type == L_TEXT ? 2 : L.type == L_WEATHER ? 10 : L.type == L_LINE || L.type == L_HAND ? 3 : 1;
+    uint8_t defSize = L.type == L_TEXT ? 2 : L.type == L_WEATHER ? 10 : L.type == L_ARC ? 10 : L.type == L_LINE || L.type == L_HAND || L.type == L_TICKS ? 3 : 1;
     L.size = l["size"] | defSize;
     L.font = pick(l["font"] | (const char *)nullptr, FONTS, F_FONTS, F_PIXEL);
     L.align = pick(l["align"] | (const char *)nullptr, ALIGNS, 3, A_LEFT);
@@ -235,7 +238,7 @@ bool facePackLoad(char *json, size_t len, char *err, size_t errLen) {
       facePackUnload();
       return false;
     }
-    int32_t defC1 = L.type == L_RECT || L.type == L_CIRCLE ? CARD : L.type == L_BAR ? WORK : TEXT;
+    int32_t defC1 = L.type == L_RECT || L.type == L_CIRCLE ? CARD : L.type == L_BAR || L.type == L_ARC ? WORK : TEXT;
     L.c1 = parseColor(l["color"] | (const char *)nullptr, defC1);
     const char *c2 = l["color2"] | (const char *)nullptr;  // aceita também os apelidos abaixo
     if (!c2) c2 = l["track"] | (const char *)nullptr;
@@ -493,6 +496,8 @@ static Box measure(const Layer &L, const UiState &s, const char *txt) {
     }
     case L_BAR: return {L.x, L.y, L.w, L.h};
     case L_HAND: return handBox(L, handAngle(L, s));
+    case L_ARC:
+    case L_TICKS: return {(int16_t)(L.x - L.r - 2), (int16_t)(L.y - L.r - 2), (int16_t)(2 * L.r + 5), (int16_t)(2 * L.r + 5)};
   }
   return {0, 0, 0, 0};
 }
@@ -506,8 +511,45 @@ static uint32_t signature(const Layer &L, const UiState &s, char *txt, size_t n)
     case L_WEATHER: { int v = s.weatherOn && s.wx.ok ? s.wx.code * 2 + s.wx.day + 1 : 0; h = fnv(h, &v, sizeof v); break; }
     case L_BAR: { int mx, v = value(L, s, mx); int fw = L.mx > 0 ? (v > L.mx ? L.mx : v) * L.w / L.mx : (v > mx ? mx : v) * L.w / mx; h = fnv(h, &fw, sizeof fw); break; }
     case L_HAND: { int a = (int)(handAngle(L, s) * 1000); h = fnv(h, &a, sizeof a); break; }
+    case L_ARC: { int mx, v = value(L, s, mx); if (L.mx > 0) mx = L.mx; int q = (v > mx ? mx : v) * 720 / mx; h = fnv(h, &q, sizeof q); break; }
   }
   return h | 1;  // nunca 0 (0 = invisível)
+}
+
+// Anel de espessura th e raio externo r, preenchido de 0 a f (fração) a partir do topo, no sentido
+// horário, com pontas redondas; o resto em "track" (C_NONE = não desenha). Linha a linha em trechos
+// (sem atan2 por pixel: o lado do ponto em relação ao raio final decide).
+static void arcRing(int cx, int cy, int r, int th, float f, uint16_t c, int32_t track, const UiState &s) {
+  if (th > r) th = r;
+  int ri = r - th;
+  float a = f * 2 * K_PI;
+  int ex = (int)(sinf(a) * 1024), ey = (int)(-cosf(a) * 1024);
+  auto inArc = [&](int dx, int dy) {
+    if (f >= 1) return true;
+    if (f <= 0) return false;
+    long cr = (long)ex * dy - (long)ey * dx;  // < 0: antes do raio final
+    if (f <= 0.5f) return (dx > 0 || (dx == 0 && dy < 0)) && cr < 0;
+    return !(dx < 0 && cr >= 0);
+  };
+  for (int dy = -r; dy <= r; dy++) {
+    int xo = (int)sqrtf((float)r * r - dy * dy + r), xi = abs(dy) < ri ? (int)sqrtf((float)ri * ri - dy * dy - ri) : -1;
+    for (int side = 0; side < 2; side++) {
+      int x0 = side ? (xi >= 0 ? xi + 1 : -xo) : -xo, x1 = side ? xo : (xi >= 0 ? -xi - 1 : -xo - 1);
+      for (int x = x0; x <= x1;) {
+        bool in = inArc(x, dy);
+        int e = x;
+        while (e + 1 <= x1 && inArc(e + 1, dy) == in) e++;
+        if (in) G->drawFastHLine(cx + x, cy + dy, e - x + 1, c);
+        else if (track != C_NONE) G->drawFastHLine(cx + x, cy + dy, e - x + 1, col(track, s));
+        x = e + 1;
+      }
+    }
+  }
+  if (f > 0 && f < 1 && th > 3) {  // pontas redondas
+    float rm = r - th / 2.0f;
+    G->fillCircle(cx, cy - (int)rm, th / 2, c);
+    G->fillCircle(cx + (int)(sinf(a) * rm), cy - (int)(cosf(a) * rm), th / 2, c);
+  }
 }
 
 static void drawLayer(const Layer &L, const UiState &s, const char *txt) {
@@ -564,6 +606,18 @@ static void drawLayer(const Layer &L, const UiState &s, const char *txt) {
       thickLine(L.x - sa * L.h, L.y + ca * L.h, L.x + sa * L.w, L.y - ca * L.w, L.size, c1);
       break;
     }
+    case L_ARC: {
+      int mx, v = value(L, s, mx);
+      if (L.mx > 0) mx = L.mx;
+      arcRing(L.x, L.y, L.r, L.size, (float)(v > mx ? mx : v) / mx, c1, L.c2, s);
+      break;
+    }
+    case L_TICKS:
+      for (int i = 0; i < L.mx; i++) {
+        float a = i * 2 * K_PI / L.mx, sa = sinf(a), ca = cosf(a);
+        thickLine(L.x + sa * (L.r - L.w), L.y - ca * (L.r - L.w), L.x + sa * L.r, L.y - ca * L.r, L.size, c1);
+      }
+      break;
     case L_IMAGE:
       if (!uiDrawImage || !uiDrawImage(pool + L.str, L.x, L.y)) G->fillRect(L.x, L.y, L.w, L.h, uiRgb(70, 70, 76));
       break;

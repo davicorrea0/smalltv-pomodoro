@@ -63,6 +63,8 @@ Toda camada aceita `"when"` para aparecer só em certas condições: `day`, `nig
 | `bar` | `x`, `y`, `w`, `h`, `r`, `value` (`sec`, `min`, `hour`, `focos`, `hum`), `max` (opcional), `color`, `track` |
 | `hand` | ponteiro: `x`, `y` (centro), `value` (`hour`, `min`, `sec`), `len`, `tail`, `size` (espessura), `color` |
 | `image` | JPEG em `/faces/` no relógio: `x`, `y`, `w`, `h`, `file` |
+| `arc` | anel de progresso com pontas redondas, do topo no sentido horário: `x`, `y` (centro), `r` (raio externo), `size` (espessura), `value`, `max` (opcional), `color`, `track` (requer firmware 1.6.6+) |
+| `ticks` | marcações de mostrador analógico: `x`, `y` (centro), `r` (raio externo), `len`, `count` (12 = horas, 60 = minutos), `size`, `color` (requer firmware 1.6.6+) |
 
 ### Fontes (`text`)
 
