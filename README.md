@@ -2,6 +2,8 @@
 
 Firmware alternativo para o **GeekMagic SmallTV Ultra** (ESP8266, tela ST7789 240×240): relógio com 8 mostradores, Pomodoro, clima, álbum de fotos/GIFs e um mascote tomate em pixel art.
 
+🌐 **Site do projeto:** [davicorrea0.github.io/smalltv-pomodoro](https://davicorrea0.github.io/smalltv-pomodoro/) — o que muda no relógio, como instalar e a [galeria de mostradores](https://davicorrea0.github.io/smalltv-pomodoro/galeria.html).
+
 ![Os 8 mostradores](docs/mostradores.png)
 
 <sub>Imagens geradas pelo simulador do projeto, que compila o mesmo código de desenho do firmware.</sub>
