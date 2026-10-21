@@ -74,3 +74,20 @@
     })
     .catch(function () { /* fica o link para a página de releases */ });
 })();
+
+// "Veja de perto": abas que trocam a imagem mostrada
+(function () {
+  var viewer = document.getElementById("viewer");
+  if (!viewer) return;
+  var tabs = viewer.querySelectorAll("[role=tab]"), panels = viewer.querySelectorAll("[role=tabpanel]");
+  tabs.forEach(function (t) {
+    t.addEventListener("click", function () {
+      tabs.forEach(function (o) {
+        var on = o === t;
+        o.setAttribute("aria-selected", String(on));
+        o.setAttribute("aria-pressed", String(on));
+      });
+      panels.forEach(function (p) { p.hidden = p.dataset.shot !== t.dataset.shot; });
+    });
+  });
+})();

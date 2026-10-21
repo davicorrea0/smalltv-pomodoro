@@ -335,3 +335,8 @@ footer a:hover { color: var(--text); }
 }
 
 [hidden] { display: none !important; }
+
+/* "Veja de perto": uma imagem por vez, escolhida nas abas */
+.viewer .tabs { flex-wrap: nowrap; overflow-x: auto; margin: 0 0 12px; padding-bottom: 2px; scrollbar-width: none; }
+.viewer .tabs::-webkit-scrollbar { display: none; }
+.viewer .tabs button { flex: none; }

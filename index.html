@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Silkscreen&display=swap">
-<link rel="stylesheet" href="style.css?v=2">
+<link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
 
@@ -147,26 +147,39 @@
       <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/cores.svg" alt=""></span>Ajuste de cor da tela</h3><p>Ordem de cor RGB/BGR, inversão e rotação 180°, com tela de teste de cores, porque isso varia entre unidades.</p></div>
       <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/seta.svg" alt=""></span>Atualização sem fio</h3><p>Versões novas são enviadas pelo painel em <code>/update</code>, que também serve para voltar ao firmware original.</p></div>
     </div>
+  </div>
+</section>
 
-    <div class="shots">
-      <figure class="shot">
-        <img class="px" src="img/tomate.png" alt="Cena Tomate: dia, noite, chuva, neve, calor e meta batida" width="1480" height="990" loading="lazy">
+<section id="de-perto">
+  <div class="wrap">
+    <h2>Veja de perto</h2>
+    <p class="section-lead">As telas do relógio, geradas pelo simulador do projeto com o mesmo código do firmware.</p>
+    <div class="viewer" id="viewer">
+      <div class="tabs" role="tablist" aria-label="Telas">
+        <button type="button" role="tab" data-shot="0" aria-selected="true" aria-pressed="true">Tomate</button>
+        <button type="button" role="tab" data-shot="1" aria-selected="false" aria-pressed="false">Pomodoro</button>
+        <button type="button" role="tab" data-shot="2" aria-selected="false" aria-pressed="false">Atividades</button>
+        <button type="button" role="tab" data-shot="3" aria-selected="false" aria-pressed="false">Flip</button>
+        <button type="button" role="tab" data-shot="4" aria-selected="false" aria-pressed="false">Desenhos</button>
+      </div>
+      <figure class="shot" role="tabpanel" data-shot="0">
+        <img class="px" src="img/tomate.png" alt="Cena Tomate: dia, noite, chuva, neve, calor e meta batida" width="1480" height="990">
         <figcaption>Mostrador Tomate: dia, noite, chuva, frio, calor e meta do dia batida.</figcaption>
       </figure>
-      <figure class="shot">
-        <img class="px" src="img/pomodoro.png" alt="Pomodoro: foco, pausado, fim de fase e tela de configuração" width="1010" height="260" loading="lazy">
+      <figure class="shot" role="tabpanel" data-shot="1" hidden>
+        <img class="px" src="img/pomodoro.png" alt="Pomodoro: foco, pausado, fim de fase e tela de configuração" width="1010" height="260">
         <figcaption>Pomodoro: foco, pausado, fim de fase e tela de configuração.</figcaption>
       </figure>
-      <figure class="shot">
-        <img class="px" src="img/atividades.png" alt="Atividades do foco: ler, estudar, programar, tarefas e desenhar" width="1260" height="260" loading="lazy">
+      <figure class="shot" role="tabpanel" data-shot="2" hidden>
+        <img class="px" src="img/atividades.png" alt="Atividades do foco: ler, estudar, programar, tarefas e desenhar" width="1260" height="260">
         <figcaption>Atividades do foco: ler, estudar, programar, tarefas e desenhar.</figcaption>
       </figure>
-      <figure class="shot">
-        <img class="px" src="img/flip.png" alt="Virada do mostrador Flip, quadro a quadro" width="1530" height="578" loading="lazy">
+      <figure class="shot" role="tabpanel" data-shot="3" hidden>
+        <img class="px" src="img/flip.png" alt="Virada do mostrador Flip, quadro a quadro" width="1530" height="578">
         <figcaption>Mostrador Flip: a plaquinha virando, quadro a quadro.</figcaption>
       </figure>
-      <figure class="shot">
-        <img class="px" src="img/assets.png" alt="Folha com todos os desenhos em pixel art do firmware" width="752" height="568" loading="lazy">
+      <figure class="shot" role="tabpanel" data-shot="4" hidden>
+        <img class="px" src="img/assets.png" alt="Folha com todos os desenhos em pixel art do firmware" width="752" height="568">
         <figcaption>Todos os desenhos em pixel art são arquivos de texto no repositório, fáceis de editar.</figcaption>
       </figure>
     </div>
@@ -292,7 +305,7 @@
   </div>
 </footer>
 
-<script src="faces.js?v=2"></script>
-<script src="site.js?v=2"></script>
+<script src="faces.js?v=3"></script>
+<script src="site.js?v=3"></script>
 </body>
 </html>

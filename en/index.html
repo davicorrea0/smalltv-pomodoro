@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Silkscreen&display=swap">
-<link rel="stylesheet" href="../style.css?v=2">
+<link rel="stylesheet" href="../style.css?v=3">
 </head>
 <body>
 
@@ -147,26 +147,39 @@
       <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/cores.svg" alt=""></span>Screen color tuning</h3><p>RGB/BGR color order, inversion and 180° rotation, with a color test screen, because this varies between units.</p></div>
       <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/seta.svg" alt=""></span>Wireless updates</h3><p>New versions are uploaded from the panel at <code>/update</code>, which also lets you go back to the original firmware.</p></div>
     </div>
+  </div>
+</section>
 
-    <div class="shots">
-      <figure class="shot">
-        <img class="px" src="../img/tomate.png" alt="Tomato scene: day, night, rain, snow, heat and goal reached" width="1480" height="990" loading="lazy">
+<section id="up-close">
+  <div class="wrap">
+    <h2>Up close</h2>
+    <p class="section-lead">The clock's screens, rendered by the project's simulator with the same code as the firmware.</p>
+    <div class="viewer" id="viewer">
+      <div class="tabs" role="tablist" aria-label="Screens">
+        <button type="button" role="tab" data-shot="0" aria-selected="true" aria-pressed="true">Tomato</button>
+        <button type="button" role="tab" data-shot="1" aria-selected="false" aria-pressed="false">Pomodoro</button>
+        <button type="button" role="tab" data-shot="2" aria-selected="false" aria-pressed="false">Activities</button>
+        <button type="button" role="tab" data-shot="3" aria-selected="false" aria-pressed="false">Flip</button>
+        <button type="button" role="tab" data-shot="4" aria-selected="false" aria-pressed="false">Drawings</button>
+      </div>
+      <figure class="shot" role="tabpanel" data-shot="0">
+        <img class="px" src="../img/tomate.png" alt="Tomato scene: day, night, rain, snow, heat and goal reached" width="1480" height="990">
         <figcaption>Tomato face: day, night, rain, cold, heat and daily goal reached.</figcaption>
       </figure>
-      <figure class="shot">
-        <img class="px" src="../img/pomodoro.png" alt="Pomodoro: focus, paused, end of phase and setup screen" width="1010" height="260" loading="lazy">
+      <figure class="shot" role="tabpanel" data-shot="1" hidden>
+        <img class="px" src="../img/pomodoro.png" alt="Pomodoro: focus, paused, end of phase and setup screen" width="1010" height="260">
         <figcaption>Pomodoro: focus, paused, end of phase and setup screen.</figcaption>
       </figure>
-      <figure class="shot">
-        <img class="px" src="../img/atividades.png" alt="Focus activities: reading, studying, coding, chores and drawing" width="1260" height="260" loading="lazy">
+      <figure class="shot" role="tabpanel" data-shot="2" hidden>
+        <img class="px" src="../img/atividades.png" alt="Focus activities: reading, studying, coding, chores and drawing" width="1260" height="260">
         <figcaption>Focus activities: reading, studying, coding, chores and drawing.</figcaption>
       </figure>
-      <figure class="shot">
-        <img class="px" src="../img/flip.png" alt="Flip face turning, frame by frame" width="1530" height="578" loading="lazy">
+      <figure class="shot" role="tabpanel" data-shot="3" hidden>
+        <img class="px" src="../img/flip.png" alt="Flip face turning, frame by frame" width="1530" height="578">
         <figcaption>Flip face: the card turning, frame by frame.</figcaption>
       </figure>
-      <figure class="shot">
-        <img class="px" src="../img/assets.png" alt="Sheet with every pixel art drawing in the firmware" width="752" height="568" loading="lazy">
+      <figure class="shot" role="tabpanel" data-shot="4" hidden>
+        <img class="px" src="../img/assets.png" alt="Sheet with every pixel art drawing in the firmware" width="752" height="568">
         <figcaption>Every pixel art drawing is a text file in the repository, easy to edit.</figcaption>
       </figure>
     </div>
@@ -292,7 +305,7 @@
   </div>
 </footer>
 
-<script src="../faces.js?v=2"></script>
-<script src="../site.js?v=2"></script>
+<script src="../faces.js?v=3"></script>
+<script src="../site.js?v=3"></script>
 </body>
 </html>
