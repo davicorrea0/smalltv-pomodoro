@@ -47,7 +47,7 @@ static void fillConvex(const float *px, const float *py, int n, uint16_t c) {
 
 // Dígito no estilo DSEG7 (relógio LCD): h = altura em px, largura = 0,618·h.
 // Cada segmento é pintado aceso ou "fantasma": troca de dígito sem limpar a área.
-static void dsegDigit(int x, int y, int h, int d, uint16_t on, uint16_t off) {
+void dsegDigit(int x, int y, int h, int d, uint16_t on, uint16_t off) {
   const float k = h / 1000.0f;
   float px[8], py[8];
   for (int sgm = 0; sgm < 7; sgm++) {
@@ -57,7 +57,7 @@ static void dsegDigit(int x, int y, int h, int d, uint16_t on, uint16_t off) {
       py[i] = y + DSEG_PT[DSEG_START[sgm] + i][1] * k;
     }
     bool lit = d >= 0 && d <= 9 && (DSEG_MASK[d] >> sgm & 1);
-    fillConvex(px, py, n, lit ? on : off);
+    if (lit || off != on) fillConvex(px, py, n, lit ? on : off);  // off == on: só os acesos
   }
 }
 

@@ -27,8 +27,9 @@
 #include "ui.h"
 #include "web.h"
 #include "faces.h"
+#include "facepack.h"
 
-#define FW_VERSION "1.5.0"
+#define FW_VERSION "1.6.0"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
@@ -69,6 +70,7 @@ struct Settings {
   uint8_t flip;         // 1 = girar 180°
   uint8_t dailyGoal;    // meta de focos por dia
   uint8_t activity;     // atividade do foco (UiActivity); campo novo no fim: unidades antigas leem lixo e caem no padrão
+  char facePkg[24];     // pacote de mostrador ativo (/faces/<id>.json) quando theme == THEME_PACK; idem: lixo vira ""
 };
 const uint32_t SETTINGS_MAGIC = 0x504F4D34;     // "POM4"
 const uint32_t SETTINGS_MAGIC_V3 = 0x504F4D33;  // "POM3": mesmos campos, sem os do v4
@@ -90,9 +92,15 @@ void loadSettings() {
     cfg.magic = SETTINGS_MAGIC;
   } else if (cfg.magic != SETTINGS_MAGIC) {
     cfg = Settings{SETTINGS_MAGIC, 25, 5, 15, 4, 80, 0, 0, "<-03>3", "", 0, -1,
-                   THEME_MATRIX, 0, 10, 0, 22, 7, 15, 1, 242, 242, 242, 0, 0, "", 0, 1, 0, 8, ACT_READ};
+                   THEME_MATRIX, 0, 10, 0, 22, 7, 15, 1, 242, 242, 242, 0, 0, "", 0, 1, 0, 8, ACT_READ, ""};
   }
-  if (cfg.theme >= THEME_COUNT) cfg.theme = THEME_MATRIX;
+  cfg.facePkg[sizeof(cfg.facePkg) - 1] = 0;
+  for (char *p = cfg.facePkg; *p; p++)  // id inválido (memória antiga): sem pacote
+    if (!((*p >= 'a' && *p <= 'z') || (*p >= '0' && *p <= '9') || *p == '-' || *p == '_')) {
+      cfg.facePkg[0] = 0;
+      break;
+    }
+  if (cfg.theme >= THEME_COUNT && !(cfg.theme == THEME_PACK && cfg.facePkg[0])) cfg.theme = THEME_MATRIX;
   if (!cfg.dailyGoal) cfg.dailyGoal = 8;
   if (cfg.activity >= ACT_COUNT) cfg.activity = ACT_READ;
   cfg.tz[sizeof(cfg.tz) - 1] = 0;
@@ -415,8 +423,33 @@ int32_t jpgSeek(JPEGFILE *f, int32_t pos) {
 }
 int jpgDraw(JPEGDRAW *p) {
   if (p->y >= 240) return 0;
-  tft.drawRGBBitmap(p->x, p->y, p->pPixels, p->iWidth, p->iHeight);
+  if (!uiClip.on) {
+    tft.drawRGBBitmap(p->x, p->y, p->pPixels, p->iWidth, p->iHeight);
+    return 1;
+  }
+  for (int r = 0; r < p->iHeight; r++) {  // recorte: só as linhas/colunas dentro da área suja
+    int y = p->y + r;
+    if (y < uiClip.y0 || y >= uiClip.y1) continue;
+    int x0 = max((int)p->x, (int)uiClip.x0), x1 = min(p->x + p->iWidth, (int)uiClip.x1);
+    if (x1 > x0) tft.drawRGBBitmap(x0, y, p->pPixels + r * p->iWidth + (x0 - p->x), x1 - x0, 1);
+  }
   return 1;
+}
+
+// Camada "image" dos pacotes: JPEG em /faces/<arquivo>, no ponto (x, y), sem escala.
+bool drawJpgAt(const char *file, int x, int y) {
+  String path = String("/faces/") + file;
+  if (strstr(file, "..") || !LittleFS.exists(path)) return false;
+  JPEGDEC *jpg = new (std::nothrow) JPEGDEC();
+  if (!jpg) return false;
+  bool ok = false;
+  if (jpg->open(path.c_str(), mediaOpen, mediaClose, jpgRead, jpgSeek, jpgDraw)) {
+    jpg->setPixelType(RGB565_LITTLE_ENDIAN);
+    ok = jpg->decode(x, y, 0);
+    jpg->close();
+  }
+  delete jpg;
+  return ok;
 }
 
 bool drawJpg(const String &f) {
@@ -554,6 +587,78 @@ void scheduleView() {
   if (!viewUntil) viewUntil = 1;
 }
 
+// ---------- pacotes de mostrador (/faces/<id>.json) ----------
+bool idOk(const String &id) {
+  if (!id.length() || id.length() > 23) return false;
+  for (char c : id)
+    if (!((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-' || c == '_')) return false;
+  return true;
+}
+
+// Lê o arquivo e carrega no motor. Em erro, msg recebe o motivo.
+bool loadPackFile(const String &path, String &msg) {
+  File f = fsOk ? LittleFS.open(path, "r") : File();
+  if (!f) {
+    msg = "arquivo nao encontrado";
+    return false;
+  }
+  size_t n = f.size();
+  if (n == 0 || n > 16384) {
+    f.close();
+    msg = "pacote vazio ou maior que 16 KB";
+    return false;
+  }
+  char *buf = (char *)malloc(n + 1);
+  if (!buf) {
+    f.close();
+    msg = "sem memoria";
+    return false;
+  }
+  f.readBytes(buf, n);
+  f.close();
+  buf[n] = 0;
+  char err[96];
+  bool ok = facePackLoad(buf, n, err, sizeof err);
+  free(buf);
+  if (!ok) msg = err;
+  uiInvalidate();
+  return ok;
+}
+
+bool loadPack(const String &id) {
+  String msg;
+  return idOk(id) && loadPackFile("/faces/" + id + ".json", msg);
+}
+
+// Volta o motor ao pacote salvo nas configurações (ou o libera, se o ativo é um embutido).
+void restoreActivePack() {
+  if (cfg.theme == THEME_PACK && loadPack(cfg.facePkg)) return;
+  facePackUnload();
+  if (cfg.theme == THEME_PACK) cfg.theme = THEME_MATRIX;
+  uiInvalidate();
+}
+
+File packUpload;
+String packUploadError;
+
+// Recebe "face" (o .json) e, opcional, "preview" (o .png) em arquivos temporários.
+void handlePackUpload() {
+  HTTPUpload &up = server.upload();
+  if (up.status == UPLOAD_FILE_START) {
+    if (up.name == "face") packUploadError = "";
+    if (!fsOk) {
+      packUploadError = "Sistema de arquivos indisponivel";
+      return;
+    }
+    if (!LittleFS.exists("/faces")) LittleFS.mkdir("/faces");
+    packUpload = LittleFS.open(up.name == "preview" ? "/faces/_novo.png" : "/faces/_novo.json", "w");
+  } else if (up.status == UPLOAD_FILE_WRITE) {
+    if (packUpload && packUpload.write(up.buf, up.currentSize) != up.currentSize) packUploadError = "Memoria cheia";
+  } else if (up.status == UPLOAD_FILE_END || up.status == UPLOAD_FILE_ABORTED) {
+    if (packUpload) packUpload.close();
+  }
+}
+
 // ---------- web ----------
 String jsonEscape(const String &s) {
   String o;
@@ -653,7 +758,9 @@ void sendState() {
   j += cfg.invert;
   j += F(",\"flip\":");
   j += cfg.flip;
-  j += F(",\"goal\":");
+  j += F(",\"pkg\":\"");
+  j += cfg.theme == THEME_PACK ? cfg.facePkg : "";
+  j += F("\",\"goal\":");
   j += cfg.dailyGoal;
   j += F(",\"act\":");
   j += cfg.activity;
@@ -749,12 +856,41 @@ void setupWeb() {
       if (t) j += ',';
       j += "{\"n\":\"" + jsonEscape(uiFaceName(t)) + "\",\"d\":\"" + jsonEscape(uiFaceDesc(t)) + "\"}";
     }
+    // pacotes instalados: nome/descrição/autor vêm do <id>.txt gravado na instalação
+    if (fsOk) {
+      Dir d = LittleFS.openDir("/faces");
+      while (d.next()) {
+        String fn = d.fileName();
+        if (!fn.endsWith(".json") || fn.startsWith("_")) continue;
+        String id = fn.substring(0, fn.length() - 5), name = id, desc, author;
+        File t = LittleFS.open("/faces/" + id + ".txt", "r");
+        if (t) {
+          name = t.readStringUntil('\n');
+          desc = t.readStringUntil('\n');
+          author = t.readStringUntil('\n');
+          t.close();
+        }
+        j += ",{\"n\":\"" + jsonEscape(name) + "\",\"d\":\"" + jsonEscape(desc) + "\",\"a\":\"" + jsonEscape(author) +
+             "\",\"pkg\":\"" + id + "\"}";
+      }
+    }
     j += "]";
-    server.sendHeader("Cache-Control", "max-age=3600");
     server.send(200, "application/json", j);
   });
   // prévia PNG de um mostrador para a galeria do painel (gerada pelo simulador, em faces.h)
   server.on("/face", HTTP_GET, [] {
+    if (server.hasArg("pkg")) {  // prévia de pacote instalado (/faces/<id>.png, se veio junto)
+      String id = server.arg("pkg");
+      File f = fsOk && idOk(id) ? LittleFS.open("/faces/" + id + ".png", "r") : File();
+      if (!f) {
+        server.send(404, "text/plain", "");
+        return;
+      }
+      server.sendHeader("Cache-Control", "max-age=300");
+      server.streamFile(f, "image/png");
+      f.close();
+      return;
+    }
     int t = server.arg("t").toInt();
     if (t < 0 || t >= FACE_PNG_COUNT) {
       server.send(404, "text/plain", "");
@@ -766,7 +902,12 @@ void setupWeb() {
   server.on("/api/cmd", HTTP_POST, [] {
     if (server.arg("c") == "preview") {
       int t = server.arg("t").toInt();
-      if (t >= 0 && t < THEME_COUNT) {
+      bool ok = t >= 0 && t < THEME_COUNT;
+      if (server.hasArg("pkg")) {  // prévia de pacote: carrega no motor até a prévia acabar
+        ok = loadPack(server.arg("pkg"));
+        t = THEME_PACK;
+      }
+      if (ok) {
         previewTheme = t;
         previewUntil = millis() + 15000;
         viewUntil = millis() + 15000;  // o álbum não interrompe a prévia
@@ -783,7 +924,14 @@ void setupWeb() {
     cfg.brightness = argRange("bri", cfg.brightness, 5, 100);  // mínimo 5: com 0 a tela apagaria
     cfg.autoStart = argRange("auto", cfg.autoStart, 0, 1);
     cfg.hour12 = argRange("h12", cfg.hour12, 0, 1);
-    cfg.theme = argRange("theme", cfg.theme, 0, THEME_COUNT - 1);
+    if (server.hasArg("theme") && server.arg("theme").length()) {  // embutido: libera o motor de pacotes
+      cfg.theme = argRange("theme", cfg.theme, 0, THEME_COUNT - 1);
+      facePackUnload();
+    }
+    if (server.hasArg("pkg") && loadPack(server.arg("pkg"))) {
+      cfg.theme = THEME_PACK;
+      strlcpy(cfg.facePkg, server.arg("pkg").c_str(), sizeof cfg.facePkg);
+    }
     cfg.dailyGoal = argRange("goal", cfg.dailyGoal, 1, 30);
     cfg.activity = argRange("act", cfg.activity, 0, ACT_COUNT - 1);
     uint8_t bgr = argRange("bgr", cfg.bgr, 0, 1), inv = argRange("inv", cfg.invert, 0, 1),
@@ -834,6 +982,49 @@ void setupWeb() {
     sendState();
   });
   server.on("/api/files", HTTP_GET, sendFiles);
+  // instala um pacote de mostrador: valida no motor, usa o "id" do JSON como nome do arquivo
+  server.on("/api/faceinstall", HTTP_POST, [] {
+    String msg;
+    bool ok = !packUploadError.length() && loadPackFile("/faces/_novo.json", msg);
+    String id = ok ? facePackId() : "", name = ok ? facePackName() : "";
+    if (ok) {
+      LittleFS.remove("/faces/" + id + ".json");
+      LittleFS.rename("/faces/_novo.json", "/faces/" + id + ".json");
+      LittleFS.remove("/faces/" + id + ".png");
+      if (LittleFS.exists("/faces/_novo.png")) LittleFS.rename("/faces/_novo.png", "/faces/" + id + ".png");
+      File t = LittleFS.open("/faces/" + id + ".txt", "w");  // metadados para a lista do painel
+      if (t) {
+        t.printf("%s\n%s\n%s\n", facePackName(), facePackDesc(), facePackAuthor());
+        t.close();
+      }
+    } else {
+      LittleFS.remove("/faces/_novo.json");
+      LittleFS.remove("/faces/_novo.png");
+    }
+    restoreActivePack();  // o teste carregou o pacote novo no motor; volta ao que estava ativo
+    if (!ok) {
+      server.send(400, "text/plain", packUploadError.length() ? packUploadError : "Pacote invalido: " + msg);
+      return;
+    }
+    server.send(200, "application/json", "{\"ok\":1,\"id\":\"" + id + "\",\"name\":\"" + jsonEscape(name) + "\"}");
+  }, handlePackUpload);
+  server.on("/api/facedelete", HTTP_POST, [] {
+    String id = server.arg("pkg");
+    if (!fsOk || !idOk(id) || !LittleFS.remove("/faces/" + id + ".json")) {
+      server.send(400, "text/plain", "Pacote nao encontrado");
+      return;
+    }
+    LittleFS.remove("/faces/" + id + ".png");
+    LittleFS.remove("/faces/" + id + ".txt");
+    if (cfg.theme == THEME_PACK && id == cfg.facePkg) {  // era o ativo: volta ao primeiro embutido
+      cfg.theme = THEME_MATRIX;
+      cfg.facePkg[0] = 0;
+      saveSettings();
+      facePackUnload();
+      uiInvalidate();
+    }
+    server.send(200, "text/plain", "ok");
+  });
   server.on("/api/upload", HTTP_POST, [] {
     if (uploadError.length()) server.send(400, "text/plain", uploadError);
     else server.send(200, "text/plain", "ok");
@@ -997,6 +1188,8 @@ void setup() {
   fcfg.setAutoFormat(false);
   LittleFS.setConfig(fcfg);
   fsOk = LittleFS.begin();
+  uiDrawImage = drawJpgAt;
+  if (cfg.theme == THEME_PACK) restoreActivePack();  // pacote ausente/inválido: volta ao Matriz
   rebuildAlbum();
 
   message("SmallTV Pomodoro", "Conectando Wi-Fi", "v" FW_VERSION);
@@ -1046,6 +1239,7 @@ void loop() {
   if (previewUntil && !previewActive()) {  // fim da prévia: volta ao mostrador salvo
     previewUntil = 0;
     viewUntil = 0;
+    if (previewTheme == THEME_PACK) restoreActivePack();
   }
   if (previewActive()) {
     if (inAlbum) stopAlbum();

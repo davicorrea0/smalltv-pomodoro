@@ -10,6 +10,8 @@
 #define UI_ASSET_LIST  // assets.h inclui a lista com o nome de cada asset (para a folha de prévia)
 #include "../smalltv-pomodoro/ui_kit.h"
 #include "../smalltv-pomodoro/assets.h"
+#include "../smalltv-pomodoro/facepack.h"
+#include <dirent.h>
 
 class Frame : public Adafruit_GFX {
  public:
@@ -168,6 +170,45 @@ static int checkIncremental(const char *name, UiState s, bool pomo) {
   return diff;
 }
 
+// Pacotes de mostrador (faces/*.json na raiz do repositório): prévia em out/pack-<id>.raw e
+// o mesmo teste de redesenho dos mostradores embutidos.
+static int testPackages(const UiState &pomo) {
+  int fails = 0;
+  DIR *dir = opendir("../faces");
+  if (!dir) return 0;
+  struct dirent *e;
+  while ((e = readdir(dir))) {
+    size_t n = strlen(e->d_name);
+    if (n < 6 || strcmp(e->d_name + n - 5, ".json") || !strcmp(e->d_name, "catalog.json")) continue;
+    char path[160];
+    snprintf(path, sizeof path, "../faces/%s", e->d_name);
+    FILE *fp = fopen(path, "rb");
+    if (!fp) continue;
+    static char buf[16384];
+    size_t len = fread(buf, 1, sizeof buf - 1, fp);
+    fclose(fp);
+    buf[len] = 0;
+    char err[96];
+    if (!facePackLoad(buf, len, err, sizeof err)) {
+      printf("%-22s ERRO: %s\n", e->d_name, err);
+      fails++;
+      continue;
+    }
+    char name[48];
+    snprintf(name, sizeof name, "pack-%s", facePackId());
+    UiState st = base(14, 37, 24);
+    st.theme = THEME_PACK;
+    shot(name, st, false);
+    UiState t = base(14, 58, 50);
+    t.theme = THEME_PACK;
+    fails += checkIncremental(name, t, false) != 0;
+    facePackUnload();
+  }
+  closedir(dir);
+  (void)pomo;
+  return fails;
+}
+
 int main() {
   // ---- relógio: temas ----
   UiState s = base(14, 37, 25);
@@ -254,5 +295,6 @@ int main() {
     fails += checkIncremental(slug, st, false) != 0;
   }
   fails += checkIncremental("pomodoro", p, true) != 0;
+  fails += testPackages(p);
   return fails;
 }

@@ -89,7 +89,13 @@ Todos os desenhos em pixel art (o tomate e suas expressões, café, livro, cader
 
 Para mudar um desenho existente, basta editar o `.txt`: o código não muda. A folha acima é gerada pelo simulador em `sim/out/assets.png`.
 
-## Criar um mostrador
+## Mostradores instaláveis (sem atualizar o firmware)
+
+Além dos 8 mostradores embutidos, o relógio aceita **pacotes**: arquivos `.json` de poucos KB que descrevem o mostrador em camadas (textos com variáveis como `{HH}:{MM}` e `{TEMP}`, as fontes do projeto, sprites em pixel art, ícone do clima, barras e ponteiros). Instale pelo painel em *Relógio → Mais mostradores*: pela galeria online ou escolhendo o arquivo. Formato e exemplos: **[docs/PACOTES.md](docs/PACOTES.md)** e a pasta [`faces/`](faces).
+
+![Pacotes de exemplo](docs/pacotes.png)
+
+## Criar um mostrador embutido
 
 Um arquivo `face_<nome>.cpp` e uma linha em `faces_list.h`: a galeria do painel, a prévia e os testes saem sozinhos. Passo a passo, modelo e o que o kit oferece: **[docs/CRIAR_MOSTRADOR.md](docs/CRIAR_MOSTRADOR.md)**.
 

@@ -79,6 +79,12 @@ extern uint32_t (*uiMillis)();
 // Envia um bloco de pixels RGB565 para a tela. O firmware aponta para o método rápido do
 // display (uma transação SPI por bloco); sem isso cai no genérico do Adafruit_GFX, pixel a pixel.
 extern void (*uiBlit)(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);
+// Recorte ativo (pacotes de mostrador redesenham só a área que mudou). O firmware respeita
+// isto ao desenhar imagens JPEG por conta própria.
+struct UiClip { bool on; int16_t x0, y0, x1, y1; };
+extern UiClip uiClip;
+void uiClipBegin(int x0, int y0, int x1, int y1);
+void uiClipEnd();
 void uiInvalidate();                         // redesenha tudo na próxima chamada
 void uiRenderClock(const UiState &s);        // tela de relógio no tema escolhido
 void uiRenderPomodoro(const UiState &s);     // anel de progresso do Pomodoro

@@ -52,6 +52,11 @@ void dmDigit(int x, int y, int d, int p, uint16_t on, uint16_t off, bool drawOff
 // HH:MM em pixel art com redesenho incremental (usa lastDig/lastColon)
 struct TimeLayout { int x[4]; int y; int p; int colonX; };
 void drawTime4(const TimeLayout &L, int a, int b, int c, int d, bool colon, uint16_t on, uint16_t off);
+// DSEG7 (relógio LCD): dígito de 0,618h x h; segmentos apagados em "off"
+void dsegDigit(int x, int y, int h, int d, uint16_t on, uint16_t off);
+// Bebas Neue suavizado sobre bg (só dígitos, ':' e espaço), altura h
+void bebasText(int x, int y, int h, const char *s, uint16_t fg, uint16_t bg);
+int bebasWidth(const char *s, int h);
 // Fonte vetorial "Geo": dígito de 6s x 10s com traço de espessura w
 void geoDigit(float x, float y, int d, float s, float w, uint16_t c);
 

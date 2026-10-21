@@ -10,6 +10,7 @@
 #include "ui.h"
 #include "assets.h"
 #include "ui_kit.h"
+#include "facepack.h"
 
 Adafruit_GFX *G = nullptr;
 #include <math.h>
@@ -268,13 +269,71 @@ static const UiSprite *const ACTIVITY_SPRITE[ACT_COUNT] = {&SPR_LIVRO, &SPR_CADE
 static const char *const ACTIVITY_LABEL[ACT_COUNT] = {"LENDO", "ESTUDANDO", "PROGRAMANDO", "TAREFAS", "DESENHANDO"};
 
 void (*uiFrameHook)() = nullptr;     // o firmware usa para ceder tempo ao Wi-Fi entre quadros
-uint32_t (*uiMillis)() = nullptr;
+uint32_t (*uiMillis)() = nullptr;    // relógio em ms (firmware: millis); sem ele, passos fixos de 20 ms
 void (*uiBlit)(int16_t, int16_t, uint16_t *, int16_t, int16_t) = nullptr;
 
-void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h) {
+// ---------- recorte (clip) ----------
+// Os pacotes de mostrador redesenham só a área que mudou: G passa a ser este embrulho, que
+// descarta o que cai fora do retângulo e repassa o resto para a tela de verdade.
+UiClip uiClip = {false, 0, 0, 0, 0};
+static Adafruit_GFX *realG = nullptr;
+
+class ClipGfx : public Adafruit_GFX {
+ public:
+  Adafruit_GFX *t = nullptr;
+  ClipGfx() : Adafruit_GFX(240, 240) {}
+  static bool in(int16_t x, int16_t y) { return x >= uiClip.x0 && x < uiClip.x1 && y >= uiClip.y0 && y < uiClip.y1; }
+  static bool rect(int16_t &x, int16_t &y, int16_t &w, int16_t &h) {
+    if (x < uiClip.x0) { w -= uiClip.x0 - x; x = uiClip.x0; }
+    if (y < uiClip.y0) { h -= uiClip.y0 - y; y = uiClip.y0; }
+    if (x + w > uiClip.x1) w = uiClip.x1 - x;
+    if (y + h > uiClip.y1) h = uiClip.y1 - y;
+    return w > 0 && h > 0;
+  }
+  void drawPixel(int16_t x, int16_t y, uint16_t c) override { if (in(x, y)) t->drawPixel(x, y, c); }
+  void writePixel(int16_t x, int16_t y, uint16_t c) override { if (in(x, y)) t->writePixel(x, y, c); }
+  void writeFillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t c) override { if (rect(x, y, w, h)) t->writeFillRect(x, y, w, h, c); }
+  void fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t c) override { if (rect(x, y, w, h)) t->fillRect(x, y, w, h, c); }
+  void writeFastHLine(int16_t x, int16_t y, int16_t w, uint16_t c) override { int16_t h = 1; if (rect(x, y, w, h)) t->writeFastHLine(x, y, w, c); }
+  void drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t c) override { int16_t h = 1; if (rect(x, y, w, h)) t->drawFastHLine(x, y, w, c); }
+  void writeFastVLine(int16_t x, int16_t y, int16_t h, uint16_t c) override { int16_t w = 1; if (rect(x, y, w, h)) t->writeFastVLine(x, y, h, c); }
+  void drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t c) override { int16_t w = 1; if (rect(x, y, w, h)) t->drawFastVLine(x, y, h, c); }
+  void startWrite() override { t->startWrite(); }
+  void endWrite() override { t->endWrite(); }
+};
+static ClipGfx clipGfx;
+
+void uiClipBegin(int x0, int y0, int x1, int y1) {
+  if (!uiClip.on) realG = G;
+  uiClip = {true, (int16_t)(x0 < 0 ? 0 : x0), (int16_t)(y0 < 0 ? 0 : y0), (int16_t)(x1 > 240 ? 240 : x1), (int16_t)(y1 > 240 ? 240 : y1)};
+  clipGfx.t = realG;
+  clipGfx.setTextWrap(false);
+  G = &clipGfx;
+}
+
+void uiClipEnd() {
+  if (!uiClip.on) return;
+  uiClip.on = false;
+  G = realG;
+}
+
+static void rawBlit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h) {
   if (uiBlit) uiBlit(x, y, px, w, h);
-  else G->drawRGBBitmap(x, y, px, w, h);  // genérico: pixel a pixel (simulador)
-}    // relógio em ms (firmware: millis); sem ele, passos fixos de 20 ms
+  else (uiClip.on ? realG : G)->drawRGBBitmap(x, y, px, w, h);  // genérico: pixel a pixel (simulador)
+}
+
+void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h) {
+  if (!uiClip.on) {
+    rawBlit(x, y, px, w, h);
+    return;
+  }
+  for (int r = 0; r < h; r++) {  // recorta linha a linha
+    int yy = y + r;
+    if (yy < uiClip.y0 || yy >= uiClip.y1) continue;
+    int x0 = x > uiClip.x0 ? x : uiClip.x0, x1 = x + w < uiClip.x1 ? x + w : uiClip.x1;
+    if (x1 > x0) rawBlit(x0, yy, px + r * w + (x0 - x), x1 - x0, 1);
+  }
+}
 
 // =====================================================================================
 // Fonte vetorial "Geo": dígitos como traços (linhas e arcos) numa grade 6x10, em décimos.
@@ -357,6 +416,11 @@ const char *uiFaceName(uint8_t t) { return t < THEME_COUNT ? FACE_NAME[t] : ""; 
 const char *uiFaceDesc(uint8_t t) { return t < THEME_COUNT ? FACE_DESC[t] : ""; }
 
 void uiRenderClock(const UiState &s) {
+  if (s.theme == THEME_PACK) {  // mostrador instalado como pacote (facepack.cpp)
+    bool full = enter(100);
+    facePackRender(s, full);
+    return;
+  }
   uint8_t t = s.theme < THEME_COUNT ? s.theme : 0;
   bool full = enter(t);
   FACE_FN[t](s, full);
