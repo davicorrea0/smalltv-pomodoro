@@ -5,11 +5,11 @@
   var en = window.SITE_LANG === "en", root = window.SITE_ROOT || "";
   var S = en ? {
     zoom: "Enlarge ", preview: "Preview of ", by: "by ", builtin: "Built-in", pkg: "New",
-    inFw: " · comes with the firmware", dl: "Download", soonT: "Coming soon",
+    inFw: " · comes with the firmware", dl: "Download .json", soonT: "Coming soon",
     soonP: "The first face packs are being prepared. Once published they show up here with a preview and a download button."
   } : {
     zoom: "Ampliar ", preview: "Prévia do mostrador ", by: "por ", builtin: "Embutido", pkg: "Novo",
-    inFw: " · já vem no firmware", dl: "Baixar", soonT: "Em breve",
+    inFw: " · já vem no firmware", dl: "Baixar .json", soonT: "Em breve",
     soonP: "Os primeiros pacotes de mostradores estão sendo preparados. Quando forem publicados, aparecem aqui com prévia e botão para baixar."
   };
   var CATALOG = root + "catalog/index.json";
