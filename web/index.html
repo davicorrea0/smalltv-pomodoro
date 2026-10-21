@@ -205,7 +205,11 @@ function tab(i){curTab=i;document.querySelectorAll('.tab').forEach((e,k)=>e.clas
 const fkey=f=>f.pkg?'p:'+f.pkg:'t:'+f.t;  // embutido "t:N" ou pacote "p:id"
 const curKey=s=>s.cfg.theme==200?'p:'+s.cfg.pkg:'t:'+s.cfg.theme;
 const faceSrc=f=>f.src||(f.pkg?'/face?pkg='+encodeURIComponent(f.pkg):'/face?t='+f.t);
-function img(f){const i=new Image();i.alt=f.n;i.src=faceSrc(f);i.onerror=()=>{const d=document.createElement('div');d.className='noimg';d.textContent=f.n;i.replaceWith(d)};return i}
+// sem prévia guardada no relógio: tenta a do site (mesmo id); se não houver, mostra o nome
+function img(f){const i=new Image();i.alt=f.n;i.src=faceSrc(f);let site=!f.pkg;
+ i.onerror=()=>{if(!site){site=true;i.src=CATALOG+encodeURIComponent(f.pkg)+'.png';return}const d=document.createElement('div');d.className='noimg';d.textContent=f.n;i.replaceWith(d)};return i}
+// mesmo id que o relógio calcula (facepack.cpp: safeId)
+const safeId=s=>{let o='';for(let c of String(s||'').toLowerCase()){if(/[a-z0-9_-]/.test(c))o+=c;else if(c==' '&&o&&!o.endsWith('-'))o+='-';if(o.length>=23)break}return o}
 function el(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
 // ---------- mostradores ----------
 function loadFaces(){return fetch('/api/faces').then(r=>r.json()).then(j=>{let t=0;FACES=j.map(f=>({n:f.n,d:f.d,a:f.a||'',pkg:f.pkg,t:f.pkg?null:t++}));buildFaces();$('curimg').dataset.k='';if(st)load(st)})}
@@ -226,7 +230,10 @@ function faceSheet(f){const c=$('sheetc');c.innerHTML='';const s=el('div','scr')
 function install(json,png){const fd=new FormData();fd.append('face',json,'face.json');if(png)fd.append('preview',png,'preview.png');toast('Instalando no relógio... (alguns segundos)');
  return fetch('/api/faceinstall',{method:'POST',body:fd}).then(async r=>{const t=await r.text();if(!r.ok)throw t;const j=JSON.parse(t);await save({pkg:j.id});toast(j.name+' instalado e em uso');return loadFaces()}).catch(e=>toast(String(e)))}
 $('pkf').onchange=e=>{const fl=[...e.target.files];e.target.value='';const p=fl.find(f=>/\.png$/i.test(f.name)),j=fl.find(f=>/\.json$/i.test(f.name))||fl.find(f=>f!==p);  // celular pode salvar como .json.txt: o relógio valida o conteúdo
- if(!j)return toast('Escolha o arquivo .json do mostrador');install(j,p)};
+ if(!j)return toast('Escolha o arquivo .json do mostrador');
+ // só o .json: busca a prévia no site pelo id, para o relógio guardar junto (funciona sem internet depois)
+ if(p)return install(j,p);j.text().then(async t=>{let pv=null;try{const k=JSON.parse(t),id=safeId(k.id||k.name);
+  if(id){const r=await fetch(CATALOG+id+'.png');if(r.ok)pv=await r.blob()}}catch(x){}install(j,pv)})};
 function catalog(){toast('Carregando a galeria...');fetch(CATALOG+'index.json',{cache:'no-store'}).then(r=>r.json()).then(c=>{const g=$('cat');g.innerHTML='';
  (c.faces||[]).forEach(e=>{const inst=FACES.some(f=>f.pkg==e.id),b=el('button','face'),s=el('div','scr');s.appendChild(img({n:e.name,src:CATALOG+e.preview}));
   b.append(s,el('span',null,e.name+(inst?' · instalado':'')));b.onclick=()=>catSheet(e,inst);g.appendChild(b)});
@@ -253,7 +260,7 @@ function load(s){if(lastPhase&&s.phase!=lastPhase&&s.phase!='idle'&&lastPhase!='
  $('clock').textContent=s.clock;$('ver').textContent=s.ver;$('heap').textContent=kb(s.heap)+' (bloco '+kb(s.blk)+')';$('oldl').style.display=s.cfg.lock?'':'none';
  // mostrador atual
  const ck=curKey(s),cf=FACES.find(f=>fkey(f)==ck);
- if(cf&&$('curimg').dataset.k!=ck){$('curimg').dataset.k=ck;$('curimg').src=faceSrc(cf);$('curname').textContent=cf.n;$('curdesc').textContent=cf.d}
+ if(cf&&$('curimg').dataset.k!=ck){$('curimg').dataset.k=ck;$('curimg').onerror=cf.pkg?()=>{$('curimg').onerror=null;$('curimg').src=CATALOG+encodeURIComponent(cf.pkg)+'.png'}:null;$('curimg').src=faceSrc(cf);$('curname').textContent=cf.n;$('curdesc').textContent=cf.d}
  document.querySelectorAll('#faces .face,#dl .face').forEach(b=>b.classList.toggle('cur',b.dataset.k==ck));
  $('pvbar').style.display=s.pv?'block':'none';if(s.pv)$('pvbar').textContent='Prévia no relógio por mais '+s.pv+' s · depois ele volta para '+(cf?cf.n:'o mostrador salvo');
  // clima

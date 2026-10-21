@@ -29,7 +29,7 @@
 #include "faces.h"
 #include "facepack.h"
 
-#define FW_VERSION "1.6.2"
+#define FW_VERSION "1.6.3"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
