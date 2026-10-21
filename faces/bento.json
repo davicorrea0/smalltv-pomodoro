@@ -20,22 +20,21 @@
     {
       "type": "text",
       "x": 120,
-      "y": 26,
-      "font": "geo",
-      "size": 54,
+      "y": 24,
+      "font": "outfit",
+      "size": 58,
       "color": "#f4f4f8",
       "text": "{HH}:{MM}",
-      "align": "center",
-      "w": 5
+      "align": "center"
     },
     {
       "type": "text",
       "x": 120,
-      "y": 96,
+      "y": 94,
       "font": "pixel",
-      "size": 1,
+      "size": 2,
       "color": "#8a8aa0",
-      "text": "{WD}  {DD} {MON}",
+      "text": "{WD} {DD} {MON}",
       "align": "center"
     },
     {
@@ -50,7 +49,7 @@
     {
       "type": "weather",
       "x": 62,
-      "y": 160,
+      "y": 156,
       "size": 8,
       "bg": "#ffd166",
       "when": "weather"
@@ -58,13 +57,14 @@
     {
       "type": "text",
       "x": 62,
-      "y": 198,
-      "font": "pixel",
-      "size": 3,
+      "y": 182,
+      "font": "outfit",
+      "size": 40,
       "color": "#1a1a1a",
       "text": "{TEMP}°",
       "align": "center",
-      "when": "weather"
+      "when": "weather",
+      "bg": "#ffd166"
     },
     {
       "type": "text",
@@ -89,9 +89,9 @@
     {
       "type": "text",
       "x": 138,
-      "y": 142,
+      "y": 140,
       "font": "pixel",
-      "size": 1,
+      "size": 2,
       "color": "#4a120c",
       "text": "FOCOS"
     },
@@ -99,26 +99,17 @@
       "type": "text",
       "x": 178,
       "y": 162,
-      "font": "pixel",
-      "size": 4,
+      "font": "outfit",
+      "size": 44,
       "color": "#ffffff",
       "text": "{FOCOS}",
-      "align": "center"
-    },
-    {
-      "type": "text",
-      "x": 178,
-      "y": 198,
-      "font": "pixel",
-      "size": 1,
-      "color": "#ffe1dc",
-      "text": "de {META}",
-      "align": "center"
+      "align": "center",
+      "bg": "#ff5a47"
     },
     {
       "type": "bar",
       "x": 138,
-      "y": 212,
+      "y": 214,
       "w": 80,
       "h": 8,
       "r": 4,

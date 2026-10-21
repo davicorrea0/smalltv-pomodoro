@@ -35,7 +35,7 @@
       "desc": "Formas e cores primárias da escola Bauhaus",
       "file": "bauhaus.json",
       "preview": "bauhaus.png",
-      "size": 1657
+      "size": 1669
     },
     {
       "id": "bebas-gigante",
@@ -53,7 +53,7 @@
       "desc": "Cartões em grade, como widgets: hora, clima e focos",
       "file": "bento.json",
       "preview": "bento.png",
-      "size": 2319
+      "size": 2173
     },
     {
       "id": "brutal",
