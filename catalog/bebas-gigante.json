@@ -79,7 +79,11 @@
       "size": 1,
       "align": "center",
       "color": "muted",
-      "text": "defina a cidade no painel",
+      "text": {
+        "pt": "defina a cidade no painel",
+        "en": "set the city in the panel",
+        "es": "elige la ciudad en el panel"
+      },
       "when": "noweather"
     },
     {

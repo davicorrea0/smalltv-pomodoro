@@ -10,8 +10,8 @@
       "desc_en": "Widget-style grid of cards: time, weather and focus",
       "file": "bento.json",
       "preview": "bento.png",
-      "size": 2173,
-      "fw": "1.6.5",
+      "size": 2243,
+      "fw": "1.10.0",
       "tags": [
         "digital"
       ]
@@ -41,8 +41,8 @@
       "desc_en": "A pixel art aquarium; hit your daily goal and the golden fish shows up",
       "file": "aquario.json",
       "preview": "aquario.png",
-      "size": 5726,
-      "fw": "1.6.0",
+      "size": 5825,
+      "fw": "1.10.0",
       "tags": [
         "pixel"
       ]
@@ -56,8 +56,8 @@
       "desc_en": "The clock as a shell session, in phosphor green",
       "file": "terminal.json",
       "preview": "terminal.png",
-      "size": 2509,
-      "fw": "1.6.0",
+      "size": 2762,
+      "fw": "1.10.0",
       "tags": [
         "digital",
         "retro"
@@ -163,8 +163,8 @@
       "desc_en": "Black and white blocks with unlit segments showing and one red dot",
       "file": "mono.json",
       "preview": "mono.png",
-      "size": 1719,
-      "fw": "1.6.0",
+      "size": 1862,
+      "fw": "1.10.0",
       "tags": [
         "digital"
       ]
@@ -178,8 +178,8 @@
       "desc_en": "The time huge in Bebas Neue, with weather and a focus bar",
       "file": "bebas-gigante.json",
       "preview": "bebas-gigante.png",
-      "size": 1755,
-      "fw": "1.6.0",
+      "size": 1867,
+      "fw": "1.10.0",
       "tags": [
         "digital"
       ]
@@ -193,8 +193,8 @@
       "desc_en": "A pixel art café table: a window that follows the day and a tomato that reacts to the weather",
       "file": "cafe-pixel.json",
       "preview": "cafe-pixel.png",
-      "size": 2595,
-      "fw": "1.6.0",
+      "size": 2694,
+      "fw": "1.10.0",
       "tags": [
         "pixel"
       ]
@@ -238,8 +238,8 @@
       "desc_en": "Complication grid: time, large weather and three stats below",
       "file": "modular.json",
       "preview": "modular.png",
-      "size": 3391,
-      "fw": "1.6.6",
+      "size": 3753,
+      "fw": "1.10.0",
       "tags": [
         "digital",
         "esportivo"
@@ -315,8 +315,8 @@
       "desc_en": "Fitness band style: big time and colorful progress bars",
       "file": "fitness.json",
       "preview": "fitness.png",
-      "size": 2253,
-      "fw": "1.6.6",
+      "size": 2464,
+      "fw": "1.10.0",
       "tags": [
         "esportivo",
         "digital"
@@ -331,8 +331,8 @@
       "desc_en": "Pixel art astronaut floating near a planet",
       "file": "astronauta.json",
       "preview": "astronauta.png",
-      "size": 3435,
-      "fw": "1.6.6",
+      "size": 3524,
+      "fw": "1.10.0",
       "tags": [
         "pixel"
       ]
@@ -361,8 +361,8 @@
       "desc_en": "Band-style capsule screen, stacked time and stats on the sides",
       "file": "pilula.json",
       "preview": "pilula.png",
-      "size": 2343,
-      "fw": "1.6.6",
+      "size": 2479,
+      "fw": "1.10.0",
       "tags": [
         "esportivo",
         "digital"

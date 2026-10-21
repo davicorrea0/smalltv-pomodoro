@@ -318,7 +318,11 @@
       "font": "pixel",
       "size": 1,
       "color": "#6b4a12",
-      "text": "{FOCOS}/{META} focos",
+      "text": {
+        "pt": "{FOCOS}/{META} focos",
+        "en": "{FOCOS}/{META} done",
+        "es": "{FOCOS}/{META} focos"
+      },
       "align": "center"
     }
   ]

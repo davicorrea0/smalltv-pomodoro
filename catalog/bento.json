@@ -93,7 +93,11 @@
       "font": "pixel",
       "size": 2,
       "color": "#4a120c",
-      "text": "FOCOS"
+      "text": {
+        "pt": "FOCOS",
+        "en": "FOCUS",
+        "es": "FOCOS"
+      }
     },
     {
       "type": "text",

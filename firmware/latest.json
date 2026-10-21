@@ -1,20 +1,23 @@
 {
-  "version": "1.9.2",
+  "version": "1.10.0",
   "date": "2026-10-21",
   "file": "smalltv-pomodoro.bin",
-  "size": 515520,
+  "size": 518800,
   "notes": {
     "pt": [
-      "Ponteiros sem piscar: a tela mostra a imagem já pronta",
-      "Tomate e Neon também trocam o minuto sem piscar"
+      "Brilho noturno que segue o sol (do pôr ao nascer)",
+      "Rodízio: o relógio troca entre seus mostradores favoritos",
+      "Mostradores da galeria com texto em português, inglês e espanhol"
     ],
     "en": [
-      "Clock hands without flicker: the screen shows the finished image",
-      "Tomato and Neon also change the minute without flicker"
+      "Night brightness that follows the sun (sunset to sunrise)",
+      "Rotation: the clock switches between your favourite faces",
+      "Gallery faces with text in Portuguese, English and Spanish"
     ],
     "es": [
-      "Agujas sin parpadeo: la pantalla muestra la imagen ya lista",
-      "Tomate y Neón también cambian el minuto sin parpadeo"
+      "Brillo nocturno que sigue el sol (del ocaso al amanecer)",
+      "Rotación: el reloj cambia entre tus esferas favoritas",
+      "Esferas de la galería con texto en portugués, inglés y español"
     ]
   }
 }
