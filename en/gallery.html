@@ -37,10 +37,15 @@
       <div class="eyebrow">Gallery</div>
       <h1>Clock faces</h1>
       <p>New faces to install, plus the 8 that ship with the firmware. Previews are the clock's screen at real size (240×240), rendered by the same drawing engine as the firmware and scaled up pixel by pixel. Tap one to see it bigger.</p>
+      <div class="tabs" role="group" aria-label="Filter clock faces">
+        <button type="button" data-filter="all" aria-pressed="true">All <span class="count" id="n-all"></span></button>
+        <button type="button" data-filter="pkg" aria-pressed="false">New <span class="count" id="n-pkg"></span></button>
+        <button type="button" data-filter="builtin" aria-pressed="false">Built-in <span class="count" id="n-builtin"></span></button>
+      </div>
     </div>
   </div>
 
-  <section style="border:0;padding-top:16px" id="new">
+  <section style="border:0;padding-top:16px" id="new" data-kind="pkg">
     <div class="wrap">
       <div class="sub-head"><h2>New, ready to install</h2><span class="count" id="packs-count"></span></div>
       <p class="section-lead">Each one is a <code>.json</code> file of a few KB, described in layers (shapes, text, pixel art sprites, weather icon, clock hands). Like the built-in faces, they show the time, the weather and your focus sessions for the day. Dates on the clock appear in Portuguese.</p>
@@ -48,7 +53,7 @@
     </div>
   </section>
 
-  <section id="how-to-install">
+  <section id="how-to-install" data-kind="pkg">
     <div class="wrap">
       <h2>How to install a new face</h2>
       <div class="how">
@@ -61,7 +66,7 @@
     </div>
   </section>
 
-  <section id="built-in">
+  <section id="built-in" data-kind="builtin">
     <div class="wrap">
       <div class="sub-head"><h2>Built into the firmware</h2><span class="count" id="builtin-count"></span></div>
       <p class="section-lead">Pick one in the clock's panel; "Ver no relógio" (show on clock) displays it for 15 seconds without saving.</p>
@@ -105,6 +110,6 @@
 </footer>
 
 <script src="../faces.js?v=2"></script>
-<script src="../galeria.js?v=3"></script>
+<script src="../galeria.js?v=4"></script>
 </body>
 </html>

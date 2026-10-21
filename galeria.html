@@ -37,10 +37,15 @@
       <div class="eyebrow">Galeria</div>
       <h1>Mostradores</h1>
       <p>Mostradores novos para instalar, além dos 8 que já vêm no firmware. As prévias são a tela do relógio em tamanho real (240×240), geradas pelo mesmo motor de desenho do firmware e ampliadas pixel por pixel. Toque em uma para ver maior.</p>
+      <div class="tabs" role="group" aria-label="Filtrar mostradores">
+        <button type="button" data-filter="all" aria-pressed="true">Todos <span class="count" id="n-all"></span></button>
+        <button type="button" data-filter="pkg" aria-pressed="false">Novos <span class="count" id="n-pkg"></span></button>
+        <button type="button" data-filter="builtin" aria-pressed="false">Embutidos <span class="count" id="n-builtin"></span></button>
+      </div>
     </div>
   </div>
 
-  <section style="border:0;padding-top:16px" id="novos">
+  <section style="border:0;padding-top:16px" id="novos" data-kind="pkg">
     <div class="wrap">
       <div class="sub-head"><h2>Novos para instalar</h2><span class="count" id="packs-count"></span></div>
       <p class="section-lead">Cada um é um arquivo <code>.json</code> de poucos KB, descrito em camadas (formas, textos, sprites em pixel art, ícone de clima, ponteiros). Mostram a hora, o clima e os seus focos do dia como os embutidos.</p>
@@ -48,7 +53,7 @@
     </div>
   </section>
 
-  <section id="como-instalar">
+  <section id="como-instalar" data-kind="pkg">
     <div class="wrap">
       <h2>Como instalar um mostrador novo</h2>
       <div class="how">
@@ -61,7 +66,7 @@
     </div>
   </section>
 
-  <section id="embutidos">
+  <section id="embutidos" data-kind="builtin">
     <div class="wrap">
       <div class="sub-head"><h2>Já vêm no firmware</h2><span class="count" id="builtin-count"></span></div>
       <p class="section-lead">Escolha no painel do relógio; "Ver no relógio" mostra cada um por 15 segundos sem salvar.</p>
@@ -105,6 +110,6 @@
 </footer>
 
 <script src="faces.js?v=2"></script>
-<script src="galeria.js?v=3"></script>
+<script src="galeria.js?v=4"></script>
 </body>
 </html>

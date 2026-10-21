@@ -69,12 +69,37 @@
     return c;
   }
 
+  // Filtro: Todos / Novos / Embutidos mostra ou esconde as seções marcadas com data-kind
+  var counts = { pkg: 0, builtin: 0 };
+  function setFilter(f) {
+    document.querySelectorAll(".tabs button").forEach(function (b) {
+      b.setAttribute("aria-pressed", String(b.dataset.filter === f));
+    });
+    document.querySelectorAll("section[data-kind]").forEach(function (s) {
+      s.hidden = f !== "all" && s.dataset.kind !== f;
+    });
+    var first = document.querySelector("section[data-kind]:not([hidden])");
+    document.querySelectorAll("section[data-kind]").forEach(function (s) {
+      s.style.borderTop = s === first ? "0" : "";
+    });
+  }
+  document.querySelectorAll(".tabs button").forEach(function (b) {
+    b.addEventListener("click", function () { setFilter(b.dataset.filter); });
+  });
+  function count(kind, n) {
+    counts[kind] = n;
+    var set = function (id, v) { var e = document.getElementById(id); if (e) e.textContent = v; };
+    set("n-" + kind, n);
+    set("n-all", counts.pkg + counts.builtin);
+  }
+
   function fill(id, list) {
     var grid = document.getElementById(id);
     grid.textContent = "";
     list.forEach(function (f) { grid.appendChild(card(f)); });
     var n = document.getElementById(id + "-count");
     if (n) n.textContent = list.length;
+    count(id === "packs" ? "pkg" : "builtin", list.length);
   }
 
   // Visualização ampliada
