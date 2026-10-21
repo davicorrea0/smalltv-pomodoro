@@ -988,6 +988,8 @@ void setup() {
   // entre os quadros de animação (virada do Flip): cede tempo ao Wi-Fi e dá ritmo à virada
   uiFrameHook = [] { yield(); };  // a animação é guiada pelo relógio: só cede tempo ao Wi-Fi
   uiMillis = [] { return (uint32_t)millis(); };
+  // linhas de pixels pelo caminho rápido do ST7789 (drawRGBBitmap não é virtual no Adafruit_GFX)
+  uiBlit = [](int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h) { tft.drawRGBBitmap(x, y, px, w, h); };
   applyPanel();
 
   // Monta o LittleFS do firmware original SEM formatar: se falhar, os arquivos ficam intactos.

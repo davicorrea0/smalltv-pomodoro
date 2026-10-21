@@ -268,7 +268,13 @@ static const UiSprite *const ACTIVITY_SPRITE[ACT_COUNT] = {&SPR_LIVRO, &SPR_CADE
 static const char *const ACTIVITY_LABEL[ACT_COUNT] = {"LENDO", "ESTUDANDO", "PROGRAMANDO", "TAREFAS", "DESENHANDO"};
 
 void (*uiFrameHook)() = nullptr;     // o firmware usa para ceder tempo ao Wi-Fi entre quadros
-uint32_t (*uiMillis)() = nullptr;    // relógio em ms (firmware: millis); sem ele, passos fixos de 20 ms
+uint32_t (*uiMillis)() = nullptr;
+void (*uiBlit)(int16_t, int16_t, uint16_t *, int16_t, int16_t) = nullptr;
+
+void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h) {
+  if (uiBlit) uiBlit(x, y, px, w, h);
+  else G->drawRGBBitmap(x, y, px, w, h);  // genérico: pixel a pixel (simulador)
+}    // relógio em ms (firmware: millis); sem ele, passos fixos de 20 ms
 
 // =====================================================================================
 // Fonte vetorial "Geo": dígitos como traços (linhas e arcos) numa grade 6x10, em décimos.

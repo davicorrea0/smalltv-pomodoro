@@ -184,7 +184,7 @@ static void flRow(int cx, int yr, int value, float srcTop, float dy, int shade, 
     int c = flCov[x] > 64 ? 64 : flCov[x];
     flRowBuf[x] = (x < l || x >= r) ? BG : pal[(c + 2) / 4];
   }
-  G->drawRGBBitmap(cx - FL_EXT, FL_Y + yr, flRowBuf, FL_BW, 1);
+  blit(cx - FL_EXT, FL_Y + yr, flRowBuf, FL_BW, 1);
 }
 
 // Metade de cima do cartão para o ângulo th da aba (0 = em pé, cobrindo; 90 = de lado).

@@ -43,6 +43,7 @@ void tempDesc(int cy, uint8_t sz, uint16_t ct, uint16_t cd, float t, const char 
 // ---------- formas ----------
 void thickLine(float x0, float y0, float x1, float y1, float w, uint16_t c);  // pontas redondas
 uint16_t mix(uint16_t a, uint16_t b, float f);                                  // f=0 -> a, f=1 -> b
+void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);            // bloco RGB565 (rápido)
 
 // ---------- dígitos ----------
 // Pixel art 5x7 sólido: p = tamanho da célula (dígito = 5p x 7p); d < 0 apaga; DM_MINUS = "-".
