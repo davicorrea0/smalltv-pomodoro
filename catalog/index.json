@@ -10,7 +10,7 @@
       "desc_en": "Widget-style grid of cards: time, weather and focus",
       "file": "bento.json",
       "preview": "bento.png",
-      "size": 2319
+      "size": 2173
     },
     {
       "id": "synthwave",
@@ -109,7 +109,7 @@
       "desc_en": "Primary shapes and colors from the Bauhaus school",
       "file": "bauhaus.json",
       "preview": "bauhaus.png",
-      "size": 1657
+      "size": 1669
     },
     {
       "id": "mono",
