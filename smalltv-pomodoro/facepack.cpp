@@ -13,15 +13,15 @@
 
 bool (*uiDrawImage)(const char *path, int x, int y) = nullptr;
 
-enum : uint8_t { L_RECT, L_CIRCLE, L_LINE, L_TEXT, L_SPRITE, L_MASCOT, L_WEATHER, L_BAR, L_HAND, L_IMAGE, L_ARC, L_TICKS, L_TYPES };
+enum : uint8_t { L_RECT, L_CIRCLE, L_LINE, L_TEXT, L_SPRITE, L_MASCOT, L_WEATHER, L_BAR, L_HAND, L_IMAGE, L_ARC, L_TICKS, L_PLANT, L_TYPES };
 enum : uint8_t { F_PIXEL, F_DM, F_GEO, F_DSEG, F_BEBAS, F_OUTFIT, F_RIGHTEOUS, F_FONTS };
 enum : uint8_t { A_LEFT, A_CENTER, A_RIGHT };
-enum : uint8_t { W_ALWAYS, W_DAY, W_NIGHT, W_RAIN, W_DRY, W_WX, W_NOWX, W_GOAL, W_NOGOAL, W_WHENS };
+enum : uint8_t { W_ALWAYS, W_DAY, W_NIGHT, W_RAIN, W_DRY, W_WX, W_NOWX, W_GOAL, W_NOGOAL, W_STREAK, W_WHENS };
 enum : uint8_t { V_SEC, V_MIN, V_HOUR, V_FOCOS, V_HUM, V_VARS };
-static const char *const TYPES[L_TYPES] = {"rect", "circle", "line", "text", "sprite", "mascot", "weather", "bar", "hand", "image", "arc", "ticks"};
+static const char *const TYPES[L_TYPES] = {"rect", "circle", "line", "text", "sprite", "mascot", "weather", "bar", "hand", "image", "arc", "ticks", "plant"};
 static const char *const FONTS[F_FONTS] = {"pixel", "dm", "geo", "dseg", "bebas", "outfit", "righteous"};
 static const char *const ALIGNS[3] = {"left", "center", "right"};
-static const char *const WHENS[W_WHENS] = {"always", "day", "night", "rain", "dry", "weather", "noweather", "goal", "nogoal"};
+static const char *const WHENS[W_WHENS] = {"always", "day", "night", "rain", "dry", "weather", "noweather", "goal", "nogoal", "streak"};
 static const char *const VARS[V_VARS] = {"sec", "min", "hour", "focos", "hum"};
 static const char *const MOODS[9] = {"feliz", "dormindo", "focado", "relax", "comemorando", "guarda-chuva", "cachecol", "oculos", "auto"};
 static const int32_t C_NONE = -1, C_ACCENT = -2;
@@ -296,6 +296,8 @@ static void variable(const char *k, const UiState &s, char *v, size_t n) {
   else if (!strcmp(k, "CITY")) snprintf(v, n, "%s", s.city ? s.city : "");
   else if (!strcmp(k, "FOCOS")) snprintf(v, n, "%u", s.today);
   else if (!strcmp(k, "META")) snprintf(v, n, "%u", s.dailyGoal);
+  else if (!strcmp(k, "STREAK")) snprintf(v, n, "%u", s.streak);
+  else if (!strcmp(k, "BEST")) snprintf(v, n, "%u", s.best);
   else if (!strcmp(k, "IP")) snprintf(v, n, "%s", s.ip ? s.ip : "");
 }
 
@@ -336,6 +338,7 @@ static bool cond(uint8_t w, const UiState &s) {
     case W_NOWX: return !wx;
     case W_GOAL: return s.today >= s.dailyGoal;
     case W_NOGOAL: return s.today < s.dailyGoal;
+    case W_STREAK: return s.streak > 0;
   }
   return true;
 }
@@ -489,7 +492,8 @@ static Box measure(const Layer &L, const UiState &s, const char *txt) {
       return {(int16_t)(x - pad), (int16_t)(L.y - pad), (int16_t)(w + 2 * pad), (int16_t)(h + 2 * pad)};
     }
     case L_SPRITE: return {L.x, L.y, (int16_t)(spr[L.str] * L.size), (int16_t)(spr[L.str + 1] * L.size)};
-    case L_MASCOT: return {L.x, L.y, (int16_t)(16 * L.size), (int16_t)(16 * L.size)};
+    case L_MASCOT:
+    case L_PLANT: return {L.x, L.y, (int16_t)(16 * L.size), (int16_t)(16 * L.size)};
     case L_WEATHER: {
       float sc = L.size / 10.0f;
       return {(int16_t)(L.x - 24 * sc), (int16_t)(L.y - 24 * sc), (int16_t)(48 * sc + 2), (int16_t)(52 * sc + 2)};
@@ -508,6 +512,7 @@ static uint32_t signature(const Layer &L, const UiState &s, char *txt, size_t n)
   switch (L.type) {
     case L_TEXT: resolve(pool + L.str, s, txt, n); h = fnv(h, txt, strlen(txt)); break;
     case L_MASCOT: { uint8_t m = L.var == 8 ? autoMood(s) : L.var; h = fnv(h, &m, 1); break; }
+    case L_PLANT: { const UiSprite *p = plantSprite(s.streak); h = fnv(h, &p, sizeof p); break; }
     case L_WEATHER: { int v = s.weatherOn && s.wx.ok ? s.wx.code * 2 + s.wx.day + 1 : 0; h = fnv(h, &v, sizeof v); break; }
     case L_BAR: { int mx, v = value(L, s, mx); int fw = L.mx > 0 ? (v > L.mx ? L.mx : v) * L.w / L.mx : (v > mx ? mx : v) * L.w / mx; h = fnv(h, &fw, sizeof fw); break; }
     case L_HAND: { int a = (int)(handAngle(L, s) * 1000); h = fnv(h, &a, sizeof a); break; }
@@ -589,6 +594,7 @@ static void drawLayer(const Layer &L, const UiState &s, const char *txt) {
       break;
     }
     case L_MASCOT: mascot(L.x, L.y, L.size, L.var == 8 ? autoMood(s) : L.var); break;
+    case L_PLANT: uiSprite(plantSprite(s.streak), L.x, L.y, L.size); break;
     case L_WEATHER:
       if (s.weatherOn && s.wx.ok) weatherIcon(L.x, L.y, L.size / 10.0f, s.wx.code, s.wx.day, L.c2 == C_NONE ? bgColor : col(L.c2, s));
       break;

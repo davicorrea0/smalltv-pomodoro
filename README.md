@@ -12,6 +12,8 @@ Firmware alternativo para o **GeekMagic SmallTV Ultra** (ESP8266, tela ST7789 24
 
 - **8 mostradores**: Matriz, Tomate (cena em pixel art que muda com a hora e o clima; o tomate abre o guarda-chuva na chuva, põe cachecol no frio, óculos escuros no calor e comemora a meta do dia), Analógico, Clima, Neon, Flip (com animação de virada de verdade), LCD retrô e Palavras (hora por extenso em português, inglês ou espanhol)
 - **Pomodoro** com anel de progresso, horário de término e o tomate mudando de expressão (focado, relaxando com um café, dormindo quando pausado); você escolhe no painel o que vai fazer no foco (ler, estudar, programar, tarefas ou desenhar) e a tela mostra a atividade e o objeto dela ao lado do tomate e pulando de alegria quando uma fase termina; contador de focos do dia com meta diária
+- **Sequência e conquistas**: o relógio guarda um ano de focos por dia; a planta ao lado do tomate cresce a cada dia seguido batendo a meta (até o tomate dourado, com 7 dias) e uma chama mostra a sequência. No painel: horta com o ano inteiro, 10 conquistas e um cartão em pixel art do dia para compartilhar (no celular abre o menu de compartilhar)
+- **Aviso de versão nova**: o painel confere o site e, se houver firmware novo, mostra o que mudou e atualiza com um toque
 - **Clima** via [Open-Meteo](https://open-meteo.com/) (sem chave de API), com busca de cidade pelo painel
 - **Álbum de fotos e GIFs**: lê os arquivos já gravados pelo firmware original; envio pelo painel com recorte automático para 240×240
 - **Brilho noturno** por horário
@@ -47,7 +49,7 @@ Para voltar ao firmware original, envie o `.bin` da GeekMagic ([GeekMagicClock/s
 | `smalltv-pomodoro/` | Firmware (Arduino/ESP8266). `main.cpp`: Wi-Fi, clima, álbum, Pomodoro e servidor web. `ui.cpp` + `ui_kit.h`: núcleo e kit de desenho. `face_*.cpp`: um arquivo por mostrador, registrados em `faces_list.h`. `assets.h` é gerado a partir de `assets/` |
 | `web/` | Painel web: edite `web/index.html`; `web/build.js` gera o `web.h` comprimido (gzip) |
 | `assets/` | Sprites em pixel art (um `.txt` por sprite), paletas e o gerador `gerar.js` |
-| `sim/` | Simulador das telas no PC; `sim/faces.js` gera as prévias da galeria (`docs/faces/` e `smalltv-pomodoro/faces.h`) |
+| `sim/` | Simulador das telas no PC; `sim/faces.js` gera as prévias da galeria em `docs/faces/` (o site as publica em `img/faces/` e o painel carrega de lá) |
 | `docs/` | Imagens do README |
 
 ## Biblioteca de assets
@@ -119,7 +121,7 @@ arduino-cli compile --fqbn "esp8266:esp8266:generic:eesz=4M3M,xtal=160,ip=lm2n" 
 ## Detalhes técnicos
 
 - **Layout da flash 4M3M**, o mesmo do firmware original (constantes do LittleFS encontradas no binário V9.0.50, offset `0x14d00`). Assim as fotos e GIFs existentes são lidos. O LittleFS é montado **sem formatação automática**: se não montar, nada é apagado.
-- **Tamanho do binário**: para conseguir voltar ao firmware original pelo painel, este firmware precisa deixar espaço para o binário original (V9.0.50: 505.200 bytes) na atualização OTA, o que dá um limite de ~540 KB (hoje ~534 KB).
+- **Tamanho do binário**: para conseguir voltar ao firmware original pelo painel, este firmware precisa deixar espaço para o binário original (V9.0.50: 505.200 bytes) na atualização OTA, o que dá um limite de ~536 KB (hoje ~525 KB). As prévias dos mostradores embutidos ficam no site, não na flash.
 - **Painel comprimido**: o HTML vai com gzip na flash (~24 KB → ~9 KB) e a pilha de rede usa a variante leve do lwIP (`ip=lm2n`, sem recursos que o relógio não usa, como PPP e roteamento)
 - **Fontes desenhadas por código**: os dígitos (pixel art 5×7, fonte vetorial "Geo" e os segmentos do DSEG7 como polígonos) não usam bitmaps na flash.
 - **Sprites** em `PROGMEM` com 4 bits por pixel, desenhados juntando pixels vizinhos iguais em retângulos (menos chamadas SPI).

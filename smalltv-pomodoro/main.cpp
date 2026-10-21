@@ -26,10 +26,9 @@
 #include <time.h>
 #include "ui.h"
 #include "web.h"
-#include "faces.h"
 #include "facepack.h"
 
-#define FW_VERSION "1.7.0"
+#define FW_VERSION "1.8.0"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
@@ -171,12 +170,17 @@ void startPhase(Phase p, bool run) {
   lastTick = millis();
 }
 
+void statsFocus();                      // um foco terminou (histórico de focos, mais abaixo)
+void statsRollover(const struct tm &t);  // o dia mudou
+extern uint16_t statsStreak, statsBest;
+
 void advance(bool completed) {
   if (phase == WORK) {
     if (completed) {
       cycleDone++;
       cfg.todayCount++;
       saveSettings();
+      statsFocus();
     }
     bool longNext = completed && cfg.longEvery && cycleDone % cfg.longEvery == 0;
     startPhase(longNext ? LONG_BREAK : SHORT_BREAK, cfg.autoStart);
@@ -304,6 +308,7 @@ void checkDayRollover(const struct tm &t) {
   if (cfg.todayYday >= 0) cfg.todayCount = 0;
   cfg.todayYday = t.tm_yday;
   saveSettings();
+  statsRollover(t);
 }
 
 // "14:05" para o painel web
@@ -331,6 +336,8 @@ UiState makeState() {
   s.today = cfg.todayCount;
   s.dailyGoal = cfg.dailyGoal;
   s.activity = cfg.activity;
+  s.streak = statsStreak;
+  s.best = statsBest;
   s.weatherOn = cfg.weatherOn && cfg.city[0];
   s.wx = {wx.ok, wx.t, wx.tmin, wx.tmax, wx.hum, wx.code, wx.day, wx.version};
   s.city = cfg.city;
@@ -366,6 +373,91 @@ uint32_t colorTestUntil = 0;
 
 // ---------- álbum: fotos (JPG) e GIFs no LittleFS ----------
 bool fsOk = false;
+
+// ---------- histórico de focos (/stats.bin) ----------
+// Um contador por dia num anel de 371 dias (53 semanas): dá a sequência de dias com a meta batida,
+// o recorde e o jardim do painel. Só o cabeçalho fica na RAM; os dias são lidos do arquivo.
+struct StatsHead { uint32_t magic; uint16_t lastDay, best; uint32_t total; };
+const uint32_t STATS_MAGIC = 0x544F4D31;  // "TOM1"
+const uint16_t STATS_DAYS = 371;
+StatsHead stats = {0, 0, 0, 0};
+uint16_t statsStreak = 0, statsBest = 0;
+
+// dias desde 1970-01-01 para a data local (algoritmo "days from civil")
+uint16_t dayNumber(const struct tm &t) {
+  int y = t.tm_year + 1900, m = t.tm_mon + 1;
+  y -= m <= 2;
+  int era = y / 400, yoe = y - era * 400, doy = (153 * (m + (m > 2 ? -3 : 9)) + 2) / 5 + t.tm_mday - 1;
+  return era * 146097 + yoe * 365 + yoe / 4 - yoe / 100 + doy - 719468;
+}
+
+// lê os 371 dias em ordem (o mais antigo primeiro); false sem arquivo
+bool statsRead(uint8_t *days) {
+  File f = fsOk ? LittleFS.open("/stats.bin", "r") : File();
+  if (!f || f.size() != sizeof(StatsHead) + STATS_DAYS) return false;
+  uint8_t ring[STATS_DAYS];
+  f.seek(sizeof(StatsHead));
+  f.read(ring, STATS_DAYS);
+  f.close();
+  for (int i = 0; i < STATS_DAYS; i++) days[i] = ring[(stats.lastDay + 1 + i) % STATS_DAYS];
+  return true;
+}
+
+void statsCompute() {
+  uint8_t d[STATS_DAYS];
+  statsStreak = 0;
+  if (stats.magic == STATS_MAGIC && statsRead(d)) {
+    int i = STATS_DAYS - 1;
+    if (d[i] < cfg.dailyGoal) i--;  // hoje ainda não bateu: a sequência vem até ontem
+    for (; i >= 0 && d[i] >= cfg.dailyGoal; i--) statsStreak++;
+  }
+  if (statsStreak > stats.best) stats.best = statsStreak;
+  statsBest = stats.best;
+}
+
+// grava o dia "day" com "count" focos, zerando os dias pulados desde o último registro
+void statsWrite(uint16_t day, uint8_t count) {
+  if (!fsOk) return;
+  File f = LittleFS.open("/stats.bin", stats.magic == STATS_MAGIC ? "r+" : "w+");
+  if (!f) return;
+  if (stats.magic != STATS_MAGIC || day - stats.lastDay >= STATS_DAYS || day < stats.lastDay) {
+    if (stats.magic != STATS_MAGIC) stats = {STATS_MAGIC, day, 0, 0};
+    uint8_t zero[64] = {0};
+    f.seek(sizeof(StatsHead));
+    for (int i = 0; i < STATS_DAYS; i += sizeof zero) f.write(zero, min((int)sizeof zero, STATS_DAYS - i));
+  } else
+    for (uint16_t d = stats.lastDay + 1; d < day; d++) {  // dias com o relógio desligado: zero
+      f.seek(sizeof(StatsHead) + d % STATS_DAYS);
+      f.write((uint8_t)0);
+    }
+  f.seek(sizeof(StatsHead) + day % STATS_DAYS);
+  f.write(count);
+  stats.lastDay = day;
+  f.seek(0);
+  f.write((const uint8_t *)&stats, sizeof stats);
+  f.close();
+}
+
+void statsLoad() {
+  File f = fsOk ? LittleFS.open("/stats.bin", "r") : File();
+  if (f && f.size() == sizeof(StatsHead) + STATS_DAYS) f.read((uint8_t *)&stats, sizeof stats);
+  if (f) f.close();
+  if (stats.magic != STATS_MAGIC) stats = {0, 0, 0, 0};
+  statsCompute();
+}
+
+void statsFocus() {
+  struct tm t;
+  if (!localNow(t)) return;
+  stats.total++;
+  statsWrite(dayNumber(t), cfg.todayCount > 255 ? 255 : cfg.todayCount);
+  statsCompute();
+}
+
+void statsRollover(const struct tm &t) {
+  statsWrite(dayNumber(t), cfg.todayCount > 255 ? 255 : cfg.todayCount);
+  statsCompute();
+}
 std::vector<String> album;
 size_t albumIdx = 0;
 bool inAlbum = false;
@@ -694,6 +786,10 @@ void sendState() {
   j += cycleDone;
   j += F(",\"today\":");
   j += cfg.todayCount;
+  j += F(",\"streak\":");
+  j += statsStreak;
+  j += F(",\"best\":");
+  j += statsBest;
   j += F(",\"clock\":\"");
   j += clock;
   j += F("\",\"showing\":\"");
@@ -854,6 +950,30 @@ void setupWeb() {
     server.send_P(200, "text/html", (PGM_P)INDEX_HTML_GZ, sizeof(INDEX_HTML_GZ));
   });
   server.on("/api/state", HTTP_GET, sendState);
+  // histórico (o mais antigo primeiro) para o jardim, as conquistas e o cartão de compartilhar do painel
+  server.on("/api/stats", HTTP_GET, [] {
+    uint8_t d[STATS_DAYS];
+    bool ok = stats.magic == STATS_MAGIC && statsRead(d);
+    String j;
+    j.reserve(STATS_DAYS * 3 + 96);
+    j = F("{\"day\":");
+    j += stats.lastDay;
+    j += F(",\"goal\":");
+    j += cfg.dailyGoal;
+    j += F(",\"streak\":");
+    j += statsStreak;
+    j += F(",\"best\":");
+    j += statsBest;
+    j += F(",\"total\":");
+    j += stats.total;
+    j += F(",\"days\":[");
+    for (int i = 0; i < STATS_DAYS; i++) {
+      if (i) j += ',';
+      j += ok ? d[i] : 0;
+    }
+    j += "]}";
+    server.send(200, "application/json", j);
+  });
   // lista dos mostradores para a galeria do painel (vem de faces_list.h)
   server.on("/api/faces", HTTP_GET, [] {
     String j = "[";
@@ -882,7 +1002,8 @@ void setupWeb() {
     j += "]";
     server.send(200, "application/json", j);
   });
-  // prévia PNG de um mostrador para a galeria do painel (gerada pelo simulador, em faces.h)
+  // prévia PNG de um mostrador para a galeria do painel. As dos embutidos ficam no site (geradas pelo
+  // simulador, sem ocupar a flash do relógio); as dos pacotes instalados, no LittleFS.
   server.on("/face", HTTP_GET, [] {
     if (server.hasArg("pkg")) {  // prévia de pacote instalado (/faces/<id>.png, se veio junto)
       String id = server.arg("pkg");
@@ -897,12 +1018,12 @@ void setupWeb() {
       return;
     }
     int t = server.arg("t").toInt();
-    if (t < 0 || t >= FACE_PNG_COUNT) {
+    if (t < 0 || t >= THEME_COUNT) {
       server.send(404, "text/plain", "");
       return;
     }
-    server.sendHeader("Cache-Control", "max-age=86400");
-    server.send_P(200, "image/png", (PGM_P)FACE_PNG[t], FACE_PNG_LEN[t]);
+    server.sendHeader("Location", String(F("https://davicorrea0.github.io/smalltv-pomodoro/img/faces/face-")) + t + ".png");
+    server.send(302, "text/plain", "");
   });
   server.on("/api/cmd", HTTP_POST, [] {
     if (server.arg("c") == "preview") {
@@ -937,7 +1058,11 @@ void setupWeb() {
       cfg.theme = THEME_PACK;
       strlcpy(cfg.facePkg, server.arg("pkg").c_str(), sizeof cfg.facePkg);
     }
-    cfg.dailyGoal = argRange("goal", cfg.dailyGoal, 1, 30);
+    uint8_t goal = argRange("goal", cfg.dailyGoal, 1, 30);
+    if (goal != cfg.dailyGoal) {  // a sequência é contada com a meta atual
+      cfg.dailyGoal = goal;
+      statsCompute();
+    }
     cfg.activity = argRange("act", cfg.activity, 0, ACT_COUNT - 1);
     uint8_t lang = argRange("lang", cfg.lang, 0, 2);
     if (lang != cfg.lang) uiSetLang(cfg.lang = lang);
@@ -1206,6 +1331,7 @@ void setup() {
   fcfg.setAutoFormat(false);
   LittleFS.setConfig(fcfg);
   fsOk = LittleFS.begin();
+  statsLoad();
   uiDrawImage = drawJpgAt;
   if (cfg.theme == THEME_PACK) restoreActivePack();  // pacote ausente/inválido: volta ao Matriz
   rebuildAlbum();

@@ -1,0 +1,17 @@
+# Chama da sequência de dias com a meta batida.
+cor o #a8261e   # contorno
+cor R #ff5a2a   # chama
+cor Y #ffc83a   # miolo
+cor w #fff4c0   # centro
+
+...o....
+...oo...
+..oRo...
+..oRRo.o
+.oRRRooR
+.oRYRRRo
+oRRYYRRo
+oRYYwYRo
+oRYwwYRo
+.oRYYRo.
+..oooo..

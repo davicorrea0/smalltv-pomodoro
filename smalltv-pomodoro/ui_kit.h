@@ -84,6 +84,9 @@ void moonShape(int cx, int cy, float s, uint16_t bg);
 // ---------- mascote (sprites de assets/, ver assets.h) ----------
 enum Face : uint8_t { FACE_HAPPY, FACE_SLEEP, FACE_FOCUS, FACE_RELAX, FACE_CHEER, FACE_UMBRELLA, FACE_SCARF, FACE_SHADES };
 void mascot(int x, int y, int sc, uint8_t face, int32_t bg = UI_TRANSPARENT);  // tomate 16x16 x sc
+// Planta do tomate conforme a sequência: semente, broto, flor, tomate verde, maduro e dourado (7+ dias)
+const UiSprite *plantSprite(uint16_t streak);
+void streakBadge(int x, int y, uint16_t streak, uint16_t c);  // chama + número; nada se streak == 0
 
 // ---------- redesenho incremental ----------
 // Cada área guarda o que mostrou e só repinta quando muda. Tudo é zerado ao trocar de tela.

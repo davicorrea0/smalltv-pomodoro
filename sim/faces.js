@@ -1,6 +1,6 @@
 // Gera as prévias dos mostradores para a galeria do painel web, a partir de sim/out/face-N.raw:
-//  - docs/faces/face-N.png (240x240) para o README
-//  - smalltv-pomodoro/faces.h com os mesmos PNGs em PROGMEM, servidos pelo relógio em /face?t=N
+//  - docs/faces/face-N.png (240x240) para o README e para o site (gh-pages img/faces/), de onde o
+//    painel do relógio carrega as prévias dos mostradores embutidos (não ocupam a flash do relógio)
 // Rode depois do simulador (sim/build.sh já chama este script).
 const fs = require('fs'), zlib = require('zlib'), path = require('path');
 const root = path.join(__dirname, '..');
@@ -24,22 +24,12 @@ function png(raw565) {
 }
 
 fs.mkdirSync(path.join(root, 'docs', 'faces'), { recursive: true });
-let h = '// Gerado por sim/faces.js — não edite à mão.\n// Prévias PNG (240x240) dos mostradores, servidas em /face?t=N para a galeria do painel.\n#pragma once\n#include <pgmspace.h>\n\n';
-const names = [];
-let total = 0;
-for (let i = 0; ; i++) {
-  const src = path.join(__dirname, 'out', `face-${i}.raw`);
+let n = 0, total = 0;
+for (; ; n++) {
+  const src = path.join(__dirname, 'out', `face-${n}.raw`);
   if (!fs.existsSync(src)) break;
   const p = png(fs.readFileSync(src));
-  fs.writeFileSync(path.join(root, 'docs', 'faces', `face-${i}.png`), p);
+  fs.writeFileSync(path.join(root, 'docs', 'faces', `face-${n}.png`), p);
   total += p.length;
-  h += `static const uint8_t FACE_PNG_${i}[] PROGMEM = {`;
-  for (let k = 0; k < p.length; k++) h += (k % 24 ? '' : '\n  ') + '0x' + p[k].toString(16).padStart(2, '0') + ',';
-  h += '\n};\n';
-  names.push(i);
 }
-h += `\nstatic const uint8_t *const FACE_PNG[] = {${names.map(i => `FACE_PNG_${i}`).join(', ')}};\n`;
-h += `static const uint16_t FACE_PNG_LEN[] = {${names.map(i => `sizeof(FACE_PNG_${i})`).join(', ')}};\n`;
-h += `static const uint8_t FACE_PNG_COUNT = ${names.length};\n`;
-fs.writeFileSync(path.join(root, 'smalltv-pomodoro', 'faces.h'), h);
-console.log(`${names.length} prévias, ${(total / 1024).toFixed(1)} KB`);
+console.log(`${n} prévias, ${(total / 1024).toFixed(1)} KB`);

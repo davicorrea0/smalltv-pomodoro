@@ -43,13 +43,13 @@ A tela tem **240 × 240** pixels; `x` cresce para a direita e `y` para baixo.
 | `{WD}` dia da semana (`TER`) | `{DD}` dia | `{MON}` mês (`OUT`) | `{MO}` mês (`10`) |
 | `{YYYY}` ano | `{AMPM}` | `{TEMP}` temperatura | `{TMIN}` `{TMAX}` |
 | `{HUM}` umidade | `{WX}` descrição do clima | `{CITY}` cidade | `{IP}` |
-| `{FOCOS}` focos de hoje | `{META}` meta diária | | |
+| `{FOCOS}` focos de hoje | `{META}` meta diária | `{STREAK}` dias seguidos na meta | `{BEST}` recorde de dias seguidos |
 
 `°` pode ser escrito direto no texto (`"{TEMP}°"`).
 
 ## Camadas
 
-Toda camada aceita `"when"` para aparecer só em certas condições: `day`, `night`, `rain`, `dry`, `weather` (clima disponível), `noweather`, `goal` (meta do dia batida), `nogoal`.
+Toda camada aceita `"when"` para aparecer só em certas condições: `day`, `night`, `rain`, `dry`, `weather` (clima disponível), `noweather`, `goal` (meta do dia batida), `nogoal`, `streak` (sequência de pelo menos 1 dia).
 
 | `type` | Campos |
 |---|---|
@@ -59,6 +59,7 @@ Toda camada aceita `"when"` para aparecer só em certas condições: `day`, `nig
 | `text` | `x`, `y`, `text`, `font`, `size`, `align` (`left`/`center`/`right`; `x` é o ponto de alinhamento), `color`, e conforme a fonte `off` ou `bg` |
 | `sprite` | `x`, `y`, `sprite` (nome em `sprites`), `size` (ampliação inteira) |
 | `mascot` | o tomate do projeto: `x`, `y`, `size`, `mood`: `auto` (dorme à noite, guarda-chuva na chuva, comemora a meta, cachecol no frio, óculos no calor), `feliz`, `dormindo`, `focado`, `relax`, `comemorando`, `guarda-chuva`, `cachecol`, `oculos` |
+| `plant` | a planta do tomate, que cresce com a sequência (semente, broto, flor, tomate verde, maduro, dourado com 7+ dias): `x`, `y`, `size` (ampliação do desenho de 16×16) (requer firmware 1.8.0+) |
 | `weather` | ícone do clima: `x`, `y` (centro), `size` (10 = ~40 px) |
 | `bar` | `x`, `y`, `w`, `h`, `r`, `value` (`sec`, `min`, `hour`, `focos`, `hum`), `max` (opcional), `color`, `track` |
 | `hand` | ponteiro: `x`, `y` (centro), `value` (`hour`, `min`, `sec`), `len`, `tail`, `size` (espessura), `color` |

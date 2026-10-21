@@ -84,8 +84,9 @@ static void tomatoScene(const UiState &s) {
   G->fillRect(0, GROUND_Y + 6, 240, 4, uiRgb(46, 125, 50));
   G->fillRect(0, GROUND_Y + 10, 240, 240 - GROUND_Y - 10, uiRgb(92, 60, 42));
   for (int i = 0; i < 12; i++) G->fillRect((i * 53 + 21) % 230, GROUND_Y - 4, 2, 4, uiRgb(76, 175, 80));  // tufos
-  // mascote em pé na grama
+  // mascote em pé na grama e, à esquerda, a planta que cresce com a sequência de dias com a meta batida
   mascot(88, GROUND_Y + 8 - 64, 4, sceneFace(s, night, rain, snow));
+  uiSprite(plantSprite(s.streak), 18, GROUND_Y + 6 - 48, 3);
   if (night) {
     text(150, GROUND_Y - 58, 2, uiRgb(220, 220, 255), "z");
     text(164, GROUND_Y - 72, 1, uiRgb(220, 220, 255), "z");
@@ -106,9 +107,11 @@ static void tomatoBottom(const UiState &s) {
   for (int i = 0; i < 14; i++) G->fillRect((i * 29 + 7) % 236, GROUND_Y + 12 + (i * 7) % 24, 3, 3, uiRgb(74, 47, 33));
   char b[40];
   snprintf(b, sizeof b, tr("%u %s hoje  %s", "%u %s today  %s", "%u %s hoy  %s"), s.today, s.today == 1 ? tr("foco", "session", "foco") : tr("focos", "sessions", "focos"), s.ip ? s.ip : "");
-  // texto com contorno escuro para ler por cima da textura da terra
-  textC(121, GROUND_Y + 22, 1, uiRgb(50, 30, 20), b);
-  textC(120, GROUND_Y + 21, 1, uiRgb(255, 226, 190), b);
+  // texto com contorno escuro para ler por cima da textura da terra; a chama da sequência à esquerda
+  int cx = s.streak ? 132 : 120;
+  textC(cx + 1, GROUND_Y + 22, 1, uiRgb(50, 30, 20), b);
+  textC(cx, GROUND_Y + 21, 1, uiRgb(255, 226, 190), b);
+  streakBadge(4, GROUND_Y + 17, s.streak, uiRgb(255, 226, 190));
 }
 
 static void tomatoClock(const UiState &s) {
@@ -138,13 +141,15 @@ void themeTomato(const UiState &s, bool full) {
   int hour = s.timeOk ? s.now.tm_hour : -1;
   int minute = s.timeOk ? s.now.tm_min : -1;
   int goalDone = s.dailyGoal && s.today >= s.dailyGoal;  // o tomate comemora a meta batida
-  bool scene = full || hour != lastHour || lastWx != s.wx.version || lastWxOn != (int)s.weatherOn || goalDone != lastGoal;
+  static uint16_t lastStreak = 0xFFFF;
+  bool scene = full || hour != lastHour || lastWx != s.wx.version || lastWxOn != (int)s.weatherOn || goalDone != lastGoal || s.streak != lastStreak;
   if (scene) {
     tomatoScene(s);
     lastHour = hour;
     lastWx = s.wx.version;
     lastWxOn = s.weatherOn;
     lastGoal = goalDone;
+    lastStreak = s.streak;
   }
   if (scene || minute != lastMin) {
     tomatoClock(s);

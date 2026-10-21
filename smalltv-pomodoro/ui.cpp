@@ -289,6 +289,20 @@ static const UiSprite *const FACES[] = {&SPR_TOMATE_FELIZ, &SPR_TOMATE_DORMINDO,
 
 void mascot(int x, int y, int sc, uint8_t face, int32_t bg) { uiSprite(FACES[face], x, y, sc, 0, bg); }
 
+const UiSprite *plantSprite(uint16_t streak) {
+  static const UiSprite *const STAGE[8] = {&SPR_PLANTA_SEMENTE, &SPR_PLANTA_BROTO, &SPR_PLANTA_FLOR, &SPR_PLANTA_FLOR,
+                                           &SPR_PLANTA_VERDE, &SPR_PLANTA_VERDE, &SPR_PLANTA_MADURA, &SPR_PLANTA_DOURADA};
+  return STAGE[streak < 7 ? streak : 7];
+}
+
+void streakBadge(int x, int y, uint16_t streak, uint16_t c) {
+  if (!streak) return;
+  char n[6];
+  snprintf(n, sizeof n, "%u", streak);
+  uiSprite(&SPR_CHAMA, x, y, 1);
+  text(x + 10, y + 2, 1, c, n);
+}
+
 // Atividades do foco (UiActivity): objeto ao lado do tomate e título da tela do Pomodoro.
 static const UiSprite *const ACTIVITY_SPRITE[ACT_COUNT] = {&SPR_LIVRO, &SPR_CADERNO, &SPR_NOTEBOOK, &SPR_PRANCHETA, &SPR_PALETA_PINTOR};
 static const char *activityLabel(uint8_t a) {

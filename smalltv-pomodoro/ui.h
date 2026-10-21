@@ -40,6 +40,8 @@ struct UiState {
   uint16_t today;
   uint8_t dailyGoal;
   uint8_t activity;  // UiActivity
+  uint16_t streak;   // dias seguidos batendo a meta (inclui hoje se já bateu)
+  uint16_t best;     // maior sequência registrada
   // clima
   bool weatherOn;
   UiWeather wx;

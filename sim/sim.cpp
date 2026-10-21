@@ -42,6 +42,8 @@ static UiState base(int h, int m, int s) {
   st.longEvery = 4;
   st.dailyGoal = 8;
   st.today = 3;
+  st.streak = 5;  // planta com tomate verde e chama na prévia
+  st.best = 9;
   st.weatherOn = true;
   st.wx = {true, 23.4f, 14.2f, 27.1f, 44, 2, true, 1};
   st.city = "Florianopolis";
