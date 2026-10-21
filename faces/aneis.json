@@ -1,0 +1,91 @@
+{
+  "format": 1,
+  "author": "davicorrea0",
+  "id": "aneis",
+  "name": "Anéis",
+  "desc": "Três anéis de progresso: focos do dia, minutos da hora e horas do dia",
+  "name_en": "Rings",
+  "desc_en": "Three progress rings: daily focus, minutes of the hour and hours of the day",
+  "bg": "#000000",
+  "layers": [
+    {
+      "type": "text",
+      "x": 120,
+      "y": 8,
+      "font": "outfit",
+      "size": 44,
+      "align": "center",
+      "color": "#ffffff",
+      "text": "{HH}:{MM}"
+    },
+    {
+      "type": "arc",
+      "x": 120,
+      "y": 148,
+      "r": 88,
+      "size": 18,
+      "value": "focos",
+      "color": "#fa114f",
+      "track": "#3b0a1a"
+    },
+    {
+      "type": "arc",
+      "x": 120,
+      "y": 148,
+      "r": 67,
+      "size": 18,
+      "value": "min",
+      "color": "#a6ff00",
+      "track": "#263a06"
+    },
+    {
+      "type": "arc",
+      "x": 120,
+      "y": 148,
+      "r": 46,
+      "size": 18,
+      "value": "hour",
+      "color": "#00d8ff",
+      "track": "#06323b"
+    },
+    {
+      "type": "text",
+      "x": 120,
+      "y": 141,
+      "text": "{FOCOS}/{META}",
+      "font": "pixel",
+      "size": 1,
+      "align": "center",
+      "color": "#fa114f"
+    },
+    {
+      "type": "text",
+      "x": 6,
+      "y": 60,
+      "text": "{WD}",
+      "font": "pixel",
+      "size": 1,
+      "color": "#8e8e93"
+    },
+    {
+      "type": "text",
+      "x": 6,
+      "y": 70,
+      "text": "{DD}",
+      "font": "pixel",
+      "size": 2,
+      "color": "#ffffff"
+    },
+    {
+      "type": "text",
+      "x": 234,
+      "y": 60,
+      "text": "{TEMP}°",
+      "font": "pixel",
+      "size": 2,
+      "align": "right",
+      "color": "#00d8ff",
+      "when": "weather"
+    }
+  ]
+}

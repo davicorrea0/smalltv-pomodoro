@@ -1,0 +1,206 @@
+{
+  "format": 1,
+  "author": "davicorrea0",
+  "id": "romano",
+  "name": "Romano",
+  "desc": "Mostrador creme clássico com algarismos romanos",
+  "name_en": "Roman",
+  "desc_en": "Classic cream dial with Roman numerals",
+  "bg": "#f3ead8",
+  "layers": [
+    {
+      "type": "ticks",
+      "x": 120,
+      "y": 120,
+      "r": 116,
+      "len": 5,
+      "count": 60,
+      "size": 1,
+      "color": "#c9bda4"
+    },
+    {
+      "type": "ticks",
+      "x": 120,
+      "y": 120,
+      "r": 116,
+      "len": 6,
+      "count": 12,
+      "size": 2,
+      "color": "#2a2622"
+    },
+    {
+      "type": "text",
+      "x": 120,
+      "y": 23,
+      "text": "XII",
+      "font": "pixel",
+      "size": 2,
+      "align": "center",
+      "color": "#2a2622"
+    },
+    {
+      "type": "text",
+      "x": 165,
+      "y": 35,
+      "text": "I",
+      "font": "pixel",
+      "size": 2,
+      "align": "center",
+      "color": "#2a2622"
+    },
+    {
+      "type": "text",
+      "x": 198,
+      "y": 68,
+      "text": "II",
+      "font": "pixel",
+      "size": 2,
+      "align": "center",
+      "color": "#2a2622"
+    },
+    {
+      "type": "text",
+      "x": 210,
+      "y": 113,
+      "text": "III",
+      "font": "pixel",
+      "size": 2,
+      "align": "center",
+      "color": "#2a2622"
+    },
+    {
+      "type": "text",
+      "x": 198,
+      "y": 158,
+      "text": "IIII",
+      "font": "pixel",
+      "size": 2,
+      "align": "center",
+      "color": "#2a2622"
+    },
+    {
+      "type": "text",
+      "x": 165,
+      "y": 191,
+      "text": "V",
+      "font": "pixel",
+      "size": 2,
+      "align": "center",
+      "color": "#2a2622"
+    },
+    {
+      "type": "text",
+      "x": 120,
+      "y": 203,
+      "text": "VI",
+      "font": "pixel",
+      "size": 2,
+      "align": "center",
+      "color": "#2a2622"
+    },
+    {
+      "type": "text",
+      "x": 75,
+      "y": 191,
+      "text": "VII",
+      "font": "pixel",
+      "size": 2,
+      "align": "center",
+      "color": "#2a2622"
+    },
+    {
+      "type": "text",
+      "x": 42,
+      "y": 158,
+      "text": "VIII",
+      "font": "pixel",
+      "size": 2,
+      "align": "center",
+      "color": "#2a2622"
+    },
+    {
+      "type": "text",
+      "x": 30,
+      "y": 113,
+      "text": "IX",
+      "font": "pixel",
+      "size": 2,
+      "align": "center",
+      "color": "#2a2622"
+    },
+    {
+      "type": "text",
+      "x": 42,
+      "y": 68,
+      "text": "X",
+      "font": "pixel",
+      "size": 2,
+      "align": "center",
+      "color": "#2a2622"
+    },
+    {
+      "type": "text",
+      "x": 75,
+      "y": 35,
+      "text": "XI",
+      "font": "pixel",
+      "size": 2,
+      "align": "center",
+      "color": "#2a2622"
+    },
+    {
+      "type": "text",
+      "x": 120,
+      "y": 156,
+      "text": "{WD} {DD}",
+      "font": "pixel",
+      "size": 1,
+      "align": "center",
+      "color": "#8a7e66"
+    },
+    {
+      "type": "hand",
+      "x": 120,
+      "y": 120,
+      "value": "hour",
+      "len": 50,
+      "tail": 8,
+      "size": 7,
+      "color": "#2a2622"
+    },
+    {
+      "type": "hand",
+      "x": 120,
+      "y": 120,
+      "value": "min",
+      "len": 80,
+      "tail": 10,
+      "size": 5,
+      "color": "#2a2622"
+    },
+    {
+      "type": "hand",
+      "x": 120,
+      "y": 120,
+      "value": "sec",
+      "len": 100,
+      "tail": 18,
+      "size": 1,
+      "color": "#e8590c"
+    },
+    {
+      "type": "circle",
+      "x": 120,
+      "y": 120,
+      "r": 5,
+      "color": "#e8590c"
+    },
+    {
+      "type": "circle",
+      "x": 120,
+      "y": 120,
+      "r": 2,
+      "color": "#f3ead8"
+    }
+  ]
+}

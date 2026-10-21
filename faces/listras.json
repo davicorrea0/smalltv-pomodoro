@@ -1,0 +1,123 @@
+{
+  "format": 1,
+  "author": "davicorrea0",
+  "id": "listras",
+  "name": "Listras",
+  "desc": "Faixas diagonais coloridas com a hora num cartão preto",
+  "name_en": "Stripes",
+  "desc_en": "Colorful diagonal stripes with the time on a black card",
+  "bg": "#111111",
+  "layers": [
+    {
+      "type": "line",
+      "x": -120,
+      "y": 250,
+      "x2": 130,
+      "y2": -10,
+      "size": 26,
+      "color": "#ff3b30"
+    },
+    {
+      "type": "line",
+      "x": -76,
+      "y": 250,
+      "x2": 174,
+      "y2": -10,
+      "size": 26,
+      "color": "#ff9500"
+    },
+    {
+      "type": "line",
+      "x": -32,
+      "y": 250,
+      "x2": 218,
+      "y2": -10,
+      "size": 26,
+      "color": "#ffcc00"
+    },
+    {
+      "type": "line",
+      "x": 12,
+      "y": 250,
+      "x2": 262,
+      "y2": -10,
+      "size": 26,
+      "color": "#34c759"
+    },
+    {
+      "type": "line",
+      "x": 56,
+      "y": 250,
+      "x2": 306,
+      "y2": -10,
+      "size": 26,
+      "color": "#00c7be"
+    },
+    {
+      "type": "line",
+      "x": 100,
+      "y": 250,
+      "x2": 350,
+      "y2": -10,
+      "size": 26,
+      "color": "#007aff"
+    },
+    {
+      "type": "line",
+      "x": 144,
+      "y": 250,
+      "x2": 394,
+      "y2": -10,
+      "size": 26,
+      "color": "#5856d6"
+    },
+    {
+      "type": "line",
+      "x": 188,
+      "y": 250,
+      "x2": 438,
+      "y2": -10,
+      "size": 26,
+      "color": "#af52de"
+    },
+    {
+      "type": "line",
+      "x": 232,
+      "y": 250,
+      "x2": 482,
+      "y2": -10,
+      "size": 26,
+      "color": "#ff2d55"
+    },
+    {
+      "type": "rect",
+      "x": 12,
+      "y": 64,
+      "w": 216,
+      "h": 112,
+      "r": 18,
+      "color": "#000000"
+    },
+    {
+      "type": "text",
+      "x": 120,
+      "y": 74,
+      "font": "bebas",
+      "size": 80,
+      "align": "center",
+      "color": "#ffffff",
+      "bg": "#000000",
+      "text": "{HH}:{MM}"
+    },
+    {
+      "type": "text",
+      "x": 120,
+      "y": 160,
+      "text": "{WD} {DD} {MON}",
+      "font": "pixel",
+      "size": 1,
+      "align": "center",
+      "color": "#bbbbbb"
+    }
+  ]
+}

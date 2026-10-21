@@ -1,0 +1,188 @@
+{
+  "format": 1,
+  "author": "davicorrea0",
+  "id": "modular",
+  "name": "Modular",
+  "desc": "Grade de complicações: hora, clima grande e três dados embaixo",
+  "name_en": "Modular",
+  "desc_en": "Complication grid: time, large weather and three stats below",
+  "bg": "#000000",
+  "layers": [
+    {
+      "type": "text",
+      "x": 10,
+      "y": 16,
+      "text": "{WD} {DD}",
+      "font": "pixel",
+      "size": 2,
+      "color": "#ff453a"
+    },
+    {
+      "type": "text",
+      "x": 232,
+      "y": 8,
+      "font": "outfit",
+      "size": 34,
+      "align": "right",
+      "color": "#ffffff",
+      "text": "{HH}:{MM}"
+    },
+    {
+      "type": "rect",
+      "x": 8,
+      "y": 52,
+      "w": 224,
+      "h": 96,
+      "r": 14,
+      "color": "#1c1c1e"
+    },
+    {
+      "type": "text",
+      "x": 20,
+      "y": 62,
+      "text": "CLIMA",
+      "font": "pixel",
+      "size": 1,
+      "color": "#ff9f0a"
+    },
+    {
+      "type": "text",
+      "x": 222,
+      "y": 62,
+      "text": "{CITY}",
+      "font": "pixel",
+      "size": 1,
+      "align": "right",
+      "color": "#8e8e93"
+    },
+    {
+      "type": "weather",
+      "x": 54,
+      "y": 108,
+      "size": 8,
+      "bg": "#1c1c1e",
+      "when": "weather"
+    },
+    {
+      "type": "text",
+      "x": 100,
+      "y": 80,
+      "font": "outfit",
+      "size": 40,
+      "color": "#ffffff",
+      "bg": "#1c1c1e",
+      "text": "{TEMP}°",
+      "when": "weather"
+    },
+    {
+      "type": "text",
+      "x": 100,
+      "y": 128,
+      "text": "{TMIN}° / {TMAX}°",
+      "font": "pixel",
+      "size": 1,
+      "color": "#8e8e93",
+      "when": "weather"
+    },
+    {
+      "type": "text",
+      "x": 120,
+      "y": 92,
+      "text": "sem clima",
+      "font": "pixel",
+      "size": 2,
+      "align": "center",
+      "color": "#8e8e93",
+      "when": "noweather"
+    },
+    {
+      "type": "rect",
+      "x": 8,
+      "y": 156,
+      "w": 70,
+      "h": 76,
+      "r": 14,
+      "color": "#1c1c1e"
+    },
+    {
+      "type": "rect",
+      "x": 85,
+      "y": 156,
+      "w": 70,
+      "h": 76,
+      "r": 14,
+      "color": "#1c1c1e"
+    },
+    {
+      "type": "rect",
+      "x": 162,
+      "y": 156,
+      "w": 70,
+      "h": 76,
+      "r": 14,
+      "color": "#1c1c1e"
+    },
+    {
+      "type": "text",
+      "x": 43,
+      "y": 166,
+      "text": "FOCOS",
+      "font": "pixel",
+      "size": 1,
+      "align": "center",
+      "color": "#30d158"
+    },
+    {
+      "type": "text",
+      "x": 43,
+      "y": 184,
+      "font": "outfit",
+      "size": 34,
+      "align": "center",
+      "color": "#ffffff",
+      "bg": "#1c1c1e",
+      "text": "{FOCOS}"
+    },
+    {
+      "type": "text",
+      "x": 120,
+      "y": 166,
+      "text": "UMIDADE",
+      "font": "pixel",
+      "size": 1,
+      "align": "center",
+      "color": "#64d2ff"
+    },
+    {
+      "type": "text",
+      "x": 120,
+      "y": 190,
+      "text": "{HUM}%",
+      "font": "pixel",
+      "size": 3,
+      "align": "center",
+      "color": "#ffffff"
+    },
+    {
+      "type": "text",
+      "x": 197,
+      "y": 166,
+      "text": "SEG",
+      "font": "pixel",
+      "size": 1,
+      "align": "center",
+      "color": "#ffd60a"
+    },
+    {
+      "type": "text",
+      "x": 197,
+      "y": 184,
+      "font": "outfit",
+      "size": 34,
+      "align": "center",
+      "color": "#ffd60a",
+      "bg": "#1c1c1e",
+      "text": "{SS}"
+    }
+  ]
+}
