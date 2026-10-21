@@ -1,11 +1,11 @@
 {
-  "version": "1.8.0",
+  "version": "1.8.1",
   "date": "2026-10-21",
   "file": "smalltv-pomodoro.bin",
-  "size": 525312,
+  "size": 527200,
   "notes": {
-    "pt": ["Planta que cresce a cada dia seguido batendo a meta, até o tomate dourado", "Horta do ano e 10 conquistas no painel", "Cartão do dia em pixel art para compartilhar", "Aviso de versão nova com atualização em um toque"],
-    "en": ["A plant that grows with every day in a row you hit your goal, up to the golden tomato", "Yearly garden and 10 achievements in the panel", "Pixel art card of your day to share", "New-version notice with one-tap update"],
-    "es": ["Una planta que crece con cada día seguido que logras la meta, hasta el tomate dorado", "Huerto del año y 10 logros en el panel", "Tarjeta del día en pixel art para compartir", "Aviso de versión nueva con actualización en un toque"]
+    "pt": ["Conquistas com ícones em pixel art", "Cartão do dia para compartilhar redesenhado, todo em pixel art"],
+    "en": ["Achievements with pixel art icons", "Redesigned share card, all in pixel art"],
+    "es": ["Logros con íconos en pixel art", "Tarjeta del día para compartir rediseñada, toda en pixel art"]
   }
 }
