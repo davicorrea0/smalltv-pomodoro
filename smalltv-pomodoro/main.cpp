@@ -29,7 +29,7 @@
 
 void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);  // ui.cpp: recorta para a área suja; fora da tela, cai na faixa
 
-#define FW_VERSION "1.9.2"
+#define FW_VERSION "1.10.0"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
@@ -71,6 +71,8 @@ struct Settings {
   uint8_t activity;     // atividade do foco (UiActivity); campo novo no fim: unidades antigas leem lixo e caem no padrão
   char facePkg[24];     // pacote de mostrador ativo (/faces/<id>.json) quando theme == THEME_PACK; idem: lixo vira ""
   uint8_t lang;         // idioma da tela e do painel: 0 português, 1 inglês, 2 espanhol; idem: lixo vira 0
+  uint8_t nightSun;     // brilho noturno do pôr ao nascer do sol (Open-Meteo) em vez de nightStart/nightEnd
+  uint8_t rotMin;       // rodízio de mostradores: minutos entre trocas (0 = desligado); lista em /rotation.txt
 };
 const uint32_t SETTINGS_MAGIC = 0x504F4D34;     // "POM4"
 const uint32_t SETTINGS_MAGIC_V3 = 0x504F4D33;  // "POM3": mesmos campos, sem os do v4
@@ -78,7 +80,7 @@ Settings cfg;
 
 void defaultSettings() {
   cfg = Settings{SETTINGS_MAGIC, 25, 5, 15, 4, 80, 0, 0, "<-03>3", "", 0, -1,
-                 THEME_MATRIX, 0, 10, 0, 22, 7, 15, 1, 242, 242, 242, 0, 0, "", 0, 1, 0, 8, ACT_READ, "", 0};
+                 THEME_MATRIX, 0, 10, 0, 22, 7, 15, 1, 242, 242, 242, 0, 0, "", 0, 1, 0, 8, ACT_READ, "", 0, 0, 0};
 }
 
 // ---------- recuperação: 3 inicializações curtas seguidas ----------
@@ -133,6 +135,8 @@ void loadSettings() {
   if (!cfg.dailyGoal) cfg.dailyGoal = 8;
   if (cfg.activity >= ACT_COUNT) cfg.activity = ACT_READ;
   if (cfg.lang > 2) cfg.lang = 0;
+  if (cfg.nightSun > 1) cfg.nightSun = 0;
+  if (cfg.rotMin > 240) cfg.rotMin = 0;
   cfg.tz[sizeof(cfg.tz) - 1] = 0;
   cfg.otaPass[sizeof(cfg.otaPass) - 1] = 0;
   cfg.city[sizeof(cfg.city) - 1] = 0;
@@ -163,12 +167,16 @@ void applyTimezone() {
 // ---------- brilho (com horário noturno) ----------
 int curBri = -1;
 
+int16_t sunRise = -1, sunSet = -1;  // minutos do dia (hora local), da última busca do clima
+
 void updateBrightness(bool force = false) {
   int b = cfg.brightness;
   struct tm t;
-  if (cfg.nightOn && cfg.nightStart != cfg.nightEnd && localNow(t)) {
-    int h = t.tm_hour, s = cfg.nightStart, e = cfg.nightEnd;
-    bool night = s < e ? (h >= s && h < e) : (h >= s || h < e);
+  if (cfg.nightOn && localNow(t)) {
+    int h = t.tm_hour, m = h * 60 + t.tm_min, s = cfg.nightStart, e = cfg.nightEnd;
+    bool night = false;
+    if (cfg.nightSun && sunRise >= 0 && sunSet > sunRise) night = m < sunRise || m >= sunSet;  // do pôr ao nascer
+    else if (s != e) night = s < e ? (h >= s && h < e) : (h >= s || h < e);  // horário fixo (ou sem o sol ainda)
     if (night) b = cfg.nightBri;
   }
   if (b == curBri && !force) return;
@@ -281,7 +289,7 @@ bool fetchWeather() {
   String url = "http://api.open-meteo.com/v1/forecast?latitude=" + String(cfg.lat, 4) +
                "&longitude=" + String(cfg.lon, 4) +
                "&current=temperature_2m,relative_humidity_2m,weather_code,is_day"
-               "&daily=temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=1";
+               "&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset&timezone=auto&forecast_days=1";
   if (!http.begin(client, url)) return false;
   http.useHTTP10(true);
   http.setTimeout(5000);
@@ -296,6 +304,8 @@ bool fetchWeather() {
   filter["current"]["is_day"] = true;
   filter["daily"]["temperature_2m_max"] = true;
   filter["daily"]["temperature_2m_min"] = true;
+  filter["daily"]["sunrise"] = true;
+  filter["daily"]["sunset"] = true;
   JsonDocument doc;
   DeserializationError err = deserializeJson(doc, http.getStream(), DeserializationOption::Filter(filter));
   http.end();
@@ -306,6 +316,13 @@ bool fetchWeather() {
   wx.day = doc["current"]["is_day"] | 1;
   wx.tmax = doc["daily"]["temperature_2m_max"][0];
   wx.tmin = doc["daily"]["temperature_2m_min"][0];
+  // "2026-10-21T05:31" (hora local, timezone=auto) -> minutos do dia
+  auto minutes = [](const char *iso) {
+    const char *p = iso ? strchr(iso, 'T') : nullptr;
+    return p && strlen(p) >= 6 ? (p[1] - '0') * 600 + (p[2] - '0') * 60 + (p[4] - '0') * 10 + (p[5] - '0') : -1;
+  };
+  sunRise = minutes(doc["daily"]["sunrise"][0] | (const char *)nullptr);
+  sunSet = minutes(doc["daily"]["sunset"][0] | (const char *)nullptr);
   wx.ok = true;
   wx.version++;
   return true;
@@ -399,6 +416,15 @@ void renderAlert() {
 void message(const char *a, const char *b = "", const char *c = "", const char *d = "") { uiMessage(a, b, c, d); }
 
 uint32_t colorTestUntil = 0;
+
+// ---------- rodízio de mostradores ----------
+// Lista "t:1,p:bento,..." (embutido pelo número, pacote pelo id) em /rotation.txt; a cada cfg.rotMin
+// minutos, com o relógio parado (sem Pomodoro nem prévia), passa para o próximo. A troca não grava na
+// EEPROM (seria uma gravação a cada troca): vale o que estiver salvo ao reiniciar.
+String rotList;
+uint32_t rotNext = 0;
+void rotSet(const String &v);
+void rotLoop();
 
 // ---------- álbum: fotos (JPG) e GIFs no LittleFS ----------
 bool fsOk = false;
@@ -855,6 +881,10 @@ void sendState() {
   j += String(wx.tmax, 1);
   j += F(",\"h\":");
   j += wx.hum;
+  j += F(",\"rise\":");
+  j += sunRise;
+  j += F(",\"set\":");
+  j += sunSet;
   j += F(",\"desc\":\"");
   j += weatherText(wx.code);
   j += F("\"},\"fs\":{\"ok\":");
@@ -919,7 +949,13 @@ void sendState() {
   j += cfg.activity;
   j += F(",\"lang\":");
   j += cfg.lang;
-  j += F("},\"pv\":");
+  j += F(",\"nsun\":");
+  j += cfg.nightSun;
+  j += F(",\"rotmin\":");
+  j += cfg.rotMin;
+  j += F(",\"rot\":\"");
+  j += rotList;
+  j += F("\"},\"pv\":");
   j += previewActive() ? (previewUntil - millis()) / 1000 + 1 : 0;
   j += F(",\"heap\":");
   j += ESP.getFreeHeap();
@@ -1154,6 +1190,9 @@ void setupWeb() {
     cfg.nightStart = argRange("nstart", cfg.nightStart, 0, 23);
     cfg.nightEnd = argRange("nend", cfg.nightEnd, 0, 23);
     cfg.nightBri = argRange("nbri", cfg.nightBri, 1, 100);
+    cfg.nightSun = argRange("nsun", cfg.nightSun, 0, 1);
+    cfg.rotMin = argRange("rotmin", cfg.rotMin, 0, 240);
+    if (server.hasArg("rot")) rotSet(server.arg("rot"));
     uint8_t won = argRange("won", cfg.weatherOn, 0, 1);
     String color = server.arg("color");
     if (color.length() == 7 && color[0] == '#') {
@@ -1443,6 +1482,50 @@ void startRecovery() {
   server.begin();
 }
 
+void rotSet(const String &v) {
+  String s;
+  for (char c : v)  // só o formato da lista: nada de aspas ou barras no JSON do estado
+    if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == ':' || c == ',' || c == '-' || c == '_') s += c;
+  if (s.length() > 300) s = s.substring(0, s.lastIndexOf(',', 300));
+  rotList = s;
+  rotNext = millis() + cfg.rotMin * 60000UL;
+  if (!fsOk) return;
+  if (!s.length()) LittleFS.remove("/rotation.txt");
+  else {
+    File f = LittleFS.open("/rotation.txt", "w");
+    if (f) {
+      f.print(s);
+      f.close();
+    }
+  }
+}
+
+void rotLoop() {
+  if (!cfg.rotMin || !rotList.length() || phase != IDLE || previewActive() || inAlbum) return;
+  if ((int32_t)(millis() - rotNext) < 0) return;
+  rotNext = millis() + cfg.rotMin * 60000UL;
+  // o item depois do mostrador atual (ou o primeiro, se o atual não está na lista)
+  String cur = cfg.theme == THEME_PACK ? String("p:") + cfg.facePkg : String("t:") + cfg.theme, l = rotList + ",";
+  int at = ("," + l).indexOf("," + cur + ","), start = at >= 0 ? at + cur.length() + 1 : 0;
+  for (int tries = 0; tries < 32; tries++) {  // pula itens inválidos (pacote removido)
+    if (start >= (int)l.length()) start = 0;
+    int e = l.indexOf(',', start);
+    String it = l.substring(start, e);
+    start = e + 1;
+    if (it.startsWith("t:")) {
+      int t = it.substring(2).toInt();
+      if (t < 0 || t >= THEME_COUNT) continue;
+      cfg.theme = t;
+      facePackUnload();
+    } else if (it.startsWith("p:") && loadPack(it.substring(2))) {
+      cfg.theme = THEME_PACK;
+      strlcpy(cfg.facePkg, it.substring(2).c_str(), sizeof cfg.facePkg);
+    } else continue;
+    uiInvalidate();
+    return;
+  }
+}
+
 // ---------- Wi-Fi: rede salva ou portal de configuração ----------
 // Portal próprio no lugar do WiFiManager (~45 KB): o binário precisa caber ao lado do firmware atual.
 DNSServer dns;
@@ -1543,6 +1626,13 @@ void setup() {
   LittleFS.setConfig(fcfg);
   fsOk = LittleFS.begin();
   statsLoad();
+  if (fsOk) {
+    File rf = LittleFS.open("/rotation.txt", "r");
+    if (rf) {
+      rotList = rf.readString();
+      rf.close();
+    }
+  }
   if (recoveryMode) {  // sem pacotes, álbum nem clima: só o necessário para consertar
     startRecovery();
     return;
@@ -1580,6 +1670,7 @@ void loop() {
   server.handleClient();
   tickPomodoro();
   weatherLoop();
+  rotLoop();
 
   uint32_t now = millis();
   if (now - lastBriCheck > 5000) {

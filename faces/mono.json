@@ -63,7 +63,11 @@
       "font": "pixel",
       "size": 1,
       "color": "#8a8a8a",
-      "text": "GRAUS",
+      "text": {
+        "pt": "GRAUS",
+        "en": "DEGREES",
+        "es": "GRADOS"
+      },
       "when": "weather"
     },
     {
@@ -84,7 +88,11 @@
       "font": "pixel",
       "size": 1,
       "color": "#8a8a8a",
-      "text": "FOCOS",
+      "text": {
+        "pt": "FOCOS",
+        "en": "FOCUS",
+        "es": "FOCOS"
+      },
       "align": "right"
     }
   ]

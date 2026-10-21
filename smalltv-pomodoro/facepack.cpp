@@ -34,6 +34,7 @@ struct Layer {
   uint16_t str;            // texto/arquivo (posição no pool) ou sprite (posição em spr)
   int16_t bx, by, bw, bh;  // caixa da última vez que foi desenhada
   uint32_t sig;            // 0 = invisível
+  uint8_t tr;              // texto com uma versão por idioma (pt, en, es em sequência no pool)
 };
 struct Box { int16_t x, y, w, h; };
 
@@ -130,6 +131,8 @@ bool facePackLoad(char *json, size_t len, char *err, size_t errLen) {
   for (JsonObjectConst l : layers) {
     const char *t = l["text"] | (const char *)nullptr, *f = l["file"] | (const char *)nullptr;
     pcap += (t ? strlen(t) + 1 : 0) + (f ? strlen(f) + 1 : 0);
+    if (l["text"].is<JsonObjectConst>())  // {"pt": ..., "en": ..., "es": ...}
+      for (const char *k : {"pt", "en", "es"}) pcap += strlen(l["text"][k] | (l["text"]["pt"] | "")) + 1;
   }
   JsonObjectConst sprites = doc["sprites"];
   size_t scap = 0;
@@ -246,7 +249,14 @@ bool facePackLoad(char *json, size_t len, char *err, size_t errLen) {
     if (!c2) c2 = l["stroke"] | (const char *)nullptr;
     if (!c2) c2 = l["bg"] | (const char *)nullptr;
     L.c2 = parseColor(c2, C_NONE);
-    if (L.type == L_TEXT) L.str = addStr(l["text"] | "");
+    if (L.type == L_TEXT && l["text"].is<JsonObjectConst>()) {  // um texto por idioma, em sequência no pool
+      JsonObjectConst tx = l["text"];
+      const char *pt = tx["pt"] | "";
+      L.str = addStr(pt);
+      addStr(tx["en"] | pt);
+      addStr(tx["es"] | pt);
+      L.tr = 1;
+    } else if (L.type == L_TEXT) L.str = addStr(l["text"] | "");
     else if (L.type == L_IMAGE) L.str = addStr(l["file"] | "");
     else if (L.type == L_SPRITE) {
       const char *sn = l["sprite"] | "";
@@ -271,6 +281,14 @@ bool facePackLoad(char *json, size_t len, char *err, size_t errLen) {
   safeId(doc["id"] | pkName, pkId, sizeof pkId);
   if (!pkId[0]) strcpy(pkId, "pacote");
   return true;
+}
+
+// texto da camada no idioma da tela
+static const char *layerText(const Layer &L) {
+  const char *p = pool + L.str;
+  if (L.tr)
+    for (int i = 0; i < uiLang; i++) p += strlen(p) + 1;
+  return p;
 }
 
 // ---------- variáveis e condições ----------
@@ -510,7 +528,7 @@ static uint32_t signature(const Layer &L, const UiState &s, char *txt, size_t n)
   uint32_t h = 2166136261u;
   txt[0] = 0;
   switch (L.type) {
-    case L_TEXT: resolve(pool + L.str, s, txt, n); h = fnv(h, txt, strlen(txt)); break;
+    case L_TEXT: resolve(layerText(L), s, txt, n); h = fnv(h, txt, strlen(txt)); break;
     case L_MASCOT: { uint8_t m = L.var == 8 ? autoMood(s) : L.var; h = fnv(h, &m, 1); break; }
     case L_PLANT: { const UiSprite *p = plantSprite(s.streak); h = fnv(h, &p, sizeof p); break; }
     case L_WEATHER: { int v = s.weatherOn && s.wx.ok ? s.wx.code * 2 + s.wx.day + 1 : 0; h = fnv(h, &v, sizeof v); break; }
@@ -678,7 +696,7 @@ void facePackRender(const UiState &s, bool full) {
     G->fillScreen(bgColor);
     for (int i = 0; i < nLay; i++)
       if (lay[i].sig) {
-        if (lay[i].type == L_TEXT) resolve(pool + lay[i].str, s, txt, sizeof txt);
+        if (lay[i].type == L_TEXT) resolve(layerText(lay[i]), s, txt, sizeof txt);
         drawLayer(lay[i], s, txt);
       }
     return;
@@ -693,7 +711,7 @@ void facePackRender(const UiState &s, bool full) {
       const Layer &L = lay[i];
       Box lb = {L.bx, L.by, L.bw, L.bh};
       if (!L.sig || !overlap(lb, a.d)) continue;
-      if (L.type == L_TEXT) resolve(pool + L.str, *a.s, a.txt, 48);
+      if (L.type == L_TEXT) resolve(layerText(L), *a.s, a.txt, 48);
       drawLayer(L, *a.s, a.txt);
     }
   };

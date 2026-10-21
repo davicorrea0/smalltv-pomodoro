@@ -50,7 +50,11 @@
       "font": "pixel",
       "size": 1,
       "color": "#1f8a3f",
-      "text": "$ clima"
+      "text": {
+        "pt": "$ clima",
+        "en": "$ weather",
+        "es": "$ clima"
+      }
     },
     {
       "type": "text",
@@ -69,7 +73,11 @@
       "font": "pixel",
       "size": 1,
       "color": "#ff5a47",
-      "text": "erro: sem dados",
+      "text": {
+        "pt": "erro: sem dados",
+        "en": "error: no data",
+        "es": "error: sin datos"
+      },
       "when": "noweather"
     },
     {
@@ -79,7 +87,11 @@
       "font": "pixel",
       "size": 1,
       "color": "#1f8a3f",
-      "text": "$ foco --hoje"
+      "text": {
+        "pt": "$ foco --hoje",
+        "en": "$ focus --today",
+        "es": "$ foco --hoy"
+      }
     },
     {
       "type": "text",

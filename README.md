@@ -13,10 +13,11 @@ Alternative firmware for the **GeekMagic SmallTV Ultra** (ESP8266, 240×240 ST77
 - **8 clock faces:** Matrix, Tomato (a pixel art scene that changes with the time and weather: the tomato opens an umbrella in the rain, wears a scarf in the cold and sunglasses in the heat, and cheers when you hit your daily goal), Analog, Weather, Neon, Flip (with a real flip animation), Retro LCD, and Words (the time spelled out in English, Portuguese or Spanish).
 - **Pomodoro** with a progress ring, the end time, and the tomato changing expression (focused, relaxing with a coffee, asleep when paused). Pick what you will do while focusing (read, study, code, tasks or draw) and the screen shows that activity next to the tomato, which jumps for joy when a phase ends. A daily session counter with a goal.
 - **Streak and achievements:** the clock keeps a year of daily focus sessions. A plant next to the tomato grows with every day in a row you hit your goal, up to a golden tomato at 7 days, and a flame shows your streak. In the web panel: a garden of the whole year, 10 achievements, and a pixel art card of your day to share (on a phone it opens the share menu).
-- **Downloadable faces:** small `.json` packages installed from the panel without updating the firmware. 24 faces in the online gallery, including Apple Watch and Mi Band inspired ones.
+- **Downloadable faces:** small `.json` packages installed from the panel without updating the firmware. 24 faces in the online gallery, including Apple Watch and Mi Band inspired ones. A face can carry its text in all three languages and shows the one chosen in the panel.
 - **Weather** from [Open-Meteo](https://open-meteo.com/) (no API key), with city search in the panel.
 - **Photo and GIF album:** reads the files already saved by the original firmware; uploads from the panel are cropped to 240×240 in the browser.
-- **Night brightness** on a schedule.
+- **Night brightness** that follows the sun (from sunset to sunrise, using the times Open-Meteo already sends with the weather) or a fixed schedule.
+- **Face rotation:** pick your favourite faces and the clock switches between them every 1 to 60 minutes.
 - **English, Portuguese and Spanish:** the language you choose applies to both the panel and the clock's screen (dates, weather, Pomodoro, the Words face).
 - **Web panel** at the IP shown on the screen, with 4 tabs (Clock, Focus, Photos, Settings). It has its own layouts for phones and computers.
 - **One-tap updates:** the panel checks the website for new firmware, shows what changed and installs it with one tap.

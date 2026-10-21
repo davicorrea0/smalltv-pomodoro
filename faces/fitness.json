@@ -32,7 +32,11 @@
       "type": "text",
       "x": 16,
       "y": 136,
-      "text": "FOCOS",
+      "text": {
+        "pt": "FOCOS",
+        "en": "FOCUS",
+        "es": "FOCOS"
+      },
       "font": "pixel",
       "size": 1,
       "color": "#ff375f"
@@ -62,7 +66,11 @@
       "type": "text",
       "x": 16,
       "y": 170,
-      "text": "UMIDADE",
+      "text": {
+        "pt": "UMIDADE",
+        "en": "HUMIDITY",
+        "es": "HUMEDAD"
+      },
       "font": "pixel",
       "size": 1,
       "color": "#64d2ff"
@@ -92,7 +100,11 @@
       "type": "text",
       "x": 16,
       "y": 204,
-      "text": "DIA",
+      "text": {
+        "pt": "DIA",
+        "en": "DAY",
+        "es": "DIA"
+      },
       "font": "pixel",
       "size": 1,
       "color": "#ffd60a"

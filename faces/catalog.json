@@ -17,7 +17,7 @@
       "desc": "Um aquário em pixel art; bata a meta do dia e aparece o peixe dourado",
       "file": "aquario.json",
       "preview": "aquario.png",
-      "size": 5726
+      "size": 5825
     },
     {
       "id": "aurora",
@@ -44,7 +44,7 @@
       "desc": "A hora enorme em Bebas Neue, com clima e barra de focos",
       "file": "bebas-gigante.json",
       "preview": "bebas-gigante.png",
-      "size": 1755
+      "size": 1867
     },
     {
       "id": "bento",
@@ -53,7 +53,7 @@
       "desc": "Cartões em grade, como widgets: hora, clima e focos",
       "file": "bento.json",
       "preview": "bento.png",
-      "size": 2173
+      "size": 2243
     },
     {
       "id": "brutal",
@@ -71,7 +71,7 @@
       "desc": "Uma mesa de café em pixel art: janela que muda com o dia e o tomate com humor do clima",
       "file": "cafe-pixel.json",
       "preview": "cafe-pixel.png",
-      "size": 2595
+      "size": 2694
     },
     {
       "id": "estacao",
@@ -89,7 +89,7 @@
       "desc": "Preto e branco em blocos, com os segmentos apagados à mostra e um ponto vermelho",
       "file": "mono.json",
       "preview": "mono.png",
-      "size": 1719
+      "size": 1862
     },
     {
       "id": "orbita",
@@ -125,7 +125,7 @@
       "desc": "O relógio como uma sessão de terminal, em verde fósforo",
       "file": "terminal.json",
       "preview": "terminal.png",
-      "size": 2509
+      "size": 2762
     },
     {
       "id": "aneis",
@@ -143,7 +143,7 @@
       "desc": "Grade de complicações: hora, clima grande e três dados embaixo",
       "file": "modular.json",
       "preview": "modular.png",
-      "size": 3391
+      "size": 3753
     },
     {
       "id": "infografico",
@@ -188,7 +188,7 @@
       "desc": "Estilo pulseira esportiva: hora grande e barras coloridas de progresso",
       "file": "fitness.json",
       "preview": "fitness.png",
-      "size": 2253
+      "size": 2464
     },
     {
       "id": "astronauta",
@@ -197,7 +197,7 @@
       "desc": "Astronauta em pixel art flutuando perto de um planeta",
       "file": "astronauta.json",
       "preview": "astronauta.png",
-      "size": 3435
+      "size": 3524
     },
     {
       "id": "listras",
@@ -215,7 +215,7 @@
       "desc": "Tela em cápsula de pulseira, hora empilhada e dados nas laterais",
       "file": "pilula.json",
       "preview": "pilula.png",
-      "size": 2343
+      "size": 2479
     }
   ]
 }

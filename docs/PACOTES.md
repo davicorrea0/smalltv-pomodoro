@@ -47,6 +47,12 @@ A tela tem **240 × 240** pixels; `x` cresce para a direita e `y` para baixo.
 
 `°` pode ser escrito direto no texto (`"{TEMP}°"`).
 
+**Texto em 3 idiomas** (firmware 1.10.0+): em vez de uma string, `text` aceita um objeto com uma versão por idioma, e o relógio mostra a do idioma escolhido no painel. `en` e `es` são opcionais (sem eles, vale o `pt`):
+
+```json
+{ "type": "text", "x": 16, "y": 140, "text": { "pt": "FOCOS", "en": "FOCUS", "es": "FOCOS" } }
+```
+
 ## Camadas
 
 Toda camada aceita `"when"` para aparecer só em certas condições: `day`, `night`, `rain`, `dry`, `weather` (clima disponível), `noweather`, `goal` (meta do dia batida), `nogoal`, `streak` (sequência de pelo menos 1 dia).

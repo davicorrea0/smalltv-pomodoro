@@ -92,7 +92,11 @@
       "type": "text",
       "x": 31,
       "y": 182,
-      "text": "UMID",
+      "text": {
+        "pt": "UMID",
+        "en": "HUM",
+        "es": "HUM"
+      },
       "font": "pixel",
       "size": 1,
       "align": "center",
@@ -112,7 +116,11 @@
       "type": "text",
       "x": 209,
       "y": 84,
-      "text": "FOCOS",
+      "text": {
+        "pt": "FOCOS",
+        "en": "FOCUS",
+        "es": "FOCOS"
+      },
       "font": "pixel",
       "size": 1,
       "align": "center",

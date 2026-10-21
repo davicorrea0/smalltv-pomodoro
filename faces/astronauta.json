@@ -188,7 +188,11 @@
       "type": "text",
       "x": 112,
       "y": 156,
-      "text": "{FOCOS} focos",
+      "text": {
+        "pt": "{FOCOS} focos",
+        "en": "{FOCOS} sessions",
+        "es": "{FOCOS} focos"
+      },
       "font": "pixel",
       "size": 1,
       "color": "#9fb4ff"

@@ -40,7 +40,11 @@
       "type": "text",
       "x": 20,
       "y": 62,
-      "text": "CLIMA",
+      "text": {
+        "pt": "CLIMA",
+        "en": "WEATHER",
+        "es": "CLIMA"
+      },
       "font": "pixel",
       "size": 1,
       "color": "#ff9f0a"
@@ -88,7 +92,11 @@
       "type": "text",
       "x": 120,
       "y": 92,
-      "text": "sem clima",
+      "text": {
+        "pt": "sem clima",
+        "en": "no weather",
+        "es": "sin clima"
+      },
       "font": "pixel",
       "size": 2,
       "align": "center",
@@ -126,7 +134,11 @@
       "type": "text",
       "x": 43,
       "y": 166,
-      "text": "FOCOS",
+      "text": {
+        "pt": "FOCOS",
+        "en": "FOCUS",
+        "es": "FOCOS"
+      },
       "font": "pixel",
       "size": 1,
       "align": "center",
@@ -147,7 +159,11 @@
       "type": "text",
       "x": 120,
       "y": 166,
-      "text": "UMIDADE",
+      "text": {
+        "pt": "UMIDADE",
+        "en": "HUMIDITY",
+        "es": "HUMEDAD"
+      },
       "font": "pixel",
       "size": 1,
       "align": "center",
@@ -167,7 +183,11 @@
       "type": "text",
       "x": 197,
       "y": 166,
-      "text": "SEG",
+      "text": {
+        "pt": "SEG",
+        "en": "SEC",
+        "es": "SEG"
+      },
       "font": "pixel",
       "size": 1,
       "align": "center",
