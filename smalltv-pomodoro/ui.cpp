@@ -364,7 +364,51 @@ void uiClipEnd() {
   G = realG;
 }
 
+// ---------- desenho fora da tela (uiOffscreen) ----------
+// Sem frame buffer (240x240 x 2 bytes não cabe na RAM): G passa a ser esta faixa de memória, que
+// recorta tudo para (bx, by, bw, bh). Os blits (fontes vetoriais, imagens) também caem nela.
+class BufGfx : public Adafruit_GFX {
+ public:
+  uint16_t *buf = nullptr;
+  int16_t bx = 0, by = 0, bw = 0, bh = 0;
+  BufGfx() : Adafruit_GFX(240, 240) {}
+  bool rect(int16_t &x, int16_t &y, int16_t &w, int16_t &h) {
+    if (x < bx) { w -= bx - x; x = bx; }
+    if (y < by) { h -= by - y; y = by; }
+    if (x + w > bx + bw) w = bx + bw - x;
+    if (y + h > by + bh) h = by + bh - y;
+    return w > 0 && h > 0;
+  }
+  void fill(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t c) {
+    if (!rect(x, y, w, h)) return;
+    for (int r = 0; r < h; r++) {
+      uint16_t *p = buf + (y - by + r) * bw + (x - bx);
+      for (int i = 0; i < w; i++) p[i] = c;
+    }
+  }
+  void put(int16_t x, int16_t y, const uint16_t *px, int16_t w, int16_t h) {
+    for (int r = 0; r < h; r++) {
+      int yy = y + r, x0 = x > bx ? x : bx, x1 = x + w < bx + bw ? x + w : bx + bw;
+      if (yy >= by && yy < by + bh && x1 > x0) memcpy(buf + (yy - by) * bw + (x0 - bx), px + r * w + (x0 - x), (x1 - x0) * 2);
+    }
+  }
+  void drawPixel(int16_t x, int16_t y, uint16_t c) override { fill(x, y, 1, 1, c); }
+  void writePixel(int16_t x, int16_t y, uint16_t c) override { fill(x, y, 1, 1, c); }
+  void writeFillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t c) override { fill(x, y, w, h, c); }
+  void fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t c) override { fill(x, y, w, h, c); }
+  void writeFastHLine(int16_t x, int16_t y, int16_t w, uint16_t c) override { fill(x, y, w, 1, c); }
+  void drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t c) override { fill(x, y, w, 1, c); }
+  void writeFastVLine(int16_t x, int16_t y, int16_t h, uint16_t c) override { fill(x, y, 1, h, c); }
+  void drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t c) override { fill(x, y, 1, h, c); }
+};
+static BufGfx bufGfx;
+static bool offscreen = false;
+
 static void rawBlit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h) {
+  if (offscreen) {
+    for (int r = 0; r < h; r++) bufGfx.put(x, y + r, px + r * w, w, 1);
+    return;
+  }
   if (uiBlit) uiBlit(x, y, px, w, h);
   else (uiClip.on ? realG : G)->drawRGBBitmap(x, y, px, w, h);  // genérico: pixel a pixel (simulador)
 }
@@ -380,6 +424,45 @@ void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h) {
     int x0 = x > uiClip.x0 ? x : uiClip.x0, x1 = x + w < uiClip.x1 ? x + w : uiClip.x1;
     if (x1 > x0) rawBlit(x0, yy, px + r * w + (x0 - x), x1 - x0, 1);
   }
+}
+
+bool uiOffscreen(int x, int y, int w, int h, void (*draw)(void *), void *ctx) {
+  if (x < 0) { w += x; x = 0; }
+  if (y < 0) { h += y; y = 0; }
+  if (x + w > 240) w = 240 - x;
+  if (y + h > 240) h = 240 - y;
+  if (w <= 0 || h <= 0) return true;
+  const int BYTES = 8192;  // ~8 KB por faixa: só existe durante o desenho
+  int rows = BYTES / (2 * w);
+  if (rows > h) rows = h;
+  uint16_t *b = (uint16_t *)malloc(w * rows * 2);
+  if (!b) return false;
+  Adafruit_GFX *g0 = G;
+  UiClip c0 = uiClip;
+  for (int sy = y; sy < y + h; sy += rows) {
+    int sh = y + h - sy < rows ? y + h - sy : rows;
+    bufGfx.buf = b;
+    bufGfx.bx = x;
+    bufGfx.by = sy;
+    bufGfx.bw = w;
+    bufGfx.bh = sh;
+    bufGfx.setTextWrap(false);
+    uiClip = {true, (int16_t)x, (int16_t)sy, (int16_t)(x + w), (int16_t)(sy + sh)};  // blit() e imagens recortam aqui
+    offscreen = true;
+    G = &bufGfx;
+    draw(ctx);
+    G = g0;
+    offscreen = false;
+    uiClip = c0;
+    rawBlit(x, sy, b, w, sh);
+    if (uiFrameHook) uiFrameHook();  // cede tempo ao Wi-Fi entre as faixas
+  }
+  free(b);
+  return true;
+}
+
+void uiPaint(bool direct, int x, int y, int w, int h, void (*draw)(void *), void *ctx) {
+  if (direct || !uiOffscreen(x, y, w, h, draw, ctx)) draw(ctx);
 }
 
 // =====================================================================================

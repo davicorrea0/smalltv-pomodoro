@@ -13,14 +13,20 @@
 #include "../smalltv-pomodoro/assets.h"
 #include "../smalltv-pomodoro/facepack.h"
 #include <dirent.h>
+#include <vector>
+#include <set>
 
 class Frame : public Adafruit_GFX {
  public:
   uint16_t px[240 * 240];
+  // piscada: durante um redesenho, um pixel que mostrou uma cor que não é nem a de antes nem a de
+  // depois (ex.: o fundo entre apagar e redesenhar o ponteiro). log guarda (posição << 16 | cor).
+  std::vector<uint32_t> *log = nullptr;
   Frame() : Adafruit_GFX(240, 240) { memset(px, 0, sizeof px); }
   void drawPixel(int16_t x, int16_t y, uint16_t c) override {
     if (x < 0 || y < 0 || x >= 240 || y >= 240) return;
     px[y * 240 + x] = c;
+    if (log) log->push_back((uint32_t)(y * 240 + x) << 16 | c);
   }
 };
 
@@ -129,7 +135,13 @@ static void shot(const char *name, const UiState &s, bool pomo) {
 static int checkIncremental(const char *name, UiState s, bool pomo) {
   Frame *inc = new Frame();
   uiBegin(inc);
+  std::vector<uint32_t> log;
+  std::vector<uint16_t> before(240 * 240);
+  long flicker = 0;
   for (int step = 0; step < 140; step++) {
+    memcpy(before.data(), inc->px, sizeof inc->px);
+    log.clear();
+    inc->log = step ? &log : nullptr;  // o primeiro desenho é a tela inteira: não conta
     if (pomo) {
       s.remainingMs = s.remainingMs > 1000 ? s.remainingMs - 1000 : 0;
       s.ms += 100;
@@ -148,7 +160,15 @@ static int checkIncremental(const char *name, UiState s, bool pomo) {
     }
     if (pomo) uiRenderPomodoro(s);
     else uiRenderClock(s);
+    std::set<uint32_t> flash;
+    for (uint32_t e : log) {
+      uint32_t i = e >> 16;
+      uint16_t c = e & 0xFFFF;
+      if (c != before[i] && c != inc->px[i]) flash.insert(i);
+    }
+    flicker += flash.size();
   }
+  inc->log = nullptr;
   Frame *fresh = new Frame();
   uiBegin(fresh);
   if (pomo) uiRenderPomodoro(s);
@@ -160,7 +180,7 @@ static int checkIncremental(const char *name, UiState s, bool pomo) {
       int x = i % 240, y = i / 240;
       if (x < x0) x0 = x; if (y < y0) y0 = y; if (x > x1) x1 = x; if (y > y1) y1 = y;
     }
-  printf("%-22s %s (%d pixels diferentes)", name, diff ? "FALHOU" : "ok", diff);
+  printf("%-22s %s (%d pixels diferentes, %ld pixels piscando)", name, diff ? "FALHOU" : "ok", diff, flicker);
   if (diff) printf("  area x %d-%d, y %d-%d", x0, x1, y0, y1);
   printf("\n");
   char n[64];

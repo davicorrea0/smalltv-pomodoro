@@ -137,6 +137,16 @@ static void tomatoClock(const UiState &s) {
   textC(120, 72, 2, TEXT, d);
 }
 
+// Partes da cena para uiPaint (desenhadas fora da tela e mandadas prontas: sem piscar).
+static void paintAll(void *c) {
+  const UiState &s = *(const UiState *)c;
+  tomatoScene(s);
+  tomatoClock(s);
+  tomatoBottom(s);
+}
+static void paintClock(void *c) { tomatoClock(*(const UiState *)c); }
+static void paintBottom(void *c) { tomatoBottom(*(const UiState *)c); }
+
 void themeTomato(const UiState &s, bool full) {
   int hour = s.timeOk ? s.now.tm_hour : -1;
   int minute = s.timeOk ? s.now.tm_min : -1;
@@ -144,19 +154,21 @@ void themeTomato(const UiState &s, bool full) {
   static uint16_t lastStreak = 0xFFFF;
   bool scene = full || hour != lastHour || lastWx != s.wx.version || lastWxOn != (int)s.weatherOn || goalDone != lastGoal || s.streak != lastStreak;
   if (scene) {
-    tomatoScene(s);
+    uiPaint(full, 0, 0, 240, 240, paintAll, (void *)&s);
+    lastMin = minute;
+    lastToday = s.today;
     lastHour = hour;
     lastWx = s.wx.version;
     lastWxOn = s.weatherOn;
     lastGoal = goalDone;
     lastStreak = s.streak;
   }
-  if (scene || minute != lastMin) {
-    tomatoClock(s);
+  if (minute != lastMin) {
+    uiPaint(false, 10, 2, 222, 92, paintClock, (void *)&s);
     lastMin = minute;
   }
-  if (scene || lastToday != s.today) {
-    tomatoBottom(s);
+  if (lastToday != s.today) {
+    uiPaint(false, 0, GROUND_Y + 10, 240, 240 - GROUND_Y - 10, paintBottom, (void *)&s);
     lastToday = s.today;
   }
 }

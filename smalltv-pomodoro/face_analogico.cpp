@@ -37,9 +37,8 @@ static void analogChips(const UiState &s) {
   }
 }
 
-void themeAnalog(const UiState &s, bool full) {
-  if (full) {
-    for (int i = 0; i < 60; i++) {
+static void dialMarks() {
+  for (int i = 0; i < 60; i++) {
       float a = i * K_PI / 30, sa = sinf(a), ca = cosf(a);
       if (i % 5) {  // minutos: ponto discreto
         G->fillCircle(AX + sa * 108, AY - ca * 108, 1, MUTED);
@@ -48,22 +47,28 @@ void themeAnalog(const UiState &s, bool full) {
       // horas: traço grosso; 12/3/6/9 mais longos e na cor de destaque
       bool q = i % 15 == 0;
       thickLine(AX + sa * (q ? 92 : 97), AY - ca * (q ? 92 : 97), AX + sa * 108, AY - ca * 108, q ? 6 : 4, q ? WORK : TEXT);
-    }
-    lastHourA = lastMinA = -1;
   }
-  int minute = s.timeOk ? s.now.tm_min : 0;
-  if (!full && minute == lastMin && lastWx == s.wx.version && lastWxOn == (int)s.weatherOn) return;
-  if (lastMinA >= 0) {  // apaga os ponteiros antigos
-    hand(lastHourA, 56, 8, BG);
-    hand(lastMinA, 84, 5, BG);
-  }
+}
+
+// Cena inteira (marcas, chips e ponteiros). Na troca de minuto é desenhada fora da tela só na
+// área dos ponteiros e dos chips: nada de apagar o ponteiro antigo na tela e desenhar o novo depois.
+static void analogScene(void *ctx) {
+  const UiState &s = *(const UiState *)ctx;
+  G->fillScreen(BG);  // fora da tela: só a faixa da vez
+  dialMarks();
   analogChips(s);
-  lastMinA = minute * K_PI / 30;
-  lastHourA = ((s.timeOk ? s.now.tm_hour % 12 : 10) + minute / 60.0f) * K_PI / 6;
   hand(lastHourA, 56, 8, TEXT);
   hand(lastMinA, 84, 5, s.accent);
   G->fillCircle(AX, AY, 8, WORK);
   G->fillCircle(AX, AY, 3, BG);
+}
+
+void themeAnalog(const UiState &s, bool full) {
+  int minute = s.timeOk ? s.now.tm_min : 0;
+  if (!full && minute == lastMin && lastWx == s.wx.version && lastWxOn == (int)s.weatherOn) return;
+  lastMinA = minute * K_PI / 30;
+  lastHourA = ((s.timeOk ? s.now.tm_hour % 12 : 10) + minute / 60.0f) * K_PI / 6;
+  uiPaint(full, full ? 0 : 28, full ? 0 : 28, full ? 240 : 184, full ? 240 : 184, analogScene, (void *)&s);
   lastMin = minute;
   lastWx = s.wx.version;
   lastWxOn = s.weatherOn;

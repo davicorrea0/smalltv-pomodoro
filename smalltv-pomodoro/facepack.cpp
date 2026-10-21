@@ -683,17 +683,26 @@ void facePackRender(const UiState &s, bool full) {
       }
     return;
   }
-  for (int k = 0; k < nd; k++) {
-    Box d = dirty[k];
-    uiClipBegin(d.x, d.y, d.x + d.w, d.y + d.h);
-    G->fillRect(d.x, d.y, d.w, d.h, bgColor);
+  // cada área suja é desenhada fora da tela e vai pronta para ela (o ponteiro de segundos não pisca);
+  // sem memória para a faixa, desenha direto com recorte, como antes
+  struct Area { Box d; const UiState *s; char *txt; } area = {{0, 0, 0, 0}, &s, txt};
+  auto paint = [](void *p) {
+    Area &a = *(Area *)p;
+    G->fillRect(a.d.x, a.d.y, a.d.w, a.d.h, bgColor);
     for (int i = 0; i < nLay; i++) {
       const Layer &L = lay[i];
       Box lb = {L.bx, L.by, L.bw, L.bh};
-      if (!L.sig || !overlap(lb, d)) continue;
-      if (L.type == L_TEXT) resolve(pool + L.str, s, txt, sizeof txt);
-      drawLayer(L, s, txt);
+      if (!L.sig || !overlap(lb, a.d)) continue;
+      if (L.type == L_TEXT) resolve(pool + L.str, *a.s, a.txt, 48);
+      drawLayer(L, *a.s, a.txt);
     }
+  };
+  for (int k = 0; k < nd; k++) {
+    area.d = dirty[k];
+    Box d = area.d;
+    if (uiOffscreen(d.x, d.y, d.w, d.h, paint, &area)) continue;
+    uiClipBegin(d.x, d.y, d.x + d.w, d.y + d.h);
+    paint(&area);
     uiClipEnd();
   }
 }

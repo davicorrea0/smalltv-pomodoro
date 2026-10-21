@@ -87,6 +87,11 @@ struct UiClip { bool on; int16_t x0, y0, x1, y1; };
 extern UiClip uiClip;
 void uiClipBegin(int x0, int y0, int x1, int y1);
 void uiClipEnd();
+// Desenha a área (x, y, w, h) fora da tela, em faixas de alguns KB, e manda cada faixa pronta para a
+// tela de uma vez: a tela nunca mostra o fundo apagado entre o "limpar" e o "desenhar de novo" (o que
+// piscava nos ponteiros). draw(ctx) desenha a cena inteira em G, que recorta para a faixa da vez; pode
+// ser chamada várias vezes. Devolve false sem memória para a faixa (aí quem chamou desenha direto).
+bool uiOffscreen(int x, int y, int w, int h, void (*draw)(void *), void *ctx);
 void uiInvalidate();                         // redesenha tudo na próxima chamada
 void uiSetLang(uint8_t lang);                // textos da tela: 0 português, 1 inglês, 2 espanhol
 extern uint8_t uiLang;

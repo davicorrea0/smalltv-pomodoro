@@ -41,6 +41,11 @@ void degree(int x, int y, uint8_t sz, uint16_t c);                 // símbolo d
 void tempText(int cx, int y, uint8_t sz, uint16_t c, float v);     // "23°" centralizado
 void tempDesc(int cy, uint8_t sz, uint16_t ct, uint16_t cd, float t, const char *desc);  // "23° Chuva"
 
+// ---------- redesenho sem piscar ----------
+// draw(ctx) na área (x, y, w, h): fora da tela (uiOffscreen) ou, com direct (tela inteira de uma vez)
+// ou sem memória para a faixa, direto na tela.
+void uiPaint(bool direct, int x, int y, int w, int h, void (*draw)(void *), void *ctx);
+
 // ---------- formas ----------
 void thickLine(float x0, float y0, float x1, float y1, float w, uint16_t c);  // pontas redondas
 uint16_t mix(uint16_t a, uint16_t b, float f);                                  // f=0 -> a, f=1 -> b

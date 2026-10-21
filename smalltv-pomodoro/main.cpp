@@ -27,7 +27,9 @@
 #include "web.h"
 #include "facepack.h"
 
-#define FW_VERSION "1.9.1"
+void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);  // ui.cpp: recorta para a área suja; fora da tela, cai na faixa
+
+#define FW_VERSION "1.9.2"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
@@ -575,12 +577,7 @@ int jpgDraw(JPEGDRAW *p) {
     tft.drawRGBBitmap(p->x, p->y, p->pPixels, p->iWidth, p->iHeight);
     return 1;
   }
-  for (int r = 0; r < p->iHeight; r++) {  // recorte: só as linhas/colunas dentro da área suja
-    int y = p->y + r;
-    if (y < uiClip.y0 || y >= uiClip.y1) continue;
-    int x0 = max((int)p->x, (int)uiClip.x0), x1 = min(p->x + p->iWidth, (int)uiClip.x1);
-    if (x1 > x0) tft.drawRGBBitmap(x0, y, p->pPixels + r * p->iWidth + (x0 - p->x), x1 - x0, 1);
-  }
+  blit(p->x, p->y, p->pPixels, p->iWidth, p->iHeight);  // recorta para a área suja; fora da tela, cai na faixa
   return 1;
 }
 

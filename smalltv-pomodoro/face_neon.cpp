@@ -24,28 +24,32 @@ static void neonDot(int y, bool on) {
   }
 }
 
+// Cada par de dígitos (com o halo) é redesenhado fora da tela e vai pronto: o neon não pisca.
+static void neonPair(int x0, int w, int v, int i, uint16_t c) {
+  G->fillRect(x0, NEON_Y - 8, w, 80 + 16, BG);  // halo de 13 px passa 7 px do dígito
+  if (v >= 0) {
+    neonDigit(NEON_X[i], v / 10, c);
+    neonDigit(NEON_X[i + 1], v % 10, c);
+  }
+}
+static void paintHours(void *v) { neonPair(0, 116, *(int *)v, 0, NEON_A); }
+static void paintMinutes(void *v) { neonPair(126, 114, *(int *)v, 2, NEON_B); }
+static void paintDate(void *d) {
+  G->fillRect(0, 12, 240, 18, BG);
+  textC(120, 14, 2, uiRgb(150, 150, 170), (const char *)d);
+}
+
 void themeNeon(const UiState &s, bool full) {
   char d[24];
   dateLabel(s, d, sizeof d);
-  if (changed(cStatL, d)) {
-    G->fillRect(0, 12, 240, 18, BG);
-    textC(120, 14, 2, uiRgb(150, 150, 170), d);
-  }
+  if (changed(cStatL, d)) uiPaint(full, 0, 12, 240, 18, paintDate, d);
   int h = s.timeOk ? displayHour(s) : -1, m = s.timeOk ? s.now.tm_min : -1;
   if (h != lastDig[0]) {  // o par inteiro: o halo de um dígito encosta no vizinho
-    G->fillRect(0, NEON_Y - 8, 116, 80 + 16, BG);  // halo de 13 px passa 7 px do dígito
-    if (h >= 0) {
-      neonDigit(NEON_X[0], h / 10, NEON_A);
-      neonDigit(NEON_X[1], h % 10, NEON_A);
-    }
+    uiPaint(full, 0, NEON_Y - 8, 116, 96, paintHours, &h);
     lastDig[0] = h;
   }
   if (m != lastDig[1]) {
-    G->fillRect(126, NEON_Y - 8, 114, 80 + 16, BG);
-    if (m >= 0) {
-      neonDigit(NEON_X[2], m / 10, NEON_B);
-      neonDigit(NEON_X[3], m % 10, NEON_B);
-    }
+    uiPaint(full, 126, NEON_Y - 8, 114, 96, paintMinutes, &m);
     lastDig[1] = m;
   }
   bool colon = !s.timeOk || s.now.tm_sec % 2 == 0;
