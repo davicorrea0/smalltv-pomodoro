@@ -1,0 +1,148 @@
+{
+  "format": 1,
+  "author": "davicorrea0",
+  "id": "brutal",
+  "name": "Brutal",
+  "desc": "Neo-brutalismo: cores chapadas, bordas pretas e sombras duras",
+  "name_en": "Brutal",
+  "desc_en": "Neo-brutalism: flat colors, black borders and hard shadows",
+  "bg": "#f4e04d",
+  "layers": [
+    {
+      "type": "rect",
+      "x": 16,
+      "y": 18,
+      "w": 214,
+      "h": 120,
+      "color": "#000000"
+    },
+    {
+      "type": "rect",
+      "x": 10,
+      "y": 12,
+      "w": 214,
+      "h": 120,
+      "color": "#000000"
+    },
+    {
+      "type": "rect",
+      "x": 13,
+      "y": 15,
+      "w": 208,
+      "h": 114,
+      "color": "#ffffff"
+    },
+    {
+      "type": "text",
+      "x": 117,
+      "y": 30,
+      "font": "bebas",
+      "size": 84,
+      "color": "#000000",
+      "text": "{HH}:{MM}",
+      "align": "center",
+      "bg": "#ffffff"
+    },
+    {
+      "type": "rect",
+      "x": 16,
+      "y": 152,
+      "w": 102,
+      "h": 80,
+      "color": "#000000"
+    },
+    {
+      "type": "rect",
+      "x": 10,
+      "y": 146,
+      "w": 102,
+      "h": 80,
+      "color": "#000000"
+    },
+    {
+      "type": "rect",
+      "x": 13,
+      "y": 149,
+      "w": 96,
+      "h": 74,
+      "color": "#ff7eb6"
+    },
+    {
+      "type": "text",
+      "x": 61,
+      "y": 160,
+      "font": "pixel",
+      "size": 2,
+      "color": "#000000",
+      "text": "{WD}",
+      "align": "center"
+    },
+    {
+      "type": "text",
+      "x": 61,
+      "y": 186,
+      "font": "pixel",
+      "size": 3,
+      "color": "#000000",
+      "text": "{DD}/{MO}",
+      "align": "center"
+    },
+    {
+      "type": "rect",
+      "x": 132,
+      "y": 152,
+      "w": 98,
+      "h": 80,
+      "color": "#000000"
+    },
+    {
+      "type": "rect",
+      "x": 126,
+      "y": 146,
+      "w": 98,
+      "h": 80,
+      "color": "#000000"
+    },
+    {
+      "type": "rect",
+      "x": 129,
+      "y": 149,
+      "w": 92,
+      "h": 74,
+      "color": "#6ec6ff"
+    },
+    {
+      "type": "text",
+      "x": 175,
+      "y": 160,
+      "font": "pixel",
+      "size": 3,
+      "color": "#000000",
+      "text": "{TEMP}°",
+      "align": "center",
+      "when": "weather"
+    },
+    {
+      "type": "text",
+      "x": 175,
+      "y": 196,
+      "font": "pixel",
+      "size": 1,
+      "color": "#000000",
+      "text": "{WX}",
+      "align": "center",
+      "when": "weather"
+    },
+    {
+      "type": "text",
+      "x": 175,
+      "y": 170,
+      "font": "pixel",
+      "size": 2,
+      "color": "#000000",
+      "text": "OFF",
+      "align": "center",
+      "when": "noweather"
+    }
+  ]
+}

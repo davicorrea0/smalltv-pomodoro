@@ -1,0 +1,226 @@
+{
+  "format": 1,
+  "author": "davicorrea0",
+  "id": "synthwave",
+  "name": "Synthwave",
+  "desc": "Pôr do sol retrô dos anos 80, com grade neon em perspectiva",
+  "name_en": "Synthwave",
+  "desc_en": "80s retro sunset with a neon perspective grid",
+  "bg": "#1a0b2e",
+  "layers": [
+    {
+      "type": "text",
+      "x": 120,
+      "y": 12,
+      "font": "dseg",
+      "size": 50,
+      "color": "#00f0ff",
+      "text": "{HH}:{MM}",
+      "align": "center"
+    },
+    {
+      "type": "text",
+      "x": 120,
+      "y": 70,
+      "font": "pixel",
+      "size": 1,
+      "color": "#ff9de2",
+      "text": "{WD} {DD} {MON}",
+      "align": "center"
+    },
+    {
+      "type": "circle",
+      "x": 120,
+      "y": 140,
+      "r": 54,
+      "color": "#ff9a3c"
+    },
+    {
+      "type": "circle",
+      "x": 120,
+      "y": 140,
+      "r": 40,
+      "color": "#ffc94a"
+    },
+    {
+      "type": "rect",
+      "x": 60,
+      "y": 112,
+      "w": 120,
+      "h": 3,
+      "color": "#1a0b2e"
+    },
+    {
+      "type": "rect",
+      "x": 60,
+      "y": 122,
+      "w": 120,
+      "h": 4,
+      "color": "#1a0b2e"
+    },
+    {
+      "type": "rect",
+      "x": 60,
+      "y": 133,
+      "w": 120,
+      "h": 5,
+      "color": "#1a0b2e"
+    },
+    {
+      "type": "rect",
+      "x": 60,
+      "y": 145,
+      "w": 120,
+      "h": 6,
+      "color": "#1a0b2e"
+    },
+    {
+      "type": "rect",
+      "x": 0,
+      "y": 156,
+      "w": 240,
+      "h": 84,
+      "color": "#14062a"
+    },
+    {
+      "type": "line",
+      "x": 120,
+      "y": 156,
+      "x2": -140,
+      "y2": 240,
+      "size": 1,
+      "color": "#b5179e"
+    },
+    {
+      "type": "line",
+      "x": 120,
+      "y": 156,
+      "x2": -20,
+      "y2": 240,
+      "size": 1,
+      "color": "#b5179e"
+    },
+    {
+      "type": "line",
+      "x": 120,
+      "y": 156,
+      "x2": 60,
+      "y2": 240,
+      "size": 1,
+      "color": "#b5179e"
+    },
+    {
+      "type": "line",
+      "x": 120,
+      "y": 156,
+      "x2": 120,
+      "y2": 240,
+      "size": 1,
+      "color": "#b5179e"
+    },
+    {
+      "type": "line",
+      "x": 120,
+      "y": 156,
+      "x2": 180,
+      "y2": 240,
+      "size": 1,
+      "color": "#b5179e"
+    },
+    {
+      "type": "line",
+      "x": 120,
+      "y": 156,
+      "x2": 260,
+      "y2": 240,
+      "size": 1,
+      "color": "#b5179e"
+    },
+    {
+      "type": "line",
+      "x": 120,
+      "y": 156,
+      "x2": 380,
+      "y2": 240,
+      "size": 1,
+      "color": "#b5179e"
+    },
+    {
+      "type": "line",
+      "x": 0,
+      "y": 164,
+      "x2": 239,
+      "y2": 164,
+      "size": 1,
+      "color": "#7b2cbf"
+    },
+    {
+      "type": "line",
+      "x": 0,
+      "y": 176,
+      "x2": 239,
+      "y2": 176,
+      "size": 1,
+      "color": "#7b2cbf"
+    },
+    {
+      "type": "line",
+      "x": 0,
+      "y": 194,
+      "x2": 239,
+      "y2": 194,
+      "size": 1,
+      "color": "#7b2cbf"
+    },
+    {
+      "type": "line",
+      "x": 0,
+      "y": 220,
+      "x2": 239,
+      "y2": 220,
+      "size": 1,
+      "color": "#7b2cbf"
+    },
+    {
+      "type": "line",
+      "x": 0,
+      "y": 156,
+      "x2": 239,
+      "y2": 156,
+      "size": 2,
+      "color": "#ff2bd6"
+    },
+    {
+      "type": "rect",
+      "x": 62,
+      "y": 204,
+      "w": 116,
+      "h": 26,
+      "color": "#1a0b2e",
+      "r": 13,
+      "stroke": "#ff2bd6"
+    },
+    {
+      "type": "text",
+      "x": 120,
+      "y": 210,
+      "font": "pixel",
+      "size": 2,
+      "color": "#00f0ff",
+      "text": "{TEMP}° {FOCOS}/{META}",
+      "align": "center",
+      "when": "weather"
+    },
+    {
+      "type": "text",
+      "x": 120,
+      "y": 210,
+      "font": "pixel",
+      "size": 2,
+      "color": "#00f0ff",
+      "text": "{FOCOS}/{META}",
+      "align": "center",
+      "when": "noweather"
+    }
+  ]
+}
