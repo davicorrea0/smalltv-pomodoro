@@ -292,12 +292,15 @@ $('pkf').onchange=e=>{const fl=[...e.target.files];e.target.value='';const p=fl.
  // só o .json: busca a prévia no site pelo id, para o relógio guardar junto (funciona sem internet depois)
  if(p)return install(j,p);j.text().then(async t=>{let pv=null;try{const k=JSON.parse(t),id=safeId(k.id||k.name);
   if(id){const r=await fetch(CATALOG+id+'.png');if(r.ok)pv=await r.blob()}}catch(x){}install(j,pv)})};
+// o pacote pede uma versão mínima do firmware (campo fw do catálogo)?
+const vnum=v=>String(v||'0').split('.').reduce((a,x)=>a*1000+(+x||0),0),old=e=>e.fw&&st&&vnum(st.ver)<vnum(e.fw);
 function catalog(){toast('Carregando a galeria...');fetch(CATALOG+'index.json',{cache:'no-store'}).then(r=>r.json()).then(c=>{const g=$('cat');g.innerHTML='';
  (c.faces||[]).forEach(e=>{const inst=FACES.some(f=>f.pkg==e.id),b=el('button','face'),s=el('div','scr');s.appendChild(img({n:e.name,src:CATALOG+e.preview}));
-  b.append(s,el('span',null,e.name+(inst?' · instalado':'')));b.onclick=()=>catSheet(e,inst);g.appendChild(b)});
+  b.append(s,el('span',null,e.name+(inst?' · instalado':old(e)?' · requer v'+e.fw:'')));b.onclick=()=>catSheet(e,inst);g.appendChild(b)});
  if(!g.children.length)g.textContent='A galeria ainda está vazia.'}).catch(()=>toast('Sem internet no navegador'))}
 function catSheet(e,inst){const c=$('sheetc');c.innerHTML='';const s=el('div','scr');s.appendChild(img({n:e.name,src:CATALOG+e.preview}));c.appendChild(s);
  c.append(el('h3',null,e.name),el('p',null,e.desc+(e.author?' · por '+e.author:'')+' · '+kb(e.size||0)));
+ if(old(e)){c.append(el('p',null,'Este mostrador precisa do firmware '+e.fw+' ou mais novo (o relógio está na '+st.ver+').'));const u=el('button','btn p','Atualizar firmware');u.onclick=()=>location='/update';c.appendChild(u);$('sheet').classList.add('v');return}
  const b=el('button','btn p',inst?'Reinstalar e usar':'Instalar e usar no relógio');
  b.onclick=async()=>{try{toast('Baixando...');const j=await (await fetch(CATALOG+e.file)).blob();let p=null;try{const r=await fetch(CATALOG+e.preview);if(r.ok)p=await r.blob()}catch(x){}
   await install(j,p);closeSheet();catalog()}catch(x){toast('Falha ao baixar')}};c.appendChild(b);$('sheet').classList.add('v')}
