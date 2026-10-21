@@ -89,7 +89,7 @@ nav button.on svg{stroke:var(--ac)}
  <div class="card">
   <p style="margin-top:0"><button class="btn p" onclick="catalog()">Ver a galeria online</button></p>
   <div class="faces" id="cat"></div>
-  <label>Instalar de um arquivo<input id="pkf" type="file" accept=".json,application/json,image/png" multiple></label>
+  <label>Instalar de um arquivo<input id="pkf" type="file" multiple></label>
   <small>Escolha o .json do mostrador (e, se tiver, a prévia .png). Ele fica guardado no relógio, sem atualizar o firmware. Mais mostradores e como criar o seu: <a href="https://davicorrea0.github.io/smalltv-pomodoro/" target="_blank" rel="noopener">site do projeto</a>.</small>
  </div>
  <h2>Aparência</h2>
@@ -194,7 +194,8 @@ const $=id=>document.getElementById(id),C=339.3;
 const LBL={work:'FOCO',short:'PAUSA',long:'PAUSA LONGA',idle:'PRONTO'};
 let FACES=[];  // vem do firmware (/api/faces): embutidos (faces_list.h) + pacotes instalados
 // catálogo da galeria online (faces/ do repositório); localStorage.catalog troca a origem (testes)
-let CATALOG='https://raw.githubusercontent.com/davicorrea0/smalltv-pomodoro/main/faces/';try{if(localStorage.catalog)CATALOG=localStorage.catalog}catch(e){}
+// mesma galeria do site (gh-pages/catalog/index.json); o site libera CORS para o painel ler
+let CATALOG='https://davicorrea0.github.io/smalltv-pomodoro/catalog/';try{if(localStorage.catalog)CATALOG=localStorage.catalog}catch(e){}
 let st=null,at=0,filled=false,lastPhase=null,actx=null,curTab=0;
 const post=(u,b)=>fetch(u,{method:'POST',body:b});
 const kb=n=>n>1048576?(n/1048576).toFixed(1)+' MB':Math.round(n/1024)+' KB';
@@ -222,11 +223,11 @@ function faceSheet(f){const c=$('sheetc');c.innerHTML='';const s=el('div','scr')
   d.onclick=()=>{if(confirm('Remover '+f.n+'?'))post('/api/facedelete',new URLSearchParams({pkg:f.pkg})).then(r=>r.text()).then(t=>{toast(t=='ok'?'Removido':t);closeSheet();loadFaces()})};c.appendChild(d)}
  $('sheet').classList.add('v')}
 // ---------- instalar pacotes (sem atualizar o firmware) ----------
-function install(json,png){const fd=new FormData();fd.append('face',json,'face.json');if(png)fd.append('preview',png,'preview.png');toast('Instalando...');
+function install(json,png){const fd=new FormData();fd.append('face',json,'face.json');if(png)fd.append('preview',png,'preview.png');toast('Instalando no relógio... (alguns segundos)');
  return fetch('/api/faceinstall',{method:'POST',body:fd}).then(async r=>{const t=await r.text();if(!r.ok)throw t;const j=JSON.parse(t);await save({pkg:j.id});toast(j.name+' instalado e em uso');return loadFaces()}).catch(e=>toast(String(e)))}
-$('pkf').onchange=e=>{const fl=[...e.target.files];e.target.value='';const j=fl.find(f=>/\.json$/i.test(f.name)),p=fl.find(f=>/\.png$/i.test(f.name));
+$('pkf').onchange=e=>{const fl=[...e.target.files];e.target.value='';const p=fl.find(f=>/\.png$/i.test(f.name)),j=fl.find(f=>/\.json$/i.test(f.name))||fl.find(f=>f!==p);  // celular pode salvar como .json.txt: o relógio valida o conteúdo
  if(!j)return toast('Escolha o arquivo .json do mostrador');install(j,p)};
-function catalog(){toast('Carregando a galeria...');fetch(CATALOG+'catalog.json',{cache:'no-store'}).then(r=>r.json()).then(c=>{const g=$('cat');g.innerHTML='';
+function catalog(){toast('Carregando a galeria...');fetch(CATALOG+'index.json',{cache:'no-store'}).then(r=>r.json()).then(c=>{const g=$('cat');g.innerHTML='';
  (c.faces||[]).forEach(e=>{const inst=FACES.some(f=>f.pkg==e.id),b=el('button','face'),s=el('div','scr');s.appendChild(img({n:e.name,src:CATALOG+e.preview}));
   b.append(s,el('span',null,e.name+(inst?' · instalado':'')));b.onclick=()=>catSheet(e,inst);g.appendChild(b)});
  if(!g.children.length)g.textContent='A galeria ainda está vazia.'}).catch(()=>toast('Sem internet no navegador'))}
