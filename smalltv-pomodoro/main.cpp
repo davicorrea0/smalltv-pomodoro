@@ -33,7 +33,7 @@ extern "C" uint32_t _FS_start;
 
 void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);  // ui.cpp: recorta para a área suja; fora da tela, cai na faixa
 
-#define FW_VERSION "1.15.2"
+#define FW_VERSION "1.16.0"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
@@ -81,6 +81,7 @@ struct Settings {
   uint8_t rotMin;       // rodízio de mostradores: minutos entre trocas (0 = desligado); lista em /rotation.txt
   uint8_t alexa;        // 1 = aparece para a Alexa como a lâmpada "Pomodoro"
   char apPass[9];       // senha das redes SmallTV-Pomodoro e SmallTV-Recuperacao (sorteada, mostrada na tela)
+  uint8_t vcom, vcomChk;  // tensão comum do painel (registrador VCOMS, 0x20 = 0,9 V) e conferência (vcom ^ 0x5A)
 };
 const uint32_t SETTINGS_MAGIC = 0x504F4D34;     // "POM4"
 const uint32_t SETTINGS_MAGIC_V3 = 0x504F4D33;  // "POM3": mesmos campos, sem os do v4
@@ -88,7 +89,7 @@ Settings cfg;
 
 void defaultSettings() {
   cfg = Settings{SETTINGS_MAGIC, 25, 5, 15, 4, 80, 0, 0, "<-03>3", "", 0, -1,
-                 THEME_MATRIX, 0, 10, 0, 22, 7, 15, 1, 242, 242, 242, 0, 0, "", 0, 1, 0, 8, ACT_READ, "", 0, 0, 0, 1, ""};
+                 THEME_MATRIX, 0, 10, 0, 22, 7, 15, 1, 242, 242, 242, 0, 0, "", 0, 1, 0, 8, ACT_READ, "", 0, 0, 0, 1, "", 0x20, 0x20 ^ 0x5A};
 }
 
 // ---------- recuperação: 3 inicializações curtas seguidas ----------
@@ -149,6 +150,11 @@ void loadSettings() {
   // senha das redes do relógio: 8 letras/dígitos sem os que se confundem, sorteada pelo gerador do chip
   // na primeira vez (ou se a memória tiver lixo) e mostrada na tela quando a rede está no ar
   static const char AP_CHARS[] = "abcdefghjkmnpqrstuvwxyz23456789";
+  // VCOM: memória de unidades antigas tem lixo aqui; só vale com a conferência certa
+  if (cfg.vcom > 0x3F || cfg.vcomChk != (cfg.vcom ^ 0x5A)) {
+    cfg.vcom = 0x20;
+    cfg.vcomChk = 0x20 ^ 0x5A;
+  }
   bool apOk = strnlen(cfg.apPass, sizeof cfg.apPass) == 8;
   for (int i = 0; apOk && i < 8; i++) apOk = strchr(AP_CHARS, cfg.apPass[i]) != nullptr;
   if (!apOk) {
@@ -570,6 +576,13 @@ void weatherLoop() {
 const char *weatherText(int code);  // de ui.cpp (o mesmo texto que aparece na tela)
 
 // ---------- tela (desenho em ui.cpp) ----------
+// Ajuste anti-fantasma: a tensão comum (VCOM) ideal muda de painel para painel. Fora do ponto, sobra
+// corrente contínua no cristal líquido e uma imagem parada por horas fica marcada ("fantasma"). O painel
+// mostra uma estampa que tremula quando o VCOM está errado; a pessoa ajusta até ela parar e salva.
+void applyVcom(uint8_t v) { tft.sendCommand(0xBB, &v, 1); }
+uint32_t vcomTestUntil = 0;  // teste na tela até este millis()
+uint8_t vcomTest = 0x20;     // valor em teste (aplicado, ainda não salvo)
+int8_t vcomDraw = 0;         // 2 = desenhar a estampa toda, 1 = só o valor
 // Ordem de cor, inversão e rotação variam entre unidades do SmallTV: tudo configurável no painel.
 void applyPanel() {
   tft.setRotation(cfg.flip ? 0 : 2);  // Adafruit: 2 = sem espelhamento/offsets 0; 0 = 180° (offset 80 já tratado)
@@ -1180,6 +1193,8 @@ void sendState() {
   j += cfg.invert;
   j += F(",\"flip\":");
   j += cfg.flip;
+  j += F(",\"vcom\":");
+  j += cfg.vcom;
   j += F(",\"pkg\":\"");
   j += cfg.theme == THEME_PACK ? cfg.facePkg : "";
   j += F("\",\"goal\":");
@@ -1455,6 +1470,26 @@ void setupWeb() {
     }
     server.sendHeader("Location", String(F("https://davicorrea0.github.io/smalltv-pomodoro/img/faces/face-")) + t + ".png");
     server.send(302, "text/plain", "");
+  });
+  // anti-fantasma: v=0..63 aplica e mostra a estampa (3 min); save=1 guarda; stop=1 volta ao salvo
+  server.on("/api/vcom", HTTP_POST, [] {
+    if (!guard()) return;
+    if (server.hasArg("v")) {
+      int v = server.arg("v").toInt();
+      vcomTest = v < 0 ? 0 : v > 0x3F ? 0x3F : v;
+      applyVcom(vcomTest);
+      if (!vcomTestUntil) vcomDraw = 2;
+      else if (vcomDraw < 1) vcomDraw = 1;
+      vcomTestUntil = millis() + 180000;
+      if (!vcomTestUntil) vcomTestUntil = 1;
+    }
+    if (server.arg("save") == "1") {
+      cfg.vcom = vcomTest;
+      cfg.vcomChk = cfg.vcom ^ 0x5A;
+      saveSettings();
+    }
+    if (server.arg("save") == "1" || server.arg("stop") == "1") vcomTestUntil = millis();  // o loop encerra
+    server.send(200, "application/json", String(F("{\"vcom\":")) + cfg.vcom + "}");
   });
   server.on("/api/cmd", HTTP_POST, [] {
     if (!guard()) return;
@@ -2052,6 +2087,7 @@ void setup() {
 
   tft.init(240, 240, SPI_MODE3);
   tft.setSPISpeed(40000000);
+  applyVcom(cfg.vcom);
   uiBegin(&tft);
   uiSetLang(cfg.lang);
   // entre os quadros de animação (virada do Flip): cede tempo ao Wi-Fi e dá ritmo à virada
@@ -2125,6 +2161,21 @@ void loop() {
   if (now - lastBriCheck > 5000) {
     lastBriCheck = now;
     updateBrightness();
+  }
+
+  if (vcomTestUntil) {
+    if ((int32_t)(now - vcomTestUntil) < 0) {
+      if (vcomDraw) {
+        if (inAlbum) stopAlbum();
+        uiVcomTest(vcomTest, vcomDraw == 2);
+        vcomDraw = 0;
+      }
+      return;
+    }
+    vcomTestUntil = 0;  // fim do teste: volta ao valor salvo e ao mostrador
+    applyVcom(cfg.vcom);
+    uiInvalidate();
+    viewUntil = 0;
   }
 
   if (colorTestRequested) {

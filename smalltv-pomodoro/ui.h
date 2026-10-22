@@ -114,4 +114,5 @@ void uiRenderClock(const UiState &s);        // tela de relógio no tema escolhi
 void uiRenderPomodoro(const UiState &s);     // anel de progresso do Pomodoro
 void uiMessage(const char *title, const char *l1, const char *l2, const char *l3);
 void uiColorTest();                          // barras R/G/B/branco para ajustar o painel
+void uiVcomTest(uint8_t vcom, bool full);    // estampas do ajuste anti-fantasma (full: desenha tudo; senão só o valor)
 void uiError(const char *msg);               // aviso centralizado (ex.: GIF inválido)

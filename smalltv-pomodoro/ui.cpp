@@ -661,6 +661,34 @@ void uiColorTest() {
   textC(120, 228, 1, MUTED, tr("fundo preto", "background black", "fondo negro"));
 }
 
+// Teste anti-fantasma: cinza médio alternado com preto pixel a pixel. Com o VCOM (tensão comum do
+// painel) fora do ponto, os pixels "positivos" e "negativos" de cada quadro ficam com brilhos
+// diferentes e a estampa tremula; no ponto certo ela fica parada, e a imagem fantasma é a menor.
+// Quatro estampas porque o painel pode inverter a polaridade por ponto, por linha ou por coluna.
+void uiVcomTest(uint8_t vcom, bool full) {
+  static const uint16_t GRAY = uiRgb(128, 128, 128);
+  if (full) {
+    screen = 23;
+    G->fillScreen(BG);
+    textC(120, 6, 1, TEXT, tr("ANTI-FANTASMA", "ANTI-GHOSTING", "ANTIFANTASMA"));
+    for (int q = 0; q < 4; q++) {
+      const int x0 = 8 + (q % 2) * 116, y0 = 40 + (q / 2) * 92;
+      for (int y = 0; y < 84; y++)
+        for (int x = 0; x < 108; x++) {
+          bool on = q == 0 ? ((x + y) & 1) : q == 1 ? (y & 1) : q == 2 ? (x & 1) : true;
+          if (on) G->drawPixel(x0 + x, y0 + y, GRAY);
+        }
+    }
+    textC(120, 218, 1, MUTED, tr("mova ate a estampa parar", "move until the pattern stops", "mueve hasta que no tiemble"));
+    textC(120, 228, 1, MUTED, tr("de tremer", "flickering", "el patron"));
+  }
+  int mv = 100 + 25 * vcom;  // registrador VCOMS do ST7789: 0,100 V + 25 mV por passo
+  char v[20];
+  snprintf(v, sizeof v, "VCOM %d%c%03d V", mv / 1000, uiLang == 1 ? '.' : ',', mv % 1000);
+  G->fillRect(0, 18, 240, 18, BG);
+  textC(120, 20, 2, vcom == 0x20 ? TEXT : SUN, v);
+}
+
 void uiError(const char *msg) {
   screen = 22;
   G->fillScreen(BG);

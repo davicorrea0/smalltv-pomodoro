@@ -298,6 +298,7 @@ int main() {
   // ---- telas avulsas ----
   { Frame *f = new Frame(); uiBegin(f); uiMessage("Configure o Wi-Fi", "SmallTV-Pomodoro", "Conecte nessa rede e abra", "http://192.168.4.1"); save(*f, "12_portal"); delete f; }
   { Frame *f = new Frame(); uiBegin(f); uiColorTest(); save(*f, "13_teste_cores"); delete f; }
+  { Frame *f = new Frame(); uiBegin(f); uiVcomTest(0x20, true); uiVcomTest(0x1C, false); save(*f, "13b_anti_fantasma"); delete f; }
 
   assetSheet();
 
