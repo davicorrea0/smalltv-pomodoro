@@ -9,6 +9,8 @@ main{max-width:480px;margin:auto;padding:4px 16px calc(96px + env(safe-area-inse
 header{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;max-width:480px;margin:auto;padding:14px 16px;background:linear-gradient(var(--bg) 75%,transparent)}
 header b{font-size:18px}header span{color:var(--mut);font-variant-numeric:tabular-nums}
 #net{display:inline-block;width:8px;height:8px;border-radius:50%;background:#555;margin-right:8px;vertical-align:middle}
+#alx{display:none;margin-right:10px;padding:2px 8px;border-radius:9px;background:#13283a;color:#5ecbff;font-size:12px;font-weight:600}#alx.v{display:inline-block}
+.alx{display:block;margin-bottom:8px;padding:10px 12px;border-radius:10px;background:var(--bg)}.alx i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;background:#e0a030}.alx.ok i{background:var(--short)}
 #net.on{background:var(--short)}#net.off{background:var(--work)}
 h2{font-size:13px;color:var(--mut);text-transform:uppercase;letter-spacing:1.2px;margin:22px 4px 10px;font-weight:600}
 .card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px;margin-bottom:12px}
@@ -113,7 +115,7 @@ nav button.on svg{stroke:var(--ac)}
  #toast{bottom:28px}
 }
 </style></head><body>
-<header><b>SmallTV</b><span><i id="net"></i><span id="clock">--:--</span></span></header>
+<header><b>SmallTV</b><span><span id="alx" title="Alexa">Alexa</span><i id="net"></i><span id="clock">--:--</span></span></header>
 <main>
 <div class="card" id="upd"><b id="updt"></b><ul id="updn"></ul><div class="row"><button class="btn" onclick="skipUpdate()">Depois</button><button class="btn p" id="updgo" onclick="doUpdate()">Atualizar agora</button></div></div>
 
@@ -203,6 +205,7 @@ nav button.on svg{stroke:var(--ac)}
  <h2>Alexa</h2>
  <div class="card">
   <label>Controlar pela Alexa<input data-k="alexa" type="checkbox"></label>
+  <span class="alx" id="alxst"></span>
   <small>Com um Echo na mesma rede, diga "Alexa, descobrir dispositivos": o relógio aparece como a lâmpada Pomodoro. Depois: "Alexa, ligar Pomodoro" começa um foco, "desligar Pomodoro" para e "Alexa, Pomodoro em 50%" foca 50 minutos. No app da Alexa dá para criar rotinas com frases suas, como "Alexa, hora de focar".</small>
  </div>
  </div>
@@ -505,6 +508,11 @@ function load(s){if(s.cfg.lang!=null&&s.cfg.lang!=LG)setLang(s.cfg.lang);if(last
  const ck=curKey(s),cf=FACES.find(f=>fkey(f)==ck);
  if(cf&&$('curimg').dataset.k!=ck){$('curimg').dataset.k=ck;$('curimg').onerror=cf.pkg?()=>{$('curimg').onerror=null;$('curimg').src=CATALOG+encodeURIComponent(cf.pkg)+'.png'}:null;$('curimg').src=faceSrc(cf);$('curname').textContent=cf.n;$('curdesc').textContent=cf.d}
  const rk=rotKeys();document.querySelectorAll('#faces .face,#dl .face').forEach(b=>{b.classList.toggle('cur',b.dataset.k==ck);b.classList.toggle('rot',rk.includes(b.dataset.k))});
+ // Alexa: há quanto tempo um Echo falou com o relógio e o último comando
+ const ax=s.alexa||{ago:-1},ago=ax.ago,seen=s.cfg.alexa&&ago>=0;$('alx').classList.toggle('v',!!(seen&&ago<86400));
+ const when=ago<60?t('agora'):ago<3600?t('há {0} min',ago/60|0):t('há {0} h',ago/3600|0),cmdT=[0,t('ligar'),t('desligar'),t('foco de {0} min',ax.min)][ax.last];
+ $('alxst').hidden=!s.cfg.alexa;$('alxst').className='alx'+(seen?' ok':'');$('alxst').innerHTML='<i></i>';
+ $('alxst').append(seen?t('Conectado à Alexa ({0}) · último contato {1}',ax.ip,when)+(cmdT?' · '+t('último comando: {0}',cmdT):''):t('Aguardando a Alexa: diga "Alexa, descobrir dispositivos".'));
  $('rotinfo').textContent=rk.length?t('No rodízio: {0}. Toque num mostrador para incluir ou tirar.',rk.map(k=>(FACES.find(f=>fkey(f)==k)||{n:k}).n).join(', ')):t('Toque num mostrador e escolha "Incluir no rodízio" (2 ou mais).');
  // noite pelo sol: horários do Open-Meteo; o horário fixo some quando o sol vale
  const hm=m=>String(m/60|0).padStart(2,'0')+':'+String(m%60).padStart(2,'0'),sun=s.wx&&s.wx.rise>=0&&s.wx.set>s.wx.rise;

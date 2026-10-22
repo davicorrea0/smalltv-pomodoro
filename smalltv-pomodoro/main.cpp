@@ -30,7 +30,7 @@
 
 void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);  // ui.cpp: recorta para a área suja; fora da tela, cai na faixa
 
-#define FW_VERSION "1.11.1"
+#define FW_VERSION "1.11.2"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
@@ -287,6 +287,9 @@ void command(const String &c) {
 WiFiUDP hueUdp;
 bool alexaUp = false;     // ouvindo a descoberta
 uint8_t alexaBri = 255;   // último brilho pedido (1-255)
+uint32_t alexaSeen = 0;   // millis() do último pedido de um Echo (0 = nenhum desde que ligou)
+IPAddress alexaIp;        // de onde veio
+uint8_t alexaLast = 0;    // último comando: 0 nenhum, 1 ligar, 2 desligar, 3 brilho (minutos em alexaBri)
 char hueMac[13];          // MAC em minúsculas, sem ":" (identificador da "ponte")
 
 // chave da lâmpada como o Espalexa: 24 bits de baixo do MAC << 7 | índice 0 (int, pode ser negativa)
@@ -313,12 +316,15 @@ void alexaApi() {
     server.send(404, "text/plain", "");
     return;
   }
+  alexaSeen = millis() | 1;  // um Echo falou com o relógio (o painel mostra)
+  alexaIp = server.client().remoteIP();
   if (body.indexOf("devicetype") > 0) {  // pede um usuário da API do Hue: qualquer um serve
     server.send(200, "application/json", F("[{\"success\":{\"username\":\"2WLEDHardQrI3WHYTHoMcXHgEspsM8ZZRpSKtBQr\"}}]"));
     return;
   }
   if (req.indexOf("state") > 0 && body.length()) {  // comando: ligar, desligar ou brilho
     server.send(200, "application/json", F("[{\"success\":{\"/lights/1/state/\": true}}]"));
+    alexaLast = body.indexOf("false") > 0 ? 2 : body.indexOf("bri") > 0 ? 3 : 1;
     if (body.indexOf("false") > 0) command("reset");
     else if (body.indexOf("bri") > 0) {  // "Pomodoro em 50%": foco de 50 minutos, só desta vez
       int b = body.substring(body.indexOf("bri") + 5).toInt();
@@ -1080,7 +1086,15 @@ void sendState() {
   j += cfg.rotMin;
   j += F(",\"rot\":\"");
   j += rotList;
-  j += F("\"},\"pv\":");
+  j += F("\"},\"alexa\":{\"ago\":");  // segundos desde o último pedido de um Echo (-1 = nenhum)
+  j += alexaSeen ? (long)((millis() - alexaSeen) / 1000) : -1L;
+  j += F(",\"ip\":\"");
+  j += alexaSeen ? alexaIp.toString() : String();
+  j += F("\",\"last\":");
+  j += alexaLast;
+  j += F(",\"min\":");
+  j += alexaBri * 100 / 255;
+  j += F("},\"pv\":");
   j += previewActive() ? (previewUntil - millis()) / 1000 + 1 : 0;
   j += F(",\"heap\":");
   j += ESP.getFreeHeap();
