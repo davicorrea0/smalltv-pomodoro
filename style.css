@@ -405,7 +405,7 @@ section[data-kind].first { border-top: 0; padding-top: 16px; }
 }
 
 /* Seção Alexa: frases de voz em cartões */
-.h-ico img { width: 28px; height: 28px; vertical-align: -4px; margin-right: 10px; }
+.h-ico img { display: inline-block; width: 28px; height: 28px; vertical-align: -4px; margin-right: 10px; }
 .voice { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
 .voice div { background: var(--card); border: 1px solid var(--line); border-left: 3px solid #3fc8ff; border-radius: 8px; padding: 12px 14px; }
 .voice b { display: block; font-size: 15px; margin-bottom: 2px; }
