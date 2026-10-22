@@ -1,22 +1,25 @@
 {
-  "version": "1.13.0",
+  "version": "1.13.1",
   "date": "2026-10-22",
   "file": "smalltv-pomodoro.bin",
-  "size": 517744,
+  "size": 518752,
   "notes": {
     "pt": [
+      "Segurança: outros sites não conseguem mais mandar comandos para o relógio",
       "A Alexa pode avisar quando o foco ou a pausa terminam (Ajustes → Alexa)",
       "Alexa: desligar Pomodoro agora pausa (e de novo encerra)",
       "Novas lâmpadas Pausa e Pausa longa; diga \"Alexa, descobrir dispositivos\" de novo",
       "O painel mostra quando a Alexa está conectada e o último comando"
     ],
     "en": [
+      "Security: other websites can no longer send commands to the clock",
       "Alexa can announce when a focus session or a break ends (Settings → Alexa)",
       "Alexa: turning off Pomodoro now pauses it (again: stops it)",
       "New Break and Long break lights; say \"Alexa, discover devices\" again",
       "The panel shows when Alexa is connected and the last command"
     ],
     "es": [
+      "Seguridad: otros sitios ya no pueden enviar comandos al reloj",
       "Alexa puede avisar cuando termina el foco o la pausa (Ajustes → Alexa)",
       "Alexa: apagar Pomodoro ahora lo pausa (otra vez: lo termina)",
       "Nuevas luces Pausa y Pausa larga; di \"Alexa, descubre dispositivos\" otra vez",
