@@ -17,6 +17,7 @@ Alternative firmware for the **GeekMagic SmallTV Ultra** (ESP8266, 240×240 ST77
 - **Weather** from [Open-Meteo](https://open-meteo.com/) (no API key), with city search in the panel.
 - **Photo and GIF album:** reads the files already saved by the original firmware; uploads from the panel are cropped to 240×240 in the browser.
 - **Night brightness** that follows the sun (from sunset to sunrise, using the times Open-Meteo already sends with the weather) or a fixed schedule.
+- **Alexa voice control, no account or cloud:** the clock shows up to an Echo on the same network as a dimmable light called *Pomodoro* (a minimal Philips Hue bridge emulation, the same protocol as Espalexa). "Alexa, turn on Pomodoro" starts a focus session and the screen switches to the timer, "turn off Pomodoro" stops it, and "Alexa, set Pomodoro to 50%" focuses for 50 minutes. Alexa routines can add your own phrases.
 - **Face rotation:** pick your favourite faces and the clock switches between them every 1 to 60 minutes.
 - **English, Portuguese and Spanish:** the language you choose applies to both the panel and the clock's screen (dates, weather, Pomodoro, the Words face).
 - **Web panel** at the IP shown on the screen, with 4 tabs (Clock, Focus, Photos, Settings). It has its own layouts for phones and computers.

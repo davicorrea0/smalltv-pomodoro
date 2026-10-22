@@ -18,6 +18,7 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_ST7789.h>
 #include <ArduinoJson.h>
+#include <WiFiUdp.h>
 #include <JPEGDEC.h>
 #include <AnimatedGIF.h>
 #include <new>
@@ -29,7 +30,7 @@
 
 void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);  // ui.cpp: recorta para a área suja; fora da tela, cai na faixa
 
-#define FW_VERSION "1.10.0"
+#define FW_VERSION "1.11.0"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
@@ -73,6 +74,7 @@ struct Settings {
   uint8_t lang;         // idioma da tela e do painel: 0 português, 1 inglês, 2 espanhol; idem: lixo vira 0
   uint8_t nightSun;     // brilho noturno do pôr ao nascer do sol (Open-Meteo) em vez de nightStart/nightEnd
   uint8_t rotMin;       // rodízio de mostradores: minutos entre trocas (0 = desligado); lista em /rotation.txt
+  uint8_t alexa;        // 1 = aparece para a Alexa como a lâmpada "Pomodoro"
 };
 const uint32_t SETTINGS_MAGIC = 0x504F4D34;     // "POM4"
 const uint32_t SETTINGS_MAGIC_V3 = 0x504F4D33;  // "POM3": mesmos campos, sem os do v4
@@ -80,7 +82,7 @@ Settings cfg;
 
 void defaultSettings() {
   cfg = Settings{SETTINGS_MAGIC, 25, 5, 15, 4, 80, 0, 0, "<-03>3", "", 0, -1,
-                 THEME_MATRIX, 0, 10, 0, 22, 7, 15, 1, 242, 242, 242, 0, 0, "", 0, 1, 0, 8, ACT_READ, "", 0, 0, 0};
+                 THEME_MATRIX, 0, 10, 0, 22, 7, 15, 1, 242, 242, 242, 0, 0, "", 0, 1, 0, 8, ACT_READ, "", 0, 0, 0, 1};
 }
 
 // ---------- recuperação: 3 inicializações curtas seguidas ----------
@@ -137,6 +139,7 @@ void loadSettings() {
   if (cfg.lang > 2) cfg.lang = 0;
   if (cfg.nightSun > 1) cfg.nightSun = 0;
   if (cfg.rotMin > 240) cfg.rotMin = 0;
+  if (cfg.alexa > 1) cfg.alexa = 1;  // memória de unidades antigas (0xFF): ligado
   cfg.tz[sizeof(cfg.tz) - 1] = 0;
   cfg.otaPass[sizeof(cfg.otaPass) - 1] = 0;
   cfg.city[sizeof(cfg.city) - 1] = 0;
@@ -271,6 +274,126 @@ void command(const String &c) {
   } else if (c == "colortest") {
     colorTestRequested = true;
   }
+}
+
+// ---------- Alexa ----------
+// O relógio aparece para a Alexa como a lâmpada regulável "Pomodoro" de uma ponte Philips Hue, na rede
+// local: sem conta, skill nem nuvem. É o mesmo protocolo do Espalexa (respostas iguais às dele, que os
+// Echo aceitam), reduzido a uma lâmpada e sem cor: a biblioteca inteira custaria ~26 KB de flash.
+//   descoberta: o Echo manda M-SEARCH por SSDP (UDP 239.255.255.250:1900) e lê /description.xml;
+//   controle:   GET /api/<usuário>/lights e PUT /api/<usuário>/lights/<id>/state {"on":..,"bri":..}.
+// "ligar" começa um foco (ou continua um pausado), "desligar" para e "Pomodoro em 50%" foca 50 minutos.
+// O estado da lâmpada acompanha o Pomodoro, então o app da Alexa mostra se está rodando.
+WiFiUDP hueUdp;
+bool alexaUp = false;     // ouvindo a descoberta
+uint8_t alexaBri = 255;   // último brilho pedido (1-255)
+char hueMac[13];          // MAC em minúsculas, sem ":" (identificador da "ponte")
+
+// chave da lâmpada como o Espalexa: 24 bits de baixo do MAC << 7 | índice 0 (int, pode ser negativa)
+long hueKey() { return (long)(int)(strtoul(hueMac + 6, nullptr, 16) << 7); }
+
+void hueLight(String &j) {
+  uint8_t m[6];
+  WiFi.macAddress(m);
+  char id[27];
+  snprintf(id, sizeof id, "%02X:%02X:%02X:%02X:%02X:%02X:00:11-01", m[0], m[1], m[2], m[3], m[4], m[5]);
+  j += F("{\"state\":{\"on\":");
+  j += phase != IDLE ? F("true") : F("false");
+  j += F(",\"bri\":");
+  j += alexaBri - 1;
+  j += F(",\"alert\":\"none\",\"mode\":\"homeautomation\",\"reachable\":true},\"type\":\"Dimmable light\",\"name\":\"Pomodoro\","
+         "\"modelid\":\"LWB010\",\"manufacturername\":\"Philips\",\"productname\":\"E1\",\"uniqueid\":\"");
+  j += id;
+  j += F("\",\"swversion\":\"espalexa-2.7.0\"}");
+}
+
+void alexaApi() {
+  String req = server.uri(), body = server.arg("plain");
+  if (!cfg.alexa || req.indexOf("api") < 0) {
+    server.send(404, "text/plain", "");
+    return;
+  }
+  if (body.indexOf("devicetype") > 0) {  // pede um usuário da API do Hue: qualquer um serve
+    server.send(200, "application/json", F("[{\"success\":{\"username\":\"2WLEDHardQrI3WHYTHoMcXHgEspsM8ZZRpSKtBQr\"}}]"));
+    return;
+  }
+  if (req.indexOf("state") > 0 && body.length()) {  // comando: ligar, desligar ou brilho
+    server.send(200, "application/json", F("[{\"success\":{\"/lights/1/state/\": true}}]"));
+    if (body.indexOf("false") > 0) command("reset");
+    else if (body.indexOf("bri") > 0) {  // "Pomodoro em 50%": foco de 50 minutos, só desta vez
+      int b = body.substring(body.indexOf("bri") + 5).toInt();
+      alexaBri = b >= 255 ? 255 : b + 1;
+      int min = alexaBri * 100 / 255;
+      min = min < 1 ? 1 : min > 99 ? 99 : min;
+      startPhase(WORK, true);
+      totalMs = remainingMs = min * 60000UL;
+    } else if (body.indexOf("true") > 0) command(phase == IDLE ? "focus" : "start");
+    previewUntil = 0;  // a tela vai direto para o timer
+    return;
+  }
+  int pos = req.indexOf("lights");
+  String j;
+  if (pos > 0 && req.substring(pos + 7).toInt() == 0) {  // todas as lâmpadas
+    j = "{\"";
+    j += hueKey();
+    j += "\":";
+    hueLight(j);
+    j += '}';
+  } else if (pos > 0) hueLight(j);  // a lâmpada (só existe uma)
+  else j = "{}";
+  server.send(200, "application/json", j);
+}
+
+void alexaBegin() {
+  if (alexaUp || !cfg.alexa) return;
+  String mac = WiFi.macAddress();
+  mac.replace(":", "");
+  mac.toLowerCase();
+  strlcpy(hueMac, mac.c_str(), sizeof hueMac);
+  alexaUp = hueUdp.beginMulticast(WiFi.localIP(), IPAddress(239, 255, 255, 250), 1900);
+}
+
+// responde às buscas por SSDP do Echo apontando para /description.xml
+void alexaLoop() {
+  if (!alexaUp) return;
+  int n = hueUdp.parsePacket();
+  if (n < 1) return;
+  char p[256];
+  int len = hueUdp.read(p, sizeof p - 1);
+  p[len < 0 ? 0 : len] = 0;
+  hueUdp.flush();
+  if (!cfg.alexa || !strstr(p, "M-SEARCH") || !strstr(p, "ssdp:disc") ||
+      !(strstr(p, "upnp:rootd") || strstr(p, "ssdp:all") || strstr(p, "asic:1")))
+    return;
+  String ip = WiFi.localIP().toString(), r;
+  r.reserve(400);
+  r = F("HTTP/1.1 200 OK\r\nEXT:\r\nCACHE-CONTROL: max-age=100\r\nLOCATION: http://");
+  r += ip;
+  r += F(":80/description.xml\r\nSERVER: FreeRTOS/6.0.5, UPnP/1.0, IpBridge/1.17.0\r\nhue-bridgeid: ");
+  r += hueMac;
+  r += F("\r\nST: urn:schemas-upnp-org:device:basic:1\r\nUSN: uuid:2f402f80-da50-11e1-9b23-");
+  r += hueMac;
+  r += F("::upnp:rootdevice\r\n\r\n");
+  hueUdp.beginPacket(hueUdp.remoteIP(), hueUdp.remotePort());
+  hueUdp.write(r.c_str(), r.length());
+  hueUdp.endPacket();
+}
+
+void sendHueDescription() {
+  String ip = WiFi.localIP().toString(), x;
+  x.reserve(900);
+  x = F("<?xml version=\"1.0\" ?><root xmlns=\"urn:schemas-upnp-org:device-1-0\"><specVersion><major>1</major><minor>0</minor></specVersion><URLBase>http://");
+  x += ip;
+  x += F(":80/</URLBase><device><deviceType>urn:schemas-upnp-org:device:Basic:1</deviceType><friendlyName>Espalexa (");
+  x += ip;
+  x += F(":80)</friendlyName><manufacturer>Royal Philips Electronics</manufacturer><manufacturerURL>http://www.philips.com</manufacturerURL>"
+         "<modelDescription>Philips hue Personal Wireless Lighting</modelDescription><modelName>Philips hue bridge 2012</modelName>"
+         "<modelNumber>929000226503</modelNumber><modelURL>http://www.meethue.com</modelURL><serialNumber>");
+  x += hueMac;
+  x += F("</serialNumber><UDN>uuid:2f402f80-da50-11e1-9b23-");
+  x += hueMac;
+  x += F("</UDN><presentationURL>index.html</presentationURL></device></root>");
+  server.send(200, "text/xml", x);
 }
 
 // ---------- clima (Open-Meteo, sem chave de API) ----------
@@ -951,6 +1074,8 @@ void sendState() {
   j += cfg.lang;
   j += F(",\"nsun\":");
   j += cfg.nightSun;
+  j += F(",\"alexa\":");
+  j += cfg.alexa;
   j += F(",\"rotmin\":");
   j += cfg.rotMin;
   j += F(",\"rot\":\"");
@@ -1192,6 +1317,8 @@ void setupWeb() {
     cfg.nightBri = argRange("nbri", cfg.nightBri, 1, 100);
     cfg.nightSun = argRange("nsun", cfg.nightSun, 0, 1);
     cfg.rotMin = argRange("rotmin", cfg.rotMin, 0, 240);
+    cfg.alexa = argRange("alexa", cfg.alexa, 0, 1);
+    alexaBegin();  // ligada agora: começa a responder à descoberta sem reiniciar
     if (server.hasArg("rot")) rotSet(server.arg("rot"));
     uint8_t won = argRange("won", cfg.weatherOn, 0, 1);
     String color = server.arg("color");
@@ -1346,6 +1473,8 @@ void setupWeb() {
     safeRestart();
   });
   setupUpdate();
+  server.on("/description.xml", HTTP_GET, sendHueDescription);  // Alexa (ponte Hue)
+  server.onNotFound(alexaApi);                                   // /api/<usuário>/lights...
   server.begin();
 }
 
@@ -1650,6 +1779,7 @@ void setup() {
   }
   applyTimezone();
   setupWeb();
+  alexaBegin();
 }
 
 uint32_t lastRender = 0, lastBriCheck = 0;
@@ -1668,6 +1798,7 @@ void loop() {
     return;
   }
   server.handleClient();
+  alexaLoop();
   tickPomodoro();
   weatherLoop();
   rotLoop();
