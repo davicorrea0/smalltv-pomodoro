@@ -1,28 +1,25 @@
 {
-  "version": "1.15.2",
+  "version": "1.16.0",
   "date": "2026-10-22",
   "file": "smalltv-pomodoro.bin",
-  "size": 512688,
+  "size": 514496,
   "notes": {
     "pt": [
-      "Novo mostrador Previsão: hoje e os próximos 4 dias, com chuva e mín/máx",
-      "7,7 KB a mais de memória livre e firmware 11 KB menor",
-      "Clima e Flip sem piscar ao atualizar",
-      "Volta a configuração da tela da 1.15.0 (a da 1.15.1 aumentava a imagem fantasma)"
+      "Ajuste anti-fantasma: calibre a tensão da tela em Ajustes > Tela do aparelho",
+      "Novo mostrador Previsão: hoje e os próximos 4 dias",
+      "Mais memória livre, firmware menor e Clima/Flip sem piscar"
     ],
     "en": [
-      "New Forecast face: today and the next 4 days, with rain and low/high",
-      "7.7 KB more free memory and an 11 KB smaller firmware",
-      "Weather and Flip faces no longer flicker when updating",
-      "Restores the 1.15.0 display settings (1.15.1 made ghosting worse)"
+      "Anti-ghosting adjustment: calibrate the display voltage in Settings > Device screen",
+      "New Forecast face: today and the next 4 days",
+      "More free memory, a smaller firmware and no flicker on Weather/Flip"
     ],
     "es": [
-      "Nueva esfera Pronóstico: hoy y los próximos 4 días, con lluvia y mín/máx",
-      "7,7 KB más de memoria libre y firmware 11 KB más pequeño",
-      "Clima y Flip ya no parpadean al actualizarse",
-      "Vuelve la configuración de pantalla de la 1.15.0 (la de 1.15.1 aumentaba la imagen fantasma)"
+      "Ajuste antifantasma: calibra el voltaje de la pantalla en Ajustes > Pantalla del aparato",
+      "Nueva esfera Pronóstico: hoy y los próximos 4 días",
+      "Más memoria libre, firmware más pequeño y Clima/Flip sin parpadeo"
     ]
   },
   "gz": "smalltv-pomodoro.bin.gz",
-  "gzsize": 385629
+  "gzsize": 387050
 }
