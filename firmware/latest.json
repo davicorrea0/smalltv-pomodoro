@@ -1,18 +1,21 @@
 {
-  "version": "1.11.1",
+  "version": "1.11.2",
   "date": "2026-10-22",
   "file": "smalltv-pomodoro.bin",
-  "size": 516416,
+  "size": 517088,
   "notes": {
     "pt": [
+      "O painel mostra quando a Alexa está conectada e o último comando",
       "Controle pela Alexa: \"Alexa, ligar Pomodoro\" começa um foco, sem conta nem nuvem",
       "Firmware menor, com espaço para as próximas atualizações"
     ],
     "en": [
+      "The panel shows when Alexa is connected and the last command",
       "Alexa control: \"Alexa, turn on Pomodoro\" starts a focus session, no account or cloud",
       "Smaller firmware, with room for future updates"
     ],
     "es": [
+      "El panel muestra cuándo Alexa está conectada y el último comando",
       "Control con Alexa: \"Alexa, enciende Pomodoro\" empieza un foco, sin cuenta ni nube",
       "Firmware más pequeño, con espacio para las próximas actualizaciones"
     ]
