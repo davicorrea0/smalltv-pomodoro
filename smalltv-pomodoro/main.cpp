@@ -10,7 +10,7 @@
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
-#include <ESP8266HTTPClient.h>
+#include <base64.h>
 #include <DNSServer.h>
 #include <EEPROM.h>
 #include <LittleFS.h>
@@ -22,7 +22,7 @@
 #include <eboot_command.h>
 #include "src/uzlib/uzlib.h"  // o mesmo descompactador do gerenciador de boot (licença zlib)
 extern "C" uint32_t _FS_start;
-#include <JPEGDEC.h>
+#include "src/JPEGDEC/JPEGDEC.h"  // cópia da JPEGDEC 1.8.4 com as tabelas de cor geradas só durante a decodificação
 #include <AnimatedGIF.h>
 #include <new>
 #include <vector>
@@ -33,7 +33,7 @@ extern "C" uint32_t _FS_start;
 
 void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);  // ui.cpp: recorta para a área suja; fora da tela, cai na faixa
 
-#define FW_VERSION "1.14.1"
+#define FW_VERSION "1.15.0"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
@@ -477,35 +477,61 @@ struct Weather {
   int hum = 0, code = 0;
   bool day = true;
   uint16_t version = 0;
+  uint8_t nd = 0;  // previsão: hoje e os próximos dias
+  UiDay d[UI_DAYS];
 } wx;
 uint32_t wxNext = 0;
 
+// GET em HTTP/1.0 (resposta sem "chunked", fecha no fim) no lugar do HTTPClient (~4 KB).
+// Devolve o código HTTP (negativo se não conectar) e deixa o cliente no começo do corpo.
+int httpGet(WiFiClient &c, const String &url, uint16_t timeoutMs) {
+  if (!url.startsWith("http://")) return -1;
+  int end = 7;
+  while (end < (int)url.length() && url[end] != '/' && url[end] != '?') end++;
+  String host = url.substring(7, end), path = url.substring(end);
+  if (!path.length() || path[0] == '?') path = "/" + path;
+  uint16_t port = 80;
+  int colon = host.indexOf(':');
+  if (colon >= 0) {
+    port = host.substring(colon + 1).toInt();
+    host.remove(colon);
+  }
+  c.setTimeout(timeoutMs);
+  if (!host.length() || !port || !c.connect(host.c_str(), port)) return -1;
+  c.print("GET " + path + F(" HTTP/1.0\r\nHost: ") + host + F("\r\nUser-Agent: SmallTV\r\nConnection: close\r\n\r\n"));
+  String line = c.readStringUntil('\n');  // "HTTP/1.1 200 OK"
+  int sp = line.indexOf(' ');
+  int code = sp > 0 ? line.substring(sp + 1).toInt() : 0;
+  if (code <= 0) return -2;
+  while (c.connected() || c.available()) {  // pula os cabeçalhos até a linha vazia
+    line = c.readStringUntil('\n');
+    if (line.length() <= 1) break;
+  }
+  return code;
+}
+
 bool fetchWeather() {
   WiFiClient client;
-  HTTPClient http;
   String url = "http://api.open-meteo.com/v1/forecast?latitude=" + String(cfg.lat, 4) +
                "&longitude=" + String(cfg.lon, 4) +
                "&current=temperature_2m,relative_humidity_2m,weather_code,is_day"
-               "&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset&timezone=auto&forecast_days=1";
-  if (!http.begin(client, url)) return false;
-  http.useHTTP10(true);
-  http.setTimeout(5000);
-  if (http.GET() != 200) {
-    http.end();
-    return false;
-  }
+               "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset"
+               "&timezone=auto&forecast_days=" + String(UI_DAYS);
+  if (httpGet(client, url, 5000) != 200) return false;
   JsonDocument filter;
   filter["current"]["temperature_2m"] = true;
   filter["current"]["relative_humidity_2m"] = true;
   filter["current"]["weather_code"] = true;
   filter["current"]["is_day"] = true;
+  filter["daily"]["weather_code"] = true;
+  filter["daily"]["precipitation_probability_max"] = true;
   filter["daily"]["temperature_2m_max"] = true;
   filter["daily"]["temperature_2m_min"] = true;
   filter["daily"]["sunrise"] = true;
   filter["daily"]["sunset"] = true;
   JsonDocument doc;
-  DeserializationError err = deserializeJson(doc, http.getStream(), DeserializationOption::Filter(filter));
-  http.end();
+  DeserializationError err = deserializeJson(doc, client, DeserializationOption::Filter(filter));
+  client.stop();
   if (err || doc["current"]["temperature_2m"].isNull()) return false;
   wx.t = doc["current"]["temperature_2m"];
   wx.hum = doc["current"]["relative_humidity_2m"];
@@ -513,6 +539,15 @@ bool fetchWeather() {
   wx.day = doc["current"]["is_day"] | 1;
   wx.tmax = doc["daily"]["temperature_2m_max"][0];
   wx.tmin = doc["daily"]["temperature_2m_min"][0];
+  JsonArrayConst dc = doc["daily"]["weather_code"], dmax = doc["daily"]["temperature_2m_max"],
+                 dmin = doc["daily"]["temperature_2m_min"], drain = doc["daily"]["precipitation_probability_max"];
+  wx.nd = 0;
+  for (int i = 0; i < UI_DAYS && i < (int)dc.size() && i < (int)dmax.size() && i < (int)dmin.size(); i++) {
+    auto deg = [](float v) { return (int8_t)constrain(lroundf(v), -99, 99); };
+    wx.d[i] = {dc[i].as<uint8_t>(), deg(dmin[i].as<float>()), deg(dmax[i].as<float>()),
+               drain[i].isNull() ? (uint8_t)255 : (uint8_t)constrain(drain[i].as<int>(), 0, 100)};
+    wx.nd = i + 1;
+  }
   // "2026-10-21T05:31" (hora local, timezone=auto) -> minutos do dia
   auto minutes = [](const char *iso) {
     const char *p = iso ? strchr(iso, 'T') : nullptr;
@@ -582,7 +617,8 @@ UiState makeState() {
   s.streak = statsStreak;
   s.best = statsBest;
   s.weatherOn = cfg.weatherOn && cfg.city[0];
-  s.wx = {wx.ok, wx.t, wx.tmin, wx.tmax, wx.hum, wx.code, wx.day, wx.version};
+  s.wx = {wx.ok, wx.t, wx.tmin, wx.tmax, wx.hum, wx.code, wx.day, wx.version, wx.nd, {}};
+  memcpy(s.wx.d, wx.d, sizeof wx.d);
   s.city = cfg.city;
   s.theme = previewActive() ? previewTheme : cfg.theme;
   s.accent = clockColor();
@@ -1286,10 +1322,18 @@ bool deny() {
 // Senha do painel (a mesma do /update, usuário admin): com ela definida, todo o painel e a API pedem
 // login HTTP (o navegador pergunta uma vez e lembra). Cada senha errada espera 1 s, o que deixa
 // tentativas em série lentas demais. A API da Alexa e o modo de recuperação não pedem senha.
+// O login Basic é conferido aqui: o authenticate() do servidor traz junto o modo Digest e o MD5 (~2,5 KB).
+bool passOk() {
+  return !cfg.otaPass[0] || server.header("Authorization") == "Basic " + base64::encode(String("admin:") + cfg.otaPass, false);
+}
+void askLogin() {
+  server.sendHeader(F("WWW-Authenticate"), F("Basic realm=\"SmallTV\""));
+  server.send(401, "text/plain", "");
+}
 bool authed() {
-  if (!cfg.otaPass[0] || server.authenticate("admin", cfg.otaPass)) return true;
+  if (passOk()) return true;
   if (server.hasHeader("Authorization")) delay(1000);  // tentou e errou
-  server.requestAuthentication(BASIC_AUTH, "SmallTV");
+  askLogin();
   return false;
 }
 bool guard() { return (panelOk() || deny()) && authed(); }   // ações (POST)
@@ -1729,12 +1773,12 @@ bool otaVerifyGz() {
 
 void setupUpdate() {
   auto authOk = [] {
-    if (recoveryMode || (panelOk() && (!cfg.otaPass[0] || server.authenticate("admin", cfg.otaPass)))) return true;
+    if (recoveryMode || (panelOk() && passOk())) return true;
     if (server.hasHeader("Authorization")) delay(1000);
     return false;
   };
   server.on("/update", HTTP_GET, [] {
-    if (!recoveryMode && cfg.otaPass[0] && !server.authenticate("admin", cfg.otaPass)) return server.requestAuthentication();
+    if (!recoveryMode && !passOk()) return askLogin();
     String p = F("<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>SmallTV</title>"
                  "<style>body{font:16px system-ui;background:#111;color:#eee;max-width:420px;margin:auto;padding:20px}"
                  "input,button{width:100%;padding:12px;margin:8px 0;border-radius:10px;border:1px solid #333;background:#1c1c1c;color:#eee;font:inherit}"
@@ -1748,7 +1792,7 @@ void setupUpdate() {
     server.send(200, "text/html", p);
   });
   server.on("/update", HTTP_POST, [] {
-      if (!ota.authOk) return server.requestAuthentication();
+      if (!ota.authOk) return askLogin();
       if (ota.err.length()) {
         server.send(400, "text/plain", "Update error: " + ota.err);
         return;
@@ -1917,11 +1961,8 @@ String hookClean(String u) {
 int hookFire(const String &url) {
   if (!url.length() || WiFi.status() != WL_CONNECTED) return 0;
   WiFiClient client;
-  HTTPClient http;
-  if (!http.begin(client, url)) return -1;
-  http.setTimeout(4000);
-  int code = http.GET();
-  http.end();
+  int code = httpGet(client, url, 4000);
+  client.stop();
   return code;
 }
 

@@ -1,20 +1,20 @@
 # SmallTV Pomodoro 🍅
 
-Alternative firmware for the **GeekMagic SmallTV Ultra** (ESP8266, 240×240 ST7789 screen): a clock with 8 faces, a Pomodoro timer, weather, a photo/GIF album and a pixel art tomato mascot that grows a plant as you keep your focus streak.
+Alternative firmware for the **GeekMagic SmallTV Ultra** (ESP8266, 240×240 ST7789 screen): a clock with 9 faces, a Pomodoro timer, weather, a photo/GIF album and a pixel art tomato mascot that grows a plant as you keep your focus streak.
 
 🌐 **Project website:** [davicorrea0.github.io/smalltv-pomodoro](https://davicorrea0.github.io/smalltv-pomodoro/): what changes on the clock, how to install it, and the [face gallery](https://davicorrea0.github.io/smalltv-pomodoro/galeria.html).
 
-![The 8 built-in clock faces](docs/clock-faces.png)
+![The 9 built-in clock faces](docs/clock-faces.png)
 
 <sub>Screens are rendered by the project's simulator, which compiles the same drawing code as the firmware.</sub>
 
 ## Features
 
-- **8 clock faces:** Matrix, Tomato (a pixel art scene that changes with the time and weather: the tomato opens an umbrella in the rain, wears a scarf in the cold and sunglasses in the heat, and cheers when you hit your daily goal), Analog, Weather, Neon, Flip (with a real flip animation), Retro LCD, and Words (the time spelled out in English, Portuguese or Spanish).
+- **9 clock faces:** Matrix, Tomato (a pixel art scene that changes with the time and weather: the tomato opens an umbrella in the rain, wears a scarf in the cold and sunglasses in the heat, and cheers when you hit your daily goal), Analog, Weather, Neon, Flip (with a real flip animation), Retro LCD, Words (the time spelled out in English, Portuguese or Spanish), and Forecast (today and the next 4 days, with the chance of rain and a low-to-high bar on a shared scale).
 - **Pomodoro** with a progress ring, the end time, and the tomato changing expression (focused, relaxing with a coffee, asleep when paused). Pick what you will do while focusing (read, study, code, tasks or draw) and the screen shows that activity next to the tomato, which jumps for joy when a phase ends. A daily session counter with a goal.
 - **Streak and achievements:** the clock keeps a year of daily focus sessions. A plant next to the tomato grows with every day in a row you hit your goal, up to a golden tomato at 7 days, and a flame shows your streak. In the web panel: a garden of the whole year, 10 achievements, and a pixel art card of your day to share (on a phone it opens the share menu).
 - **Downloadable faces:** small `.json` packages installed from the panel without updating the firmware. 24 faces in the online gallery, including Apple Watch and Mi Band inspired ones. A face can carry its text in all three languages and shows the one chosen in the panel.
-- **Weather** from [Open-Meteo](https://open-meteo.com/) (no API key), with city search in the panel.
+- **Weather and a 5-day forecast** from [Open-Meteo](https://open-meteo.com/) (no API key), with city search in the panel.
 - **Photo and GIF album:** reads the files already saved by the original firmware; uploads from the panel are cropped to 240×240 in the browser.
 - **Night brightness** that follows the sun (from sunset to sunrise, using the times Open-Meteo already sends with the weather) or a fixed schedule.
 - **Alexa voice control, no account or cloud:** the clock shows up to an Echo on the same network as three dimmable lights (a minimal Philips Hue bridge emulation, the same protocol as Espalexa). *Pomodoro*: "turn on" starts or resumes a focus session and the screen switches to the timer, "turn off" pauses it and, again, stops it, and "set Pomodoro to 40%" focuses for 40 minutes. *Break* and *Long break*: "turn on" starts the break (a percentage sets its minutes), "turn off" goes back to focus. The lit light shows the current phase in the Alexa app, and the web panel shows when an Echo last talked to the clock and its last command. **End-of-phase announcements:** paste a trigger URL from [Virtual Smart Home](https://www.virtualsmarthome.xyz/), Voice Monkey or IFTTT in the panel and the clock calls it when a focus session or a break ends, so an Alexa routine can say "Pomodoro done" (plain HTTP; those services accept it).
@@ -136,7 +136,7 @@ To change an existing drawing, just edit its `.txt`: no code changes. The sheet 
 
 ## Downloadable faces (no firmware update)
 
-Besides the 8 built-in faces, the clock accepts **packages**: `.json` files of a few KB that describe a face in layers (text with variables such as `{HH}:{MM}`, `{TEMP}` and `{STREAK}`, the project's fonts, pixel art sprites, the weather icon, bars, progress rings, dial ticks, hands and the streak plant). Install them from the panel under *Clock → More faces*, from the online gallery or by picking the file. Format and examples (in Portuguese): **[docs/PACOTES.md](docs/PACOTES.md)** and the [`faces/`](faces) folder.
+Besides the 9 built-in faces, the clock accepts **packages**: `.json` files of a few KB that describe a face in layers (text with variables such as `{HH}:{MM}`, `{TEMP}` and `{STREAK}`, the project's fonts, pixel art sprites, the weather icon, bars, progress rings, dial ticks, hands and the streak plant). Install them from the panel under *Clock → More faces*, from the online gallery or by picking the file. Format and examples (in Portuguese): **[docs/PACOTES.md](docs/PACOTES.md)** and the [`faces/`](faces) folder.
 
 ![Some of the downloadable faces in the gallery](docs/packages.png)
 
@@ -156,7 +156,7 @@ sim/build.sh
 
 ```
 arduino-cli core install esp8266:esp8266 --additional-urls https://arduino.esp8266.com/stable/package_esp8266com_index.json
-arduino-cli lib install "Adafruit GFX Library" "Adafruit ST7735 and ST7789 Library" "ArduinoJson" "JPEGDEC" "AnimatedGIF"
+arduino-cli lib install "Adafruit GFX Library" "Adafruit ST7735 and ST7789 Library" "ArduinoJson" "AnimatedGIF"
 (cd web && npm install)  # optional: terser minifies the panel (~1 KB smaller)
 sim/build.sh   # generates assets.h and web.h, checks the code and tests the screens in the simulator
 ./compilar.sh  # builds into build/ and checks the size
@@ -197,7 +197,8 @@ The panel's English and Spanish texts live in `web/i18n.json`, not in flash: `we
 - Flip face digits: [Bebas Neue](https://github.com/dharmatype/Bebas-Neue) (Dharma Type, SIL Open Font License 1.1 — see `licenses/BebasNeue-OFL.txt`), also converted to polygons
 - `outfit` and `righteous` package fonts: [Outfit](https://github.com/Outfitio/Outfit-Fonts) (The Outfit Project Authors) and [Righteous](https://fonts.google.com/specimen/Righteous) (Astigmatic), SIL Open Font License 1.1 — see `licenses/`; digit outlines generated by `sim/fontgen.js`
 - [uzlib](https://github.com/pfalcon/uzlib) (Paul Sokolovsky, zlib license — see `licenses/uzlib-LICENSE.txt`), the decompressor from the ESP8266 core, used to check compressed updates
-- Libraries: Adafruit GFX and ST7789, ArduinoJson, JPEGDEC and AnimatedGIF (bitbank2)
+- [JPEGDEC](https://github.com/bitbank2/JPEGDEC) 1.8.4 (BitBank Software, Apache License 2.0 — see `licenses/JPEGDEC-LICENSE.txt`), included in `smalltv-pomodoro/src/JPEGDEC` with one change: its color and range lookup tables (7.7 KB) are computed at the start of each decode and freed at the end instead of living in RAM all the time
+- Libraries: Adafruit GFX and ST7789, ArduinoJson and AnimatedGIF (bitbank2)
 
 ## License
 
@@ -207,3 +208,4 @@ Third-party parts keep their own licenses (copies in [`licenses/`](licenses)):
 
 - The digit outlines derived from DSEG7, Bebas Neue, Outfit and Righteous (in `smalltv-pomodoro/fonts.cpp` and the faces that use them) remain under the SIL Open Font License 1.1.
 - uzlib (`smalltv-pomodoro/src/uzlib/`) is under the zlib license.
+- JPEGDEC (`smalltv-pomodoro/src/JPEGDEC/`) is under the Apache License 2.0.

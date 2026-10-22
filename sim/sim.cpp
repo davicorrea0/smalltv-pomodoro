@@ -51,7 +51,7 @@ static UiState base(int h, int m, int s) {
   st.streak = 5;  // planta com tomate verde e chama na prévia
   st.best = 9;
   st.weatherOn = true;
-  st.wx = {true, 23.4f, 14.2f, 27.1f, 44, 2, true, 1};
+  st.wx = {true, 23.4f, 14.2f, 27.1f, 44, 2, true, 1, 5, {{2, 14, 27, 10}, {61, 15, 21, 80}, {95, 13, 19, 100}, {3, -2, 22, 20}, {0, 12, 29, 0}}};
   st.city = "Florianopolis";
   st.accent = uiRgb(242, 242, 242);
   st.ip = "192.168.1.101";

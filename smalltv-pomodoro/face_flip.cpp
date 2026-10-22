@@ -275,6 +275,26 @@ static void flipAnimate(int n, const int *cx, const int *oldV, const int *newV) 
 
 static void pill(int x, int w) { G->fillRoundRect(x, 186, w, 28, 14, CARD); }
 
+// Pílulas de baixo, desenhadas fora da tela e mandadas prontas (sem piscar)
+static void paintWxPill(void *c) {
+  const UiState &s = *(const UiState *)c;
+  G->fillRect(8, 184, 110, 32, BG);
+  pill(10, 105);
+  if (s.weatherOn && s.wx.ok) {
+    weatherIcon(34, 199, 0.42f, s.wx.code, s.wx.day, CARD);
+    tempText(80, 193, 2, TEXT, s.wx.t);
+  } else textC(62, 197, 1, MUTED, tr("sem clima", "no weather", "sin clima"));
+}
+static void paintFocusPill(void *c) {
+  const UiState &s = *(const UiState *)c;
+  G->fillRect(122, 184, 112, 32, BG);
+  pill(125, 105);
+  mascot(137, 192, 1, s.today >= s.dailyGoal ? FACE_CHEER : FACE_HAPPY);
+  char f[16];
+  snprintf(f, sizeof f, "%u/%u", s.today, s.dailyGoal);
+  text(160, 193, 2, s.today >= s.dailyGoal ? SHORT : TEXT, f);
+}
+
 void themeFlip(const UiState &s, bool full) {
   char d[24];
   dateLabel(s, d, sizeof d);
@@ -298,22 +318,12 @@ void themeFlip(const UiState &s, bool full) {
   }
   if (n) flipAnimate(n, cx, ov, nv);
   if (full || lastWx != s.wx.version || lastWxOn != (int)s.weatherOn) {
-    G->fillRect(8, 184, 110, 32, BG);
-    pill(10, 105);
-    if (s.weatherOn && s.wx.ok) {
-      weatherIcon(34, 199, 0.42f, s.wx.code, s.wx.day, CARD);
-      tempText(80, 193, 2, TEXT, s.wx.t);
-    } else textC(62, 197, 1, MUTED, tr("sem clima", "no weather", "sin clima"));
+    uiPaint(full, 8, 184, 110, 32, paintWxPill, (void *)&s);
     lastWx = s.wx.version;
     lastWxOn = s.weatherOn;
   }
   if (full || lastToday != s.today || lastGoal != s.dailyGoal) {
-    G->fillRect(122, 184, 112, 32, BG);
-    pill(125, 105);
-    mascot(137, 192, 1, s.today >= s.dailyGoal ? FACE_CHEER : FACE_HAPPY);
-    char f[16];
-    snprintf(f, sizeof f, "%u/%u", s.today, s.dailyGoal);
-    text(160, 193, 2, s.today >= s.dailyGoal ? SHORT : TEXT, f);
+    uiPaint(full, 122, 184, 112, 32, paintFocusPill, (void *)&s);
     lastToday = s.today;
     lastGoal = s.dailyGoal;
   }

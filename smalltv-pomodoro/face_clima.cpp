@@ -13,22 +13,9 @@ static void miniCard(int x, const char *label, const char *value, bool deg) {
   if (deg) degree(cx - vw / 2 + textW(value, 3) + 3, y + 34, 2, TEXT);
 }
 
-void themeWeather(const UiState &s, bool full) {
-  char hm[8] = "--:--";
-  if (s.timeOk) snprintf(hm, sizeof hm, "%02d:%02d", displayHour(s), s.now.tm_min);
-  char l[24];
-  dateLabel(s, l, sizeof l);
-  if (changed(cStatL, l)) {
-    G->fillRect(0, 4, 140, 10, BG);
-    text(10, 7, 1, MUTED, l);
-  }
-  if (changed(cC, hm)) {
-    G->fillRect(150, 0, 90, 22, BG);
-    textR(230, 4, 2, s.accent, hm);
-  }
-  if (!(full || lastWx != s.wx.version || lastWxOn != (int)s.weatherOn)) return;
-  lastWx = s.wx.version;
-  lastWxOn = s.weatherOn;
+// Bloco do clima (abaixo da barra de cima), desenhado fora da tela e mandado pronto: sem piscar.
+static void paintWeather(void *c) {
+  const UiState &s = *(const UiState *)c;
   G->fillRect(0, 24, 240, 216, BG);
   if (!(s.weatherOn && s.wx.ok)) {
     textC(120, 96, 2, MUTED, s.weatherOn ? tr("Buscando clima", "Fetching weather", "Buscando clima") : tr("Clima desligado", "Weather off", "Clima apagado"));
@@ -66,5 +53,24 @@ void themeWeather(const UiState &s, bool full) {
   miniCard(8, "MIN", a, true);
   miniCard(85, "MAX", b, true);
   miniCard(162, tr("UMIDADE", "HUMIDITY", "HUMEDAD"), h, false);
+}
+
+void themeWeather(const UiState &s, bool full) {
+  char hm[8] = "--:--";
+  if (s.timeOk) snprintf(hm, sizeof hm, "%02d:%02d", displayHour(s), s.now.tm_min);
+  char l[24];
+  dateLabel(s, l, sizeof l);
+  if (changed(cStatL, l)) {
+    G->fillRect(0, 4, 140, 10, BG);
+    text(10, 7, 1, MUTED, l);
+  }
+  if (changed(cC, hm)) {
+    G->fillRect(150, 0, 90, 22, BG);
+    textR(230, 4, 2, s.accent, hm);
+  }
+  if (!(full || lastWx != s.wx.version || lastWxOn != (int)s.weatherOn)) return;
+  lastWx = s.wx.version;
+  lastWxOn = s.weatherOn;
+  uiPaint(full, 0, 24, 240, 216, paintWeather, (void *)&s);
 }
 
