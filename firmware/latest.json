@@ -1,23 +1,25 @@
 {
-  "version": "1.14.0",
+  "version": "1.14.1",
   "date": "2026-10-22",
   "file": "smalltv-pomodoro.bin",
-  "size": 522688,
+  "size": 523984,
   "notes": {
     "pt": [
-      "O relógio passa a aceitar atualizações comprimidas, com espaço para crescer até ~600 KB",
-      "Segurança: outros sites não conseguem mais mandar comandos para o relógio",
-      "A Alexa pode avisar quando o foco ou a pausa terminam"
+      "Senha opcional no painel inteiro (a mesma do /update)",
+      "Redes de configuração e recuperação com senha, mostrada na tela do relógio",
+      "Código baixado do site travado por impressão digital"
     ],
     "en": [
-      "The clock now accepts compressed updates, with room to grow to ~600 KB",
-      "Security: other websites can no longer send commands to the clock",
-      "Alexa can announce when a focus session or a break ends"
+      "Optional password for the whole panel (the same as /update)",
+      "Setup and recovery networks with a password shown on the clock",
+      "Code downloaded from the website pinned by fingerprint"
     ],
     "es": [
-      "El reloj ahora acepta actualizaciones comprimidas, con espacio para crecer hasta ~600 KB",
-      "Seguridad: otros sitios ya no pueden enviar comandos al reloj",
-      "Alexa puede avisar cuando termina el foco o la pausa"
+      "Contraseña opcional para todo el panel (la misma de /update)",
+      "Redes de configuración y recuperación con contraseña, mostrada en la pantalla",
+      "Código descargado del sitio fijado por huella digital"
     ]
-  }
+  },
+  "gz": "smalltv-pomodoro.bin.gz",
+  "gzsize": 388493
 }
