@@ -1,28 +1,28 @@
 {
-  "version": "1.15.1",
+  "version": "1.15.2",
   "date": "2026-10-22",
   "file": "smalltv-pomodoro.bin",
-  "size": 512880,
+  "size": 512688,
   "notes": {
     "pt": [
       "Novo mostrador Previsão: hoje e os próximos 4 dias, com chuva e mín/máx",
       "7,7 KB a mais de memória livre e firmware 11 KB menor",
       "Clima e Flip sem piscar ao atualizar",
-      "Tela ligada com as tensões do fabricante: menos imagem fantasma depois do LCD retrô"
+      "Volta a configuração da tela da 1.15.0 (a da 1.15.1 aumentava a imagem fantasma)"
     ],
     "en": [
       "New Forecast face: today and the next 4 days, with rain and low/high",
       "7.7 KB more free memory and an 11 KB smaller firmware",
       "Weather and Flip faces no longer flicker when updating",
-      "Display driven with the maker voltages: less ghosting after the Retro LCD face"
+      "Restores the 1.15.0 display settings (1.15.1 made ghosting worse)"
     ],
     "es": [
       "Nueva esfera Pronóstico: hoy y los próximos 4 días, con lluvia y mín/máx",
       "7,7 KB más de memoria libre y firmware 11 KB más pequeño",
       "Clima y Flip ya no parpadean al actualizarse",
-      "Pantalla con los voltajes del fabricante: menos imagen fantasma tras el LCD retro"
+      "Vuelve la configuración de pantalla de la 1.15.0 (la de 1.15.1 aumentaba la imagen fantasma)"
     ]
   },
   "gz": "smalltv-pomodoro.bin.gz",
-  "gzsize": 385787
+  "gzsize": 385629
 }
