@@ -216,6 +216,114 @@
       "file": "pilula.json",
       "preview": "pilula.png",
       "size": 2479
+    },
+    {
+      "id": "mare",
+      "name": "Maré",
+      "author": "davicorrea0",
+      "desc": "Farol em pixel art, mar em faixas e focos na areia.",
+      "file": "mare.json",
+      "preview": "mare.png",
+      "size": 2661
+    },
+    {
+      "id": "jardim",
+      "name": "Jardim",
+      "author": "davicorrea0",
+      "desc": "Uma pequena estufa; a planta cresce com sua sequência.",
+      "file": "jardim.json",
+      "preview": "jardim.png",
+      "size": 2091
+    },
+    {
+      "id": "vinil",
+      "name": "Vinil",
+      "author": "davicorrea0",
+      "desc": "Sulcos de vinil e um anel que acompanha os segundos.",
+      "file": "vinil.json",
+      "preview": "vinil.png",
+      "size": 2280
+    },
+    {
+      "id": "duna",
+      "name": "Duna",
+      "author": "davicorrea0",
+      "desc": "Sol e lua sobre dunas em tons de terracota.",
+      "file": "duna.json",
+      "preview": "duna.png",
+      "size": 2166
+    },
+    {
+      "id": "papel",
+      "name": "Papel",
+      "author": "davicorrea0",
+      "desc": "Tipografia editorial, papel creme e um círculo vermelho.",
+      "file": "papel.json",
+      "preview": "papel.png",
+      "size": 1609
+    },
+    {
+      "id": "arcade",
+      "name": "Arcade",
+      "author": "davicorrea0",
+      "desc": "Uma fase em pixel art; a bandeira acende na meta diária.",
+      "file": "arcade.json",
+      "preview": "arcade.png",
+      "size": 3110
+    },
+    {
+      "id": "nixie",
+      "name": "Nixie",
+      "author": "davicorrea0",
+      "desc": "Vidro, filamentos âmbar e segundos discretos.",
+      "file": "nixie.json",
+      "preview": "nixie.png",
+      "size": 3524
+    },
+    {
+      "id": "koi",
+      "name": "Koi",
+      "author": "davicorrea0",
+      "desc": "Um lago visto de cima; a flor aparece na meta.",
+      "file": "koi.json",
+      "preview": "koi.png",
+      "size": 2207
+    },
+    {
+      "id": "janela",
+      "name": "Janela",
+      "author": "davicorrea0",
+      "desc": "Cidade na janela, com chuva conforme o clima real.",
+      "file": "janela.json",
+      "preview": "janela.png",
+      "size": 2487
+    },
+    {
+      "id": "metro",
+      "name": "Metrô",
+      "author": "davicorrea0",
+      "desc": "Painel de trânsito com a rota preenchida pelos focos.",
+      "file": "metro.json",
+      "preview": "metro.png",
+      "size": 1956
+    },
+    {
+      "id": "memphis",
+      "name": "Memphis",
+      "author": "davicorrea0",
+      "desc": "Geometria dos anos 80 em coral, azul e amarelo.",
+      "file": "memphis.json",
+      "preview": "memphis.png",
+      "size": 1625
+    },
+    {
+      "id": "compasso",
+      "name": "Compasso",
+      "author": "davicorrea0",
+      "desc": "Analógico sereno, com ponteiros sem atualização por segundo.",
+      "file": "compasso.json",
+      "preview": "compasso.png",
+      "size": 1735
     }
   ]
 }
