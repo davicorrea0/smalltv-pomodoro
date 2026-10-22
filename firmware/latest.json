@@ -1,25 +1,25 @@
 {
-  "version": "1.17.0",
+  "version": "1.18.0",
   "date": "2026-10-22",
   "file": "smalltv-pomodoro.bin",
-  "size": 515920,
+  "size": 531136,
   "notes": {
     "pt": [
-      "Novo mostrador Previsão em cartões: 4 dias com a máxima em destaque",
-      "Sem imagem fantasma: tela em 0,850 V (ajustável)",
-      "GIFs não travam com o painel aberto"
+      "Novo mostrador Previsão LCD, no visor do LCD retrô",
+      "Previsão em cartões com fonte suave e ícones em pixel art",
+      "Sem imagem fantasma (0,850 V) e GIFs sem travar"
     ],
     "en": [
-      "New Forecast cards face: 4 days with the high in focus",
-      "No ghosting: display at 0.850 V (adjustable)",
-      "GIFs no longer stutter with the panel open"
+      "New Forecast LCD face, on the Retro LCD screen",
+      "Forecast cards with a smooth font and pixel art icons",
+      "No ghosting (0.850 V) and smooth GIFs"
     ],
     "es": [
-      "Nueva esfera Pronóstico en tarjetas: 4 días con la máxima destacada",
-      "Sin imagen fantasma: pantalla en 0,850 V (ajustable)",
-      "Los GIF ya no se traban con el panel abierto"
+      "Nueva esfera Pronóstico LCD, en la pantalla del LCD retro",
+      "Pronóstico en tarjetas con fuente suave e íconos en pixel art",
+      "Sin imagen fantasma (0,850 V) y GIF sin trabas"
     ]
   },
   "gz": "smalltv-pomodoro.bin.gz",
-  "gzsize": 388062
+  "gzsize": 398202
 }
