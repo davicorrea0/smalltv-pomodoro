@@ -686,7 +686,7 @@ void uiVcomTest(uint8_t vcom, bool full) {
   char v[20];
   snprintf(v, sizeof v, "VCOM %d%c%03d V", mv / 1000, uiLang == 1 ? '.' : ',', mv % 1000);
   G->fillRect(0, 18, 240, 18, BG);
-  textC(120, 20, 2, vcom == 0x20 ? TEXT : SUN, v);
+  textC(120, 20, 2, vcom == UI_VCOM_DEFAULT ? TEXT : SUN, v);
 }
 
 void uiError(const char *msg) {

@@ -239,7 +239,7 @@ nav button.on svg{stroke:var(--ac)}
  <h2>Tela do aparelho</h2>
  <div class="card">
   <label>Ordem de cor<select data-k="bgr"><option value="0">RGB (padrão)</option><option value="1">BGR</option></select></label>
-  <label>Inverter cores<input data-k="inv" type="checkbox"></label>
+  <label>Inverter cores<input data-k="inv" data-neg type="checkbox"></label>
   <label>Girar 180°<input data-k="flip" type="checkbox"></label>
   <p><button class="btn" onclick="cmd('colortest');toast(t('Teste de cores por 10 s no relógio'))">Testar cores no relógio</button></p>
   <small>No teste, a 1ª barra deve ser vermelha e o fundo preto. Vermelho e azul trocados: mude a ordem de cor. Fundo branco ou cores negativas: alterne "Inverter cores".</small>
@@ -248,7 +248,7 @@ nav button.on svg{stroke:var(--ac)}
    <label>Tensão do painel <b id="vcomv" style="white-space:nowrap"></b><input id="vcom" type="range" min="0" max="63" oninput="vcomSet()"></label>
    <p><button class="btn" onclick="vcomEnd(1)">Salvar</button> <button class="btn" onclick="vcomEnd(0)">Cancelar</button></p>
   </div>
-  <small>Imagem antiga marcada no fundo depois de um mostrador ficar parado? Abra o ajuste, olhe as estampas cinza no relógio de perto e de frente e mova o controle até elas pararem de tremer: nesse ponto o fantasma é o menor. O padrão é 0,900 V.</small>
+  <small>Imagem antiga marcada no fundo depois de um mostrador ficar parado? Abra o ajuste, olhe as estampas cinza no relógio de perto e de frente e mova o controle até elas pararem de tremer: nesse ponto o fantasma é o menor. O padrão é 0,850 V.</small>
  </div>
  </div>
  <div class="grp">
@@ -475,7 +475,8 @@ async function hookTest(e){await hooksSave();toast(t('Chamando o endereço...'))
  toast(c>=200&&c<300?t('Enviado ({0}): a Alexa deve falar em instantes',c):c==0?t('Sem endereço salvo para esse aviso'):t('O serviço respondeu {0}: confira o endereço',c))}
 // ---------- configurações (salva sozinho) ----------
 function save(o){return post('/api/settings',new URLSearchParams(o)).then(r=>r.json()).then(s=>{filled=false;load(s);return s})}
-document.querySelectorAll('[data-k]').forEach(e=>{e.onchange=()=>{const v=e.type=='checkbox'?(e.checked?1:0):e.value;save({[e.dataset.k]:v}).then(()=>toast(t('Salvo')))}});
+// data-neg: chave marcada = 0. "Inverter cores" é em relação ao normal (o painel IPS já liga com INVON)
+document.querySelectorAll('[data-k]').forEach(e=>{e.onchange=()=>{const v=e.type=='checkbox'?(e.checked!=e.hasAttribute('data-neg')?1:0):e.value;save({[e.dataset.k]:v}).then(()=>toast(t('Salvo')))}});
 // ---------- estado ----------
 function beep(){try{actx=actx||new AudioContext();[0,.25,.5].forEach(d=>{const o=actx.createOscillator(),g=actx.createGain();
  o.frequency.value=880;g.gain.setValueAtTime(.2,actx.currentTime+d);g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+d+.2);
@@ -483,7 +484,7 @@ function beep(){try{actx=actx||new AudioContext();[0,.25,.5].forEach(d=>{const o
 // anti-fantasma: cada movimento aplica o VCOM na hora (com uma pausa curta entre envios); Salvar guarda
 let vcT;
 const vcomTxt=v=>(0.1+0.025*v).toFixed(3).replace('.',LG==1?'.':',')+' V';
-function vcomStart(){const r=$('vcom');r.value=st&&st.cfg.vcom!=null?st.cfg.vcom:32;$('vcombox').style.display='block';$('vcomgo').style.display='none';vcomSet(1)}
+function vcomStart(){const r=$('vcom');r.value=st&&st.cfg.vcom!=null?st.cfg.vcom:30;$('vcombox').style.display='block';$('vcomgo').style.display='none';vcomSet(1)}
 function vcomSet(now){const v=$('vcom').value;$('vcomv').textContent=vcomTxt(v);clearTimeout(vcT);vcT=setTimeout(()=>post('/api/vcom',new URLSearchParams({v})),now?0:150)}
 function vcomEnd(save){clearTimeout(vcT);$('vcombox').style.display='none';$('vcomgo').style.display='';
  post('/api/vcom',new URLSearchParams(save?{v:$('vcom').value,save:1}:{stop:1})).then(r=>r.json()).then(j=>{if(st)st.cfg.vcom=j.vcom;toast(t(save?'Ajuste salvo':'Ajuste cancelado'))})}
@@ -519,7 +520,7 @@ function load(s){if(s.cfg.lang!=null&&s.cfg.lang!=LG)setLang(s.cfg.lang);if(last
  $('fsinfo').textContent=s.fs.ok?t('{0} usados de {1}',kb(s.fs.used),kb(s.fs.total)):t('Memória de arquivos indisponível');
  $('fsbar').style.width=(s.fs.total?s.fs.used/s.fs.total*100:0)+'%';$('fmt').hidden=!!s.fs.ok;
  document.querySelectorAll('#grid div').forEach(e=>e.classList.toggle('on',e.dataset.n==s.showing));
- if(!filled){filled=true;document.querySelectorAll('[data-k]').forEach(e=>{const v=s.cfg[e.dataset.k];if(v===undefined)return;if(e.type=='checkbox')e.checked=!!v;else e.value=v})}
+ if(!filled){filled=true;document.querySelectorAll('[data-k]').forEach(e=>{const v=s.cfg[e.dataset.k];if(v===undefined)return;if(e.type=='checkbox')e.checked=!!v!=e.hasAttribute('data-neg');else e.value=v})}
  draw()}
 function draw(){if(!st)return;const s=st,idle=s.phase=='idle';
  const rem=idle?s.cfg.work*60000:Math.max(0,s.remaining-(s.running?Date.now()-at:0)),sec=Math.ceil(rem/1000);

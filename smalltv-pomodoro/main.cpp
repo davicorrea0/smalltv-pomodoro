@@ -33,7 +33,7 @@ extern "C" uint32_t _FS_start;
 
 void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);  // ui.cpp: recorta para a área suja; fora da tela, cai na faixa
 
-#define FW_VERSION "1.16.0"
+#define FW_VERSION "1.16.1"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
@@ -81,7 +81,7 @@ struct Settings {
   uint8_t rotMin;       // rodízio de mostradores: minutos entre trocas (0 = desligado); lista em /rotation.txt
   uint8_t alexa;        // 1 = aparece para a Alexa como a lâmpada "Pomodoro"
   char apPass[9];       // senha das redes SmallTV-Pomodoro e SmallTV-Recuperacao (sorteada, mostrada na tela)
-  uint8_t vcom, vcomChk;  // tensão comum do painel (registrador VCOMS, 0x20 = 0,9 V) e conferência (vcom ^ 0x5A)
+  uint8_t vcom, vcomChk;  // tensão comum do painel (registrador VCOMS) e marca de calibrado (vcom ^ 0xDA)
 };
 const uint32_t SETTINGS_MAGIC = 0x504F4D34;     // "POM4"
 const uint32_t SETTINGS_MAGIC_V3 = 0x504F4D33;  // "POM3": mesmos campos, sem os do v4
@@ -89,7 +89,7 @@ Settings cfg;
 
 void defaultSettings() {
   cfg = Settings{SETTINGS_MAGIC, 25, 5, 15, 4, 80, 0, 0, "<-03>3", "", 0, -1,
-                 THEME_MATRIX, 0, 10, 0, 22, 7, 15, 1, 242, 242, 242, 0, 0, "", 0, 1, 0, 8, ACT_READ, "", 0, 0, 0, 1, "", 0x20, 0x20 ^ 0x5A};
+                 THEME_MATRIX, 0, 10, 0, 22, 7, 15, 1, 242, 242, 242, 0, 0, "", 0, 1, 0, 8, ACT_READ, "", 0, 0, 0, 1, "", UI_VCOM_DEFAULT, 0};
 }
 
 // ---------- recuperação: 3 inicializações curtas seguidas ----------
@@ -150,10 +150,11 @@ void loadSettings() {
   // senha das redes do relógio: 8 letras/dígitos sem os que se confundem, sorteada pelo gerador do chip
   // na primeira vez (ou se a memória tiver lixo) e mostrada na tela quando a rede está no ar
   static const char AP_CHARS[] = "abcdefghjkmnpqrstuvwxyz23456789";
-  // VCOM: memória de unidades antigas tem lixo aqui; só vale com a conferência certa
-  if (cfg.vcom > 0x3F || cfg.vcomChk != (cfg.vcom ^ 0x5A)) {
-    cfg.vcom = 0x20;
-    cfg.vcomChk = 0x20 ^ 0x5A;
+  // VCOM: só fica o valor que a pessoa calibrou (com a marca); lixo de memória antiga, a 1.16.0
+  // (marca 0x5A) e quem nunca calibrou seguem o padrão atual
+  if (cfg.vcom > 0x3F || cfg.vcomChk != (cfg.vcom ^ 0xDA)) {
+    cfg.vcom = UI_VCOM_DEFAULT;
+    cfg.vcomChk = 0;
   }
   bool apOk = strnlen(cfg.apPass, sizeof cfg.apPass) == 8;
   for (int i = 0; apOk && i < 8; i++) apOk = strchr(AP_CHARS, cfg.apPass[i]) != nullptr;
@@ -581,7 +582,7 @@ const char *weatherText(int code);  // de ui.cpp (o mesmo texto que aparece na t
 // mostra uma estampa que tremula quando o VCOM está errado; a pessoa ajusta até ela parar e salva.
 void applyVcom(uint8_t v) { tft.sendCommand(0xBB, &v, 1); }
 uint32_t vcomTestUntil = 0;  // teste na tela até este millis()
-uint8_t vcomTest = 0x20;     // valor em teste (aplicado, ainda não salvo)
+uint8_t vcomTest = UI_VCOM_DEFAULT;     // valor em teste (aplicado, ainda não salvo)
 int8_t vcomDraw = 0;         // 2 = desenhar a estampa toda, 1 = só o valor
 // Ordem de cor, inversão e rotação variam entre unidades do SmallTV: tudo configurável no painel.
 void applyPanel() {
@@ -807,7 +808,10 @@ bool isJpg(const String &n) {
 // Pastas usadas pelo firmware original: /image (fotos e GIFs) e /gif.
 const char *MEDIA_DIRS[] = {"/image", "/gif"};
 
+uint32_t fsInfoAt = 0;  // quando o espaço livre foi medido para o painel (0 = medir de novo)
+
 void rebuildAlbum() {
+  fsInfoAt = 0;  // fotos enviadas, apagadas ou formatação: o espaço livre mudou
   album.clear();
   if (!fsOk) return;
   for (const char *dir : MEDIA_DIRS) {
@@ -1099,8 +1103,14 @@ void sendState() {
   String clock = localNow(t) ? hhmm(t) : "--:--";
   char color[8];
   snprintf(color, sizeof(color), "#%02x%02x%02x", cfg.colR, cfg.colG, cfg.colB);
-  FSInfo fi = {};
-  if (fsOk) LittleFS.info(fi);
+  // LittleFS.info() percorre o sistema de arquivos inteiro (~100 ms com 1,5 MB de fotos) e o painel
+  // pede o estado a cada segundo: isso travava os GIFs. Guarda o resultado; recalcula quando os
+  // arquivos mudam (fsInfoAt = 0) ou depois de 1 minuto.
+  static FSInfo fi = {};
+  if (fsOk && (!fsInfoAt || millis() - fsInfoAt > 60000)) {
+    LittleFS.info(fi);
+    fsInfoAt = millis() | 1;
+  }
   String j;
   j.reserve(900);
   j += F("{\"phase\":\"");
@@ -1485,7 +1495,7 @@ void setupWeb() {
     }
     if (server.arg("save") == "1") {
       cfg.vcom = vcomTest;
-      cfg.vcomChk = cfg.vcom ^ 0x5A;
+      cfg.vcomChk = cfg.vcom ^ 0xDA;
       saveSettings();
     }
     if (server.arg("save") == "1" || server.arg("stop") == "1") vcomTestUntil = millis();  // o loop encerra

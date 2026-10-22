@@ -114,5 +114,7 @@ void uiRenderClock(const UiState &s);        // tela de relógio no tema escolhi
 void uiRenderPomodoro(const UiState &s);     // anel de progresso do Pomodoro
 void uiMessage(const char *title, const char *l1, const char *l2, const char *l3);
 void uiColorTest();                          // barras R/G/B/branco para ajustar o painel
+// VCOM padrão: 0x1E = 0,850 V (com 0,900 V, o valor de reset do chip, o SmallTV Ultra ficava com imagem fantasma)
+static const uint8_t UI_VCOM_DEFAULT = 0x1E;
 void uiVcomTest(uint8_t vcom, bool full);    // estampas do ajuste anti-fantasma (full: desenha tudo; senão só o valor)
 void uiError(const char *msg);               // aviso centralizado (ex.: GIF inválido)
