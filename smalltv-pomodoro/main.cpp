@@ -33,7 +33,7 @@ extern "C" uint32_t _FS_start;
 
 void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);  // ui.cpp: recorta para a área suja; fora da tela, cai na faixa
 
-#define FW_VERSION "1.14.0"
+#define FW_VERSION "1.14.1"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
@@ -80,6 +80,7 @@ struct Settings {
   uint8_t nightSun;     // brilho noturno do pôr ao nascer do sol (Open-Meteo) em vez de nightStart/nightEnd
   uint8_t rotMin;       // rodízio de mostradores: minutos entre trocas (0 = desligado); lista em /rotation.txt
   uint8_t alexa;        // 1 = aparece para a Alexa como a lâmpada "Pomodoro"
+  char apPass[9];       // senha das redes SmallTV-Pomodoro e SmallTV-Recuperacao (sorteada, mostrada na tela)
 };
 const uint32_t SETTINGS_MAGIC = 0x504F4D34;     // "POM4"
 const uint32_t SETTINGS_MAGIC_V3 = 0x504F4D33;  // "POM3": mesmos campos, sem os do v4
@@ -87,7 +88,7 @@ Settings cfg;
 
 void defaultSettings() {
   cfg = Settings{SETTINGS_MAGIC, 25, 5, 15, 4, 80, 0, 0, "<-03>3", "", 0, -1,
-                 THEME_MATRIX, 0, 10, 0, 22, 7, 15, 1, 242, 242, 242, 0, 0, "", 0, 1, 0, 8, ACT_READ, "", 0, 0, 0, 1};
+                 THEME_MATRIX, 0, 10, 0, 22, 7, 15, 1, 242, 242, 242, 0, 0, "", 0, 1, 0, 8, ACT_READ, "", 0, 0, 0, 1, ""};
 }
 
 // ---------- recuperação: 3 inicializações curtas seguidas ----------
@@ -145,6 +146,17 @@ void loadSettings() {
   if (cfg.nightSun > 1) cfg.nightSun = 0;
   if (cfg.rotMin > 240) cfg.rotMin = 0;
   if (cfg.alexa > 1) cfg.alexa = 1;  // memória de unidades antigas (0xFF): ligado
+  // senha das redes do relógio: 8 letras/dígitos sem os que se confundem, sorteada pelo gerador do chip
+  // na primeira vez (ou se a memória tiver lixo) e mostrada na tela quando a rede está no ar
+  static const char AP_CHARS[] = "abcdefghjkmnpqrstuvwxyz23456789";
+  bool apOk = strnlen(cfg.apPass, sizeof cfg.apPass) == 8;
+  for (int i = 0; apOk && i < 8; i++) apOk = strchr(AP_CHARS, cfg.apPass[i]) != nullptr;
+  if (!apOk) {
+    for (int i = 0; i < 8; i++) cfg.apPass[i] = AP_CHARS[ESP.random() % (sizeof AP_CHARS - 1)];
+    cfg.apPass[8] = 0;
+    EEPROM.put(0, cfg);  // grava já (saveSettings vem mais abaixo)
+    EEPROM.commit();
+  }
   cfg.tz[sizeof(cfg.tz) - 1] = 0;
   cfg.otaPass[sizeof(cfg.otaPass) - 1] = 0;
   cfg.city[sizeof(cfg.city) - 1] = 0;
@@ -1271,13 +1283,23 @@ bool deny() {
   server.send(403, "text/plain", "Proibido");
   return false;
 }
-bool guard() { return panelOk() || deny(); }   // ações (POST)
-bool readOk() { return hostOk() || deny(); }   // leituras
+// Senha do painel (a mesma do /update, usuário admin): com ela definida, todo o painel e a API pedem
+// login HTTP (o navegador pergunta uma vez e lembra). Cada senha errada espera 1 s, o que deixa
+// tentativas em série lentas demais. A API da Alexa e o modo de recuperação não pedem senha.
+bool authed() {
+  if (!cfg.otaPass[0] || server.authenticate("admin", cfg.otaPass)) return true;
+  if (server.hasHeader("Authorization")) delay(1000);  // tentou e errou
+  server.requestAuthentication(BASIC_AUTH, "SmallTV");
+  return false;
+}
+bool guard() { return (panelOk() || deny()) && authed(); }   // ações (POST)
+bool readOk() { return (hostOk() || deny()) && authed(); }   // leituras
 
 void setupWeb() {
-  server.collectHeaders("X-SmallTV", "Content-Length");
+  server.collectHeaders("X-SmallTV", "Content-Length", "Authorization");
   // painel comprimido (web/index.html -> web/build.js -> web.h); o navegador descompacta
   server.on("/", HTTP_GET, [] {
+    if (!readOk()) return;  // com senha, o navegador pede o login já ao abrir o painel
     server.sendHeader("Content-Encoding", "gzip");
     server.sendHeader("Cache-Control", "no-cache");  // depois de atualizar o firmware, o navegador busca o painel novo
     server.send_P(200, "text/html", (PGM_P)INDEX_HTML_GZ, sizeof(INDEX_HTML_GZ));
@@ -1706,7 +1728,11 @@ bool otaVerifyGz() {
 }
 
 void setupUpdate() {
-  auto authOk = [] { return recoveryMode || (panelOk() && (!cfg.otaPass[0] || server.authenticate("admin", cfg.otaPass))); };
+  auto authOk = [] {
+    if (recoveryMode || (panelOk() && (!cfg.otaPass[0] || server.authenticate("admin", cfg.otaPass)))) return true;
+    if (server.hasHeader("Authorization")) delay(1000);
+    return false;
+  };
   server.on("/update", HTTP_GET, [] {
     if (!recoveryMode && cfg.otaPass[0] && !server.authenticate("admin", cfg.otaPass)) return server.requestAuthentication();
     String p = F("<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>SmallTV</title>"
@@ -1768,10 +1794,10 @@ void setupUpdate() {
 #define RECOVERY_AP "SmallTV-Recuperacao"
 void startRecovery() {
   WiFi.mode(WIFI_AP_STA);
-  WiFi.softAP(RECOVERY_AP);
+  WiFi.softAP(RECOVERY_AP, cfg.apPass);
   WiFi.begin();  // tenta também a rede salva: o painel de recuperação abre pelo IP de casa
-  message(tr("Modo de recuperacao", "Recovery mode", "Modo de recuperacion"), RECOVERY_AP,
-          tr("Conecte nessa rede e abra", "Join this network and open", "Conectate a esta red y abre"), "http://192.168.4.1");
+  String pw = String(tr("senha: ", "password: ", "clave: ")) + cfg.apPass;
+  message(tr("Modo de recuperacao", "Recovery mode", "Modo de recuperacion"), RECOVERY_AP, pw.c_str(), "http://192.168.4.1");
   server.on("/", HTTP_GET, [] {
     String p = F("<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>SmallTV</title>"
                  "<style>body{font:16px system-ui;background:#111;color:#eee;max-width:420px;margin:auto;padding:20px}"
@@ -1928,9 +1954,10 @@ String htmlEscape(const String &s) {
 void startPortal() {
   portalMode = true;
   WiFi.mode(WIFI_AP_STA);
-  WiFi.softAP(AP_NAME);
+  WiFi.softAP(AP_NAME, cfg.apPass);
   dns.start(53, "*", WiFi.softAPIP());
-  message(tr("Configure o Wi-Fi", "Set up Wi-Fi", "Configura el Wi-Fi"), AP_NAME, tr("Conecte nessa rede e abra", "Join this network and open", "Conectate a esta red y abre"), "http://192.168.4.1");
+  String pw = String(tr("senha: ", "password: ", "clave: ")) + cfg.apPass;
+  message(tr("Configure o Wi-Fi", "Set up Wi-Fi", "Configura el Wi-Fi"), AP_NAME, pw.c_str(), "http://192.168.4.1");
   server.on("/", HTTP_GET, [] {
     int n = WiFi.scanNetworks();
     String opts;

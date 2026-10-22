@@ -257,7 +257,8 @@ nav button.on svg{stroke:var(--ac)}
  <div class="card">
   <form id="op">
    <label id="oldl">Senha atual<input name="old" type="password" autocomplete="current-password"></label>
-   <label>Senha do /update<input name="new" type="password" autocomplete="new-password" placeholder="vazio = sem senha"></label>
+   <label>Senha do painel e do /update<input name="new" type="password" autocomplete="new-password" placeholder="vazio = sem senha"></label>
+   <small>Com senha, o navegador pede usuário admin e esta senha ao abrir o painel. A Alexa continua funcionando sem senha. Esqueceu? Use o modo de recuperação.</small>
    <p><button class="btn" type="submit">Salvar senha</button></p>
   </form>
   <div class="row" style="margin-bottom:8px"><button class="btn" onclick="backup()">Fazer backup</button><button class="btn" onclick="$('rbk').click()">Restaurar backup</button></div>
@@ -297,11 +298,11 @@ function i18n(){document.documentElement.lang=LANGS[LG];document.documentElement
 // Dicionário inglês/espanhol: fica no site (web/i18n.json publicado como panel/i18n-<versão>.json) e é
 // guardado no navegador na primeira vez; em português não precisa de nada. O build troca __I18V__ pelo
 // código do dicionário; sem ele (painel de teste), vem de /i18n.json.
-const I18V='__I18V__';
+const I18V='__I18V__',I18I='__I18I__';  // I18I: impressão digital (SRI) do dicionário publicado
 function loadI18n(){if(!LG||I18N._v==I18V)return;let c=null;try{c=JSON.parse(localStorage.i18n||'null')}catch(e){}
  const use=d=>{Object.assign(I18N,d.dict,{_v:I18V});BUILTIN=d.builtin;i18n();buildFaces();drawGame();if(st){$('curimg').dataset.k='';load(st)}};
  if(c&&c.v==I18V)return use(c);
- fetch(I18V[0]=='_'?'/i18n.json':SITE+'panel/i18n-'+I18V+'.json').then(r=>r.json()).then(d=>{use(d);try{localStorage.i18n=JSON.stringify({...d,v:I18V})}catch(e){}}).catch(()=>{})}
+ fetch(I18V[0]=='_'?'/i18n.json':SITE+'panel/i18n-'+I18V+'.json',I18V[0]=='_'?{}:{integrity:I18I}).then(r=>r.json()).then(d=>{use(d);try{localStorage.i18n=JSON.stringify({...d,v:I18V})}catch(e){}}).catch(()=>{})}
 // chamado por load() antes de desenhar o estado: não chama load de novo
 function setLang(l){if(l==LG)return;LG=l;try{localStorage.lang=l}catch(e){}loadI18n();i18n();buildFaces();drawGame();if($('upd').classList.contains('v')&&!updating)showUpdate();$('curimg').dataset.k='';if(curTab==2)files();if($('cat').children.length)catalog()}
 
@@ -412,9 +413,9 @@ function drawGame(){const j=STATS;if(!j)return;const d=j.days,G=j.goal,n=d.lengt
  try{localStorage.ach=JSON.stringify(got)}catch(e){}}
 // Cartão do dia: o desenho (web/share.js) fica no site e só é baixado na hora de compartilhar, que já
 // precisa de internet. O build troca __SHV__ pelo código do arquivo; sem ele (painel de teste), vem de /share.js.
-const SHV='__SHV__';let shareJs=null;
+const SHV='__SHV__',SHI='__SHI__';  // SHI: impressão digital (SRI) do arquivo publicadolet shareJs=null;
 async function shareDay(){if(!st)return;if(!STATS)await loadStats();
- if(!window.shareCard){toast(t('Preparando o cartão...'));shareJs=shareJs||new Promise((ok,no)=>{const s=document.createElement('script');s.src=SHV[0]=='_'?'/share.js':SITE+'panel/share-'+SHV+'.js';s.onload=ok;s.onerror=no;document.head.appendChild(s)});
+ if(!window.shareCard){toast(t('Preparando o cartão...'));shareJs=shareJs||new Promise((ok,no)=>{const s=document.createElement('script');if(SHV[0]=='_')s.src='/share.js';else{s.src=SITE+'panel/share-'+SHV+'.js';s.integrity=SHI;s.crossOrigin='anonymous'}s.onload=ok;s.onerror=no;document.head.appendChild(s)});
   try{await shareJs}catch(e){shareJs=null;return toast(t('Sem internet no navegador'))}}
  const now=new Date(),big=shareCard({spr,SPR,t,LG,today:st.today,goal:st.cfg.goal,streak:st.streak||0,days:STATS?STATS.days:[]});
  const blob=await new Promise(r=>big.toBlob(r,'image/png')),file=new File([blob],'pomodoro-'+now.toISOString().slice(0,10)+'.png',{type:'image/png'});
@@ -428,7 +429,7 @@ function showUpdate(){const u=UPD;if(!u)return;$('updt').textContent=t('Nova ver
  ((u.notes||{})[LANGS[LG]]||(u.notes||{}).pt||[]).forEach(x=>n.appendChild(el('li',null,x)));$('upd').classList.add('v')}
 function skipUpdate(){try{localStorage.updSkip=UPD.version}catch(e){}$('upd').classList.remove('v')}
 async function doUpdate(){const u=UPD;if(!u||updating||!confirm(t('Atualizar o relógio para a versão {0}? Ele reinicia sozinho no fim.',u.version)))return;
- const h={};if(st.cfg.lock){const p=prompt(t('Senha do /update'));if(p==null)return;h.Authorization='Basic '+btoa('admin:'+p)}
+ const h={};  // com senha, o navegador já manda o login do painel
  updating=true;$('updgo').disabled=true;
  try{$('updt').textContent=t('Baixando a versão {0}...',u.version);// a partir da 1.14 o relógio aceita o .bin.gz (menor, e o firmware pode passar de 520 KB)
   const gz=!!u.gz,bin=await (await fetch(SITE+'firmware/'+(gz?u.gz:u.file),{cache:'no-store'})).blob();
