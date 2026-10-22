@@ -30,7 +30,7 @@
 
 void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);  // ui.cpp: recorta para a área suja; fora da tela, cai na faixa
 
-#define FW_VERSION "1.11.2"
+#define FW_VERSION "1.12.0"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
@@ -277,37 +277,87 @@ void command(const String &c) {
 }
 
 // ---------- Alexa ----------
-// O relógio aparece para a Alexa como a lâmpada regulável "Pomodoro" de uma ponte Philips Hue, na rede
-// local: sem conta, skill nem nuvem. É o mesmo protocolo do Espalexa (respostas iguais às dele, que os
-// Echo aceitam), reduzido a uma lâmpada e sem cor: a biblioteca inteira custaria ~26 KB de flash.
+// O relógio aparece para a Alexa como lâmpadas reguláveis de uma ponte Philips Hue, na rede local: sem
+// conta, skill nem nuvem. É o mesmo protocolo do Espalexa (respostas iguais às dele, que os Echo aceitam),
+// reduzido ao que o Pomodoro usa e sem cor: a biblioteca inteira custaria ~26 KB de flash.
 //   descoberta: o Echo manda M-SEARCH por SSDP (UDP 239.255.255.250:1900) e lê /description.xml;
 //   controle:   GET /api/<usuário>/lights e PUT /api/<usuário>/lights/<id>/state {"on":..,"bri":..}.
-// "ligar" começa um foco (ou continua um pausado), "desligar" para e "Pomodoro em 50%" foca 50 minutos.
-// O estado da lâmpada acompanha o Pomodoro, então o app da Alexa mostra se está rodando.
+// Lâmpadas (o nome sai no idioma do relógio na hora da descoberta):
+//   Pomodoro    ligar: começa o foco (ou continua um pausado); desligar: pausa, e de novo encerra;
+//               "em 50%": foco de 50 minutos
+//   Pausa       ligar: pausa curta ("em 10%": de 10 minutos); desligar: volta ao foco
+//   Pausa longa ligar: pausa longa ("em 30%": de 30 minutos); desligar: volta ao foco
+// A lâmpada acesa mostra a fase atual no app da Alexa.
 WiFiUDP hueUdp;
 bool alexaUp = false;     // ouvindo a descoberta
 uint8_t alexaBri = 255;   // último brilho pedido (1-255)
 uint32_t alexaSeen = 0;   // millis() do último pedido de um Echo (0 = nenhum desde que ligou)
 IPAddress alexaIp;        // de onde veio
-uint8_t alexaLast = 0;    // último comando: 0 nenhum, 1 ligar, 2 desligar, 3 brilho (minutos em alexaBri)
+// último comando para o painel: 0 nenhum, 1 começou/continuou o foco, 2 pausou, 3 foco de N min,
+// 4 encerrou, 5 pausa curta, 6 pausa longa, 7 voltou ao foco, 8 pausa de N min
+uint8_t alexaLast = 0;
+uint8_t alexaMin = 0;     // N dos comandos 3 e 8
 char hueMac[13];          // MAC em minúsculas, sem ":" (identificador da "ponte")
+const int HUE_LIGHTS = 3;
 
-// chave da lâmpada como o Espalexa: 24 bits de baixo do MAC << 7 | índice 0 (int, pode ser negativa)
-long hueKey() { return (long)(int)(strtoul(hueMac + 6, nullptr, 16) << 7); }
+// chave da lâmpada como o Espalexa: 24 bits de baixo do MAC << 7 | índice (int, pode ser negativa)
+long hueKey(int i) { return (long)(int)((strtoul(hueMac + 6, nullptr, 16) << 7) | i); }
 
-void hueLight(String &j) {
+bool hueOn(int i) {
+  return i == 0 ? phase == WORK && running : i == 1 ? phase == SHORT_BREAK : phase == LONG_BREAK;
+}
+
+void hueLight(String &j, int i) {
   uint8_t m[6];
   WiFi.macAddress(m);
   char id[27];
-  snprintf(id, sizeof id, "%02X:%02X:%02X:%02X:%02X:%02X:00:11-01", m[0], m[1], m[2], m[3], m[4], m[5]);
+  snprintf(id, sizeof id, "%02X:%02X:%02X:%02X:%02X:%02X:00:11-%02X", m[0], m[1], m[2], m[3], m[4], m[5], i + 1);
   j += F("{\"state\":{\"on\":");
-  j += phase != IDLE ? F("true") : F("false");
+  j += hueOn(i) ? F("true") : F("false");
   j += F(",\"bri\":");
-  j += alexaBri - 1;
-  j += F(",\"alert\":\"none\",\"mode\":\"homeautomation\",\"reachable\":true},\"type\":\"Dimmable light\",\"name\":\"Pomodoro\","
-         "\"modelid\":\"LWB010\",\"manufacturername\":\"Philips\",\"productname\":\"E1\",\"uniqueid\":\"");
+  j += i ? 254 : alexaBri - 1;
+  j += F(",\"alert\":\"none\",\"mode\":\"homeautomation\",\"reachable\":true},\"type\":\"Dimmable light\",\"name\":\"");
+  j += i == 0 ? tr("Pomodoro", "Pomodoro", "Pomodoro") : i == 1 ? tr("Pausa", "Break", "Pausa") : tr("Pausa longa", "Long break", "Pausa larga");
+  j += F("\",\"modelid\":\"LWB010\",\"manufacturername\":\"Philips\",\"productname\":\"E1\",\"uniqueid\":\"");
   j += id;
   j += F("\",\"swversion\":\"espalexa-2.7.0\"}");
+}
+
+// comando de uma lâmpada: ligar, desligar ou brilho (minutos)
+void hueCommand(int i, const String &body) {
+  bool off = body.indexOf("false") > 0, bri = body.indexOf("bri") > 0;
+  int min = 0;
+  if (bri) {
+    int b = body.substring(body.indexOf("bri") + 5).toInt();
+    b = b >= 255 ? 255 : b + 1;
+    if (i == 0) alexaBri = b;
+    min = b * 100 / 255;
+    min = min < 1 ? 1 : min > 99 ? 99 : min;
+  }
+  if (i == 0) {
+    if (off) {
+      alexaLast = phase != IDLE && running ? 2 : 4;  // rodando: pausa; já pausado (ou na pausa): encerra
+      command(alexaLast == 2 ? "pause" : "reset");
+    } else if (bri) {
+      startPhase(WORK, true);
+      totalMs = remainingMs = min * 60000UL;
+      alexaLast = 3;
+    } else {
+      alexaLast = 1;
+      command(phase == WORK ? "start" : "focus");
+    }
+  } else if (off) {  // desligar uma pausa: volta ao foco
+    if (phase == (i == 1 ? SHORT_BREAK : LONG_BREAK)) {
+      command("focus");
+      alexaLast = 7;
+    }
+  } else {
+    startPhase(i == 1 ? SHORT_BREAK : LONG_BREAK, true);
+    if (bri) totalMs = remainingMs = min * 60000UL;
+    alexaLast = bri ? 8 : i == 1 ? 5 : 6;
+  }
+  alexaMin = min;
+  previewUntil = 0;  // a tela vai direto para o timer
 }
 
 void alexaApi() {
@@ -322,30 +372,25 @@ void alexaApi() {
     server.send(200, "application/json", F("[{\"success\":{\"username\":\"2WLEDHardQrI3WHYTHoMcXHgEspsM8ZZRpSKtBQr\"}}]"));
     return;
   }
-  if (req.indexOf("state") > 0 && body.length()) {  // comando: ligar, desligar ou brilho
+  int pos = req.indexOf("lights");
+  long key = pos > 0 ? req.substring(pos + 7).toInt() : 0;
+  int i = key & 127;  // índice da lâmpada na chave
+  if (req.indexOf("state") > 0 && body.length()) {
     server.send(200, "application/json", F("[{\"success\":{\"/lights/1/state/\": true}}]"));
-    alexaLast = body.indexOf("false") > 0 ? 2 : body.indexOf("bri") > 0 ? 3 : 1;
-    if (body.indexOf("false") > 0) command("reset");
-    else if (body.indexOf("bri") > 0) {  // "Pomodoro em 50%": foco de 50 minutos, só desta vez
-      int b = body.substring(body.indexOf("bri") + 5).toInt();
-      alexaBri = b >= 255 ? 255 : b + 1;
-      int min = alexaBri * 100 / 255;
-      min = min < 1 ? 1 : min > 99 ? 99 : min;
-      startPhase(WORK, true);
-      totalMs = remainingMs = min * 60000UL;
-    } else if (body.indexOf("true") > 0) command(phase == IDLE ? "focus" : "start");
-    previewUntil = 0;  // a tela vai direto para o timer
+    if (i < HUE_LIGHTS) hueCommand(i, body);
     return;
   }
-  int pos = req.indexOf("lights");
   String j;
-  if (pos > 0 && req.substring(pos + 7).toInt() == 0) {  // todas as lâmpadas
-    j = "{\"";
-    j += hueKey();
-    j += "\":";
-    hueLight(j);
+  if (pos > 0 && key == 0) {  // todas as lâmpadas
+    j = '{';
+    for (int k = 0; k < HUE_LIGHTS; k++) {
+      j += k ? ",\"" : "\"";
+      j += hueKey(k);
+      j += "\":";
+      hueLight(j, k);
+    }
     j += '}';
-  } else if (pos > 0) hueLight(j);  // a lâmpada (só existe uma)
+  } else if (pos > 0 && i < HUE_LIGHTS) hueLight(j, i);
   else j = "{}";
   server.send(200, "application/json", j);
 }
@@ -1093,7 +1138,7 @@ void sendState() {
   j += F("\",\"last\":");
   j += alexaLast;
   j += F(",\"min\":");
-  j += alexaBri * 100 / 255;
+  j += alexaMin;
   j += F("},\"pv\":");
   j += previewActive() ? (previewUntil - millis()) / 1000 + 1 : 0;
   j += F(",\"heap\":");
