@@ -312,6 +312,8 @@ let FACES=[];  // vem do firmware (/api/faces): embutidos (faces_list.h) + pacot
 let SITE='https://davicorrea0.github.io/smalltv-pomodoro/';try{if(localStorage.site)SITE=localStorage.site}catch(e){}
 let CATALOG=SITE+'catalog/';try{if(localStorage.catalog)CATALOG=localStorage.catalog}catch(e){}
 let st=null,at=0,filled=false,lastPhase=null,actx=null,curTab=0;
+// pedidos ao próprio relógio levam X-SmallTV: sem ele o relógio recusa ações (proteção contra outros sites)
+const _fetch=window.fetch;window.fetch=(u,o={})=>_fetch(u,/^https?:/.test(u)?o:{...o,headers:{...o.headers,'X-SmallTV':'1'}});
 const post=(u,b)=>fetch(u,{method:'POST',body:b});
 const kb=n=>n>1048576?(n/1048576).toFixed(1)+' MB':Math.round(n/1024)+' KB';
 function toast(t){const e=$('toast');e.textContent=t;e.classList.add('v');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('v'),2200)}

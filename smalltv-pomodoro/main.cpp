@@ -30,7 +30,7 @@
 
 void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);  // ui.cpp: recorta para a área suja; fora da tela, cai na faixa
 
-#define FW_VERSION "1.13.0"
+#define FW_VERSION "1.13.1"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
@@ -41,6 +41,8 @@ void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);  // ui.cpp:
 
 Adafruit_ST7789 tft(-1, PIN_DC, PIN_RST);
 ESP8266WebServer server(80);
+bool panelOk();  // proteção do painel (mais abaixo, antes de setupWeb)
+bool readOk();
 
 // ---------- cores ----------
 constexpr uint16_t rgb(uint8_t r, uint8_t g, uint8_t b) { return uiRgb(r, g, b); }
@@ -677,6 +679,7 @@ void statsWrite(uint16_t day, uint8_t count) {
 
 // histórico (o mais antigo primeiro) para o jardim, as conquistas, o cartão de compartilhar e o backup
 void sendStats() {
+  if (!readOk()) return;
   uint8_t d[STATS_DAYS];
   bool ok = stats.magic == STATS_MAGIC && statsRead(d);
   String j;
@@ -997,6 +1000,10 @@ void handlePackUpload() {
   HTTPUpload &up = server.upload();
   if (up.status == UPLOAD_FILE_START) {
     if (up.name == "face") packUploadError = "";
+    if (!panelOk()) {
+      packUploadError = "Proibido";
+      return;
+    }
     if (!fsOk) {
       packUploadError = "Sistema de arquivos indisponivel";
       return;
@@ -1023,6 +1030,7 @@ String jsonEscape(const String &s) {
 bool safeText(const String &s) { return s.indexOf('"') < 0 && s.indexOf('\\') < 0; }
 
 void sendState() {
+  if (!readOk()) return;
   struct tm t;
   String clock = localNow(t) ? hhmm(t) : "--:--";
   char color[8];
@@ -1185,6 +1193,10 @@ void handleUpload() {
   if (up.status == UPLOAD_FILE_START) {
     uploadError = "";
     uploadPath = "";
+    if (!panelOk()) {
+      uploadError = "Proibido";
+      return;
+    }
     if (!fsOk) {
       uploadError = "Sistema de arquivos indisponivel";
       return;
@@ -1222,6 +1234,7 @@ void handleUpload() {
 }
 
 void sendFiles() {
+  if (!readOk()) return;
   String j = "{\"files\":[";
   bool first = true;
   for (const String &n : album) {
@@ -1235,7 +1248,31 @@ void sendFiles() {
   server.send(200, "application/json", j);
 }
 
+// ---------- proteção do painel ----------
+// Qualquer site aberto no navegador pode mandar pedidos para o IP do relógio (CSRF: apagar o Wi-Fi,
+// formatar, gravar um firmware) ou, apontando um nome próprio para esse IP, até ler as respostas (DNS
+// rebinding). Por isso:
+//  - toda ação exige o cabeçalho X-SmallTV, que só o painel manda: um site de fora não consegue (o
+//    navegador pediria uma permissão CORS que o relógio nunca dá);
+//  - o pedido precisa chegar pelo IP do relógio (cabeçalho Host só com números), não por um nome.
+// Ficam de fora a API da Alexa (o Echo não manda o cabeçalho; só liga e desliga o Pomodoro), o portal de
+// Wi-Fi e o modo de recuperação (exigem estar perto do relógio).
+bool hostOk() {
+  const String &h = server.hostHeader();
+  for (char c : h)
+    if (!((c >= '0' && c <= '9') || c == '.' || c == ':')) return false;
+  return h.length() > 0;
+}
+bool panelOk() { return hostOk() && server.header("X-SmallTV") == "1"; }
+bool deny() {
+  server.send(403, "text/plain", "Proibido");
+  return false;
+}
+bool guard() { return panelOk() || deny(); }   // ações (POST)
+bool readOk() { return hostOk() || deny(); }   // leituras
+
 void setupWeb() {
+  server.collectHeaders("X-SmallTV");
   // painel comprimido (web/index.html -> web/build.js -> web.h); o navegador descompacta
   server.on("/", HTTP_GET, [] {
     server.sendHeader("Content-Encoding", "gzip");
@@ -1246,9 +1283,11 @@ void setupWeb() {
   server.on("/api/stats", HTTP_GET, sendStats);
   // avisos de fim de fase: GET lê, POST (w, b) grava, POST test=w|b chama o endereço e devolve o código
   server.on("/api/hooks", HTTP_GET, [] {
+    if (!guard()) return;  // os links levam o código da conta do serviço
     server.send(200, "application/json", "{\"w\":\"" + hookWork + "\",\"b\":\"" + hookBreak + "\"}");
   });
   server.on("/api/hooks", HTTP_POST, [] {
+    if (!guard()) return;
     if (server.hasArg("test")) {
       int code = hookFire(server.arg("test") == "b" ? hookBreak : hookWork);
       server.send(200, "text/plain", String(code));
@@ -1265,6 +1304,7 @@ void setupWeb() {
   });
   // restaura o histórico de um backup: "days" = contagens do mais antigo ao dia "day"
   server.on("/api/statsimport", HTTP_POST, [] {
+    if (!guard()) return;
     if (!fsOk || !server.hasArg("days") || !server.hasArg("day")) {
       server.send(400, "text/plain", "Backup invalido");
       return;
@@ -1297,6 +1337,7 @@ void setupWeb() {
   });
   // lista dos mostradores para a galeria do painel (vem de faces_list.h)
   server.on("/api/faces", HTTP_GET, [] {
+    if (!readOk()) return;
     String j = "[";
     for (uint8_t t = 0; t < THEME_COUNT; t++) {
       if (t) j += ',';
@@ -1347,6 +1388,7 @@ void setupWeb() {
     server.send(302, "text/plain", "");
   });
   server.on("/api/cmd", HTTP_POST, [] {
+    if (!guard()) return;
     if (server.arg("c") == "preview") {
       int t = server.arg("t").toInt();
       bool ok = t >= 0 && t < THEME_COUNT;
@@ -1364,6 +1406,7 @@ void setupWeb() {
     sendState();
   });
   server.on("/api/settings", HTTP_POST, [] {
+    if (!guard()) return;
     cfg.work = argRange("work", cfg.work, 1, 99);
     cfg.shortBreak = argRange("short", cfg.shortBreak, 1, 99);
     cfg.longBreak = argRange("long", cfg.longBreak, 1, 99);
@@ -1442,6 +1485,7 @@ void setupWeb() {
   server.on("/api/files", HTTP_GET, sendFiles);
   // instala um pacote de mostrador: valida no motor, usa o "id" do JSON como nome do arquivo
   server.on("/api/faceinstall", HTTP_POST, [] {
+    if (!guard()) return;
     String msg;
     bool ok = !packUploadError.length() && loadPackFile("/faces/_novo.json", msg);
     String id = ok ? facePackId() : "", name = ok ? facePackName() : "";
@@ -1467,6 +1511,7 @@ void setupWeb() {
     server.send(200, "application/json", "{\"ok\":1,\"id\":\"" + id + "\",\"name\":\"" + jsonEscape(name) + "\"}");
   }, handlePackUpload);
   server.on("/api/facedelete", HTTP_POST, [] {
+    if (!guard()) return;
     String id = server.arg("pkg");
     if (!fsOk || !idOk(id) || !LittleFS.remove("/faces/" + id + ".json")) {
       server.send(400, "text/plain", "Pacote nao encontrado");
@@ -1484,10 +1529,12 @@ void setupWeb() {
     server.send(200, "text/plain", "ok");
   });
   server.on("/api/upload", HTTP_POST, [] {
+    if (!guard()) return;
     if (uploadError.length()) server.send(400, "text/plain", uploadError);
     else server.send(200, "text/plain", "ok");
   }, handleUpload);
   server.on("/api/delete", HTTP_POST, [] {
+    if (!guard()) return;
     String f = server.arg("f");
     if (curFile == f) {
       stopAlbum();
@@ -1501,6 +1548,7 @@ void setupWeb() {
     server.send(200, "text/plain", "ok");
   });
   server.on("/api/show", HTTP_POST, [] {
+    if (!guard()) return;
     String f = server.arg("f");
     if (phase != IDLE) {
       server.send(409, "text/plain", "Pomodoro em andamento");
@@ -1514,6 +1562,7 @@ void setupWeb() {
     server.send(200, "text/plain", "ok");
   });
   server.on("/api/format", HTTP_POST, [] {
+    if (!guard()) return;
     stopAlbum();
     LittleFS.end();
     fsOk = LittleFS.format() && LittleFS.begin();
@@ -1523,6 +1572,7 @@ void setupWeb() {
   });
   // Arquivos de mídia para as miniaturas do painel
   server.on("/fs", HTTP_GET, [] {
+    if (!readOk()) return;
     String f = server.arg("f");
     File file;
     if (fsOk && mediaPath(f)) file = LittleFS.open(f, "r");
@@ -1536,6 +1586,7 @@ void setupWeb() {
   });
   // Troca a senha do /update. Se já houver senha, exige a atual.
   server.on("/api/otapass", HTTP_POST, [] {
+    if (!guard()) return;
     if (cfg.otaPass[0] && server.arg("old") != cfg.otaPass) {
       server.send(403, "text/plain", "Senha atual incorreta");
       return;
@@ -1550,6 +1601,7 @@ void setupWeb() {
     server.send(200, "text/plain", p.length() ? "Senha definida (usuario: admin)" : "Senha removida");
   });
   server.on("/api/wifireset", HTTP_POST, [] {
+    if (!guard()) return;
     server.send(200, "text/plain", "ok");
     delay(300);
     WiFi.persistent(true);
@@ -1592,9 +1644,9 @@ void otaConsume(const uint8_t *p, size_t n) {
 }
 
 void setupUpdate() {
-  auto authOk = [] { return recoveryMode || !cfg.otaPass[0] || server.authenticate("admin", cfg.otaPass); };
-  server.on("/update", HTTP_GET, [authOk] {
-    if (!authOk()) return server.requestAuthentication();
+  auto authOk = [] { return recoveryMode || (panelOk() && (!cfg.otaPass[0] || server.authenticate("admin", cfg.otaPass))); };
+  server.on("/update", HTTP_GET, [] {
+    if (!recoveryMode && cfg.otaPass[0] && !server.authenticate("admin", cfg.otaPass)) return server.requestAuthentication();
     String p = F("<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>SmallTV</title>"
                  "<style>body{font:16px system-ui;background:#111;color:#eee;max-width:420px;margin:auto;padding:20px}"
                  "input,button{width:100%;padding:12px;margin:8px 0;border-radius:10px;border:1px solid #333;background:#1c1c1c;color:#eee;font:inherit}"
@@ -1602,7 +1654,9 @@ void setupUpdate() {
     p += tr("Atualizar firmware", "Update firmware", "Actualizar firmware");
     p += F("</h2><form method=post enctype=multipart/form-data><input type=file name=firmware accept=.bin required><button>");
     p += tr("Enviar", "Upload", "Enviar");
-    p += F("</button></form><small>v" FW_VERSION "</small>");
+    p += F("</button></form><small>v" FW_VERSION "</small>"
+           "<script>document.forms[0].onsubmit=e=>{e.preventDefault();document.body.innerHTML='...';"
+           "fetch('/update',{method:'POST',body:new FormData(e.target),headers:{'X-SmallTV':'1'}}).then(r=>r.text()).then(t=>document.body.innerHTML=t)}</script>");
     server.send(200, "text/html", p);
   });
   server.on("/update", HTTP_POST, [] {
