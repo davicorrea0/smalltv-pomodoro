@@ -201,7 +201,7 @@ The panel's English and Spanish texts live in `web/i18n.json`, not in flash: `we
 
 ## License
 
-[MIT](LICENSE): use, change and share the code, the pixel art and the clock faces, including in your own projects, as long as you keep the copyright notice.
+[GNU GPL v3](LICENSE) (GPL-3.0-or-later): you can use, study, change and share the code, the pixel art and the clock faces. If you distribute a modified version, or a firmware built from it, it must also be released under the GPL with its source code.
 
 Third-party parts keep their own licenses (copies in [`licenses/`](licenses)):
 
