@@ -1,25 +1,25 @@
 {
-  "version": "1.16.0",
+  "version": "1.16.1",
   "date": "2026-10-22",
   "file": "smalltv-pomodoro.bin",
-  "size": 514496,
+  "size": 514576,
   "notes": {
     "pt": [
-      "Ajuste anti-fantasma: calibre a tensão da tela em Ajustes > Tela do aparelho",
-      "Novo mostrador Previsão: hoje e os próximos 4 dias",
-      "Mais memória livre, firmware menor e Clima/Flip sem piscar"
+      "Sem imagem fantasma: a tela agora usa 0,850 V (ajustável em Ajustes > Tela do aparelho)",
+      "GIFs não travam mais com o painel aberto",
+      "\"Inverter cores\" desligado já mostra as cores certas"
     ],
     "en": [
-      "Anti-ghosting adjustment: calibrate the display voltage in Settings > Device screen",
-      "New Forecast face: today and the next 4 days",
-      "More free memory, a smaller firmware and no flicker on Weather/Flip"
+      "No more ghosting: the display now uses 0.850 V (adjustable in Settings > Device screen)",
+      "GIFs no longer stutter while the panel is open",
+      "\"Invert colors\" off now shows the right colors"
     ],
     "es": [
-      "Ajuste antifantasma: calibra el voltaje de la pantalla en Ajustes > Pantalla del aparato",
-      "Nueva esfera Pronóstico: hoy y los próximos 4 días",
-      "Más memoria libre, firmware más pequeño y Clima/Flip sin parpadeo"
+      "Sin imagen fantasma: la pantalla ahora usa 0,850 V (ajustable en Ajustes > Pantalla del aparato)",
+      "Los GIF ya no se traban con el panel abierto",
+      "\"Invertir colores\" apagado ya muestra los colores correctos"
     ]
   },
   "gz": "smalltv-pomodoro.bin.gz",
-  "gzsize": 387050
+  "gzsize": 387093
 }
