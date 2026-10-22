@@ -155,16 +155,19 @@ sim/build.sh
 ```
 arduino-cli core install esp8266:esp8266 --additional-urls https://arduino.esp8266.com/stable/package_esp8266com_index.json
 arduino-cli lib install "Adafruit GFX Library" "Adafruit ST7735 and ST7789 Library" "ArduinoJson" "JPEGDEC" "AnimatedGIF"
+(cd web && npm install)  # optional: terser minifies the panel (~1 KB smaller)
 sim/build.sh   # generates assets.h and web.h, checks the code and tests the screens in the simulator
 ./compilar.sh  # builds into build/ and checks the size
 ```
+
+The panel's English and Spanish texts live in `web/i18n.json`, not in flash: `web/build.js` writes `web/out/i18n-<code>.json`, which is published in the website's `panel/` folder; the panel downloads it once and keeps it in the browser.
 
 `compilar.sh` builds without newlib's decimal number printf/scanf (`--build-property build.float=`, ~7 KB): the firmware never uses `%f` or parses decimals with it, and `sim/build.sh` rejects code that does.
 
 ## Technical details
 
 - **4M3M flash layout**, the same as the original firmware (LittleFS constants found in the V9.0.50 binary at offset `0x14d00`), so existing photos and GIFs are read. LittleFS is mounted **without auto-format**: if it fails to mount, nothing is erased.
-- **Binary size:** to be able to go back to the original firmware from the panel, this firmware must leave room for the largest original binary (V9.0.31: 509,792 bytes) during the OTA update, which means at most 532,480 bytes (about 514 KB today; `compilar.sh` checks it). The previews of the built-in faces live on the website, not in flash.
+- **Binary size:** an OTA update writes the new firmware into the free space after the current one (1 MB in total, in 4 KB sectors, plus 4 KB reserved). For a version to be replaceable by another of the same size it must stay at or below 520,192 bytes (about 516 KB today); that also leaves room to go back to the largest original binary (V9.0.31, 509,792 bytes). `compilar.sh` checks it. The previews of the built-in faces live on the website, not in flash.
 - **Update checks:** the elf2bin tool writes the image size and a CRC32 into every ESP8266 Arduino image (offsets 4112 and 4116); all original V9.0.x firmwares have them too. `/update` checks them while the file arrives and only switches firmware if everything matches.
 - **Recovery:** a boot counter stored in EEPROM after the settings (it survives power loss, unlike RTC memory). Three boots shorter than 30 s in a row open recovery mode; staying on for 30 s, or a deliberate restart, resets it.
 - **Focus history:** one count per day in a 371-day ring (`/stats.bin` on LittleFS, ~380 bytes). Only the header stays in RAM.

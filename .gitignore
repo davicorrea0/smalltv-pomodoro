@@ -13,3 +13,6 @@ fw/
 smalltv-loader/
 # configuração local do Claude Code
 .claude/
+# painel: dependências do build e dicionário gerado para publicar no site
+web/node_modules/
+web/out/

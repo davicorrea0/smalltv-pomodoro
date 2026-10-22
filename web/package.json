@@ -1,0 +1,7 @@
+{
+  "private": true,
+  "description": "Ferramentas do painel web (web/build.js)",
+  "devDependencies": {
+    "terser": "5.31.0"
+  }
+}
