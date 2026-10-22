@@ -1,23 +1,20 @@
 {
-  "version": "1.10.0",
-  "date": "2026-10-21",
+  "version": "1.11.1",
+  "date": "2026-10-22",
   "file": "smalltv-pomodoro.bin",
-  "size": 518800,
+  "size": 516416,
   "notes": {
     "pt": [
-      "Brilho noturno que segue o sol (do pôr ao nascer)",
-      "Rodízio: o relógio troca entre seus mostradores favoritos",
-      "Mostradores da galeria com texto em português, inglês e espanhol"
+      "Controle pela Alexa: \"Alexa, ligar Pomodoro\" começa um foco, sem conta nem nuvem",
+      "Firmware menor, com espaço para as próximas atualizações"
     ],
     "en": [
-      "Night brightness that follows the sun (sunset to sunrise)",
-      "Rotation: the clock switches between your favourite faces",
-      "Gallery faces with text in Portuguese, English and Spanish"
+      "Alexa control: \"Alexa, turn on Pomodoro\" starts a focus session, no account or cloud",
+      "Smaller firmware, with room for future updates"
     ],
     "es": [
-      "Brillo nocturno que sigue el sol (del ocaso al amanecer)",
-      "Rotación: el reloj cambia entre tus esferas favoritas",
-      "Esferas de la galería con texto en portugués, inglés y español"
+      "Control con Alexa: \"Alexa, enciende Pomodoro\" empieza un foco, sin cuenta ni nube",
+      "Firmware más pequeño, con espacio para las próximas actualizaciones"
     ]
   }
 }
