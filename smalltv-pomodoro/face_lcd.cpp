@@ -19,7 +19,7 @@ static const int16_t DSEG_PT[][2] = {
   {138, 438}, {478, 438}, {541, 501}, {480, 562}, {138, 562}, {76, 500},  // g
 };
 static const uint8_t DSEG_START[8] = {0, 6, 13, 20, 26, 33, 40, 46};
-static const uint8_t DSEG_MASK[10] = {0x3f, 0x06, 0x5b, 0x4f, 0x66, 0x6d, 0x7d, 0x27, 0x7f, 0x6f};
+static const uint8_t DSEG_MASK[11] = {0x3f, 0x06, 0x5b, 0x4f, 0x66, 0x6d, 0x7d, 0x27, 0x7f, 0x6f, 0x40};  // 10 = "-" (só o g)
 
 // Preenche um polígono convexo (um segmento) linha a linha, amostrando no centro do pixel:
 // assim as folgas finas entre segmentos vizinhos ficam limpas em qualquer tamanho.
@@ -56,7 +56,7 @@ void dsegDigit(int x, int y, int h, int d, uint16_t on, uint16_t off) {
       px[i] = x + DSEG_PT[DSEG_START[sgm] + i][0] * k;
       py[i] = y + DSEG_PT[DSEG_START[sgm] + i][1] * k;
     }
-    bool lit = d >= 0 && d <= 9 && (DSEG_MASK[d] >> sgm & 1);
+    bool lit = d >= 0 && d <= 10 && (DSEG_MASK[d] >> sgm & 1);
     if (lit || off != on) fillConvex(px, py, n, lit ? on : off);  // off == on: só os acesos
   }
 }

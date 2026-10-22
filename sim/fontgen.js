@@ -1,12 +1,15 @@
 // Gera as tabelas de contorno de smalltv-pomodoro/fonts.cpp a partir de um TTF (dígitos 0-9 e ':').
 // uso: npm i opentype.js@1.3.4 && node fontgen.js <ttf> <NOME> [tolerância=10]
 //      com PREVIEW=arquivo.png desenha "14:37" para conferir o preenchimento (regra não-zero)
+//      com TEXTO=1 gera texto (A-Z, a-z, 0-9, espaço, ':', '-' e '%'): a célula de 720 vai do topo das
+//      maiúsculas ao fim das descendentes (g, p, y), os avanços são os da fonte e sai também NOME_CHARS
 const opentype = require('opentype.js'), fs = require('fs'), zlib = require('zlib');
 const [, , file, NAME, tolArg] = process.argv;
 const font = opentype.loadSync(file), CH = 720, tol = +(tolArg || 10);
-const chars = '0123456789:';
+const TEXT = !!process.env.TEXTO;
+const chars = TEXT ? ' -%:0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz' : '0123456789:';
 let top = -1e9, bot = 1e9;
-for (const c of '0123456789') { const b = font.charToGlyph(c).getBoundingBox(); top = Math.max(top, b.y2); bot = Math.min(bot, b.y1); }
+for (const c of TEXT ? 'Hdgpy' : '0123456789') { const b = font.charToGlyph(c).getBoundingBox(); top = Math.max(top, b.y2); bot = Math.min(bot, b.y1); }
 const k = CH / (top - bot);
 const X = x => Math.round(x * k), Y = y => Math.round((top - y) * k);
 
@@ -39,7 +42,7 @@ for (const ch of chars) {
 first.push(cend.length);
 // dígitos tabulares (o relógio não balança): célula = maior avanço de 2-9, glifo centralizado
 const tab = Math.max(...adv.slice(2, 10));
-for (let d = 0; d < 10; d++) { const dx = Math.round((tab - adv[d]) / 2); for (let c = first[d]; c < first[d + 1]; c++) for (let i = c ? cend[c - 1] : 0; i < cend[c]; i++) pts[i][0] += dx; adv[d] = tab; }
+if (!TEXT) for (let d = 0; d < 10; d++) { const dx = Math.round((tab - adv[d]) / 2); for (let c = first[d]; c < first[d + 1]; c++) for (let i = c ? cend[c - 1] : 0; i < cend[c]; i++) pts[i][0] += dx; adv[d] = tab; }
 // getPath já usa y para baixo com escala unitsPerEm/unitsPerEm = 1: desfeito acima (-y) para voltar ao sistema da fonte
 
 const out = [];
@@ -47,8 +50,9 @@ out.push(`static const int16_t ${NAME}_PT[${pts.length}][2] PROGMEM = {`);
 for (let i = 0; i < pts.length; i += 10) out.push('  ' + pts.slice(i, i + 10).map(p => `{${p[0]}, ${p[1]}}`).join(', ') + ',');
 out.push('};');
 out.push(`static const uint16_t ${NAME}_CEND[${cend.length}] PROGMEM = {${cend.join(', ')}};`);
-out.push(`static const uint8_t ${NAME}_GLYPH[12] PROGMEM = {${first.join(', ')}};`);
-out.push(`static const uint16_t ${NAME}_ADV[11] PROGMEM = {${adv.join(', ')}};`);
+out.push(`static const uint8_t ${NAME}_GLYPH[${first.length}] PROGMEM = {${first.join(', ')}};`);
+out.push(`static const uint16_t ${NAME}_ADV[${adv.length}] PROGMEM = {${adv.join(', ')}};`);
+if (TEXT) out.push(`static const char ${NAME}_CHARS[] PROGMEM = "${chars}";`);
 console.log(out.join('\n'));
 console.error(`${NAME}: ${pts.length} pontos, ${cend.length} contornos, ${pts.length * 4 + cend.length * 2 + 34} bytes`);
 
