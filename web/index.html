@@ -430,9 +430,10 @@ function skipUpdate(){try{localStorage.updSkip=UPD.version}catch(e){}$('upd').cl
 async function doUpdate(){const u=UPD;if(!u||updating||!confirm(t('Atualizar o relógio para a versão {0}? Ele reinicia sozinho no fim.',u.version)))return;
  const h={};if(st.cfg.lock){const p=prompt(t('Senha do /update'));if(p==null)return;h.Authorization='Basic '+btoa('admin:'+p)}
  updating=true;$('updgo').disabled=true;
- try{$('updt').textContent=t('Baixando a versão {0}...',u.version);const bin=await (await fetch(SITE+'firmware/'+u.file,{cache:'no-store'})).blob();
-  if(u.size&&bin.size!=u.size)throw 'size';
-  $('updt').textContent=t('Instalando... não desligue o relógio');const fd=new FormData();fd.append('firmware',bin,'firmware.bin');
+ try{$('updt').textContent=t('Baixando a versão {0}...',u.version);// a partir da 1.14 o relógio aceita o .bin.gz (menor, e o firmware pode passar de 520 KB)
+  const gz=!!u.gz,bin=await (await fetch(SITE+'firmware/'+(gz?u.gz:u.file),{cache:'no-store'})).blob();
+  if((gz?u.gzsize:u.size)&&bin.size!=(gz?u.gzsize:u.size))throw 'size';
+  $('updt').textContent=t('Instalando... não desligue o relógio');const fd=new FormData();fd.append('firmware',bin,gz?'firmware.bin.gz':'firmware.bin');
   const r=await fetch('/update',{method:'POST',body:fd,headers:h}),x=await r.text();
   if(r.status==401)throw t('Senha incorreta');if(!/success/i.test(x))throw x;
   $('updt').textContent=t('Atualizado! O relógio está reiniciando...');$('updn').innerHTML='';setTimeout(()=>location.reload(),20000)}

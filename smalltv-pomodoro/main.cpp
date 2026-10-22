@@ -19,6 +19,9 @@
 #include <Adafruit_ST7789.h>
 #include <ArduinoJson.h>
 #include <WiFiUdp.h>
+#include <eboot_command.h>
+#include "src/uzlib/uzlib.h"  // o mesmo descompactador do gerenciador de boot (licença zlib)
+extern "C" uint32_t _FS_start;
 #include <JPEGDEC.h>
 #include <AnimatedGIF.h>
 #include <new>
@@ -30,7 +33,7 @@
 
 void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);  // ui.cpp: recorta para a área suja; fora da tela, cai na faixa
 
-#define FW_VERSION "1.13.1"
+#define FW_VERSION "1.14.0"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
@@ -1272,7 +1275,7 @@ bool guard() { return panelOk() || deny(); }   // ações (POST)
 bool readOk() { return hostOk() || deny(); }   // leituras
 
 void setupWeb() {
-  server.collectHeaders("X-SmallTV");
+  server.collectHeaders("X-SmallTV", "Content-Length");
   // painel comprimido (web/index.html -> web/build.js -> web.h); o navegador descompacta
   server.on("/", HTTP_GET, [] {
     server.sendHeader("Content-Encoding", "gzip");
@@ -1620,7 +1623,7 @@ void setupWeb() {
 // grava no cabeçalho (offsets 4112 e 4116; todas as versões V9.0.x originais também têm) e se cabe no
 // espaço livre. Arquivo truncado, corrompido ou de outro aparelho é recusado e o firmware atual fica.
 // Usuário "admin"; senha vazia (ou o modo de recuperação) dispensa a autenticação.
-struct OtaCheck { uint32_t got, size, want, crc; uint8_t field[8]; String err; bool authOk; } ota;
+struct OtaCheck { uint32_t got, size, want, crc; uint8_t field[8]; String err; bool authOk, begun, gz; } ota;
 
 void otaConsume(const uint8_t *p, size_t n) {
   for (size_t i = 0; i < n && !ota.err.length(); i++, ota.got++) {
@@ -1634,13 +1637,72 @@ void otaConsume(const uint8_t *p, size_t n) {
         memcpy(&ota.size, ota.field, 4);
         memcpy(&ota.want, ota.field + 4, 4);
         uint32_t room = (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000;
-        if (ota.size < 4120 || ota.size > room) ota.err = F("tamanho invalido ou sem espaco");
+        if (ota.size < 4120 || (!ota.gz && ota.size > room)) ota.err = F("tamanho invalido ou sem espaco");  // .gz: conferido em otaVerifyGz
       }
     }
     if (ota.size && o >= ota.size) ota.err = F("arquivo maior que o indicado");
     ota.crc ^= (uint32_t)v << 24;
     for (int k = 0; k < 8; k++) ota.crc = (ota.crc << 1) ^ (ota.crc & 0x80000000 ? 0x04C11DB7 : 0);
   }
+}
+
+// ---------- atualização comprimida (.bin.gz) ----------
+// O .gz ocupa ~74% do firmware, então cabe mais firmware na área de 1 MB: a versão nova não precisa
+// mais caber inteira ao lado da atual. O .gz é gravado no FIM da área e o gerenciador de boot (eboot)
+// descompacta no reinício, por cima do firmware atual, setor por setor. Um .gz corrompido deixaria o
+// relógio sem firmware; por isso, antes de liberar a troca, o relógio lê o .gz gravado, descompacta
+// tudo e confere: CRC do .gz, cabeçalho, tamanho e CRC da imagem (otaConsume) e que a imagem
+// descompactada não alcança o .gz que o eboot ainda vai ler. Se algo falhar, a troca é cancelada.
+// Janela de 8 KB (compilar.sh comprime assim): um .gz com janela maior é recusado pelo uzlib.
+static uint32_t gzAddr, gzEnd;
+static uint8_t *gzBuf;
+static int gzRead(struct uzlib_uncomp *m) {
+  if (gzAddr >= gzEnd) return -1;
+  uint32_t n = gzEnd - gzAddr < 512 ? gzEnd - gzAddr : 512;
+  if (!ESP.flashRead(gzAddr, gzBuf, n)) return -1;
+  gzAddr += n;
+  m->source = gzBuf + 1;
+  m->source_limit = gzBuf + n;
+  return gzBuf[0];
+}
+
+bool otaVerifyGz() {
+  eboot_command cmd;
+  if (eboot_command_read(&cmd) || cmd.action != ACTION_COPY_RAW) {
+    ota.err = F("troca nao agendada");
+    return false;
+  }
+  uint32_t src = cmd.args[0];
+  uint8_t *dict = (uint8_t *)malloc(8192), out[256];
+  TINF_DATA *d = (TINF_DATA *)calloc(1, sizeof(TINF_DATA));  // ~1,2 KB de tabelas: fora da pilha
+  gzBuf = (uint8_t *)malloc(512);
+  if (dict && gzBuf && d) {
+    gzAddr = src;
+    gzEnd = src + cmd.args[2];
+    uzlib_init();
+    d->source_read_cb = gzRead;
+    uzlib_uncompress_init(d, dict, 8192);
+    int res = uzlib_gzip_parse_header(d);
+    ota.got = ota.size = ota.want = 0;  // otaConsume confere agora a imagem descompactada
+    ota.crc = 0xFFFFFFFF;
+    while (res == TINF_OK && !ota.err.length()) {
+      d->dest_start = d->dest = out;
+      d->dest_limit = out + sizeof out;
+      res = uzlib_uncompress_chksum(d);
+      if (res == TINF_OK || res == TINF_DONE) otaConsume(out, d->dest - out);
+      yield();
+    }
+    if (ota.err.length()) {}
+    else if (res != TINF_DONE) ota.err = F("arquivo comprimido corrompido");
+    else if (ota.got < 4120 || ota.got != ota.size) ota.err = F("imagem incompleta");
+    else if (ota.crc != ota.want) ota.err = F("imagem corrompida (CRC)");
+    else if (ota.size > src) ota.err = F("firmware grande demais para descompactar");
+  } else ota.err = F("sem memoria para conferir");
+  free(dict);
+  free(gzBuf);
+  free(d);
+  if (ota.err.length()) eboot_command_clear();  // cancela a troca: o firmware atual continua
+  return !ota.err.length();
 }
 
 void setupUpdate() {
@@ -1652,7 +1714,7 @@ void setupUpdate() {
                  "input,button{width:100%;padding:12px;margin:8px 0;border-radius:10px;border:1px solid #333;background:#1c1c1c;color:#eee;font:inherit}"
                  "button{background:#ff5a47;border:0;font-weight:700}</style><h2>");
     p += tr("Atualizar firmware", "Update firmware", "Actualizar firmware");
-    p += F("</h2><form method=post enctype=multipart/form-data><input type=file name=firmware accept=.bin required><button>");
+    p += F("</h2><form method=post enctype=multipart/form-data><input type=file name=firmware accept=.bin,.gz required><button>");
     p += tr("Enviar", "Upload", "Enviar");
     p += F("</button></form><small>v" FW_VERSION "</small>"
            "<script>document.forms[0].onsubmit=e=>{e.preventDefault();document.body.innerHTML='...';"
@@ -1671,20 +1733,28 @@ void setupUpdate() {
     }, [authOk] {
       HTTPUpload &up = server.upload();
       if (up.status == UPLOAD_FILE_START) {
-        ota = {0, 0, 0, 0xFFFFFFFF, {0}, String(), authOk()};
+        ota = {0, 0, 0, 0xFFFFFFFF, {0}, String(), authOk(), false, false};
         if (!ota.authOk) ota.err = F("senha");
-        else {
-          if (inAlbum) stopAlbum();  // libera RAM e o LittleFS durante a gravação
-          if (!Update.begin((ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000, U_FLASH)) ota.err = Update.getErrorString();
-        }
+        else if (inAlbum) stopAlbum();  // libera RAM e o LittleFS durante a gravação
       } else if (up.status == UPLOAD_FILE_WRITE && !ota.err.length()) {
-        otaConsume(up.buf, up.currentSize);
+        if (!ota.begun) {  // primeiro pedaço: .gz vai para o fim da área (tamanho do envio); .bin, para o espaço livre
+          ota.begun = true;
+          ota.gz = up.currentSize > 1 && up.buf[0] == 0x1F && up.buf[1] == 0x8B;
+          uint32_t size = ota.gz ? server.header("Content-Length").toInt() : (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000;
+          if (!size || !Update.begin(size, U_FLASH)) ota.err = size ? Update.getErrorString() : String(F("tamanho desconhecido"));
+        }
+        if (!ota.gz) otaConsume(up.buf, up.currentSize);
         if (!ota.err.length() && Update.write(up.buf, up.currentSize) != up.currentSize) ota.err = Update.getErrorString();
         if (ota.err.length()) Update.end();  // desiste: o firmware atual continua
       } else if (up.status == UPLOAD_FILE_END && !ota.err.length()) {
-        if (ota.got < 4120 || ota.got != ota.size) ota.err = F("arquivo incompleto");
+        if (!ota.begun) ota.err = F("arquivo vazio");
+        else if (ota.gz) {
+          if (!Update.end(true)) ota.err = Update.getErrorString();
+          else otaVerifyGz();
+        } else if (ota.got < 4120 || ota.got != ota.size) ota.err = F("arquivo incompleto");
         else if (ota.crc != ota.want) ota.err = F("arquivo corrompido (CRC)");
-        if (ota.err.length()) Update.end();
+        if (ota.gz) {}
+        else if (ota.err.length()) Update.end();
         else if (!Update.end(true)) ota.err = Update.getErrorString();
       } else if (up.status == UPLOAD_FILE_ABORTED) {
         Update.end();
@@ -1745,6 +1815,7 @@ void startRecovery() {
     safeRestart();
   });
   server.on("/api/stats", HTTP_GET, sendStats);
+  server.collectHeaders("Content-Length");  // /update com .bin.gz
   setupUpdate();
   server.begin();
 }
