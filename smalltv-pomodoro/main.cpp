@@ -33,7 +33,7 @@ extern "C" uint32_t _FS_start;
 
 void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);  // ui.cpp: recorta para a área suja; fora da tela, cai na faixa
 
-#define FW_VERSION "1.15.1"
+#define FW_VERSION "1.15.2"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
@@ -570,34 +570,6 @@ void weatherLoop() {
 const char *weatherText(int code);  // de ui.cpp (o mesmo texto que aparece na tela)
 
 // ---------- tela (desenho em ui.cpp) ----------
-// Tensões e gama do painel ST7789V 240x240: a biblioteca da Adafruit deixa os valores de reset do chip
-// (VCOM 0,9 V), e um VCOM fora do ponto deixa um resto de corrente contínua no cristal líquido: a imagem
-// parada por horas (o fundo claro do LCD retrô) fica "fantasma" nos mostradores escuros. Estes são os
-// valores do fabricante do módulo, os mesmos do TFT_eSPI e do ESPHome (modelo ST7789V).
-void panelTune() {
-  static const uint8_t SEQ[] PROGMEM = {
-    0xB6, 2, 0x0A, 0x82,                    // controle de exibição
-    0xB2, 5, 0x0C, 0x0C, 0x00, 0x33, 0x33,  // porch
-    0xB7, 1, 0x35,                          // VGH / VGL
-    0xBB, 1, 0x28,                          // VCOM 1,1 V
-    0xC0, 1, 0x0C,                          // LCM
-    0xC2, 2, 0x01, 0xFF,                    // VDV e VRH pelos registradores
-    0xC3, 1, 0x10,                          // VRH
-    0xC4, 1, 0x20,                          // VDV
-    0xC6, 1, 0x0F,                          // 60 Hz
-    0xD0, 2, 0xA4, 0xA1,                    // AVDD / AVCL / VDS
-    0xE0, 14, 0xD0, 0x00, 0x02, 0x07, 0x0A, 0x28, 0x32, 0x44, 0x42, 0x06, 0x0E, 0x12, 0x14, 0x17,  // gama +
-    0xE1, 14, 0xD0, 0x00, 0x02, 0x07, 0x0A, 0x28, 0x31, 0x54, 0x47, 0x0E, 0x1C, 0x17, 0x1B, 0x1E,  // gama -
-  };
-  uint8_t buf[14];
-  for (size_t i = 0; i < sizeof SEQ;) {
-    uint8_t cmd = pgm_read_byte(&SEQ[i]), n = pgm_read_byte(&SEQ[i + 1]);
-    memcpy_P(buf, &SEQ[i + 2], n);
-    tft.sendCommand(cmd, buf, n);
-    i += 2 + n;
-  }
-}
-
 // Ordem de cor, inversão e rotação variam entre unidades do SmallTV: tudo configurável no painel.
 void applyPanel() {
   tft.setRotation(cfg.flip ? 0 : 2);  // Adafruit: 2 = sem espelhamento/offsets 0; 0 = 180° (offset 80 já tratado)
@@ -2080,7 +2052,6 @@ void setup() {
 
   tft.init(240, 240, SPI_MODE3);
   tft.setSPISpeed(40000000);
-  panelTune();
   uiBegin(&tft);
   uiSetLang(cfg.lang);
   // entre os quadros de animação (virada do Flip): cede tempo ao Wi-Fi e dá ritmo à virada
