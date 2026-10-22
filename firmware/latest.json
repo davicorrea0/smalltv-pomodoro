@@ -1,25 +1,25 @@
 {
-  "version": "1.16.1",
+  "version": "1.17.0",
   "date": "2026-10-22",
   "file": "smalltv-pomodoro.bin",
-  "size": 514576,
+  "size": 515920,
   "notes": {
     "pt": [
-      "Sem imagem fantasma: a tela agora usa 0,850 V (ajustável em Ajustes > Tela do aparelho)",
-      "GIFs não travam mais com o painel aberto",
-      "\"Inverter cores\" desligado já mostra as cores certas"
+      "Novo mostrador Previsão em cartões: 4 dias com a máxima em destaque",
+      "Sem imagem fantasma: tela em 0,850 V (ajustável)",
+      "GIFs não travam com o painel aberto"
     ],
     "en": [
-      "No more ghosting: the display now uses 0.850 V (adjustable in Settings > Device screen)",
-      "GIFs no longer stutter while the panel is open",
-      "\"Invert colors\" off now shows the right colors"
+      "New Forecast cards face: 4 days with the high in focus",
+      "No ghosting: display at 0.850 V (adjustable)",
+      "GIFs no longer stutter with the panel open"
     ],
     "es": [
-      "Sin imagen fantasma: la pantalla ahora usa 0,850 V (ajustable en Ajustes > Pantalla del aparato)",
-      "Los GIF ya no se traban con el panel abierto",
-      "\"Invertir colores\" apagado ya muestra los colores correctos"
+      "Nueva esfera Pronóstico en tarjetas: 4 días con la máxima destacada",
+      "Sin imagen fantasma: pantalla en 0,850 V (ajustable)",
+      "Los GIF ya no se traban con el panel abierto"
     ]
   },
   "gz": "smalltv-pomodoro.bin.gz",
-  "gzsize": 387093
+  "gzsize": 388062
 }

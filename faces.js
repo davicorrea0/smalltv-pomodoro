@@ -22,7 +22,9 @@ window.BUILTIN_FACES = [
   { id: "words", tags: ["digital"],   name: "Palavras",  desc: "A hora por extenso, no idioma do relógio",
     name_en: "Words",    desc_en: "The time spelled out, in the clock's language" },
   { id: "forecast", tags: ["digital"], name: "Previsão", desc: "Hoje e os próximos 4 dias, com chuva e mín/máx",
-    name_en: "Forecast", desc_en: "Today and the next 4 days, with rain and low/high" }
+    name_en: "Forecast", desc_en: "Today and the next 4 days, with rain and low/high" },
+  { id: "forecast-cards", tags: ["digital"], name: "Previsão em cartões", desc: "Quatro dias em cartões, com a máxima em destaque",
+    name_en: "Forecast cards", desc_en: "Four days in cards, with the high in focus" }
 ].map(function (f, i) {
   if (window.SITE_LANG === "en") { f.name = f.name_en; f.desc = f.desc_en; }
   f.num = i;
