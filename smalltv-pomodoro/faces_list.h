@@ -15,4 +15,5 @@
   X(FLIP, themeFlip, "Flip", "Plaquinhas que viram, com a fonte Bebas Neue")               \
   X(LCD, themeLcd, "LCD retrô", "Relógio digital dos anos 80 (fonte DSEG7)")               \
   X(WORDS, themeWords, "Palavras", "A hora por extenso, no idioma do relógio")         \
-  X(FORECAST, themeForecast, "Previsão", "Hoje e os próximos 4 dias, com chuva e mín/máx")
+  X(FORECAST, themeForecast, "Previsão", "Hoje e os próximos 4 dias, com chuva e mín/máx") \
+  X(FORECAST_CARDS, themeForecastCards, "Previsão em cartões", "Quatro dias em cartões, com a máxima em destaque")

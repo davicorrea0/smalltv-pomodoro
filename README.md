@@ -1,16 +1,16 @@
 # SmallTV Pomodoro 🍅
 
-Alternative firmware for the **GeekMagic SmallTV Ultra** (ESP8266, 240×240 ST7789 screen): a clock with 9 faces, a Pomodoro timer, weather, a photo/GIF album and a pixel art tomato mascot that grows a plant as you keep your focus streak.
+Alternative firmware for the **GeekMagic SmallTV Ultra** (ESP8266, 240×240 ST7789 screen): a clock with 10 faces, a Pomodoro timer, weather, a photo/GIF album and a pixel art tomato mascot that grows a plant as you keep your focus streak.
 
 🌐 **Project website:** [davicorrea0.github.io/smalltv-pomodoro](https://davicorrea0.github.io/smalltv-pomodoro/): what changes on the clock, how to install it, and the [face gallery](https://davicorrea0.github.io/smalltv-pomodoro/galeria.html).
 
-![The 9 built-in clock faces](docs/clock-faces.png)
+![The 10 built-in clock faces](docs/clock-faces.png)
 
 <sub>Screens are rendered by the project's simulator, which compiles the same drawing code as the firmware.</sub>
 
 ## Features
 
-- **9 clock faces:** Matrix, Tomato (a pixel art scene that changes with the time and weather: the tomato opens an umbrella in the rain, wears a scarf in the cold and sunglasses in the heat, and cheers when you hit your daily goal), Analog, Weather, Neon, Flip (with a real flip animation), Retro LCD, Words (the time spelled out in English, Portuguese or Spanish), and Forecast (today and the next 4 days, with the chance of rain and a low-to-high bar on a shared scale).
+- **10 clock faces:** Matrix, Tomato (a pixel art scene that changes with the time and weather: the tomato opens an umbrella in the rain, wears a scarf in the cold and sunglasses in the heat, and cheers when you hit your daily goal), Analog, Weather, Neon, Flip (with a real flip animation), Retro LCD, Words (the time spelled out in English, Portuguese or Spanish), Forecast (today and the next 4 days, with the chance of rain and a low-to-high bar on a shared scale), and Forecast cards (four days as cards with a big high, the low and the chance of rain).
 - **Pomodoro** with a progress ring, the end time, and the tomato changing expression (focused, relaxing with a coffee, asleep when paused). Pick what you will do while focusing (read, study, code, tasks or draw) and the screen shows that activity next to the tomato, which jumps for joy when a phase ends. A daily session counter with a goal.
 - **Streak and achievements:** the clock keeps a year of daily focus sessions. A plant next to the tomato grows with every day in a row you hit your goal, up to a golden tomato at 7 days, and a flame shows your streak. In the web panel: a garden of the whole year, 10 achievements, and a pixel art card of your day to share (on a phone it opens the share menu).
 - **Downloadable faces:** small `.json` packages installed from the panel without updating the firmware. 24 faces in the online gallery, including Apple Watch and Mi Band inspired ones. A face can carry its text in all three languages and shows the one chosen in the panel.
@@ -136,7 +136,7 @@ To change an existing drawing, just edit its `.txt`: no code changes. The sheet 
 
 ## Downloadable faces (no firmware update)
 
-Besides the 9 built-in faces, the clock accepts **packages**: `.json` files of a few KB that describe a face in layers (text with variables such as `{HH}:{MM}`, `{TEMP}` and `{STREAK}`, the project's fonts, pixel art sprites, the weather icon, bars, progress rings, dial ticks, hands and the streak plant). Install them from the panel under *Clock → More faces*, from the online gallery or by picking the file. Format and examples (in Portuguese): **[docs/PACOTES.md](docs/PACOTES.md)** and the [`faces/`](faces) folder.
+Besides the 10 built-in faces, the clock accepts **packages**: `.json` files of a few KB that describe a face in layers (text with variables such as `{HH}:{MM}`, `{TEMP}` and `{STREAK}`, the project's fonts, pixel art sprites, the weather icon, bars, progress rings, dial ticks, hands and the streak plant). Install them from the panel under *Clock → More faces*, from the online gallery or by picking the file. Format and examples (in Portuguese): **[docs/PACOTES.md](docs/PACOTES.md)** and the [`faces/`](faces) folder.
 
 ![Some of the downloadable faces in the gallery](docs/packages.png)
 
