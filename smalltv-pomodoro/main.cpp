@@ -30,7 +30,7 @@
 
 void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);  // ui.cpp: recorta para a área suja; fora da tela, cai na faixa
 
-#define FW_VERSION "1.12.0"
+#define FW_VERSION "1.13.0"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
@@ -214,7 +214,13 @@ void statsFocus();                      // um foco terminou (histórico de focos
 void statsRollover(const struct tm &t);  // o dia mudou
 extern uint16_t statsStreak, statsBest;
 
+int8_t hookPending = -1;  // aviso de fim de fase a enviar no loop: 0 foco, 1 pausa (avisos na Alexa)
+String hookWork, hookBreak;  // endereços dos avisos (mais abaixo, em "avisos de fim de fase")
+int hookFire(const String &url);
+String hookClean(String u);
+
 void advance(bool completed) {
+  if (completed) hookPending = phase == WORK ? 0 : 1;
   if (phase == WORK) {
     if (completed) {
       cycleDone++;
@@ -1238,6 +1244,25 @@ void setupWeb() {
   });
   server.on("/api/state", HTTP_GET, sendState);
   server.on("/api/stats", HTTP_GET, sendStats);
+  // avisos de fim de fase: GET lê, POST (w, b) grava, POST test=w|b chama o endereço e devolve o código
+  server.on("/api/hooks", HTTP_GET, [] {
+    server.send(200, "application/json", "{\"w\":\"" + hookWork + "\",\"b\":\"" + hookBreak + "\"}");
+  });
+  server.on("/api/hooks", HTTP_POST, [] {
+    if (server.hasArg("test")) {
+      int code = hookFire(server.arg("test") == "b" ? hookBreak : hookWork);
+      server.send(200, "text/plain", String(code));
+      return;
+    }
+    hookWork = hookClean(server.arg("w"));
+    hookBreak = hookClean(server.arg("b"));
+    File f = fsOk ? LittleFS.open("/hooks.txt", "w") : File();
+    if (f) {
+      f.print(hookWork + "\n" + hookBreak + "\n");
+      f.close();
+    }
+    server.send(f ? 200 : 500, "text/plain", f ? "ok" : "falhou");
+  });
   // restaura o histórico de um backup: "days" = contagens do mais antigo ao dia "day"
   server.on("/api/statsimport", HTTP_POST, [] {
     if (!fsOk || !server.hasArg("days") || !server.hasArg("day")) {
@@ -1714,6 +1739,41 @@ void rotLoop() {
   }
 }
 
+// ---------- avisos de fim de fase (Alexa e afins) ----------
+// Um endereço por evento em /hooks.txt (fim do foco, fim da pausa). Quando a fase termina o relógio
+// chama o endereço (GET), e o serviço dispara uma rotina: a Virtual Smart Home e o Voice Monkey fazem a
+// Alexa falar, o IFTTT liga a centenas de serviços. Vai sem criptografia (http): os três aceitam, e
+// TLS não cabe no relógio. Um "https://" colado no painel vira "http://".
+
+void hooksLoad() {
+  File f = fsOk ? LittleFS.open("/hooks.txt", "r") : File();
+  if (!f) return;
+  hookWork = f.readStringUntil('\n');
+  hookBreak = f.readStringUntil('\n');
+  f.close();
+  hookWork.trim();
+  hookBreak.trim();
+}
+
+String hookClean(String u) {
+  u.trim();
+  if (u.startsWith("https://")) u = "http://" + u.substring(8);
+  if (!u.startsWith("http://") || u.length() > 400 || u.indexOf('"') >= 0 || u.indexOf('\\') >= 0 || u.indexOf(' ') >= 0) return "";
+  return u;
+}
+
+// chama o endereço; devolve o código HTTP (0 = sem endereço ou sem Wi-Fi, negativo = falha de conexão)
+int hookFire(const String &url) {
+  if (!url.length() || WiFi.status() != WL_CONNECTED) return 0;
+  WiFiClient client;
+  HTTPClient http;
+  if (!http.begin(client, url)) return -1;
+  http.setTimeout(4000);
+  int code = http.GET();
+  http.end();
+  return code;
+}
+
 // ---------- Wi-Fi: rede salva ou portal de configuração ----------
 // Portal próprio no lugar do WiFiManager (~45 KB): o binário precisa caber ao lado do firmware atual.
 DNSServer dns;
@@ -1821,6 +1881,7 @@ void setup() {
       rf.close();
     }
   }
+  hooksLoad();
   if (recoveryMode) {  // sem pacotes, álbum nem clima: só o necessário para consertar
     startRecovery();
     return;
@@ -1861,6 +1922,11 @@ void loop() {
   tickPomodoro();
   weatherLoop();
   rotLoop();
+  if (hookPending >= 0) {  // a fase acabou: avisa (fora do tick do Pomodoro; leva até 4 s sem Wi-Fi bom)
+    int8_t p = hookPending;
+    hookPending = -1;
+    hookFire(p ? hookBreak : hookWork);
+  }
 
   uint32_t now = millis();
   if (now - lastBriCheck > 5000) {

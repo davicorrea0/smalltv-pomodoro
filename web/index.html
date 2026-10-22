@@ -34,7 +34,7 @@ small{color:var(--mut)}
 label{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--line)}
 .card label:first-of-type{border-top:0}
 input,select{background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:9px;font:inherit;width:96px}
-select,input[type=text],input[type=search],input[type=password]{width:180px}input[type=range]{width:160px;padding:0;accent-color:var(--ac)}
+select,input[type=text],input[type=search],input[type=password]{width:180px}label.stk{flex-direction:column;align-items:stretch;gap:6px}label.stk input{width:100%}input[type=range]{width:160px;padding:0;accent-color:var(--ac)}
 input[type=checkbox]{width:44px;height:26px;appearance:none;-webkit-appearance:none;border-radius:13px;background:var(--line);position:relative;padding:0;border:0;transition:.2s;flex:none}
 input[type=checkbox]::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s}
 input[type=checkbox]:checked{background:var(--short)}input[type=checkbox]:checked::after{left:21px}
@@ -206,6 +206,10 @@ nav button.on svg{stroke:var(--ac)}
  <div class="card">
   <label>Controlar pela Alexa<input data-k="alexa" type="checkbox"></label>
   <span class="alx" id="alxst"></span>
+  <label class="stk">Avisar quando o foco terminar<input id="hkw" type="url" placeholder="http://..." spellcheck="false"></label>
+  <label class="stk">Avisar quando a pausa terminar<input id="hkb" type="url" placeholder="http://..." spellcheck="false"></label>
+  <div class="row" style="margin:6px 0 10px"><button class="btn" onclick="hooksSave()">Salvar avisos</button><button class="btn" onclick="hookTest('w')">Testar foco</button><button class="btn" onclick="hookTest('b')">Testar pausa</button></div>
+  <small>Para a Alexa falar quando a fase terminar: ative a skill Virtual Smart Home, crie um "URL Routine Trigger" em virtualsmarthome.xyz e cole o endereço aqui; no app da Alexa, crie uma rotina que começa com esse gatilho e faz a Alexa dizer "Pomodoro concluído". Funciona também com Voice Monkey e IFTTT (webhooks).</small>
   <small>Com um Echo na mesma rede, diga "Alexa, descobrir dispositivos": o relógio aparece como três lâmpadas. Pomodoro: "ligar" começa o foco, "desligar" pausa e, de novo, encerra; "Pomodoro em 40%" foca 40 minutos. Pausa e Pausa longa: "ligar" começa a pausa, "desligar" volta ao foco. Nas rotinas do app da Alexa dá para usar frases suas, como "Alexa, hora de focar".</small>
  </div>
  </div>
@@ -312,7 +316,7 @@ const post=(u,b)=>fetch(u,{method:'POST',body:b});
 const kb=n=>n>1048576?(n/1048576).toFixed(1)+' MB':Math.round(n/1024)+' KB';
 function toast(t){const e=$('toast');e.textContent=t;e.classList.add('v');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('v'),2200)}
 function tab(i){curTab=i;document.querySelectorAll('.tab').forEach((e,k)=>e.classList.toggle('on',k==i));document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t==i));
- try{localStorage.tab=i}catch(e){}if(i==2)files();if(i==1&&!STATS)loadStats();window.scrollTo(0,0)}
+ try{localStorage.tab=i}catch(e){}if(i==2)files();if(i==3)hooksLoad();if(i==1&&!STATS)loadStats();window.scrollTo(0,0)}
 const fkey=f=>f.pkg?'p:'+f.pkg:'t:'+f.t;  // embutido "t:N" ou pacote "p:id"
 const curKey=s=>s.cfg.theme==200?'p:'+s.cfg.pkg:'t:'+s.cfg.theme;
 const faceSrc=f=>f.src||(f.pkg?'/face?pkg='+encodeURIComponent(f.pkg):SITE+'img/faces/face-'+f.t+'.png');  // embutidos: prévia no site (não ocupa a flash)
@@ -372,7 +376,7 @@ function catSheet(e,inst){const c=$('sheetc');c.innerHTML='';const s=el('div','s
  b.onclick=async()=>{try{toast(t('Baixando...'));const j=await (await fetch(CATALOG+e.file)).blob();let p=null;try{const r=await fetch(CATALOG+e.preview);if(r.ok)p=await r.blob()}catch(x){}
   await install(j,p);closeSheet();catalog()}catch(x){toast(t('Falha ao baixar'))}};c.appendChild(b);$('sheet').classList.add('v')}
 function closeSheet(){$('sheet').classList.remove('v')}
-const SPR={"t_feliz":{"p":"Re8402f ra8261e hff9178 G60c454 g2e8034 k280e0c pffa0a0 wffffff m7a1010","r":["......gGGg......","....gGGGGGGg....","...rRRgGGgRRr...","..rRRRRggRRRRr..",".rRhhRRRRRRRRRr.",".rRhRRRRRRRRRRr.","rRRRRRRRRRRRRRRr","rRRRRRRRRRRRRRRr","rRRRRkRRRRkRRRRr","rRRRRkRRRRkRRRRr","rRRpRRRRRRRRpRRr",".rRRRRkRRkRRRRr.",".rRRRRRkkRRRRRr.","..rrRRRRRRRRrr..","....rrrrrrrr....","................"]},"t_comemorando":{"p":"Re8402f ra8261e hff9178 G60c454 g2e8034 k280e0c pffa0a0 wffffff m7a1010 Yffc428 B4f8dff","r":[".Y....gGGg....B.","....gGGGGGGg....","r..rRRgGGgRRr..r",".rrRRRRggRRRRrr.",".rRhhRRRRRRRRRr.","BrRhRRRRRRRRRRrY","rRRRRRRRRRRRRRRr","rRRRRRRRRRRRRRRr","rRRRRkRRRRkRRRRr","rRRRkRkRRkRkRRRr","rRRpRRRRRRRRpRRr",".rRRRRkkkkRRRRr.",".rRRRRkmmkRRRRr.","..rrRRRkkRRRrr..","....rrrrrrrr....","................"]},"chama":{"p":"oa8261e Rff5a2a Yffc83a wfff4c0","r":["...o....","...oo...","..oRo...","..oRRo.o",".oRRRooR",".oRYRRRo","oRRYYRRo","oRYYwYRo","oRYwwYRo",".oRYYRo.","..oooo.."]},"p_semente":{"p":"o3d2414 S7a4a2e sf0d58c g2e8034 G60c454 yffd23f cff8c1a v8fd16a V4f9a3a Re8402f ra8261e Dffcc33 dc48a12 wffffff","r":["................","................","................","................","................","................","................","................","................","................","................","................","......oooo......",".....oSSsSo.....","....oSSSSSSo....","...oSSSSSSSSo..."]},"p_broto":{"p":"o3d2414 S7a4a2e sf0d58c g2e8034 G60c454 yffd23f cff8c1a v8fd16a V4f9a3a Re8402f ra8261e Dffcc33 dc48a12 wffffff","r":["................","................","................","................","................","................",".....gGg.gGg....","....gGGGgGGGg...",".....gggGggg....",".......gG.......",".......gG.......",".......gG.......","......oooo......",".....oSSSSo.....","....oSSSSSSo....","...oSSSSSSSSo..."]},"p_flor":{"p":"o3d2414 S7a4a2e sf0d58c g2e8034 G60c454 yffd23f cff8c1a v8fd16a V4f9a3a Re8402f ra8261e Dffcc33 dc48a12 wffffff","r":["................","......yyy.......",".....yycyy......","......yyy.......",".......gG.......",".......gG.......",".....gGgG.......","....gGGgG.gGg...",".......gGgGGGg..",".......gG.......",".......gG.......",".......gG.......","......oooo......",".....oSSSSo.....","....oSSSSSSo....","...oSSSSSSSSo..."]},"p_verde":{"p":"o3d2414 S7a4a2e sf0d58c g2e8034 G60c454 yffd23f cff8c1a v8fd16a V4f9a3a Re8402f ra8261e Dffcc33 dc48a12 wffffff","r":["................",".......gG.......",".....gGgG.......","....gGGgGggg....",".......gGgGGg...",".......gG.vvvv..",".......gGvwvvvV.",".......gGvvvvvV.",".......gGvvvvvV.",".......gG.VVVV..","...gGg.gG.......","....gGGgG.......","......oooo......",".....oSSSSo.....","....oSSSSSSo....","...oSSSSSSSSo..."]},"p_madura":{"p":"o3d2414 S7a4a2e sf0d58c g2e8034 G60c454 yffd23f cff8c1a v8fd16a V4f9a3a Re8402f ra8261e Dffcc33 dc48a12 wffffff","r":["................",".......gG.......",".....gGgG.......","....gGGgGggg....",".......gGgGGg...",".......gG.RRRR..",".......gGRwRRRr.",".......gGRRRRRr.",".......gGRRRRRr.",".......gG.rrrr..","...gGg.gG.......","....gGGgG.......","......oooo......",".....oSSSSo.....","....oSSSSSSo....","...oSSSSSSSSo..."]},"p_dourada":{"p":"o3d2414 S7a4a2e sf0d58c g2e8034 G60c454 yffd23f cff8c1a v8fd16a V4f9a3a Re8402f ra8261e Dffcc33 dc48a12 wffffff","r":["...w.......w....","..www..gG.www...","...w.gGgG..w....","....gGGgGggg....",".......gGgGGg...",".......gG.DDDD..",".......gGDwDDDd.",".......gGDDDDDd.",".......gGDDDDDd.",".......gG.dddd..","...gGg.gG.......","....gGGgG.......","......oooo......",".....oSSSSo.....","....oSSSSSSo....","...oSSSSSSSSo..."]}};
+const SPR={"t_feliz":{"p":"Re8402f ra8261e hff9178 G60c454 g2e8034 k280e0c pffa0a0 wffffff m7a1010","r":["......gGGg......","....gGGGGGGg....","...rRRgGGgRRr...","..rRRRRggRRRRr..",".rRhhRRRRRRRRRr.",".rRhRRRRRRRRRRr.","rRRRRRRRRRRRRRRr","rRRRRRRRRRRRRRRr","rRRRRkRRRRkRRRRr","rRRRRkRRRRkRRRRr","rRRpRRRRRRRRpRRr",".rRRRRkRRkRRRRr.",".rRRRRRkkRRRRRr.","..rrRRRRRRRRrr..","....rrrrrrrr....","................"]},"t_comemorando":{"p":"Re8402f ra8261e hff9178 G60c454 g2e8034 k280e0c pffa0a0 wffffff m7a1010 Yffc428 B4f8dff","r":[".Y....gGGg....B.","....gGGGGGGg....","r..rRRgGGgRRr..r",".rrRRRRggRRRRrr.",".rRhhRRRRRRRRRr.","BrRhRRRRRRRRRRrY","rRRRRRRRRRRRRRRr","rRRRRRRRRRRRRRRr","rRRRRkRRRRkRRRRr","rRRRkRkRRkRkRRRr","rRRpRRRRRRRRpRRr",".rRRRRkkkkRRRRr.",".rRRRRkmmkRRRRr.","..rrRRRkkRRRrr..","....rrrrrrrr....","................"]},"chama":{"p":"oa8261e Rff5a2a Yffc83a wfff4c0","r":["...o....","...oo...","..oRo...","..oRRo.o",".oRRRooR",".oRYRRRo","oRRYYRRo","oRYYwYRo","oRYwwYRo",".oRYYRo.","..oooo.."]},"p_broto":{"p":"o3d2414 S7a4a2e sf0d58c g2e8034 G60c454 yffd23f cff8c1a v8fd16a V4f9a3a Re8402f ra8261e Dffcc33 dc48a12 wffffff","r":["................","................","................","................","................","................",".....gGg.gGg....","....gGGGgGGGg...",".....gggGggg....",".......gG.......",".......gG.......",".......gG.......","......oooo......",".....oSSSSo.....","....oSSSSSSo....","...oSSSSSSSSo..."]}};
 // ---------- sequência, horta, conquistas e cartão de compartilhar ----------
 let STATS=null;
 // desenha um sprite (paleta "k280e0c ...", linhas de caracteres) num canvas 2D
@@ -382,13 +386,6 @@ Object.assign(SPR,{"ic_alvo":{"p":"o5a1a14 re8402f wf4f4f5","r":["....oooo....",
 SPR.gold={p:SPR.t_feliz.p.split(' ').map(e=>({R:'Rffcc33',r:'rc48a12',h:'hfff2a8',p:'pffb347'})[e[0]]||e).join(' '),r:SPR.t_feliz.r};
 // sprite centralizado num canvas 16x16 (o CSS amplia)
 function sprCanvas(S){const c=document.createElement('canvas');c.width=c.height=16;spr(c.getContext('2d'),S,(16-S.r[0].length)>>1,(16-S.r.length)>>1,1);return c}
-// fonte 5x7 do relógio (glcdfont do Adafruit GFX, ' ' a 'Z'): 5 colunas por letra, bit 0 em cima
-const FONT='000000000000005f00000007000700147f147f14242a7f2a12231308646236495620500008070300001c2241000041221c002a1c7f1c2a08083e080800807030000808080808000060600020100804023e5149453e00427f400072494949462141494d331814127f1027454545393c4a49493141211109073649494936464949291e0000140000004034000000081422411414141414004122140802015909063e415d594e7c1211127c7f494949363e414141227f4141413e7f494949417f090909013e414151737f0808087f00417f41002040413f017f081422417f404040407f021c027f7f0408107f3e4141413e7f090909063e4151215e7f09192946264949493203017f01033f4040403f1f2040201f3f4038403f631408146303047804036159494d43';
-const pnorm=s=>String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[¡¿]/g,'').toUpperCase();
-const ptw=(s,sc)=>pnorm(s).length*6*sc-sc;
-function ptxt(g,s,x,y,sc,col){g.fillStyle=col;for(const ch of pnorm(s)){const k=ch.charCodeAt(0)-32;
- if(k>=0&&k<59)for(let cx=0;cx<5;cx++){const b=parseInt(FONT.substr((k*5+cx)*2,2),16);for(let cy=0;cy<7;cy++)if(b>>cy&1)g.fillRect(x+cx*sc,y+cy*sc,sc,sc)}x+=6*sc}}
-const plant=n=>SPR[['p_semente','p_broto','p_flor','p_flor','p_verde','p_verde','p_madura'][n]||'p_dourada'];
 document.documentElement.style.setProperty('--fire','url('+(()=>{const c=document.createElement('canvas');c.width=8;c.height=11;spr(c.getContext('2d'),SPR.chama,0,0,1);return c.toDataURL()})()+')');
 function loadStats(){return fetch('/api/stats').then(r=>r.json()).then(j=>{STATS=j;drawGame()}).catch(()=>{})}
 const dayDate=d=>new Date(d*864e5);  // dia do relógio (dias desde 1970) -> data (UTC)
@@ -411,39 +408,13 @@ function drawGame(){const j=STATS;if(!j)return;const d=j.days,G=j.goal,n=d.lengt
   x.append(el('b',null,t(name)),el('small',null,t(desc)+(ok||goal==1?'':' · '+Math.min(v,goal)+'/'+goal)));e.appendChild(x);a.appendChild(e);
   if(ok){got.push(name);if(seen&&!seen.includes(name))toast(t('Conquista: {0}!',t(name)))}});
  try{localStorage.ach=JSON.stringify(got)}catch(e){}}
-// cartão em pixel art: desenhado numa grade de 120x150 e ampliado 9x (1080x1350, 4:5), com a fonte do
-// relógio e a cena do mostrador Tomate. No celular abre o compartilhar; no PC baixa o PNG.
-const WDN=[['DOM','SEG','TER','QUA','QUI','SEX','SAB'],['SUN','MON','TUE','WED','THU','FRI','SAT'],['DOM','LUN','MAR','MIE','JUE','VIE','SAB']];
-const MON=[['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'],['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'],['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC']];
-const MINI=['...gGg...','.rRRgRRr.','rRhRRRRRr','rRRRRRRRr','rRRRRRRRr','.rRRRRRr.','..rrrrr..'];
-async function shareDay(){if(!st)return;if(!STATS)await loadStats();const j=STATS||{days:[],goal:st.cfg.goal},G=st.cfg.goal,today=st.today,met=today>=G,sk=st.streak||0;
- const W=120,H=150,c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');
- const R=(col,x,y,w,h)=>{g.fillStyle=col;g.fillRect(x,y,w,h)},ctr=(s,y,sc,col)=>ptxt(g,s,Math.round((W-ptw(s,sc))/2),y,sc,col);
- R('#0e0e10',0,0,W,H);
- R('#3a3046',3,2,W-6,H-4);R('#3a3046',2,3,W-4,H-6);R('#18141f',4,3,W-8,H-6);R('#18141f',3,4,W-6,H-8);  // cartão com cantos em degrau
- ctr('SmallTV Pomodoro',9,1,'#ff5a47');
- const now=new Date();ctr(WDN[LG][now.getDay()]+' '+now.getDate()+' '+MON[LG][now.getMonth()],19,1,'#8b8b93');
- // cena: céu em faixas, sol, nuvens, grama e terra, com a planta da sequência e o tomate
- const sx=10,sy=30,sw=100;R('#3a3046',sx-1,sy-1,sw+2,42);
- ['#2e86de','#3d91e1','#4f9de5','#64aae9','#7bb8ee','#93c8f3'].forEach((col,i)=>R(col,sx,sy+i*5,sw,5));
- R('#ffc428',sx+84,sy+4,7,7);R('#93c8f3',sx+84,sy+4,1,1);R('#93c8f3',sx+90,sy+4,1,1);R('#93c8f3',sx+84,sy+10,1,1);R('#93c8f3',sx+90,sy+10,1,1);
- R('#f4f6fa',sx+30,sy+7,12,3);R('#f4f6fa',sx+33,sy+5,6,2);R('#f4f6fa',sx+64,sy+13,10,3);R('#f4f6fa',sx+66,sy+11,5,2);
- R('#4caf50',sx,sy+30,sw,3);R('#2e7d32',sx,sy+33,sw,1);R('#5c3c2a',sx,sy+34,sw,6);
- for(let i=0;i<9;i++)R('#4a2f21',sx+3+i*11,sy+36+(i*3)%3,2,1);
- for(let i=0;i<8;i++)R('#4caf50',sx+6+i*13,sy+28,1,2);
- spr(g,plant(sk),sx+10,sy+1,2);spr(g,met?SPR.t_comemorando:SPR.t_feliz,sx+50,sy+2,2);
- // focos de hoje em dígitos grandes, com a meta ao lado
- const n=String(today),gl='/'+G,w1=ptw(n,3),w2=ptw(gl,2),x0=Math.round((W-w1-3-w2)/2);
- ptxt(g,n,x0,78,3,'#ffffff');ptxt(g,gl,x0+w1+3,85,2,'#5a5a66');
- ctr(met?t('Meta batida')+'!':t(today==1?'tomate hoje':'tomates hoje'),103,1,met?'#ffc83a':'#ff5a47');
- // últimos 7 dias: um tomatinho por dia (cheio = meta batida, apagado = alguns focos, contorno = nenhum)
- const last=(Array(7).fill(0).concat(j.days)).slice(-7),wd=now.getDay(),mx0=Math.round((W-7*14+5)/2);
- last.forEach((v,i)=>{const x=mx0+i*14,y=116,pal=v>=G?{g:'#60c454',G:'#2e8034',r:'#a8261e',R:'#e8402f',h:'#ff9178'}:v?{g:'#3f6a3a',G:'#3f6a3a',r:'#5a2a26',R:'#7a3a32',h:'#8a4a40'}:{g:'#3a3a44',G:'#3a3a44',r:'#3a3a44',R:'#18141f',h:'#18141f'};
-  MINI.forEach((row,yy)=>[...row].forEach((ch,xx)=>{if(pal[ch])R(pal[ch],x+xx,y+yy,1,1)}));
-  ptxt(g,WDN[LG][(wd-6+i+7)%7][0],x+2,126,1,i==6?'#ffffff':'#5a5a66')});
- // sequência
- if(sk){const s=sk+' '+t(sk==1?'dia seguido':'dias seguidos'),sw2=ptw(s,1)+11,x=Math.round((W-sw2)/2);spr(g,SPR.chama,x,135,1);ptxt(g,s,x+11,138,1,'#ffc83a')}
- const big=document.createElement('canvas');big.width=W*9;big.height=H*9;const bg=big.getContext('2d');bg.imageSmoothingEnabled=false;bg.drawImage(c,0,0,W*9,H*9);
+// Cartão do dia: o desenho (web/share.js) fica no site e só é baixado na hora de compartilhar, que já
+// precisa de internet. O build troca __SHV__ pelo código do arquivo; sem ele (painel de teste), vem de /share.js.
+const SHV='__SHV__';let shareJs=null;
+async function shareDay(){if(!st)return;if(!STATS)await loadStats();
+ if(!window.shareCard){toast(t('Preparando o cartão...'));shareJs=shareJs||new Promise((ok,no)=>{const s=document.createElement('script');s.src=SHV[0]=='_'?'/share.js':SITE+'panel/share-'+SHV+'.js';s.onload=ok;s.onerror=no;document.head.appendChild(s)});
+  try{await shareJs}catch(e){shareJs=null;return toast(t('Sem internet no navegador'))}}
+ const now=new Date(),big=shareCard({spr,SPR,t,LG,today:st.today,goal:st.cfg.goal,streak:st.streak||0,days:STATS?STATS.days:[]});
  const blob=await new Promise(r=>big.toBlob(r,'image/png')),file=new File([blob],'pomodoro-'+now.toISOString().slice(0,10)+'.png',{type:'image/png'});
  if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:'SmallTV Pomodoro'})}catch(e){}return}
  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=file.name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000);toast(t('Imagem salva'))}
@@ -487,6 +458,11 @@ $('rbk').onchange=async e=>{const file=e.target.files[0];e.target.value='';if(!f
   if(b.stats&&b.stats.days){const r=await post('/api/statsimport',new URLSearchParams({day:b.stats.day,best:b.stats.best,total:b.stats.total,days:b.stats.days.join(',')}));if(!r.ok)throw await r.text();await loadStats()}
   await loadFaces();filled=false;toast(lost?t('Backup restaurado; {0} mostrador(es) não estão na galeria e precisam ser instalados de novo pelo arquivo',lost):t('Backup restaurado'))}
  catch(x){toast(t('Falha ao restaurar: ')+t(String(x)))}};
+// ---------- avisos de fim de fase (endereços chamados pelo relógio) ----------
+function hooksLoad(){fetch('/api/hooks').then(r=>r.json()).then(h=>{$('hkw').value=h.w;$('hkb').value=h.b}).catch(()=>{})}
+function hooksSave(){return post('/api/hooks',new URLSearchParams({w:$('hkw').value,b:$('hkb').value})).then(r=>{toast(t(r.ok?'Salvo':'Falha: ')+(r.ok?'':r.status));hooksLoad()})}
+async function hookTest(e){await hooksSave();toast(t('Chamando o endereço...'));const c=+(await (await post('/api/hooks',new URLSearchParams({test:e}))).text());
+ toast(c>=200&&c<300?t('Enviado ({0}): a Alexa deve falar em instantes',c):c==0?t('Sem endereço salvo para esse aviso'):t('O serviço respondeu {0}: confira o endereço',c))}
 // ---------- configurações (salva sozinho) ----------
 function save(o){return post('/api/settings',new URLSearchParams(o)).then(r=>r.json()).then(s=>{filled=false;load(s);return s})}
 document.querySelectorAll('[data-k]').forEach(e=>{e.onchange=()=>{const v=e.type=='checkbox'?(e.checked?1:0):e.value;save({[e.dataset.k]:v}).then(()=>toast(t('Salvo')))}});
@@ -511,7 +487,7 @@ function load(s){if(s.cfg.lang!=null&&s.cfg.lang!=LG)setLang(s.cfg.lang);if(last
  // Alexa: há quanto tempo um Echo falou com o relógio e o último comando
  const ax=s.alexa||{ago:-1},ago=ax.ago,seen=s.cfg.alexa&&ago>=0;$('alx').classList.toggle('v',!!(seen&&ago<86400));
  const when=ago<60?t('agora'):ago<3600?t('há {0} min',ago/60|0):t('há {0} h',ago/3600|0),cmdT=[0,t('começar o foco'),t('pausar'),t('foco de {0} min',ax.min),t('encerrar'),t('pausa curta'),t('pausa longa'),t('voltar ao foco'),t('pausa de {0} min',ax.min)][ax.last];
- $('alxst').hidden=!s.cfg.alexa;$('alxst').className='alx'+(seen?' ok':'');$('alxst').innerHTML='<i></i>';
+ $('alxst').style.display=s.cfg.alexa?'':'none';$('alxst').className='alx'+(seen?' ok':'');$('alxst').innerHTML='<i></i>';
  $('alxst').append(seen?t('Conectado à Alexa ({0}) · último contato {1}',ax.ip,when)+(cmdT?' · '+t('último comando: {0}',cmdT):''):t('Aguardando a Alexa: diga "Alexa, descobrir dispositivos".'));
  $('rotinfo').textContent=rk.length?t('No rodízio: {0}. Toque num mostrador para incluir ou tirar.',rk.map(k=>(FACES.find(f=>fkey(f)==k)||{n:k}).n).join(', ')):t('Toque num mostrador e escolha "Incluir no rodízio" (2 ou mais).');
  // noite pelo sol: horários do Open-Meteo; o horário fixo some quando o sol vale
