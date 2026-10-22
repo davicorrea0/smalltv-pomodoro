@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Silkscreen&display=swap">
-<link rel="stylesheet" href="style.css?v=12">
+<link rel="stylesheet" href="style.css?v=13">
 </head>
 <body>
 
@@ -124,6 +124,11 @@
         <div class="now">4 abas pensadas para o celular (Relógio, Foco, Fotos, Ajustes); os ajustes salvam sozinhos</div>
       </div>
       <div class="row">
+        <div class="topic">Voz</div>
+        <div class="was">Não tem</div>
+        <div class="now">Alexa começa, pausa e encerra o Pomodoro, direto na rede local, e avisa quando a fase termina</div>
+      </div>
+      <div class="row">
         <div class="topic">Código</div>
         <div class="was">Fechado</div>
         <div class="now">Aberto: dá para criar mostradores e desenhos novos</div>
@@ -147,6 +152,28 @@
       <div class="card feature"><h3><span class="ico"><img class="px" src="img/jogo/planta/dourada.svg" alt=""></span>Jogo do foco</h3><p>Sequência de dias com a meta batida, planta que cresce até o tomate dourado, horta do ano, 10 conquistas e cartão do dia para compartilhar. <a href="jogo.html">Ver o jogo</a>.</p></div>
       <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/seta.svg" alt=""></span>Atualização em um toque</h3><p>Quando sai uma versão nova, o painel avisa e atualiza o relógio com um toque (a partir da v1.8). Também dá para enviar um <code>.bin</code> e voltar ao firmware original.</p></div>
     </div>
+  </div>
+</section>
+
+<section id="alexa">
+  <div class="wrap">
+    <div class="eyebrow">Novo na v1.13</div>
+    <h2><span class="h-ico"><img class="px" src="img/icons/alexa.svg" alt=""></span>Controle pela Alexa</h2>
+    <p class="section-lead">Comece, pause e encerre o Pomodoro pela voz. O relógio aparece para o Echo como três lâmpadas na sua rede: sem conta, sem skill e sem nuvem. Ligar e desligar mexem no timer, e a porcentagem vira minutos.</p>
+    <div class="voice">
+      <div><b>“Alexa, ligar Pomodoro”</b><span>começa o foco (ou continua, se estava pausado) e a tela vai para o timer</span></div>
+      <div><b>“Alexa, desligar Pomodoro”</b><span>pausa; repetindo, encerra</span></div>
+      <div><b>“Alexa, Pomodoro em 40%”</b><span>um foco de 40 minutos</span></div>
+      <div><b>“Alexa, ligar Pausa”</b><span>começa a pausa curta; “Pausa em 10%” faz uma pausa de 10 minutos</span></div>
+      <div><b>“Alexa, ligar Pausa longa”</b><span>começa a pausa longa</span></div>
+      <div><b>“Alexa, desligar Pausa”</b><span>volta ao foco</span></div>
+    </div>
+    <div class="grid three" style="margin-top:14px">
+      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/celular.svg" alt=""></span>Como ligar</h3><p>No painel, em <strong>Ajustes → Alexa</strong>, ative <strong>Controlar pela Alexa</strong>. Com um Echo na mesma rede Wi-Fi, diga “Alexa, descobrir dispositivos”. O painel mostra quando o Echo se conectou e o último comando.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="img/jogo/conquistas/ic_calendario.svg" alt=""></span>Rotinas</h3><p>No app da Alexa, crie rotinas com frases suas, como “Alexa, hora de focar”. A lâmpada acesa mostra a fase atual: Pomodoro, Pausa ou Pausa longa.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/alexa.svg" alt=""></span>Alexa avisa o fim</h3><p>Cole no painel o endereço de um gatilho do <a href="https://www.virtualsmarthome.xyz/">Virtual Smart Home</a>, Voice Monkey ou IFTTT. Quando o foco ou a pausa terminam, o relógio chama o gatilho e uma rotina faz a Alexa dizer “Pomodoro concluído”.</p></div>
+    </div>
+    <p style="color:var(--muted);font-size:14px;margin-top:14px">Precisa do firmware v1.13.0 ou mais novo. Os nomes das lâmpadas seguem o idioma do relógio. Depois de atualizar, diga “Alexa, descobrir dispositivos” de novo.</p>
   </div>
 </section>
 

@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Silkscreen&display=swap">
-<link rel="stylesheet" href="../style.css?v=12">
+<link rel="stylesheet" href="../style.css?v=13">
 </head>
 <body>
 
@@ -124,6 +124,11 @@
         <div class="now">4 phone-friendly tabs (Clock, Focus, Photos, Settings); settings save on their own</div>
       </div>
       <div class="row">
+        <div class="topic">Voice</div>
+        <div class="was">None</div>
+        <div class="now">Alexa starts, pauses and stops the Pomodoro, locally on your network, and announces when a phase ends</div>
+      </div>
+      <div class="row">
         <div class="topic">Code</div>
         <div class="was">Closed</div>
         <div class="now">Open: you can make new faces and drawings</div>
@@ -147,6 +152,28 @@
       <div class="card feature"><h3><span class="ico"><img class="px" src="../img/jogo/planta/dourada.svg" alt=""></span>Focus game</h3><p>Day streaks with the goal reached, a plant that grows into the golden tomato, a yearly garden, 10 achievements and a shareable day card. <a href="game.html">See the game</a>.</p></div>
       <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/seta.svg" alt=""></span>One-tap updates</h3><p>When a new version is out, the panel tells you and updates the clock with one tap (from v1.8). You can also upload a <code>.bin</code> and go back to the original firmware.</p></div>
     </div>
+  </div>
+</section>
+
+<section id="alexa">
+  <div class="wrap">
+    <div class="eyebrow">New in v1.13</div>
+    <h2><span class="h-ico"><img class="px" src="../img/icons/alexa.svg" alt=""></span>Alexa voice control</h2>
+    <p class="section-lead">Start, pause and stop the Pomodoro by voice. The clock shows up to an Echo as three lights on your network: no account, no skill and no cloud. Turning them on and off drives the timer, and the percentage becomes minutes.</p>
+    <div class="voice">
+      <div><b>“Alexa, turn on Pomodoro”</b><span>starts a focus session (or resumes it if paused) and the screen switches to the timer</span></div>
+      <div><b>“Alexa, turn off Pomodoro”</b><span>pauses; say it again to stop</span></div>
+      <div><b>“Alexa, set Pomodoro to 40%”</b><span>a 40 minute focus session</span></div>
+      <div><b>“Alexa, turn on Break”</b><span>starts a short break; “set Break to 10%” makes it 10 minutes</span></div>
+      <div><b>“Alexa, turn on Long break”</b><span>starts a long break</span></div>
+      <div><b>“Alexa, turn off Break”</b><span>goes back to focus</span></div>
+    </div>
+    <div class="grid three" style="margin-top:14px">
+      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/celular.svg" alt=""></span>Turning it on</h3><p>In the panel, under <strong>Settings → Alexa</strong>, enable <strong>Control with Alexa</strong>. With an Echo on the same Wi-Fi, say “Alexa, discover devices”. The panel shows when the Echo connected and its last command.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/jogo/conquistas/ic_calendario.svg" alt=""></span>Routines</h3><p>In the Alexa app, create routines with your own phrases, like “Alexa, focus time”. The lit light shows the current phase: Pomodoro, Break or Long break.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/alexa.svg" alt=""></span>Alexa announces the end</h3><p>Paste a trigger URL from <a href="https://www.virtualsmarthome.xyz/">Virtual Smart Home</a>, Voice Monkey or IFTTT in the panel. When a focus session or a break ends, the clock calls it and a routine makes Alexa say “Pomodoro done”.</p></div>
+    </div>
+    <p style="color:var(--muted);font-size:14px;margin-top:14px">Requires firmware v1.13.0 or newer. The light names follow the clock's language (with the clock in Portuguese they are Pomodoro, Pausa and Pausa longa). After updating, say “Alexa, discover devices” again.</p>
   </div>
 </section>
 
