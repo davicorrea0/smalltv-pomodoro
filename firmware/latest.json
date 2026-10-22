@@ -1,25 +1,25 @@
 {
-  "version": "1.14.1",
+  "version": "1.15.0",
   "date": "2026-10-22",
   "file": "smalltv-pomodoro.bin",
-  "size": 523984,
+  "size": 512688,
   "notes": {
     "pt": [
-      "Senha opcional no painel inteiro (a mesma do /update)",
-      "Redes de configuração e recuperação com senha, mostrada na tela do relógio",
-      "Código baixado do site travado por impressão digital"
+      "Novo mostrador Previsão: hoje e os próximos 4 dias, com chuva e mín/máx",
+      "7,7 KB a mais de memória livre e firmware 11 KB menor",
+      "Clima e Flip sem piscar ao atualizar"
     ],
     "en": [
-      "Optional password for the whole panel (the same as /update)",
-      "Setup and recovery networks with a password shown on the clock",
-      "Code downloaded from the website pinned by fingerprint"
+      "New Forecast face: today and the next 4 days, with rain and low/high",
+      "7.7 KB more free memory and an 11 KB smaller firmware",
+      "Weather and Flip faces no longer flicker when updating"
     ],
     "es": [
-      "Contraseña opcional para todo el panel (la misma de /update)",
-      "Redes de configuración y recuperación con contraseña, mostrada en la pantalla",
-      "Código descargado del sitio fijado por huella digital"
+      "Nueva esfera Pronóstico: hoy y los próximos 4 días, con lluvia y mín/máx",
+      "7,7 KB más de memoria libre y firmware 11 KB más pequeño",
+      "Clima y Flip ya no parpadean al actualizarse"
     ]
   },
   "gz": "smalltv-pomodoro.bin.gz",
-  "gzsize": 388493
+  "gzsize": 385628
 }
