@@ -2,6 +2,194 @@
   "format": 1,
   "faces": [
     {
+      "id": "nixie",
+      "name": "Nixie",
+      "author": "davicorrea0",
+      "desc": "Vidro, filamentos âmbar e segundos discretos.",
+      "name_en": "Nixie",
+      "desc_en": "Glass capsules, amber filaments and discreet seconds.",
+      "file": "nixie.json",
+      "preview": "nixie.png",
+      "size": 3524,
+      "fw": "1.10.0",
+      "tags": [
+        "digital",
+        "retro"
+      ]
+    },
+    {
+      "id": "koi",
+      "name": "Koi",
+      "author": "davicorrea0",
+      "desc": "Um lago visto de cima; a flor aparece na meta.",
+      "name_en": "Koi",
+      "desc_en": "A pond from above; a lotus blooms at your goal.",
+      "file": "koi.json",
+      "preview": "koi.png",
+      "size": 2207,
+      "fw": "1.10.0",
+      "tags": [
+        "pixel"
+      ]
+    },
+    {
+      "id": "janela",
+      "name": "Janela",
+      "author": "davicorrea0",
+      "desc": "Cidade na janela, com chuva conforme o clima real.",
+      "name_en": "Window",
+      "desc_en": "A city window with rain following actual weather.",
+      "file": "janela.json",
+      "preview": "janela.png",
+      "size": 2487,
+      "fw": "1.10.0",
+      "tags": [
+        "pixel"
+      ]
+    },
+    {
+      "id": "metro",
+      "name": "Metrô",
+      "author": "davicorrea0",
+      "desc": "Painel de trânsito com a rota preenchida pelos focos.",
+      "name_en": "Metro",
+      "desc_en": "A transit board whose route fills with focus sessions.",
+      "file": "metro.json",
+      "preview": "metro.png",
+      "size": 1956,
+      "fw": "1.10.0",
+      "tags": [
+        "digital",
+        "retro"
+      ]
+    },
+    {
+      "id": "memphis",
+      "name": "Memphis",
+      "author": "davicorrea0",
+      "desc": "Geometria dos anos 80 em coral, azul e amarelo.",
+      "name_en": "Memphis",
+      "desc_en": "Playful 80s geometry in coral, blue and yellow.",
+      "file": "memphis.json",
+      "preview": "memphis.png",
+      "size": 1625,
+      "fw": "1.10.0",
+      "tags": [
+        "digital",
+        "retro"
+      ]
+    },
+    {
+      "id": "compasso",
+      "name": "Compasso",
+      "author": "davicorrea0",
+      "desc": "Analógico sereno, com ponteiros sem atualização por segundo.",
+      "name_en": "Compass",
+      "desc_en": "A calm analog dial without per-second hand updates.",
+      "file": "compasso.json",
+      "preview": "compasso.png",
+      "size": 1735,
+      "fw": "1.10.0",
+      "tags": [
+        "analogico"
+      ]
+    },
+    {
+      "id": "mare",
+      "name": "Maré",
+      "author": "davicorrea0",
+      "desc": "Farol em pixel art, mar em faixas e focos na areia.",
+      "name_en": "Tide",
+      "desc_en": "Pixel lighthouse, ocean bands and focus on the sand.",
+      "file": "mare.json",
+      "preview": "mare.png",
+      "size": 2661,
+      "fw": "1.10.0",
+      "tags": [
+        "digital",
+        "pixel"
+      ]
+    },
+    {
+      "id": "jardim",
+      "name": "Jardim",
+      "author": "davicorrea0",
+      "desc": "Uma pequena estufa; a planta cresce com sua sequência.",
+      "name_en": "Greenhouse",
+      "desc_en": "A little greenhouse; the plant grows with your streak.",
+      "file": "jardim.json",
+      "preview": "jardim.png",
+      "size": 2091,
+      "fw": "1.10.0",
+      "tags": [
+        "digital",
+        "pixel"
+      ]
+    },
+    {
+      "id": "vinil",
+      "name": "Vinil",
+      "author": "davicorrea0",
+      "desc": "Sulcos de vinil e um anel que acompanha os segundos.",
+      "name_en": "Vinyl",
+      "desc_en": "Vinyl grooves with a rim that tracks the seconds.",
+      "file": "vinil.json",
+      "preview": "vinil.png",
+      "size": 2280,
+      "fw": "1.10.0",
+      "tags": [
+        "digital",
+        "retro"
+      ]
+    },
+    {
+      "id": "duna",
+      "name": "Duna",
+      "author": "davicorrea0",
+      "desc": "Sol e lua sobre dunas em tons de terracota.",
+      "name_en": "Dune",
+      "desc_en": "Sun and moon above terracotta pixel dunes.",
+      "file": "duna.json",
+      "preview": "duna.png",
+      "size": 2166,
+      "fw": "1.10.0",
+      "tags": [
+        "digital",
+        "pixel"
+      ]
+    },
+    {
+      "id": "papel",
+      "name": "Papel",
+      "author": "davicorrea0",
+      "desc": "Tipografia editorial, papel creme e um círculo vermelho.",
+      "name_en": "Paper",
+      "desc_en": "Editorial typography, cream paper and a red circle.",
+      "file": "papel.json",
+      "preview": "papel.png",
+      "size": 1609,
+      "fw": "1.10.0",
+      "tags": [
+        "digital"
+      ]
+    },
+    {
+      "id": "arcade",
+      "name": "Arcade",
+      "author": "davicorrea0",
+      "desc": "Uma fase em pixel art; a bandeira acende na meta diária.",
+      "name_en": "Arcade",
+      "desc_en": "A pixel platform level; the flag lights at your daily goal.",
+      "file": "arcade.json",
+      "preview": "arcade.png",
+      "size": 3110,
+      "fw": "1.10.0",
+      "tags": [
+        "pixel",
+        "retro"
+      ]
+    },
+    {
       "id": "bento",
       "name": "Bento",
       "author": "davicorrea0",
