@@ -1,20 +1,23 @@
 {
-  "version": "1.12.0",
+  "version": "1.13.0",
   "date": "2026-10-22",
   "file": "smalltv-pomodoro.bin",
-  "size": 517664,
+  "size": 517744,
   "notes": {
     "pt": [
+      "A Alexa pode avisar quando o foco ou a pausa terminam (Ajustes → Alexa)",
       "Alexa: desligar Pomodoro agora pausa (e de novo encerra)",
       "Novas lâmpadas Pausa e Pausa longa; diga \"Alexa, descobrir dispositivos\" de novo",
       "O painel mostra quando a Alexa está conectada e o último comando"
     ],
     "en": [
+      "Alexa can announce when a focus session or a break ends (Settings → Alexa)",
       "Alexa: turning off Pomodoro now pauses it (again: stops it)",
       "New Break and Long break lights; say \"Alexa, discover devices\" again",
       "The panel shows when Alexa is connected and the last command"
     ],
     "es": [
+      "Alexa puede avisar cuando termina el foco o la pausa (Ajustes → Alexa)",
       "Alexa: apagar Pomodoro ahora lo pausa (otra vez: lo termina)",
       "Nuevas luces Pausa y Pausa larga; di \"Alexa, descubre dispositivos\" otra vez",
       "El panel muestra cuándo Alexa está conectada y el último comando"
