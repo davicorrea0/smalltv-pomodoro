@@ -34,7 +34,7 @@ extern "C" uint32_t _FS_start;
 
 void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);  // ui.cpp: recorta para a área suja; fora da tela, cai na faixa
 
-#define FW_VERSION "1.18.1"
+#define FW_VERSION "1.18.2"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
@@ -47,6 +47,7 @@ Adafruit_ST7789 tft(-1, PIN_DC, PIN_RST);
 ESP8266WebServer server(80);
 bool panelOk();  // proteção do painel (mais abaixo, antes de setupWeb)
 bool readOk();
+uint16_t wifiDowngrades = 0;  // rebaixamentos do Wi-Fi bloqueados desde que ligou (ver wifiGuardLoop)
 
 // ---------- cores ----------
 constexpr uint16_t rgb(uint8_t r, uint8_t g, uint8_t b) { return uiRgb(r, g, b); }
@@ -1225,6 +1226,8 @@ void sendState() {
   j += cfg.flip;
   j += F(",\"vcom\":");
   j += cfg.vcom;
+  j += F(",\"wdown\":");  // rebaixamentos do Wi-Fi bloqueados desde que ligou
+  j += wifiDowngrades;
   j += F(",\"pkg\":\"");
   j += cfg.theme == THEME_PACK ? cfg.facePkg : "";
   j += F("\",\"goal\":");
@@ -2040,9 +2043,48 @@ int hookFire(const String &url) {
 DNSServer dns;
 bool portalMode = false;
 
+// ---------- proteção contra rebaixamento do Wi-Fi (CVE-2020-12638) ----------
+// Um beacon falso com o bit de privacidade desligado, junto com um aviso de troca de canal, faz o SDK
+// do ESP8266 passar a conversar SEM criptografia com o ponto de acesso de quem está por perto. A
+// Espressif não corrigiu isso no NONOS SDK do núcleo Arduino; o contorno conhecido é observar a troca
+// do modo de autenticação e reconectar quando ele enfraquece. reconnect() mantém a rede salva
+// (disconnect() apagaria a senha) e a nova conexão só aceita WPA ou melhor.
+WiFiEventHandler wifiAuthHandler;
+volatile bool wifiDowngrade = false;
+
+static int authRank(uint8_t m) { return m == AUTH_OPEN ? 0 : m == AUTH_WEP ? 1 : 2; }  // WPA, WPA2 e misto: 2
+
+// Rede salva por outro firmware (o original) pode não exigir WPA: passa a exigir, como faz o begin() do núcleo
+void wifiHarden() {
+  struct station_config conf;
+  if (!wifi_station_get_config_default(&conf) || !conf.password[0]) return;  // rede aberta salva: nada a exigir
+  bool ok = conf.threshold.authmode >= AUTH_WPA_PSK;  // NONOS 2.2: só se conecta a redes com este modo ou melhor
+#if (NONOSDK >= (0x30000))
+  ok = ok && conf.open_and_wep_mode_disable;
+  conf.open_and_wep_mode_disable = 1;
+#endif
+  if (ok) return;
+  conf.threshold.authmode = AUTH_WPA_PSK;
+  wifi_station_set_config(&conf);
+}
+
+void wifiGuardBegin() {
+  wifiAuthHandler = WiFi.onStationModeAuthModeChanged([](const WiFiEventStationModeAuthModeChanged &e) {
+    if (authRank(e.newMode) < authRank(e.oldMode)) wifiDowngrade = true;  // trata no loop, fora do SDK
+  });
+}
+
+void wifiGuardLoop() {
+  if (!wifiDowngrade) return;
+  wifiDowngrade = false;
+  wifiDowngrades++;
+  WiFi.reconnect();
+}
+
 bool connectStored(uint32_t timeoutMs) {
   WiFi.mode(WIFI_STA);
   WiFi.hostname(HOSTNAME);
+  wifiHarden();
   WiFi.begin();
   uint32_t t0 = millis();
   while (WiFi.status() != WL_CONNECTED && millis() - t0 < timeoutMs) delay(100);
@@ -2156,6 +2198,7 @@ void setup() {
   message("SmallTV Pomodoro", tr("Conectando Wi-Fi", "Connecting Wi-Fi", "Conectando Wi-Fi"), "v" FW_VERSION);
 
   // Usa a rede salva no ESP8266 (inclusive a que o firmware original já tinha configurado).
+  wifiGuardBegin();
   if (!connectStored(20000)) {
     startPortal();
     return;
@@ -2181,6 +2224,7 @@ void loop() {
     return;
   }
   server.handleClient();
+  wifiGuardLoop();
   alexaLoop();
   tickPomodoro();
   weatherLoop();

@@ -179,6 +179,7 @@ The panel's English and Spanish texts live in `web/i18n.json`, not in flash: `we
 - **Translated text in flash:** `tr("pt", "en", "es")` keeps the three strings in flash with `PSTR` and copies only the current language into a small buffer, leaving the RAM the GIF decoder needs.
 - **RAM:** the GIF decoder needs ~24 KB of contiguous memory and the JPEG decoder ~18 KB. If memory runs short, the screen shows a notice instead of crashing.
 - **GIF validation:** uploads and existing album files are checked before decoding (complete blocks, palettes, frame bounds, up to 480×480 and 2,000 frames). The bundled decoder uses checked reads and bounds LZW codes, dictionary links and compressed input. See [the GIF hardening notes](docs/GIF-SECURITY.md) for test coverage and limits.
+- **Wi-Fi downgrade guard:** the ESP8266 SDK can be pushed by a forged beacon to drop to an unencrypted (open) connection with a rogue access point ([CVE-2020-12638](https://nvd.nist.gov/vuln/detail/CVE-2020-12638), not fixed by Espressif for this SDK). Since 1.18.2 the clock watches the Wi-Fi authentication mode and reconnects as soon as it gets weaker, and a saved network (including one set up by the original firmware) only accepts WPA or better. The SDK in use (2.2.1+100, 2019-07-03) already includes Espressif's fix for the beacon crash (CVE-2019-12588). FragAttacks have no fix for this SDK: keep the panel password on and, if your router allows it, put the clock on a guest/IoT network.
 
 ### Pinout
 
