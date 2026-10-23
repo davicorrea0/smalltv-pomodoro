@@ -131,6 +131,34 @@ static void shot(const char *name, const UiState &s, bool pomo) {
   delete f;
 }
 
+// Troca de tela: cada mostrador -> Pomodoro e Pomodoro -> cada mostrador tem que dar o mesmo que desenhar
+// a tela nova numa tela limpa. Até a 1.19 o Pomodoro e o 11º mostrador tinham o mesmo número de tela e a
+// troca entre eles não limpava: um aparecia por cima do outro.
+static int checkTransitions(const UiState &pomo) {
+  int fails = 0;
+  Frame *a = new Frame(), *b = new Frame();
+  for (int t = 0; t < THEME_COUNT; t++) {
+    UiState c = base(14, 58, 50);
+    c.theme = t;
+    for (int dir = 0; dir < 2; dir++) {  // 0: mostrador -> Pomodoro; 1: Pomodoro -> mostrador
+      uiBegin(a);
+      if (dir == 0) { uiRenderClock(c); uiRenderPomodoro(pomo); } else { uiRenderPomodoro(pomo); uiRenderClock(c); }
+      uiBegin(b);
+      if (dir == 0) uiRenderPomodoro(pomo); else uiRenderClock(c);
+      int diff = 0;
+      for (int i = 0; i < 240 * 240; i++) diff += a->px[i] != b->px[i];
+      if (diff) {
+        printf("troca %-22s %s: %d pixels sobrando da tela anterior\n", uiFaceName(t), dir ? "<- Pomodoro" : "-> Pomodoro", diff);
+        fails++;
+      }
+    }
+  }
+  if (!fails) printf("troca mostrador <-> Pomodoro: ok (%d mostradores, nos dois sentidos)\n", THEME_COUNT);
+  delete a;
+  delete b;
+  return fails;
+}
+
 // Sequência incremental vs. desenho do zero
 static int checkIncremental(const char *name, UiState s, bool pomo) {
   Frame *inc = new Frame();
@@ -333,6 +361,7 @@ int main() {
     fails += checkIncremental(slug, st, false) != 0;
   }
   fails += checkIncremental("pomodoro", p, true) != 0;
+  fails += checkTransitions(p);
   fails += testPackages(p);
   return fails;
 }

@@ -98,7 +98,12 @@ bool changed(Cache &c, const char *now) {
   return true;
 }
 
-static int8_t screen = -1;  // 0..3 temas, 10 Pomodoro, 20+ telas avulsas
+// Tela na frente: o número do mostrador (0..THEME_COUNT-1) ou uma das telas abaixo. Os números das outras
+// telas ficam longe dos mostradores: até a 1.19 o Pomodoro era 10, o mesmo do 11º mostrador (Previsão LCD),
+// e ao trocar entre os dois a tela não era limpa (um aparecia por cima do outro).
+enum : int8_t { SCR_PACK = 100, SCR_POMO, SCR_MSG, SCR_COLOR, SCR_ERROR, SCR_VCOM };
+static_assert(THEME_COUNT < SCR_PACK, "número de mostrador colidiria com o de outra tela");
+static int8_t screen = -1;
 Cache cStatL, cStatR, cA, cB, cC;
 int8_t lastDig[4], lastColon;
 uint16_t lastDigCol;
@@ -555,7 +560,7 @@ const char *uiFaceDesc(uint8_t t) { return t < THEME_COUNT ? FACE_DESC[t] : ""; 
 
 void uiRenderClock(const UiState &s) {
   if (s.theme == THEME_PACK) {  // mostrador instalado como pacote (facepack.cpp)
-    bool full = enter(100);
+    bool full = enter(SCR_PACK);
     facePackRender(s, full);
     return;
   }
@@ -577,7 +582,7 @@ static void ringDot(int deg, uint16_t c) {
 }
 
 void uiRenderPomodoro(const UiState &s) {
-  bool full = enter(10);
+  bool full = enter(SCR_POMO);
   uint16_t col = phaseColor(s.phase);
   // anel: trilho apagado + progresso na cor da fase, desenhado só no trecho novo
   int target = s.totalMs ? (int)((uint64_t)(s.totalMs - s.remainingMs) * 360 / s.totalMs) : 0;
@@ -646,7 +651,7 @@ void uiRenderPomodoro(const UiState &s) {
 
 // ---------- telas avulsas ----------
 void uiMessage(const char *title, const char *l1, const char *l2, const char *l3) {
-  screen = 20;
+  screen = SCR_MSG;
   G->fillScreen(BG);
   mascot(96, 26, 3, FACE_HAPPY);
   textC(120, 90, 2, TEXT, title);
@@ -656,7 +661,7 @@ void uiMessage(const char *title, const char *l1, const char *l2, const char *l3
 }
 
 void uiColorTest() {
-  screen = 21;
+  screen = SCR_COLOR;
   G->fillScreen(BG);
   textC(120, 8, 1, TEXT, tr("TESTE DE CORES", "COLOR TEST", "PRUEBA DE COLOR"));
   const uint16_t c[4] = {0xF800, 0x07E0, 0x001F, 0xFFFF};
@@ -676,7 +681,7 @@ void uiColorTest() {
 void uiVcomTest(uint8_t vcom, bool full) {
   static const uint16_t GRAY = uiRgb(128, 128, 128);
   if (full) {
-    screen = 23;
+    screen = SCR_VCOM;
     G->fillScreen(BG);
     textC(120, 6, 1, TEXT, tr("ANTI-FANTASMA", "ANTI-GHOSTING", "ANTIFANTASMA"));
     for (int q = 0; q < 4; q++) {
@@ -698,7 +703,7 @@ void uiVcomTest(uint8_t vcom, bool full) {
 }
 
 void uiError(const char *msg) {
-  screen = 22;
+  screen = SCR_ERROR;
   G->fillScreen(BG);
   textC(120, 112, 2, MUTED, msg);
 }
