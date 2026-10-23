@@ -92,6 +92,14 @@ int main(){
  {AuthThrottle a;assert(!a.blocked(7,1000));a.fail(7,1000);assert(a.blocked(7,1500)&&!a.blocked(8,1500)&&!a.blocked(7,2001));
   for(uint32_t ip=10;ip<20;ip++)a.fail(ip,3000+ip);assert(a.blocked(19,3100)&&!a.blocked(7,3100));}
  {RateLimit r;int n=0;for(int i=0;i<50;i++)n+=r.take(5000+i,4);assert(n==4);assert(r.take(6001,4));}
+ AuthThrottle throttle;uint32_t wait=0;
+ assert(!throttle.blocked(1,100,&wait)&&wait==0);
+ assert(throttle.fail(1,100)==1000&&throttle.blocked(1,100,&wait)&&wait==1000);
+ assert(throttle.blocked(1,1099,&wait)&&wait==1&&!throttle.blocked(1,1100,&wait));
+ assert(throttle.fail(1,1100)==2000);throttle.success(1);assert(!throttle.blocked(1,1100,&wait));
+ for(int i=0;i<8;i++){wait=throttle.fail(2,2000+i);}assert(wait==32000);
+ assert(throttle.blocked(2,3000,&wait));
+ AuthThrottle wrap;assert(wrap.fail(3,0xfffffff0UL)==1000);assert(wrap.blocked(3,20,&wait));
  puts("security: actual upload handlers deny unauthenticated writes; bounds, aborts and URL injection checks passed");
  puts("security: hora protegida contra NTP falso, bloqueio de senha por IP e limite de SSDP ok");
 }

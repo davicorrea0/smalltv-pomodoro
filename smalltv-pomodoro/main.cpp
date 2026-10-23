@@ -1682,8 +1682,8 @@ bool deny() {
   return false;
 }
 // Senha do painel (a mesma do /update, usuário admin): com ela definida, todo o painel e a API pedem
-// login HTTP (o navegador pergunta uma vez e lembra). Cada senha errada espera 1 s, o que deixa
-// tentativas em série lentas demais. A API da Alexa e o modo de recuperação não pedem senha.
+// login HTTP (o navegador pergunta uma vez e lembra). Erros usam espera progressiva por IP sem bloquear
+// o loop do relógio. A API da Alexa e o modo de recuperação não pedem senha.
 // O login Basic é conferido aqui: o authenticate() do servidor traz junto o modo Digest e o MD5 (~2,5 KB).
 bool passOk() {
   return !cfg.otaPass[0] || server.header("Authorization") == "Basic " + base64::encode(String("admin:") + cfg.otaPass, false);
@@ -1692,23 +1692,31 @@ void askLogin() {
   server.sendHeader(F("WWW-Authenticate"), F("Basic realm=\"SmallTV\""));
   server.send(401, "text/plain", "");
 }
-// Senha errada: aquele IP espera 1 s para tentar de novo (security.h). Antes era delay(1000), que
-// congelava tela, timer e Alexa a cada tentativa: um aparelho da rede insistindo travava o relógio.
 AuthThrottle authThrottle;
-bool authThrottled() {
-  if (!server.hasHeader("Authorization") || !authThrottle.blocked(server.client().remoteIP(), millis())) return false;
-  server.send(429, "text/plain", "Aguarde 1 s");
+uint32_t requestIp() {
+  IPAddress ip = server.client().remoteIP();
+  return ((uint32_t)ip[0] << 24) | ((uint32_t)ip[1] << 16) | ((uint32_t)ip[2] << 8) | ip[3];
+}
+bool authBlocked(uint32_t ip, bool reply) {
+  uint32_t wait = 0;
+  if (!cfg.otaPass[0] || !authThrottle.blocked(ip, millis(), &wait)) return false;
+  if (reply) {
+    server.sendHeader("Retry-After", String((wait + 999) / 1000));
+    server.send(429, "text/plain", "Tente novamente em alguns segundos");
+  }
   return true;
 }
-void authFailed() {
-  if (server.hasHeader("Authorization")) authThrottle.fail(server.client().remoteIP(), millis());
-}
 bool authed() {
-  if (authThrottled()) return false;
-  if (passOk()) return true;
-  authFailed();
+  uint32_t ip = requestIp();
+  if (authBlocked(ip, true)) return false;
+  if (passOk()) { authThrottle.success(ip); return true; }
+  if (server.hasHeader("Authorization")) authThrottle.fail(ip, millis());
   askLogin();
   return false;
+}
+bool authThrottled() { return authBlocked(requestIp(), true); }
+void authFailed() {
+  if (server.hasHeader("Authorization")) authThrottle.fail(requestIp(), millis());
 }
 bool guard() { return (panelOk() || deny()) && authed(); }   // ações (POST)
 bool readOk() { return (hostOk() || deny()) && authed(); }   // leituras
@@ -2278,10 +2286,11 @@ bool otaVerifyGz() {
 }
 
 void setupUpdate() {
-  auto authOk = [] {  // sem mandar resposta: também roda no meio do envio
-    if (server.hasHeader("Authorization") && authThrottle.blocked(server.client().remoteIP(), millis())) return false;
-    if (panelOk() && (recoveryMode || passOk())) return true;
-    authFailed();
+  auto authOk = [] {
+    uint32_t ip = requestIp();
+    if (authBlocked(ip, false)) return false;
+    if (panelOk() && (recoveryMode || passOk())) { authThrottle.success(ip); return true; }
+    if (server.hasHeader("Authorization")) authThrottle.fail(ip, millis());
     return false;
   };
   server.on("/update", HTTP_GET, [] {
