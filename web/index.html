@@ -324,7 +324,7 @@ let FACES=[];  // vem do firmware (/api/faces): embutidos (faces_list.h) + pacot
 // site do projeto: catálogo, prévias dos mostradores embutidos e firmware novo (localStorage.site/catalog trocam a origem em testes)
 let SITE='https://davicorrea0.github.io/smalltv-pomodoro/';try{if(localStorage.site)SITE=localStorage.site}catch(e){}
 let CATALOG=SITE+'catalog/';try{if(localStorage.catalog)CATALOG=localStorage.catalog}catch(e){}
-let st=null,at=0,holdUntil=0,holdRem=0,filled=false,lastPhase=null,actx=null,curTab=0;
+let st=null,at=0,holding=false,holdRem=0,waitSeq=0,fp=0,filled=false,lastPhase=null,actx=null,curTab=0;
 // pedidos ao próprio relógio levam X-SmallTV: sem ele o relógio recusa ações (proteção contra outros sites)
 const _fetch=window.fetch;window.fetch=(u,o={})=>_fetch(u,/^https?:/.test(u)?o:{...o,headers:{...o.headers,'X-SmallTV':'1'}});
 const post=(u,b)=>fetch(u,{method:'POST',body:b});
@@ -498,9 +498,13 @@ function vcomEnd(save){clearTimeout(vcT);$('vcombox').style.display='none';$('vc
  post('/api/vcom',new URLSearchParams(save?{v:$('vcom').value,save:1}:{stop:1})).then(r=>r.json()).then(j=>{if(st)st.cfg.vcom=j.vcom;toast(t(save?'Ajuste salvo':'Ajuste cancelado'))})}
 function cmd(c){try{actx=actx||new AudioContext()}catch(e){}post('/api/cmd',new URLSearchParams({c})).then(r=>r.json()).then(load)}
 function load(s){if(s.cfg.lang!=null&&s.cfg.lang!=LG)setLang(s.cfg.lang);if(lastPhase&&s.phase!=lastPhase&&s.phase!='idle'&&lastPhase!='idle')beep();lastPhase=s.phase;
- // fase que acabou de começar: o relógio ainda está desenhando o anel e só mostra os números depois de s.pdraw ms;
- // o painel desenha o anel dele no mesmo tempo e segura o tempo inicial, para os dois começarem a descer juntos
- if(s.running&&s.remaining>=s.total-1500&&(!st||!st.running||st.phase!=s.phase))ringDraw(s.pdraw||100,s.remaining);
+ // fase que acabou de começar: o relógio desenha o anel e só depois mostra os números. O painel desenha o anel
+ // dele e espera o relógio avisar que os números já estão na tela (pshown == pseq), perguntando a cada 100 ms:
+ // assim o navegador nunca começa a contar antes do aparelho
+ if(s.pseq!=null){if(s.running&&s.pshown!=s.pseq){if(waitSeq!=s.pseq){waitSeq=s.pseq;ringDraw(s.pdraw||500,s.remaining,true)}clearTimeout(fp);fp=setTimeout(()=>fetch('/api/state').then(r=>r.json()).then(load).catch(()=>{}),100)}
+  else if(waitSeq){waitSeq=0;ringDone()}}
+ // firmware sem o aviso (até a 1.19.3): segura pelo tempo medido do desenho
+ else if(s.running&&s.remaining>=s.total-1500&&(!st||!st.running||st.phase!=s.phase))ringDraw(s.pdraw||100,s.remaining,false);
  st=s;at=Date.now();$('net').className='on';
  document.documentElement.style.setProperty('--ac','var(--'+(s.phase=='idle'?'work':s.phase)+')');
  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('sel',b.dataset.p==s.phase));
@@ -534,10 +538,12 @@ function load(s){if(s.cfg.lang!=null&&s.cfg.lang!=LG)setLang(s.cfg.lang);if(last
  document.querySelectorAll('#grid div').forEach(e=>e.classList.toggle('on',e.dataset.n==s.showing));
  if(!filled){filled=true;document.querySelectorAll('[data-k]').forEach(e=>{const v=s.cfg[e.dataset.k];if(v===undefined)return;if(e.type=='checkbox')e.checked=!!v!=e.hasAttribute('data-neg');else e.value=v})}
  draw()}
-function ringDraw(ms,rem){holdUntil=Date.now()+ms;holdRem=rem;const r=document.querySelector('.ring');r.style.setProperty('--pd',ms+'ms');
- r.classList.remove('drawing');void r.offsetWidth;r.classList.add('drawing');clearTimeout(r._t);r._t=setTimeout(()=>{r.classList.remove('drawing');draw()},ms)}
+// anel do painel sendo desenhado em ms; com wait, só termina com o aviso do relógio (ou em 4 s, se ele não vier)
+function ringDraw(ms,rem,wait){holding=true;holdRem=rem;const r=document.querySelector('.ring');r.style.setProperty('--pd',ms+'ms');
+ r.classList.remove('drawing');void r.offsetWidth;r.classList.add('drawing');clearTimeout(r._t);r._t=setTimeout(()=>{waitSeq=0;ringDone()},wait?4000:ms)}
+function ringDone(){holding=false;const r=document.querySelector('.ring');clearTimeout(r._t);r.classList.remove('drawing');draw()}
 function draw(){if(!st)return;const s=st,idle=s.phase=='idle';
- const rem=idle?s.cfg.work*60000:Date.now()<holdUntil?holdRem:Math.max(0,s.remaining-(s.running?Date.now()-at:0)),sec=Math.ceil(rem/1000);
+ const rem=idle?s.cfg.work*60000:holding?holdRem:Math.max(0,s.remaining-(s.running?Date.now()-at:0)),sec=Math.ceil(rem/1000);
  const tm=String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0');
  $('time').textContent=tm;$('phase').textContent=t(LBL[s.phase])+(!idle&&!s.running?' · '+t('PAUSADO'):'');
  $('arc').style.strokeDashoffset=idle||!s.total?C:C*rem/s.total;document.title=idle?'SmallTV':tm+' · '+t(LBL[s.phase])}

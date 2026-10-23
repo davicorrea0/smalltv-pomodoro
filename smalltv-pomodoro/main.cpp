@@ -38,7 +38,7 @@ extern "C" uint32_t _FS_start;
 
 void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);  // ui.cpp: recorta para a área suja; fora da tela, cai na faixa
 
-#define FW_VERSION "1.19.3"
+#define FW_VERSION "1.19.4"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
@@ -253,11 +253,17 @@ uint8_t phaseMinutes(Phase p) {
   return p == WORK ? cfg.work : p == SHORT_BREAK ? cfg.shortBreak : cfg.longBreak;
 }
 
+// Cada fase que começa ganha um número (phaseSeq); quando a tela termina de desenhá-la, com os números,
+// shownSeq passa a ser esse número. O painel espera os dois baterem para mostrar a contagem: nunca começa
+// antes do relógio (ver "pseq"/"pshown" em /api/state).
+uint16_t phaseSeq = 0, shownSeq = 0;
+
 void startPhase(Phase p, bool run) {
   phase = p;
   totalMs = remainingMs = (uint32_t)phaseMinutes(p) * 60000UL;
   running = run;
   lastTick = millis();
+  phaseSeq++;
 }
 
 void statsFocus();                      // um foco terminou (histórico de focos, mais abaixo)
@@ -779,7 +785,9 @@ bool pomoShown = false;
 uint16_t pomoDrawMs = 0;
 void renderPomodoro() {
   uint32_t t0 = millis();
+  uint16_t seq = phaseSeq;  // a fase que este desenho mostra (o comando pode chegar durante o desenho)
   uiRenderPomodoro(makeState());
+  shownSeq = seq;
   if (!pomoShown) {
     pomoShown = true;
     pomoDrawMs = millis() - t0;
@@ -1484,6 +1492,10 @@ void sendState() {
   j += ESP.getMaxFreeBlockSize();
   j += F(",\"pdraw\":");  // ms que a tela levou para desenhar o Pomodoro (0 = ainda não mediu)
   j += pomoDrawMs;
+  j += F(",\"pseq\":");  // fase atual e a última que a tela já mostrou com os números (iguais = na tela)
+  j += phaseSeq;
+  j += F(",\"pshown\":");
+  j += shownSeq;
   j += F(",\"ver\":\"" FW_VERSION "\"}");
   server.sendHeader("Cache-Control", "no-store");  // cidade, rede e ajustes: o navegador não guarda
   server.send(200, "application/json", j);
