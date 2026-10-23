@@ -140,18 +140,31 @@
 <section id="funcoes">
   <div class="wrap">
     <h2>Funções</h2>
-    <p class="section-lead">Tudo cabe em menos de 500 KB e roda no próprio relógio.</p>
+    <p class="section-lead">Tudo cabe em cerca de 520 KB (390 KB comprimido) e roda no próprio relógio.</p>
     <div class="grid three">
       <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/relogio.svg" alt=""></span>11 mostradores</h3><p>Matriz, Tomate, Analógico, Clima, Neon, Flip (com animação de virada de verdade), LCD retrô, Palavras (a hora por extenso) Previsão (os próximos 5 dias), Previsão em cartões e Previsão LCD.</p></div>
       <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/focado.svg" alt=""></span>Pomodoro com mascote</h3><p>O tomate fica focado, relaxa com um café na pausa, dorme quando o timer está pausado e pula de alegria quando uma fase termina.</p></div>
       <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/livro.svg" alt=""></span>Atividade do foco</h3><p>Escolha no painel o que vai fazer: ler, estudar, programar, tarefas ou desenhar. A tela mostra o objeto da atividade ao lado do tomate.</p></div>
-      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/sol.svg" alt=""></span>Clima</h3><p>Pelo <a href="https://open-meteo.com/">Open-Meteo</a>, sem cadastro nem chave de API. Na chuva o tomate abre o guarda-chuva; no frio põe cachecol; no calor, óculos escuros.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/sol.svg" alt=""></span>Clima</h3><p>Pelo <a href="https://open-meteo.com/">Open-Meteo</a>, sem cadastro nem chave de API. Em °C ou °F. Avisa quando a chuva vai começar na próxima hora. Na chuva o tomate abre o guarda-chuva; no frio põe cachecol; no calor, óculos escuros.</p></div>
       <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/foto.svg" alt=""></span>Fotos e GIFs</h3><p>Usa o álbum que já estava no relógio. Fotos novas vão pelo painel e são recortadas para 240×240 automaticamente.</p></div>
       <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/lua.svg" alt=""></span>Brilho noturno</h3><p>Escolha um horário para a tela ficar mais fraca à noite e não iluminar o quarto.</p></div>
       <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/celular.svg" alt=""></span>Painel web</h3><p>Abra no celular ou no computador o IP que aparece na tela: mostradores, Pomodoro, fotos e ajustes, incluindo cor e rotação da tela. Em português, inglês ou espanhol.</p></div>
       <div class="card feature"><h3><span class="ico"><img class="px" src="img/jogo/planta/dourada.svg" alt=""></span>Jogo do foco</h3><p>Sequência de dias com a meta batida, planta que cresce até o tomate dourado, horta do ano, 10 conquistas e cartão do dia para compartilhar. <a href="jogo.html">Ver o jogo</a>.</p></div>
-      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/seta.svg" alt=""></span>Atualização em um toque</h3><p>Quando sai uma versão nova, o painel avisa e atualiza o relógio com um toque (a partir da v1.8). Também dá para enviar um <code>.bin</code> e voltar ao firmware original.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/seta.svg" alt=""></span>Atualização em um toque</h3><p>Quando sai uma versão nova, o painel avisa e atualiza o relógio com um toque (a partir da v1.8). Também dá para enviar o arquivo em <code>/update</code> (o <code>.bin.gz</code>, sem descompactar) e voltar ao firmware original.</p></div>
     </div>
+  </div>
+</section>
+
+<section id="novo">
+  <div class="wrap">
+    <div class="eyebrow">Novo na v1.19</div>
+    <h2><span class="h-ico"><img class="px" src="img/icons/nuvem.svg" alt=""></span>Aviso de chuva, °F e mais segurança</h2>
+    <div class="grid three">
+      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/nuvem.svg" alt=""></span>Vai chover</h3><p>Quando a chuva deve começar na próxima hora, a tela mostra “chuva 15 min” e o tomate já abre o guarda-chuva. Usa a previsão de 15 em 15 minutos do Open-Meteo. Liga e desliga em <strong>Ajustes → Clima</strong>.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/sol.svg" alt=""></span>Temperatura em °F</h3><p>Uma chave em <strong>Ajustes → Clima</strong>. Os mostradores e os pacotes (<code>{UNIT}</code>, <code>{RAIN}</code>) passam a usar °F, com três dígitos nos dias quentes.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/seta.svg" alt=""></span>Mais leve e mais seguro</h3><p>O painel saiu da memória do programa e fica na memória de arquivos, conferido por SHA-256: firmware 11 KB menor. Uploads só com a senha certa, JPEG e pacotes de mostrador protegidos contra arquivos forjados, e o histórico de focos não se perde mais ao reiniciar.</p></div>
+    </div>
+    <p style="color:var(--muted);font-size:14px;margin-top:14px">Depois de atualizar, a primeira abertura do painel baixa o painel novo do site (o navegador precisa de internet). Pelo <code>/update</code>, envie o <code>.bin.gz</code> sem descompactar.</p>
   </div>
 </section>
 

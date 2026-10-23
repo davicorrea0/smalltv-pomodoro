@@ -1,25 +1,27 @@
 {
-  "version": "1.18.2",
-  "date": "2026-10-22",
+  "version": "1.19.0",
+  "date": "2026-10-23",
   "file": "smalltv-pomodoro.bin",
-  "size": 533328,
+  "size": 526096,
   "notes": {
     "pt": [
-      "Proteção contra rebaixamento do Wi-Fi para rede sem criptografia",
-      "Rede salva passa a exigir WPA ou melhor",
-      "Inclui a correção de segurança dos GIFs da 1.18.1"
+      "Aviso de chuva na próxima hora e temperatura em °F",
+      "Correções de segurança (uploads, JPEG, pacotes) e o histórico não se perde mais ao reiniciar",
+      "Firmware 11 KB menor: o painel fica na memória de arquivos"
     ],
     "en": [
-      "Guard against Wi-Fi downgrade to an unencrypted network",
-      "Saved network now requires WPA or better",
-      "Includes the 1.18.1 GIF security fix"
+      "Warning when rain is coming within the hour, and temperature in °F",
+      "Security fixes (uploads, JPEG, face packages) and focus history no longer lost on restart",
+      "Firmware 11 KB smaller: the panel lives in the file storage"
     ],
     "es": [
-      "Protección contra la degradación del Wi-Fi a una red sin cifrado",
-      "La red guardada ahora exige WPA o superior",
-      "Incluye la corrección de seguridad de GIF de la 1.18.1"
+      "Aviso de lluvia en la próxima hora y temperatura en °F",
+      "Correcciones de seguridad (subidas, JPEG, esferas) y el historial ya no se pierde al reiniciar",
+      "Firmware 11 KB más pequeño: el panel vive en la memoria de archivos"
     ]
   },
   "gz": "smalltv-pomodoro.bin.gz",
-  "gzsize": 399577
+  "gzsize": 388873,
+  "panel": "panel-19b99d7f24d4adebc864c210.html.gz",
+  "psri": "sha256-GbmdfyTUrevIZMIQJnSwZIs55OkiQQbOscScqjBq+RQ="
 }

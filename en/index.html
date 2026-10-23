@@ -140,18 +140,31 @@
 <section id="features">
   <div class="wrap">
     <h2>Features</h2>
-    <p class="section-lead">It all fits in under 500 KB and runs on the clock itself. Screens and panel in Portuguese, English or Spanish.</p>
+    <p class="section-lead">It all fits in about 520 KB (390 KB compressed) and runs on the clock itself. Screens and panel in Portuguese, English or Spanish.</p>
     <div class="grid three">
       <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/relogio.svg" alt=""></span>11 clock faces</h3><p>Matrix, Tomato, Analog, Weather, Neon, Flip (with a real flipping animation), Retro LCD, Words (the time spelled out) Forecast (the next 5 days), Forecast cards and Forecast LCD.</p></div>
       <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/focado.svg" alt=""></span>Pomodoro with a mascot</h3><p>The tomato focuses, relaxes with a coffee on breaks, sleeps while the timer is paused and jumps for joy when a phase ends.</p></div>
       <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/livro.svg" alt=""></span>Focus activity</h3><p>Pick what you're doing in the panel: reading, studying, coding, chores or drawing. The screen shows the activity's object next to the tomato.</p></div>
-      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/sol.svg" alt=""></span>Weather</h3><p>From <a href="https://open-meteo.com/">Open-Meteo</a>, no sign-up or API key. In the rain the tomato opens an umbrella; in the cold it wears a scarf; in the heat, sunglasses.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/sol.svg" alt=""></span>Weather</h3><p>From <a href="https://open-meteo.com/">Open-Meteo</a>, no sign-up or API key. In °C or °F. Warns you when rain is about to start within the hour. In the rain the tomato opens an umbrella; in the cold it wears a scarf; in the heat, sunglasses.</p></div>
       <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/foto.svg" alt=""></span>Photos and GIFs</h3><p>Uses the album already on the clock. New photos go through the panel and are cropped to 240×240 automatically.</p></div>
       <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/lua.svg" alt=""></span>Night brightness</h3><p>Set a schedule to dim the screen at night so it doesn't light up the bedroom.</p></div>
       <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/celular.svg" alt=""></span>Web panel</h3><p>Open the IP shown on the screen from your phone or computer: faces, Pomodoro, photos and settings, including screen color and rotation. In Portuguese, English or Spanish.</p></div>
       <div class="card feature"><h3><span class="ico"><img class="px" src="../img/jogo/planta/dourada.svg" alt=""></span>Focus game</h3><p>Day streaks with the goal reached, a plant that grows into the golden tomato, a yearly garden, 10 achievements and a shareable day card. <a href="game.html">See the game</a>.</p></div>
-      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/seta.svg" alt=""></span>One-tap updates</h3><p>When a new version is out, the panel tells you and updates the clock with one tap (from v1.8). You can also upload a <code>.bin</code> and go back to the original firmware.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/seta.svg" alt=""></span>One-tap updates</h3><p>When a new version is out, the panel tells you and updates the clock with one tap (from v1.8). You can also upload the file at <code>/update</code> (the <code>.bin.gz</code>, without unzipping it) and go back to the original firmware.</p></div>
     </div>
+  </div>
+</section>
+
+<section id="new">
+  <div class="wrap">
+    <div class="eyebrow">New in v1.19</div>
+    <h2><span class="h-ico"><img class="px" src="../img/icons/nuvem.svg" alt=""></span>Rain warning, °F and more security</h2>
+    <div class="grid three">
+      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/nuvem.svg" alt=""></span>Rain is coming</h3><p>When rain should start within the next hour, the screen shows “rain 15 min” and the tomato opens its umbrella. It uses Open-Meteo's 15-minute forecast. Turn it on or off in <strong>Settings → Weather</strong>.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/sol.svg" alt=""></span>Temperature in °F</h3><p>One switch in <strong>Settings → Weather</strong>. The faces and the face packages (<code>{UNIT}</code>, <code>{RAIN}</code>) switch to °F, with three digits on hot days.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/seta.svg" alt=""></span>Lighter and safer</h3><p>The panel moved out of the program memory into the file storage, checked by SHA-256: an 11 KB smaller firmware. Uploads need the right password, JPEG and face packages are protected against forged files, and the focus history is no longer lost on restart.</p></div>
+    </div>
+    <p style="color:var(--muted);font-size:14px;margin-top:14px">After updating, the first time you open the panel it downloads the new panel from this website (the browser needs internet). At <code>/update</code>, upload the <code>.bin.gz</code> without unzipping it.</p>
   </div>
 </section>
 
