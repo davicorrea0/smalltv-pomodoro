@@ -1,30 +1,27 @@
 {
-  "version": "1.19.6",
+  "version": "1.19.7",
   "date": "2026-10-23",
   "file": "smalltv-pomodoro.bin",
-  "size": 530576,
+  "size": 530928,
   "notes": {
     "pt": [
-      "Tentativas repetidas de senha passam a esperar de 1 a 32 s sem travar o relógio",
-      "Uploads só criam ou alteram arquivos depois da autenticação completa",
-      "O histórico espera uploads terminarem antes de gravar no LittleFS",
-      "O modo de recuperação fica isolado na rede própria do relógio"
+      "Atualiza a biblioteca gráfica Adafruit GFX para 1.13.0",
+      "Inclui correções recentes de renderização e estabilidade no ESP8266",
+      "Preserva as telas e os reforços de segurança da versão 1.19.6"
     ],
     "en": [
-      "Repeated wrong passwords wait from 1 to 32 s without freezing the clock",
-      "Uploads only create or change files after complete authentication",
-      "History waits for uploads to finish before writing to LittleFS",
-      "Recovery mode stays isolated on the clock's own network"
+      "Updates the Adafruit GFX graphics library to 1.13.0",
+      "Includes recent ESP8266 rendering and stability fixes",
+      "Preserves all screens and the security hardening from version 1.19.6"
     ],
     "es": [
-      "Los intentos repetidos de contraseña esperan de 1 a 32 s sin bloquear el reloj",
-      "Las cargas solo crean o cambian archivos después de la autenticación completa",
-      "El historial espera que terminen las cargas antes de escribir en LittleFS",
-      "El modo de recuperación queda aislado en la red propia del reloj"
+      "Actualiza la biblioteca gráfica Adafruit GFX a la versión 1.13.0",
+      "Incluye correcciones recientes de renderizado y estabilidad en ESP8266",
+      "Conserva todas las pantallas y las mejoras de seguridad de la versión 1.19.6"
     ]
   },
   "gz": "smalltv-pomodoro.bin.gz",
-  "gzsize": 391820,
+  "gzsize": 392026,
   "panel": "panel-0ee149b64a2cd34ae09ad59d.html.gz",
   "psri": "sha256-DuFJtkos00rgmtWdCWcfa9TAB5j4LWZGAcp5o1hU+3g="
 }
