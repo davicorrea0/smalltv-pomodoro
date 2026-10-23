@@ -1,27 +1,27 @@
 {
-  "version": "1.19.4",
+  "version": "1.19.5",
   "date": "2026-10-23",
   "file": "smalltv-pomodoro.bin",
-  "size": 529136,
+  "size": 531328,
   "notes": {
     "pt": [
-      "A tela do Pomodoro não aparece mais por cima do mostrador Previsão LCD",
-      "Painel e relógio começam a contagem juntos",
-      "Hora protegida contra NTP falso e senha errada sem travar o relógio"
+      "Fotos → Ver o que ocupa espaço: arquivos agrupados por tipo e tamanho",
+      "Libere espaço apagando arquivos e pastas que sobraram do firmware original",
+      "Histórico, avisos, painel e mostrador em uso ficam protegidos contra exclusão"
     ],
     "en": [
-      "The Pomodoro screen no longer shows on top of the Forecast LCD face",
-      "Panel and clock start the countdown together",
-      "Time protected against fake NTP, and a wrong password no longer freezes the clock"
+      "Photos → See what uses space: files grouped by type and size",
+      "Free space by deleting files and folders left by the original firmware",
+      "History, webhooks, panel and the active face are protected from deletion"
     ],
     "es": [
-      "La pantalla del Pomodoro ya no aparece encima de la esfera Pronóstico LCD",
-      "El panel y el reloj empiezan la cuenta juntos",
-      "Hora protegida contra NTP falso y una contraseña incorrecta ya no congela el reloj"
+      "Fotos → Ver qué ocupa espacio: archivos agrupados por tipo y tamaño",
+      "Libera espacio borrando archivos y carpetas del firmware original",
+      "El historial, los avisos, el panel y la esfera en uso están protegidos contra borrado"
     ]
   },
   "gz": "smalltv-pomodoro.bin.gz",
-  "gzsize": 390962,
-  "panel": "panel-c9aae6c30e14326bb1c9ffff.html.gz",
-  "psri": "sha256-yarmww4UMmuxyf//ge5nyz4X0tGCwmjFpIFYgTz6txk="
+  "gzsize": 392489,
+  "panel": "panel-0ee149b64a2cd34ae09ad59d.html.gz",
+  "psri": "sha256-DuFJtkos00rgmtWdCWcfa9TAB5j4LWZGAcp5o1hU+3g="
 }
