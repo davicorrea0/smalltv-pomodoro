@@ -38,7 +38,7 @@ extern "C" uint32_t _FS_start;
 
 void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);  // ui.cpp: recorta para a área suja; fora da tela, cai na faixa
 
-#define FW_VERSION "1.19.4"
+#define FW_VERSION "1.19.5"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
@@ -1602,6 +1602,67 @@ void sendFiles() {
   server.send(200, "application/json", j);
 }
 
+// ---------- armazenamento: tudo o que ocupa a memória de arquivos ----------
+// O álbum mostra só fotos e GIFs, mas a memória guarda mais: mostradores baixados, o painel, o histórico
+// e, em relógios que vieram do firmware original, os arquivos dele. /api/storage lista tudo, em partes
+// (sem montar a lista inteira na RAM); /api/fsdelete apaga um arquivo ou uma pasta inteira, menos o que
+// o relógio precisa para funcionar (fsKeep).
+bool fsKeep(const String &p) {
+  if (p == "/stats.bin" || p == "/hooks.txt" || p == "/rotation.txt" || p == "/www" || p.startsWith("/www/")) return true;
+  if (p == "/image" || p == "/gif" || p == "/faces") return true;  // as pastas ficam; o que está dentro pode sair
+  return cfg.theme == THEME_PACK && p.startsWith(String("/faces/") + cfg.facePkg + ".");  // mostrador em uso
+}
+
+void sendStorage() {
+  if (!readOk()) return;
+  static FSInfo fi;
+  if (fsOk) LittleFS.info(fi);
+  server.sendHeader("Cache-Control", "no-store");
+  server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+  server.send(200, "application/json", "");
+  server.sendContent("{\"used\":" + String(fsOk ? fi.usedBytes : 0) + ",\"total\":" + String(fsOk ? fi.totalBytes : 0) +
+                     ",\"block\":" + String(fsOk ? fi.blockSize : 0) + ",\"files\":[");
+  std::vector<String> dirs = {"/"};
+  bool first = true;
+  int n = 0;
+  for (size_t k = 0; fsOk && k < dirs.size() && n < 1000; k++) {  // pasta por pasta (em largura)
+    Dir d = LittleFS.openDir(dirs[k]);
+    String base = dirs[k] == "/" ? "" : dirs[k];
+    String chunk;
+    while (d.next() && n < 1000) {
+      String p = base + "/" + d.fileName();
+      bool dir = d.isDirectory();
+      if (dir && dirs.size() < 64) dirs.push_back(p);
+      chunk += first ? "{" : ",{";
+      first = false;
+      chunk += "\"p\":\"" + jsonEscape(p) + "\",\"s\":" + String(dir ? 0 : d.fileSize()) + (dir ? ",\"d\":1" : "") +
+               (fsKeep(p) ? ",\"k\":1" : "") + "}";
+      n++;
+      if (chunk.length() > 700) {
+        server.sendContent(chunk);
+        chunk = "";
+      }
+      yield();
+    }
+    if (chunk.length()) server.sendContent(chunk);
+  }
+  server.sendContent("]}");
+  server.sendContent("");  // fim da resposta em partes
+}
+
+// apaga a pasta p e tudo dentro (no máximo 8 níveis); os nomes são lidos antes de apagar
+bool fsRemoveAll(const String &p, int depth) {
+  if (depth > 8) return false;
+  std::vector<String> files, dirs;
+  Dir d = LittleFS.openDir(p);
+  while (d.next()) (d.isDirectory() ? dirs : files).push_back(p + "/" + d.fileName());
+  bool ok = true;
+  for (const String &f : files) ok = LittleFS.remove(f) && ok;
+  for (const String &s : dirs) ok = fsRemoveAll(s, depth + 1) && ok;
+  if (LittleFS.exists(p)) ok = LittleFS.rmdir(p) && ok;  // o LittleFS do núcleo pode já ter tirado a pasta vazia
+  return ok;
+}
+
 // ---------- proteção do painel ----------
 // Qualquer site aberto no navegador pode mandar pedidos para o IP do relógio (CSRF: apagar o Wi-Fi,
 // formatar, gravar um firmware) ou, apontando um nome próprio para esse IP, até ler as respostas (DNS
@@ -2038,6 +2099,28 @@ void setupWeb() {
     }
     rebuildAlbum();
     server.send(200, "text/plain", "ok");
+  });
+  server.on("/api/storage", HTTP_GET, sendStorage);
+  // apaga qualquer arquivo ou pasta da memória, menos o que o relógio precisa (fsKeep)
+  server.on("/api/fsdelete", HTTP_POST, [] {
+    if (!guard()) return;
+    String f = server.arg("f");
+    if (!fsOk || !f.startsWith("/") || f.length() < 2 || f.length() > 96 || f.indexOf("..") >= 0 || f.indexOf("//") >= 0 ||
+        f.endsWith("/") || fsKeep(f) || !LittleFS.exists(f)) {
+      server.send(400, "text/plain", "Nao foi possivel apagar");
+      return;
+    }
+    if (curFile == f || curFile.startsWith(f + "/")) {  // o arquivo na tela, ou a pasta dele
+      stopAlbum();
+      viewUntil = 0;
+    }
+    File h = LittleFS.open(f, "r");
+    bool dir = h && h.isDirectory();
+    if (h) h.close();
+    bool ok = dir ? fsRemoveAll(f, 0) : LittleFS.remove(f);
+    fsInfoAt = 0;  // o uso da memória mudou
+    rebuildAlbum();
+    server.send(ok ? 200 : 500, "text/plain", ok ? "ok" : "Nao foi possivel apagar");
   });
   server.on("/api/show", HTTP_POST, [] {
     if (!guard()) return;

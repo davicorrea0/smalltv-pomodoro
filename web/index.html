@@ -74,6 +74,8 @@ nav button.on svg{stroke:var(--ac)}
 #sheet{position:fixed;inset:0;z-index:8;background:#000a;display:none;align-items:flex-end;justify-content:center}
 #sheet.v{display:flex}#sheet>div{width:100%;max-width:480px;background:var(--card);border-radius:22px 22px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom));animation:up .2s}
 @keyframes up{from{transform:translateY(40px);opacity:.5}}
+.stg{max-height:58vh;overflow:auto;text-align:left;margin-top:6px}.stg h4{margin:14px 0 2px;font-size:14px;display:flex;justify-content:space-between;gap:8px}.stg h4 b,.stg .it b{color:var(--mut);font-weight:500;white-space:nowrap}
+.stg .it{display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid var(--line);font-size:13px}.stg .it span{flex:1;word-break:break-all}.stg .it button{padding:5px 10px;border-radius:8px;background:var(--card2);border:1px solid var(--line)}.stg small{display:block;color:var(--mut);margin:4px 0}
 #sheet .scr{width:min(240px,64vw);margin:4px auto 14px}#sheet h3{margin:0;text-align:center;font-size:20px}#sheet p{text-align:center;color:var(--mut);margin:6px 0 16px}
 #toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--card2);border:1px solid var(--line);padding:10px 16px;border-radius:12px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:9;white-space:nowrap}
 #toast.v{opacity:1}
@@ -192,6 +194,7 @@ nav button.on svg{stroke:var(--ac)}
   <div class="grid" id="grid"></div>
   <input id="up" type="file" accept="image/*" multiple hidden>
   <p><button class="btn p" onclick="$('up').click()">Enviar fotos ou GIFs</button></p>
+  <p><button class="btn" onclick="storage()">Ver o que ocupa espaço</button></p>
   <small>Fotos são recortadas para 240×240 no seu navegador antes de enviar. GIFs vão como estão (ideal 240×240). Para exibir, escolha "Álbum" ou "Alternar" em Relógio → Aparência.</small>
  </div>
 </section>
@@ -557,6 +560,28 @@ let qt;$('q').oninput=()=>{clearTimeout(qt);const q=$('q').value.trim();if(q.len
     save({lat:p.latitude,lon:p.longitude,city:name,won:1}).then(()=>toast(t('Cidade: ')+name));r.innerHTML='';$('q').value=''};r.appendChild(b)});
   if(!r.children.length)r.textContent=t('Nenhuma cidade encontrada')}).catch(()=>toast(t('Sem internet no navegador'))),400)};
 // ---------- fotos ----------
+// ---------- armazenamento: tudo o que ocupa a memória de arquivos (/api/storage) ----------
+// Agrupa por tipo; "Outros" é o que o Pomodoro não usa (em relógios vindos do firmware original, os arquivos dele).
+// O relógio marca com k o que precisa para funcionar (sem botão de apagar).
+const STG=[['Fotos e GIFs',p=>p.startsWith('/image/')||p.startsWith('/gif/')],['Mostradores baixados',p=>p.startsWith('/faces/')],['Painel',p=>p.startsWith('/www/')],['Histórico e ajustes',p=>['/stats.bin','/hooks.txt','/rotation.txt'].includes(p)]];
+function storage(){fetch('/api/storage').then(r=>r.json()).then(j=>{const c=$('sheetc');c.innerHTML='';c.appendChild(el('h3',null,t('Memória de arquivos')));
+ const fl=j.files.filter(x=>!x.d),sum=fl.reduce((a,x)=>a+x.s,0);c.appendChild(el('p',null,t('{0} usados de {1}',kb(j.used),kb(j.total))));
+ const box=el('div','stg'),known=new Set(),mine=['/image','/gif','/faces','/www'];
+ const row=(name,size,path,isDir,keep)=>{const r=el('div','it');r.append(el('span',null,name),el('b',null,kb(size)));
+  if(!keep){const b=el('button',null,t('Apagar'));b.onclick=()=>{if(!confirm(isDir?t('Apagar a pasta {0} e tudo dentro?',path):t('Apagar {0}?',path)))return;
+   post('/api/fsdelete',new URLSearchParams({f:path})).then(r=>r.text()).then(x=>{toast(x=='ok'?t('Apagado'):t(x));storage();files()})};r.appendChild(b)}box.appendChild(r)};
+ const group=(title,items)=>{if(!items.length)return;const h=el('h4');h.append(el('span',null,t(title)),el('b',null,kb(items.reduce((a,x)=>a+x.s,0))));box.appendChild(h);
+  items.sort((a,b)=>b.s-a.s).slice(0,60).forEach(x=>row(x.p,x.s,x.p,false,x.k));if(items.length>60)box.appendChild(el('small',null,'+'+(items.length-60)))};
+ STG.forEach(([n,f])=>{const it=fl.filter(x=>f(x.p));it.forEach(x=>known.add(x));group(n,it)});
+ // outros: pastas de cima que o Pomodoro não usa (tamanho somado, apaga a pasta inteira) e arquivos soltos
+ const tops=j.files.filter(x=>x.d&&x.p.split('/').length==2&&!mine.includes(x.p)),other=[];
+ tops.forEach(d=>{const it=fl.filter(x=>x.p.startsWith(d.p+'/'));it.forEach(x=>known.add(x));other.push({p:d.p+'/',s:it.reduce((a,x)=>a+x.s,0),dir:d.p,n:it.length,k:d.k})});
+ fl.filter(x=>!known.has(x)).forEach(x=>other.push({p:x.p,s:x.s,k:x.k}));
+ if(other.length){const h=el('h4');h.append(el('span',null,t('Outros (provavelmente do firmware original)')),el('b',null,kb(other.reduce((a,x)=>a+x.s,0))));box.appendChild(h);
+  other.sort((a,b)=>b.s-a.s).forEach(x=>row(x.dir?x.p+' · '+t('{0} arquivo(s)',x.n):x.p,x.s,x.dir||x.p,!!x.dir,x.k))}
+ const meta=j.used-sum;if(meta>0){const h=el('h4');h.append(el('span',null,t('Controle do sistema de arquivos')),el('b',null,kb(meta)));box.appendChild(h);
+  box.appendChild(el('small',null,t('Pastas e blocos de {0} que cada arquivo ocupa no mínimo: não dá para apagar.',kb(j.block))))}
+ c.appendChild(box);const b=el('button','btn',t('Fechar'));b.style.marginTop='12px';b.onclick=closeSheet;c.appendChild(b);$('sheet').classList.add('v')}).catch(()=>toast(t('Falha: ')+'/api/storage'))}
 function files(){fetch('/api/files').then(r=>r.json()).then(j=>{const g=$('grid');g.innerHTML='';
  j.files.forEach(x=>{const d=document.createElement('div');d.dataset.n=x.n;d.innerHTML='<img loading="lazy">'+(x.n.toLowerCase().endsWith('.gif')?'<span>GIF</span>':'');
   qload(d.firstChild,'/fs?f='+encodeURIComponent(x.n),()=>{});d.onclick=()=>photoSheet(x);g.appendChild(d)});
