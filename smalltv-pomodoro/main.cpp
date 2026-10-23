@@ -38,7 +38,7 @@ extern "C" uint32_t _FS_start;
 
 void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);  // ui.cpp: recorta para a área suja; fora da tela, cai na faixa
 
-#define FW_VERSION "1.19.7"
+#define FW_VERSION "1.19.8"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
@@ -102,6 +102,7 @@ struct Settings {
   uint8_t vcom, vcomChk;  // tensão comum do painel (registrador VCOMS) e marca de calibrado (vcom ^ 0xDA)
   uint8_t fahr;         // 1 = temperaturas em °F; lixo vira 0
   uint8_t rainAlert;    // 1 = avisa na tela quando vai chover na próxima hora; lixo vira 1
+  uint8_t beta;         // 1 = o painel oferece também as versões de teste (firmware/beta.json); lixo vira 0
 };
 const uint32_t SETTINGS_MAGIC = 0x504F4D34;     // "POM4"
 const uint32_t SETTINGS_MAGIC_V3 = 0x504F4D33;  // "POM3": mesmos campos, sem os do v4
@@ -109,7 +110,7 @@ Settings cfg;
 
 void defaultSettings() {
   cfg = Settings{SETTINGS_MAGIC, 25, 5, 15, 4, 80, 0, 0, "<-03>3", "", 0, -1,
-                 THEME_MATRIX, 0, 10, 0, 22, 7, 15, 1, 242, 242, 242, 0, 0, "", 0, 1, 0, 8, ACT_READ, "", 0, 0, 0, 1, "", UI_VCOM_DEFAULT, 0, 0, 1};
+                 THEME_MATRIX, 0, 10, 0, 22, 7, 15, 1, 242, 242, 242, 0, 0, "", 0, 1, 0, 8, ACT_READ, "", 0, 0, 0, 1, "", UI_VCOM_DEFAULT, 0, 0, 1, 0};
 }
 
 // ---------- recuperação: 3 inicializações curtas seguidas ----------
@@ -169,6 +170,7 @@ void loadSettings() {
   if (cfg.alexa > 1) cfg.alexa = 1;  // memória de unidades antigas (0xFF): ligado
   if (cfg.fahr > 1) cfg.fahr = 0;
   if (cfg.rainAlert > 1) cfg.rainAlert = 1;
+  if (cfg.beta > 1) cfg.beta = 0;
   if (!(fabsf(cfg.lat) <= 90 && fabsf(cfg.lon) <= 180)) cfg.lat = cfg.lon = 0;  // lixo ou NaN estouraria o String(float)
   // senha das redes do relógio: 8 letras/dígitos sem os que se confundem, sorteada pelo gerador do chip
   // na primeira vez (ou se a memória tiver lixo) e mostrada na tela quando a rede está no ar
@@ -534,6 +536,8 @@ struct Weather {
   uint8_t nd = 0;  // previsão: hoje e os próximos dias
   UiDay d[UI_DAYS];
   uint8_t rainIn = 0;  // ver UiWeather::rainIn
+  char tzName[40] = "";  // fuso da cidade segundo o Open-Meteo (IANA, ex.: America/Sao_Paulo)
+  int32_t utcOff = 0;     // deslocamento desse fuso agora, em segundos (o painel compara com o do relógio)
 } wx;
 uint32_t wxNext = 0;
 uint8_t wxFails = 0;  // buscas de clima seguidas que falharam
@@ -630,6 +634,7 @@ bool fetchWeather() {
   filter["current"]["is_day"] = true;
   filter["current"]["time"] = true;  // hora local do serviço: a segunda fonte que confirma a do SNTP
   filter["utc_offset_seconds"] = true;
+  filter["timezone"] = true;  // fuso da cidade: o painel confere se bate com o do relógio
   filter["daily"]["weather_code"] = true;
   filter["daily"]["precipitation_probability_max"] = true;
   filter["daily"]["temperature_2m_max"] = true;
@@ -684,6 +689,10 @@ bool fetchWeather() {
       settimeofday(&w, nullptr);
     }
   }
+  strlcpy(wx.tzName, doc["timezone"] | "", sizeof wx.tzName);
+  for (char *c = wx.tzName; *c; c++)  // nome IANA ("America/Sao_Paulo"): só isso vai para o JSON do estado
+    if (!isalnum((unsigned char)*c) && !strchr("/_+-", *c)) *c = 0;
+  wx.utcOff = doc["utc_offset_seconds"] | 0;
   wx.ok = true;
   wx.version++;
   return true;
@@ -1388,6 +1397,51 @@ void jsonEscapeAppend(String &o, const char *s) {
 
 bool safeText(const String &s) { return s.indexOf('"') < 0 && s.indexOf('\\') < 0; }
 
+// Deslocamento do fuso do relógio agora, em segundos (hora local - UTC), pela diferença entre localtime e gmtime.
+int32_t localOffset() {
+  time_t now = time(nullptr);
+  struct tm lt, gt;
+  localtime_r(&now, &lt);
+  gmtime_r(&now, &gt);
+  int32_t d = (lt.tm_hour - gt.tm_hour) * 3600 + (lt.tm_min - gt.tm_min) * 60;
+  int dd = lt.tm_yday - gt.tm_yday;  // virada de dia (ou de ano) entre os dois
+  if (dd == 1 || dd < -1) d += 86400;
+  else if (dd == -1 || dd > 1) d -= 86400;
+  return d;
+}
+
+// ---------- diagnóstico (painel: Ajustes -> Sistema) ----------
+// Motivo do último reinício (e, se foi travamento, a causa e o endereço), sinal do Wi-Fi, menor memória livre
+// desde que ligou e tempo ligado: se o relógio reiniciar sozinho, dá para ver o porquê em vez de adivinhar.
+uint32_t diagMinHeap = 0xFFFFFFFF, diagLastMs = 0;
+uint16_t diagWraps = 0;  // millis() volta a zero a cada ~49,7 dias
+void diagLoop() {
+  uint32_t now = millis(), h = ESP.getFreeHeap();
+  if (now < diagLastMs) diagWraps++;
+  diagLastMs = now;
+  if (h < diagMinHeap) diagMinHeap = h;
+}
+void diagJson(String &j) {
+  const rst_info *r = ESP.getResetInfoPtr();
+  char epc[12];
+  snprintf(epc, sizeof epc, "%08x", r ? (unsigned)r->epc1 : 0u);
+  j += F(",\"diag\":{\"rst\":");  // 0 ligado, 1 watchdog de hardware, 2 travamento, 3 watchdog, 4 reinício pedido, 6 botão/externo
+  j += r ? (int)r->reason : -1;
+  j += F(",\"exc\":");
+  j += r ? (int)r->exccause : -1;
+  j += F(",\"epc\":\"");
+  j += epc;
+  j += F("\",\"rssi\":");
+  j += WiFi.isConnected() ? WiFi.RSSI() : 0;
+  j += F(",\"minheap\":");
+  j += diagMinHeap;
+  j += F(",\"frag\":");
+  j += ESP.getHeapFragmentation();
+  j += F(",\"up\":");
+  j += (uint32_t)((((uint64_t)diagWraps << 32) | millis()) / 1000);
+  j += '}';
+}
+
 void sendState() {
   if (!readOk()) return;
   struct tm t;
@@ -1403,7 +1457,7 @@ void sendState() {
     fsInfoAt = millis() | 1;
   }
   String j;
-  j.reserve(900 + rotList.length());
+  j.reserve(1150 + rotList.length());  // estado, ajustes e diagnóstico: uma alocação só
   j += F("{\"phase\":\"");
   j += PHASE_KEY[phase];
   j += F("\",\"running\":");
@@ -1436,6 +1490,12 @@ void sendState() {
   j += wx.hum;
   j += F(",\"rin\":");  // minutos até a chuva (0 = não vai chover na próxima hora)
   j += wx.rainIn;
+  j += F(",\"tzn\":\"");  // fuso da cidade (Open-Meteo), o deslocamento dele e o do relógio agora
+  j += wx.tzName;
+  j += F("\",\"off\":");
+  j += wx.utcOff;
+  j += F(",\"loff\":");
+  j += localOffset();
   j += F(",\"rise\":");
   j += sunRise;
   j += F(",\"set\":");
@@ -1488,6 +1548,8 @@ void sendState() {
   j += cfg.fahr;
   j += F(",\"rain\":");
   j += cfg.rainAlert;
+  j += F(",\"beta\":");
+  j += cfg.beta;
   j += F(",\"lat\":");
   appendFixed(j, cfg.lat, 4);
   j += F(",\"lon\":");
@@ -1544,6 +1606,7 @@ void sendState() {
   j += phaseSeq;
   j += F(",\"pshown\":");
   j += shownSeq;
+  diagJson(j);
   j += F(",\"ver\":\"" FW_VERSION "\"}");
   server.sendHeader("Cache-Control", "no-store");  // cidade, rede e ajustes: o navegador não guarda
   server.send(200, "application/json", j);
@@ -2090,6 +2153,7 @@ void setupWeb() {
     if (server.hasArg("rot")) rotSet(server.arg("rot"));
     uint8_t won = argRange("won", cfg.weatherOn, 0, 1);
     uint8_t fahr = argRange("fahr", cfg.fahr, 0, 1), rain = argRange("rain", cfg.rainAlert, 0, 1);
+    cfg.beta = argRange("beta", cfg.beta, 0, 1);
     if (fahr != cfg.fahr || rain != cfg.rainAlert) uiInvalidate();  // números e aviso mudam na tela
     cfg.fahr = fahr;
     cfg.rainAlert = rain;
@@ -2791,6 +2855,7 @@ void setup() {
 uint32_t lastRender = 0, lastBriCheck = 0;
 
 void loop() {
+  diagLoop();
   if (bootCount && millis() > 30000) setBootCount(0);  // ficou ligado: não foi uma inicialização curta
   if (recoveryMode) {
     server.handleClient();

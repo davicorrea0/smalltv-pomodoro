@@ -19,6 +19,12 @@ const out = path.join(__dirname, '..', 'smalltv-pomodoro', 'web.h');
   html = html.replace(/__I18V__/g, ver).replace(/__I18I__/g, 'sha384-' + crypto.createHash('sha384').update(dict).digest('base64'));
   fs.mkdirSync(path.join(__dirname, 'out'), { recursive: true });
   fs.writeFileSync(path.join(__dirname, 'out', `i18n-${ver}.json`), dict);
+  // fusos (web/tz.json, gerado por web/tzgen.sh da tzdata): idem, panel/tz-<código>.json com SRI, baixado só
+  // quando a pessoa escolhe a cidade (o relógio recebe a regra POSIX pronta)
+  const tz = fs.readFileSync(path.join(__dirname, 'tz.json'));
+  const tzv = crypto.createHash('sha1').update(tz).digest('hex').slice(0, 10);
+  html = html.replace(/__TZV__/g, tzv).replace(/__TZI__/g, 'sha384-' + crypto.createHash('sha384').update(tz).digest('base64'));
+  fs.writeFileSync(path.join(__dirname, 'out', `tz-${tzv}.json`), tz);
   // cartão de compartilhar: web/share.js vai para o site como panel/share-<código>.js (minificado, se der)
   let share = fs.readFileSync(path.join(__dirname, 'share.js'), 'utf8');
   const shv = crypto.createHash('sha1').update(share).digest('hex').slice(0, 10);
@@ -61,5 +67,5 @@ const out = path.join(__dirname, '..', 'smalltv-pomodoro', 'web.h');
   h += '\n};\n';
   fs.writeFileSync(out, h);
   fs.writeFileSync(path.join(__dirname, 'out', 'panel.json'), JSON.stringify({ panel: file, psri: sri, psize: gz.length }) + '\n');  // para o latest.json
-  console.log(`painel: ${(fs.statSync(src).size / 1024).toFixed(1)} KB -> ${(gz.length / 1024).toFixed(1)} KB (gzip) em ${file}; carregador na flash: ${loader.length} bytes; dicionário i18n-${ver}.json, cartão share-${shv}.js`);
+  console.log(`painel: ${(fs.statSync(src).size / 1024).toFixed(1)} KB -> ${(gz.length / 1024).toFixed(1)} KB (gzip) em ${file}; carregador na flash: ${loader.length} bytes; dicionário i18n-${ver}.json, fusos tz-${tzv}.json, cartão share-${shv}.js`);
 })();

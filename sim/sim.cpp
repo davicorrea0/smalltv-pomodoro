@@ -34,6 +34,10 @@ static void save(const Frame &f, const char *name) {
   char path[128];
   snprintf(path, sizeof path, "out/%s.raw", name);
   FILE *fp = fopen(path, "wb");
+  if (!fp) {  // sem a pasta out/ (o build.sh cria)
+    perror(path);
+    exit(1);
+  }
   fwrite(f.px, 2, 240 * 240, fp);
   fclose(fp);
 }

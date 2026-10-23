@@ -63,6 +63,7 @@ input[type=color]{width:52px;height:36px;padding:2px}
 .grid div{position:relative;aspect-ratio:1;border-radius:12px;overflow:hidden;background:var(--bg);cursor:pointer}
 .grid img{width:100%;height:100%;object-fit:cover}.grid div.on{outline:3px solid var(--ac)}
 .grid span{position:absolute;bottom:4px;right:4px;background:#000a;font-size:10px;padding:1px 5px;border-radius:6px}
+.diag div{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-top:1px solid var(--line);font-size:13px}.diag div:first-child{border-top:0}.diag b{color:var(--mut);font-weight:500;white-space:nowrap}.diag span{text-align:right}
 .bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:6px}.bar i{display:block;height:100%;background:var(--ac)}
 /* barra de abas */
 nav{position:fixed;left:0;right:0;bottom:0;z-index:6;background:#121215ee;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
@@ -264,7 +265,9 @@ nav button.on svg{stroke:var(--ac)}
  <h2>Data e hora</h2>
  <div class="card">
   <label>Fuso (POSIX TZ)<input data-k="tz" type="text" spellcheck="false"></label>
-  <small>Brasília: &lt;-03&gt;3 · Manaus: &lt;-04&gt;4 · Lisboa: WET0WEST,M3.5.0/1,M10.5.0</small>
+  <small>Automático: ao escolher a cidade em Clima, o fuso (com horário de verão) vem junto. Manual: Brasília &lt;-03&gt;3 · Manaus &lt;-04&gt;4 · Lisboa WET0WEST,M3.5.0/1,M10.5.0</small>
+  <small id="tzauto"></small>
+  <p id="tzfix" hidden><button class="btn" onclick="tzFix()">Ajustar o fuso pela cidade</button></p>
  </div>
  </div>
  <div class="grp">
@@ -276,12 +279,21 @@ nav button.on svg{stroke:var(--ac)}
    <small>Com senha, o navegador pede usuário admin e esta senha ao abrir o painel. A Alexa continua funcionando sem senha. Esqueceu? Use o modo de recuperação.</small>
    <p><button class="btn" type="submit">Salvar senha</button></p>
   </form>
-  <div class="row" style="margin-bottom:8px"><button class="btn" onclick="backup()">Fazer backup</button><button class="btn" onclick="$('rbk').click()">Restaurar backup</button></div>
+  <label>Receber versões de teste<input data-k="beta" type="checkbox"></label>
+  <small>O aviso de atualização passa a oferecer também as versões de teste, antes de todo mundo. Elas podem ter problemas; o modo de recuperação continua disponível.</small>
+  <div class="row" style="margin:10px 0 8px"><button class="btn" onclick="backup()">Fazer backup</button><button class="btn" onclick="$('rbk').click()">Restaurar backup</button></div>
   <input id="rbk" type="file" accept=".json,application/json" hidden>
   <div class="row"><button class="btn" onclick="location='/update'">Atualizar firmware</button>
   <button class="btn" onclick="if(confirm(t('Apagar Wi-Fi salvo e reiniciar?')))post('/api/wifireset').then(()=>toast(t('Reiniciando...')))">Resetar Wi-Fi</button></div>
   <p><button class="btn" id="fmt" hidden onclick="if(confirm(t('Formatar a memória? Todas as fotos e GIFs serão apagados.')))post('/api/format').then(r=>r.text()).then(x=>{toast(t(x));files()})">Formatar memória de arquivos</button></p>
   <small>Usuário do /update: admin. Para voltar ao firmware original, envie o .bin da GeekMagic em "Atualizar firmware". Se o relógio travar, ligue e desligue 3 vezes seguidas (cada vez por menos de 30 s): ele abre o modo de recuperação, com a rede SmallTV-Recuperacao. Versão <span id="ver"></span> · RAM livre <span id="heap"></span></small>
+ </div>
+ </div>
+ <div class="grp">
+ <h2>Diagnóstico</h2>
+ <div class="card">
+  <div id="diag" class="diag"></div>
+  <small>Se o relógio reiniciar sozinho, o motivo aparece aqui. Wi-Fi fraco (abaixo de −75 dBm) costuma explicar clima e atualização falhando.</small>
  </div>
  </div>
 </section>
@@ -314,6 +326,7 @@ function i18n(){document.documentElement.lang=LANGS[LG];document.documentElement
 // guardado no navegador na primeira vez; em português não precisa de nada. O build troca __I18V__ pelo
 // código do dicionário; sem ele (painel de teste), vem de /i18n.json.
 const I18V='__I18V__',I18I='__I18I__';  // I18I: impressão digital (SRI) do dicionário publicado
+const TZV='__TZV__',TZI='__TZI__';  // tabela de fusos publicada (panel/tz-<código>.json), idem
 function loadI18n(){if(!LG||I18N._v==I18V)return;let c=null;try{c=JSON.parse(localStorage.i18n||'null')}catch(e){}
  const use=d=>{Object.assign(I18N,d.dict,{_v:I18V});BUILTIN=d.builtin;i18n();buildFaces();drawGame();if(st){$('curimg').dataset.k='';load(st)}};
  if(c&&c.v==I18V)return use(c);
@@ -438,9 +451,11 @@ async function shareDay(){if(!st)return;if(!STATS)await loadStats();
  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=file.name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000);toast(t('Imagem salva'))}
 // ---------- versão nova (firmware/latest.json no site) ----------
 let UPD=null,updating=false,updChecked=false,lastToday=-1;
-function checkUpdate(){fetch(SITE+'firmware/latest.json',{cache:'no-store'}).then(r=>r.json()).then(u=>{if(!st||vnum(u.version)<=vnum(st.ver))return;
- UPD=u;let skip='';try{skip=localStorage.updSkip||''}catch(e){}if(skip==u.version)return;showUpdate()}).catch(()=>{})}
-function showUpdate(){const u=UPD;if(!u)return;$('updt').textContent=t('Nova versão {0} disponível',u.version);const n=$('updn');n.innerHTML='';
+// com "Receber versões de teste" ligado, firmware/beta.json também conta: vale a mais nova das duas
+function checkUpdate(){const get=f=>fetch(SITE+'firmware/'+f,{cache:'no-store'}).then(r=>r.ok?r.json():null).catch(()=>null);
+ Promise.all([get('latest.json'),st&&st.cfg.beta?get('beta.json'):null]).then(([a,b])=>{let u=a;if(b&&(!u||vnum(b.version)>vnum(u.version)))u=Object.assign({beta:1},b);
+  if(!u||!st||vnum(u.version)<=vnum(st.ver))return;UPD=u;let skip='';try{skip=localStorage.updSkip||''}catch(e){}if(skip==u.version)return;showUpdate()})}
+function showUpdate(){const u=UPD;if(!u)return;$('updt').textContent=t(u.beta?'Versão de teste {0} disponível':'Nova versão {0} disponível',u.version);const n=$('updn');n.innerHTML='';
  ((u.notes||{})[LANGS[LG]]||(u.notes||{}).pt||[]).forEach(x=>n.appendChild(el('li',null,x)));$('upd').classList.add('v')}
 function skipUpdate(){try{localStorage.updSkip=UPD.version}catch(e){}$('upd').classList.remove('v')}
 async function doUpdate(){const u=UPD;if(!u||updating||!confirm(t('Atualizar o relógio para a versão {0}? Ele reinicia sozinho no fim.',u.version)))return;
@@ -486,8 +501,18 @@ async function hookTest(e){await hooksSave();toast(t('Chamando o endereço...'))
  toast(c>=200&&c<300?t('Enviado ({0}): a Alexa deve falar em instantes',c):c==0?t('Sem endereço salvo para esse aviso'):t('O serviço respondeu {0}: confira o endereço',c))}
 // ---------- configurações (salva sozinho) ----------
 function save(o){return post('/api/settings',new URLSearchParams(o)).then(r=>r.json()).then(s=>{filled=false;load(s);return s})}
+// ---------- fuso pela cidade (tabela IANA -> POSIX do site, web/tz.json) ----------
+let TZ=null;function tzLoad(){return TZ?Promise.resolve(TZ):fetch(SITE+'panel/tz-'+TZV+'.json',{integrity:TZI}).then(r=>r.json()).then(j=>TZ=j)}
+function tzFix(){const z=st&&st.wx&&st.wx.tzn;if(!z)return;tzLoad().then(m=>{if(!m[z])throw z;return save({tz:m[z]})}).then(()=>toast(t('Fuso ajustado: {0}',z))).catch(()=>toast(t('Falha: ')+z))}
+// ---------- diagnóstico ----------
+const RST=['ligado na tomada','travou (watchdog de hardware)','travou (erro {0} em {1})','travou (watchdog)','reiniciado pelo próprio relógio (atualização, ajuste ou comando)','saiu do modo de economia','reiniciado por fora'];
+function dur(x){const d=x/86400|0,h=x%86400/3600|0,m=x%3600/60|0;return d?d+' d '+h+' h':h?h+' h '+m+' min':m+' min'}
+function diagShow(s){const d=s.diag,c=$('diag'),q=d.rssi>=-60?'bom':d.rssi>=-72?'médio':'fraco';c.innerHTML='';
+ [[t('Ligado há'),dur(d.up)],[t('Último reinício'),t(RST[d.rst]||'?',d.exc,'0x'+d.epc)],[t('Sinal do Wi-Fi'),d.rssi?d.rssi+' dBm ('+t(q)+')':t('desconectado')],
+  [t('Memória livre'),kb(s.heap)+' · '+t('menor desde que ligou')+' '+kb(d.minheap)+' · '+t('maior bloco')+' '+kb(s.blk)+' · '+t('fragmentação')+' '+d.frag+'%']]
+  .forEach(([a,b])=>{const r=el('div');r.append(el('b',null,a),el('span',null,b));c.appendChild(r)})}
 // data-neg: chave marcada = 0. "Inverter cores" é em relação ao normal (o painel IPS já liga com INVON)
-document.querySelectorAll('[data-k]').forEach(e=>{e.onchange=()=>{const v=e.type=='checkbox'?(e.checked!=e.hasAttribute('data-neg')?1:0):e.value;save({[e.dataset.k]:v}).then(()=>toast(t('Salvo')))}});
+document.querySelectorAll('[data-k]').forEach(e=>{e.onchange=()=>{const v=e.type=='checkbox'?(e.checked!=e.hasAttribute('data-neg')?1:0):e.value;save({[e.dataset.k]:v}).then(()=>{toast(t('Salvo'));if(e.dataset.k=='beta')checkUpdate()})}});
 // ---------- estado ----------
 function beep(){try{actx=actx||new AudioContext();[0,.25,.5].forEach(d=>{const o=actx.createOscillator(),g=actx.createGain();
  o.frequency.value=880;g.gain.setValueAtTime(.2,actx.currentTime+d);g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+d+.2);
@@ -531,6 +556,10 @@ function load(s){if(s.cfg.lang!=null&&s.cfg.lang!=LG)setLang(s.cfg.lang);if(last
  const hm=m=>String(m/60|0).padStart(2,'0')+':'+String(m%60).padStart(2,'0'),sun=s.wx&&s.wx.rise>=0&&s.wx.set>s.wx.rise;
  $('suninfo').textContent=s.cfg.nsun?(sun?t('Pôr do sol {0} · nascer {1} em {2}',hm(s.wx.set),hm(s.wx.rise),s.cfg.city):t('Escolha a cidade em Clima para saber os horários do sol; até lá vale o horário fixo.')):'';
  document.querySelectorAll('.fixh').forEach(e=>e.style.display=s.cfg.nsun&&sun?'none':'')
+ // fuso: o Open-Meteo diz o da cidade (e o deslocamento agora); se o do relógio for outro, oferece ajustar
+ const w=s.wx||{},tzBad=!!(w.ok&&w.tzn&&w.loff!=null&&w.off!==w.loff);$('tzfix').hidden=!tzBad;
+ $('tzauto').textContent=w.tzn?(tzBad?t('O fuso do relógio não bate com o da cidade ({0}).',w.tzn):t('Fuso da cidade: {0}',w.tzn)):'';
+ if(s.diag)diagShow(s)
  $('pvbar').style.display=s.pv?'block':'none';if(s.pv)$('pvbar').textContent=t('Prévia no relógio por mais {0} s · depois ele volta para {1}',s.pv,cf?cf.n:t('o mostrador salvo'));
  // clima
  $('city').textContent=s.cfg.city||'—';$('wx').hidden=!(s.cfg.won&&s.wx.ok);
@@ -557,7 +586,9 @@ let qt;$('q').oninput=()=>{clearTimeout(qt);const q=$('q').value.trim();if(q.len
   const r=$('res');r.innerHTML='';(j.results||[]).forEach(p=>{const b=document.createElement('button');b.type='button';
    b.textContent=[p.name,p.admin1,p.country].filter(Boolean).join(', ');
    b.onclick=()=>{const name=p.name.normalize('NFD').replace(/[^\x20-\x7e]/g,'').replace(/["\\]/g,'').slice(0,31);
-    save({lat:p.latitude,lon:p.longitude,city:name,won:1}).then(()=>toast(t('Cidade: ')+name));r.innerHTML='';$('q').value=''};r.appendChild(b)});
+    // o fuso da cidade (IANA, do geocoding) vira a regra POSIX que o relógio usa, pela tabela do site
+    tzLoad().then(m=>m[p.timezone]).catch(()=>null).then(tz=>save(Object.assign({lat:p.latitude,lon:p.longitude,city:name,won:1},tz?{tz}:{}))
+     .then(()=>toast(t('Cidade: ')+name+(tz?' · '+p.timezone:''))));r.innerHTML='';$('q').value=''};r.appendChild(b)});
   if(!r.children.length)r.textContent=t('Nenhuma cidade encontrada')}).catch(()=>toast(t('Sem internet no navegador'))),400)};
 // ---------- fotos ----------
 // ---------- armazenamento: tudo o que ocupa a memória de arquivos (/api/storage) ----------

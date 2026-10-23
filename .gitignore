@@ -6,6 +6,7 @@ build/
 # simulador
 sim/out/
 sim/*.exe
+sim/sim
 sim/*.pdb
 # firmware de fábrica da GeekMagic (não é nosso; baixe do repositório oficial)
 fw/
