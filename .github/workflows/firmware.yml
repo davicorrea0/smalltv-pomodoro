@@ -32,10 +32,11 @@ jobs:
 
       - name: arduino-cli (conferido pelo SHA-256 do release oficial)
         run: |
+          set -o pipefail
           base="https://github.com/arduino/arduino-cli/releases/download/v${ARDUINO_CLI}"
           file="arduino-cli_${ARDUINO_CLI}_Linux_64bit.tar.gz"
           curl -fsSLO "$base/$file"
-          curl -fsSL "$base/arduino-cli_${ARDUINO_CLI}_checksums.txt" | grep " $file\$" | sha256sum -c -
+          curl -fsSL "$base/${ARDUINO_CLI}-checksums.txt" | grep " $file\$" | sha256sum -c -
           mkdir -p "$HOME/bin" && tar -xzf "$file" -C "$HOME/bin" arduino-cli
           echo "$HOME/bin" >> "$GITHUB_PATH"
 

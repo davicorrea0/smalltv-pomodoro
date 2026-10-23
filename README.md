@@ -16,6 +16,9 @@ Alternative firmware for the **GeekMagic SmallTV Ultra** (ESP8266, 240×240 ST77
 - **Downloadable faces:** small `.json` packages installed from the panel without updating the firmware. 36 faces in the online gallery, including Apple Watch and Mi Band inspired ones. A face can carry its text in all three languages and shows the one chosen in the panel.
 - **Weather and a 5-day forecast** from [Open-Meteo](https://open-meteo.com/) (no API key), with city search in the panel, in °C or °F.
 - **Rain warning:** when rain should start within the next hour, the clock shows "rain 15 min" (and the tomato opens its umbrella), using Open-Meteo's 15-minute precipitation.
+- **Automatic time zone:** picking the city also sets the time zone with its daylight saving rules; if the clock's zone does not match the city's, the panel offers to fix it.
+- **Diagnostics:** the panel shows why the clock last restarted (with the crash cause and address), the Wi-Fi signal, the lowest free memory since boot and the uptime.
+- **Test versions:** an option in the panel to receive test builds before everyone else.
 - **Photo and GIF album:** reads the files already saved by the original firmware; uploads from the panel are cropped to 240×240 in the browser.
 - **Night brightness** that follows the sun (from sunset to sunrise, using the times Open-Meteo already sends with the weather) or a fixed schedule.
 - **Alexa voice control, no account or cloud:** the clock shows up to an Echo on the same network as three dimmable lights (a minimal Philips Hue bridge emulation, the same protocol as Espalexa). *Pomodoro*: "turn on" starts or resumes a focus session and the screen switches to the timer, "turn off" pauses it and, again, stops it, and "set Pomodoro to 40%" focuses for 40 minutes. *Break* and *Long break*: "turn on" starts the break (a percentage sets its minutes), "turn off" goes back to focus. The lit light shows the current phase in the Alexa app, and the web panel shows when an Echo last talked to the clock and its last command. **End-of-phase announcements:** paste a trigger URL from [Virtual Smart Home](https://www.virtualsmarthome.xyz/), Voice Monkey or IFTTT in the panel and the clock calls it when a focus session or a break ends, so an Alexa routine can say "Pomodoro done" (plain HTTP; those services accept it).
@@ -160,8 +163,15 @@ arduino-cli core install esp8266:esp8266 --additional-urls https://arduino.esp82
 arduino-cli lib install "Adafruit GFX Library@1.13.0" "Adafruit ST7735 and ST7789 Library@1.11.0" "ArduinoJson@7.4.3"
 (cd web && npm install)  # optional: terser minifies the panel (~1 KB smaller)
 sim/build.sh   # generates assets.h and web.h, checks the code and tests the screens in the simulator
+sim/testes.sh  # Linux/WSL (g++-multilib): upload/host/password handlers, history, GIF and JPEG fuzzing
 ./compilar.sh  # builds into build/ and checks the size
 ```
+
+`sim/build.sh` runs on Windows (Zig) and on Linux (Zig, or `g++ -m32` without it). Every push runs all of the above on GitHub Actions (`.github/workflows/firmware.yml`) and keeps the firmware as an artifact.
+
+**Publishing** a version is one command, `scripts/publicar.sh [--beta] [--publicar]`: it checks the tree, scans the diff for secrets, runs the simulator and the tests, builds, adds only new panel files to the website (never overwriting the ones older firmwares point to), writes `firmware/latest.json` (or `firmware/beta.json` with `--beta`), creates the GitHub release and checks the result online. Without `--publicar` it is a dry run that sends nothing. Release notes live in `notas/<version>.json`.
+
+The time zone table (`web/tz.json`, IANA name → POSIX rule) is generated from the system tzdata by `web/tzgen.sh` and published like the dictionary.
 
 The panel's English and Spanish texts live in `web/i18n.json`, not in flash: `web/build.js` writes `web/out/i18n-<code>.json`, which is published in the website's `panel/` folder; the panel downloads it once and keeps it in the browser.
 
