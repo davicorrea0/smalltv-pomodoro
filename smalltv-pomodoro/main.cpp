@@ -425,7 +425,7 @@ void hueCommand(int i, const String &body) {
 }
 
 void alexaApi() {
-  String req = server.uri(), body = server.arg("plain");
+  const String &req = server.uri(), &body = server.arg("plain");
   if (!cfg.alexa || req.indexOf("api") < 0) {
     server.send(404, "text/plain", "");
     return;
@@ -449,6 +449,7 @@ void alexaApi() {
     return;
   }
   String j;
+  j.reserve(512);
   if (pos > 0 && key == 0) {  // todas as lâmpadas
     j = '{';
     for (int k = 0; k < HUE_LIGHTS; k++) {
@@ -553,6 +554,22 @@ static bool httpLine(WiFiClient &c, String &line, uint32_t start, uint16_t timeo
   }
   return false;
 }
+
+// Acrescenta um decimal já limitado pelo firmware sem criar outro String no heap.
+static void appendFixed(String &out, float value, uint8_t digits) {
+  bool neg = value < 0;
+  if (neg) value = -value;
+  uint32_t scale = 1;
+  for (uint8_t i = 0; i < digits; i++) scale *= 10;
+  uint32_t scaled = lroundf(value * scale);
+  if (neg && scaled) out += '-';
+  out += scaled / scale;
+  if (!digits) return;
+  out += '.';
+  uint32_t frac = scaled % scale;
+  for (uint32_t div = scale / 10; div; div /= 10) out += (char)('0' + frac / div % 10);
+}
+
 int httpGet(WiFiClient &c, const String &url, uint16_t timeoutMs) {
   if (!safeHttpUrl(url.c_str(), url.length())) return -1;
   int end = 7;
@@ -567,9 +584,15 @@ int httpGet(WiFiClient &c, const String &url, uint16_t timeoutMs) {
   }
   c.setTimeout(timeoutMs);
   if (!host.length() || !port || !c.connect(host.c_str(), port)) return -1;
-  c.print("GET " + path + F(" HTTP/1.0\r\nHost: ") + host + F("\r\nUser-Agent: SmallTV\r\nConnection: close\r\n\r\n"));
+  // Envia em partes: concatenar tudo criava um String temporário grande em toda consulta.
+  c.print(F("GET "));
+  c.print(path);
+  c.print(F(" HTTP/1.0\r\nHost: "));
+  c.print(host);
+  c.print(F("\r\nUser-Agent: SmallTV\r\nConnection: close\r\n\r\n"));
   uint32_t start = millis();
   String line;
+  line.reserve(128);  // httpLine reutiliza a mesma capacidade para status e cabeçalhos
   if (!httpLine(c, line, start, timeoutMs)) return -2;
   int sp = line.indexOf(' ');
   int code = sp > 0 ? line.substring(sp + 1).toInt() : 0;
@@ -586,12 +609,17 @@ int httpGet(WiFiClient &c, const String &url, uint16_t timeoutMs) {
 
 bool fetchWeather() {
   WiFiClient client;
-  String url = "http://api.open-meteo.com/v1/forecast?latitude=" + String(cfg.lat, 4) +
-               "&longitude=" + String(cfg.lon, 4) +
-               "&current=temperature_2m,relative_humidity_2m,weather_code,is_day"
-               "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset"
-               "&minutely_15=precipitation,precipitation_probability&forecast_minutely_15=4"
-               "&timezone=auto&forecast_days=" + String(UI_DAYS);
+  String url;
+  url.reserve(384);
+  url = F("http://api.open-meteo.com/v1/forecast?latitude=");
+  appendFixed(url, cfg.lat, 4);
+  url += F("&longitude=");
+  appendFixed(url, cfg.lon, 4);
+  url += F("&current=temperature_2m,relative_humidity_2m,weather_code,is_day"
+           "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset"
+           "&minutely_15=precipitation,precipitation_probability&forecast_minutely_15=4"
+           "&timezone=auto&forecast_days=");
+  url += UI_DAYS;
   if (httpGet(client, url, 5000) != 200) return false;
   JsonDocument filter;
   filter["minutely_15"]["precipitation"] = true;  // 4 quartos de hora a partir do atual: a próxima hora
@@ -618,7 +646,7 @@ bool fetchWeather() {
   wx.day = doc["current"]["is_day"] | 1;
   wx.tmax = doc["daily"]["temperature_2m_max"][0];
   wx.tmin = doc["daily"]["temperature_2m_min"][0];
-  // a resposta vem em HTTP puro: um 1e38 forjado estouraria o String(float) de /api/state
+  // a resposta vem em HTTP puro: limita antes de converter os decimais de /api/state
   for (float *v : {&wx.t, &wx.tmax, &wx.tmin}) *v = isfinite(*v) ? constrain(*v, -99.0f, 99.0f) : 0;
   // vai chover: o primeiro quarto de hora com chuva de verdade (≥ 0,1 mm e chance ≥ 40%), se agora
   // ainda não chove. O atual vira "em instantes" (5); os seguintes, 15/30/45 min.
@@ -978,12 +1006,18 @@ File mediaFile;
 int gifOffX = 0, gifOffY = 0;
 uint32_t nextFrameAt = 0;
 
-bool isGif(const String &n) { return n.endsWith(".gif") || n.endsWith(".GIF"); }
-bool isJpg(const String &n) {
-  String l = n;
-  l.toLowerCase();
-  return l.endsWith(".jpg") || l.endsWith(".jpeg");
+bool endsWithIgnoreCase(const String &s, const char *suffix) {
+  size_t n = s.length(), m = strlen(suffix);
+  if (m > n) return false;
+  for (size_t i = 0; i < m; i++) {
+    char a = s[n - m + i];
+    if (a >= 'A' && a <= 'Z') a += 'a' - 'A';
+    if (a != suffix[i]) return false;
+  }
+  return true;
 }
+bool isGif(const String &n) { return endsWithIgnoreCase(n, ".gif"); }
+bool isJpg(const String &n) { return endsWithIgnoreCase(n, ".jpg") || endsWithIgnoreCase(n, ".jpeg"); }
 
 // Pastas usadas pelo firmware original: /image (fotos e GIFs) e /gif.
 const char *MEDIA_DIRS[] = {"/image", "/gif"};
@@ -1330,13 +1364,12 @@ void handlePackUpload() {
 }
 
 // ---------- web ----------
-String jsonEscape(const String &s) {
-  String o;
-  for (char c : s) {
+void jsonEscapeAppend(String &o, const char *s) {
+  for (; *s; s++) {
+    char c = *s;
     if (c == '"' || c == '\\') o += '\\';
     if ((uint8_t)c >= 0x20) o += c;
   }
-  return o;
 }
 
 bool safeText(const String &s) { return s.indexOf('"') < 0 && s.indexOf('\\') < 0; }
@@ -1356,7 +1389,7 @@ void sendState() {
     fsInfoAt = millis() | 1;
   }
   String j;
-  j.reserve(900);
+  j.reserve(900 + rotList.length());
   j += F("{\"phase\":\"");
   j += PHASE_KEY[phase];
   j += F("\",\"running\":");
@@ -1376,15 +1409,15 @@ void sendState() {
   j += F(",\"clock\":\"");
   j += clock;
   j += F("\",\"showing\":\"");
-  j += jsonEscape(curFile);
+  jsonEscapeAppend(j, curFile.c_str());
   j += F("\",\"wx\":{\"ok\":");
   j += wx.ok ? 1 : 0;
   j += F(",\"t\":");
-  j += String(wx.t, 1);
+  appendFixed(j, wx.t, 1);
   j += F(",\"min\":");
-  j += String(wx.tmin, 1);
+  appendFixed(j, wx.tmin, 1);
   j += F(",\"max\":");
-  j += String(wx.tmax, 1);
+  appendFixed(j, wx.tmax, 1);
   j += F(",\"h\":");
   j += wx.hum;
   j += F(",\"rin\":");  // minutos até a chuva (0 = não vai chover na próxima hora)
@@ -1416,7 +1449,7 @@ void sendState() {
   j += F(",\"h12\":");
   j += cfg.hour12;
   j += F(",\"tz\":\"");
-  j += jsonEscape(cfg.tz);
+  jsonEscapeAppend(j, cfg.tz);
   j += F("\",\"lock\":");
   j += cfg.otaPass[0] ? 1 : 0;
   j += F(",\"theme\":");
@@ -1442,11 +1475,11 @@ void sendState() {
   j += F(",\"rain\":");
   j += cfg.rainAlert;
   j += F(",\"lat\":");
-  j += String(cfg.lat, 4);
+  appendFixed(j, cfg.lat, 4);
   j += F(",\"lon\":");
-  j += String(cfg.lon, 4);
+  appendFixed(j, cfg.lon, 4);
   j += F(",\"city\":\"");
-  j += jsonEscape(cfg.city);
+  jsonEscapeAppend(j, cfg.city);
   j += F("\",\"bgr\":");
   j += cfg.bgr;
   j += F(",\"inv\":");
@@ -1590,13 +1623,21 @@ void handleUpload() {
 
 void sendFiles() {
   if (!readOk()) return;
-  String j = "{\"files\":[";
+  size_t cap = 16;
+  for (const String &n : album) cap += n.length() * 2 + 32;
+  String j;
+  j.reserve(cap);  // uma alocação, em vez de crescer a resposta a cada arquivo
+  j = F("{\"files\":[");
   bool first = true;
   for (const String &n : album) {
     File f = LittleFS.open(n, "r");
     if (!first) j += ',';
     first = false;
-    j += "{\"n\":\"" + jsonEscape(n) + "\",\"s\":" + String(f ? f.size() : 0) + "}";
+    j += F("{\"n\":\"");
+    jsonEscapeAppend(j, n.c_str());
+    j += F("\",\"s\":");
+    j += (uint32_t)(f ? f.size() : 0);
+    j += '}';
     if (f) f.close();
   }
   j += "]}";
@@ -1803,7 +1844,14 @@ void setupWeb() {
   server.on("/api/hooks", HTTP_GET, [] {
     if (!guard()) return;  // os links levam o código da conta do serviço
     server.sendHeader("Cache-Control", "no-store");
-    server.send(200, "application/json", "{\"w\":\"" + jsonEscape(hookWork) + "\",\"b\":\"" + jsonEscape(hookBreak) + "\"}");
+    String j;
+    j.reserve((hookWork.length() + hookBreak.length()) * 2 + 20);
+    j = F("{\"w\":\"");
+    jsonEscapeAppend(j, hookWork.c_str());
+    j += F("\",\"b\":\"");
+    jsonEscapeAppend(j, hookBreak.c_str());
+    j += F("\"}");
+    server.send(200, "application/json", j);
   });
   server.on("/api/hooks", HTTP_POST, [] {
     if (!guard()) return;
@@ -1835,9 +1883,10 @@ void setupWeb() {
       server.send(400, "text/plain", "Backup invalido");
       return;
     }
-    String d = server.arg("days");
+    const String &d = server.arg("days");
     uint16_t day = server.arg("day").toInt();
     std::vector<uint8_t> v;
+    v.reserve(min((size_t)STATS_DAYS, d.length() / 2 + 1));
     for (int i = 0; i < (int)d.length();) {
       int e = d.indexOf(',', i);
       if (e < 0) e = d.length();
@@ -1865,10 +1914,16 @@ void setupWeb() {
   // lista dos mostradores para a galeria do painel (vem de faces_list.h)
   server.on("/api/faces", HTTP_GET, [] {
     if (!readOk()) return;
-    String j = "[";
+    String j;
+    j.reserve(1800);
+    j = '[';
     for (uint8_t t = 0; t < THEME_COUNT; t++) {
       if (t) j += ',';
-      j += "{\"n\":\"" + jsonEscape(uiFaceName(t)) + "\",\"d\":\"" + jsonEscape(uiFaceDesc(t)) + "\"}";
+      j += F("{\"n\":\"");
+      jsonEscapeAppend(j, uiFaceName(t));
+      j += F("\",\"d\":\"");
+      jsonEscapeAppend(j, uiFaceDesc(t));
+      j += F("\"}");
     }
     // pacotes instalados: nome/descrição/autor vêm do <id>.txt gravado na instalação
     if (fsOk) {
@@ -1884,8 +1939,15 @@ void setupWeb() {
           author = t.readStringUntil('\n');
           t.close();
         }
-        j += ",{\"n\":\"" + jsonEscape(name) + "\",\"d\":\"" + jsonEscape(desc) + "\",\"a\":\"" + jsonEscape(author) +
-             "\",\"pkg\":\"" + id + "\"}";
+        j += F(",{\"n\":\"");
+        jsonEscapeAppend(j, name.c_str());
+        j += F("\",\"d\":\"");
+        jsonEscapeAppend(j, desc.c_str());
+        j += F("\",\"a\":\"");
+        jsonEscapeAppend(j, author.c_str());
+        j += F("\",\"pkg\":\"");
+        j += id;
+        j += F("\"}");
       }
     }
     j += "]";
@@ -1896,7 +1958,7 @@ void setupWeb() {
   server.on("/face", HTTP_GET, [] {
     if (!readOk()) return;
     if (server.hasArg("pkg")) {  // prévia de pacote instalado (/faces/<id>.png, se veio junto)
-      String id = server.arg("pkg");
+      const String &id = server.arg("pkg");
       File f = fsOk && idOk(id) ? LittleFS.open("/faces/" + id + ".png", "r") : File();
       if (!f) {
         server.send(404, "text/plain", "");
@@ -2000,7 +2062,7 @@ void setupWeb() {
     if (fahr != cfg.fahr || rain != cfg.rainAlert) uiInvalidate();  // números e aviso mudam na tela
     cfg.fahr = fahr;
     cfg.rainAlert = rain;
-    String color = server.arg("color");
+    const String &color = server.arg("color");
     if (color.length() == 7 && color[0] == '#') {
       long v = strtol(color.c_str() + 1, nullptr, 16);
       cfg.colR = v >> 16;
@@ -2015,7 +2077,7 @@ void setupWeb() {
       applyTimezone();
     }
     bool newPlace = false;
-    // fora de ±90/±180 não é lugar; e um número enorme estouraria o String(float) de 33 bytes do core
+    // fora de ±90/±180 não é lugar; também impede estouro na conversão decimal do estado
     float lat = parseDec(server.arg("lat")), lon = parseDec(server.arg("lon"));
     if (server.hasArg("lat") && server.hasArg("lon") && safeText(server.arg("city")) && fabsf(lat) <= 90 && fabsf(lon) <= 180) {
       cfg.lat = lat;
@@ -2068,11 +2130,18 @@ void setupWeb() {
       server.send(400, "text/plain", packUploadError.length() ? packUploadError : "Pacote invalido: " + msg);
       return;
     }
-    server.send(200, "application/json", "{\"ok\":1,\"id\":\"" + id + "\",\"name\":\"" + jsonEscape(name) + "\"}");
+    String reply;
+    reply.reserve(id.length() + name.length() * 2 + 32);
+    reply = F("{\"ok\":1,\"id\":\"");
+    reply += id;
+    reply += F("\",\"name\":\"");
+    jsonEscapeAppend(reply, name.c_str());
+    reply += F("\"}");
+    server.send(200, "application/json", reply);
   }, handlePackUpload);
   server.on("/api/facedelete", HTTP_POST, [] {
     if (!guard()) return;
-    String id = server.arg("pkg");
+    const String &id = server.arg("pkg");
     if (!fsOk || !idOk(id) || !LittleFS.remove("/faces/" + id + ".json")) {
       server.send(400, "text/plain", "Pacote nao encontrado");
       return;
@@ -2095,7 +2164,7 @@ void setupWeb() {
   }, handleUpload);
   server.on("/api/delete", HTTP_POST, [] {
     if (!guard()) return;
-    String f = server.arg("f");
+    const String &f = server.arg("f");
     if (curFile == f) {
       stopAlbum();
       viewUntil = 0;
@@ -2131,7 +2200,7 @@ void setupWeb() {
   });
   server.on("/api/show", HTTP_POST, [] {
     if (!guard()) return;
-    String f = server.arg("f");
+    const String &f = server.arg("f");
     if (phase != IDLE) {
       server.send(409, "text/plain", "Pomodoro em andamento");
       return;
@@ -2155,7 +2224,7 @@ void setupWeb() {
   // Arquivos de mídia para as miniaturas do painel
   server.on("/fs", HTTP_GET, [] {
     if (!readOk()) return;
-    String f = server.arg("f");
+    const String &f = server.arg("f");
     File file;
     if (fsOk && mediaPath(f)) file = LittleFS.open(f, "r");
     if (!file) {
@@ -2173,7 +2242,7 @@ void setupWeb() {
       server.send(403, "text/plain", "Senha atual incorreta");
       return;
     }
-    String p = server.arg("new");
+    const String &p = server.arg("new");
     if (p.length() >= sizeof(cfg.otaPass)) {
       server.send(400, "text/plain", "Senha muito longa (max 23)");
       return;
@@ -2434,6 +2503,7 @@ void startRecovery() {
 
 void rotSet(const String &v) {
   String s;
+  s.reserve(min((size_t)300, v.length()) + 1);
   for (char c : v)  // só o formato da lista: nada de aspas ou barras no JSON do estado
     if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == ':' || c == ',' || c == '-' || c == '_') s += c;
   if (s.length() > 300) s = s.substring(0, s.lastIndexOf(',', 300));
@@ -2562,8 +2632,7 @@ bool connectStored(uint32_t timeoutMs) {
   return WiFi.status() == WL_CONNECTED;
 }
 
-String htmlEscape(const String &s) {
-  String o;
+void htmlEscapeAppend(String &o, const String &s) {
   for (char c : s) {
     if (c == '<') o += "&lt;";
     else if (c == '>') o += "&gt;";
@@ -2571,7 +2640,6 @@ String htmlEscape(const String &s) {
     else if (c == '"') o += "&quot;";
     else o += c;
   }
-  return o;
 }
 
 void startPortal() {
@@ -2585,12 +2653,18 @@ void startPortal() {
   server.on("/", HTTP_GET, [] {
     int n = WiFi.scanNetworks();
     String opts;
-    for (int i = 0; i < n; i++) opts += "<option>" + htmlEscape(WiFi.SSID(i)) + "</option>";
-    String p = F("<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'>"
-                 "<title>SmallTV Wi-Fi</title><style>body{font:16px system-ui;background:#111;color:#eee;max-width:380px;margin:auto;padding:20px}"
-                 "input,button{width:100%;padding:12px;margin:6px 0 14px;border-radius:10px;border:1px solid #333;background:#1c1c1c;color:#eee;font:inherit}"
-                 "button{background:#ff5a47;border:0;font-weight:700}</style><h2>SmallTV Wi-Fi</h2><form method=post action=/save>"
-                 );
+    opts.reserve(min(2048, max(0, n) * 48));
+    for (int i = 0; i < n; i++) {
+      opts += F("<option>");
+      htmlEscapeAppend(opts, WiFi.SSID(i));
+      opts += F("</option>");
+    }
+    String p;
+    p.reserve(900 + opts.length());
+    p = F("<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'>"
+          "<title>SmallTV Wi-Fi</title><style>body{font:16px system-ui;background:#111;color:#eee;max-width:380px;margin:auto;padding:20px}"
+          "input,button{width:100%;padding:12px;margin:6px 0 14px;border-radius:10px;border:1px solid #333;background:#1c1c1c;color:#eee;font:inherit}"
+          "button{background:#ff5a47;border:0;font-weight:700}</style><h2>SmallTV Wi-Fi</h2><form method=post action=/save>");
     p += tr("Rede", "Network", "Red");
     p += F("<input name=s list=l required><datalist id=l>");
     p += opts;
