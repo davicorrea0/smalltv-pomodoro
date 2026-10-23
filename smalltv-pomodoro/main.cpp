@@ -1346,6 +1346,7 @@ void sendState() {
   j += F(",\"blk\":");
   j += ESP.getMaxFreeBlockSize();
   j += F(",\"ver\":\"" FW_VERSION "\"}");
+  server.sendHeader("Cache-Control", "no-store");  // cidade, rede e ajustes: o navegador não guarda
   server.send(200, "application/json", j);
 }
 
@@ -1461,9 +1462,7 @@ void sendFiles() {
 // Wi-Fi e o modo de recuperação (exigem estar perto do relógio).
 bool hostOk() {
   const String &h = server.hostHeader();
-  for (char c : h)
-    if (!((c >= '0' && c <= '9') || c == '.' || c == ':')) return false;
-  return h.length() > 0;
+  return safeIpv4Host(h.c_str(), h.length());  // IPv4 de verdade (4 partes até 255, porta opcional)
 }
 bool panelOk() { return hostOk() && server.header("X-SmallTV") == "1"; }
 bool deny() {
@@ -1504,6 +1503,7 @@ void setupWeb() {
   // avisos de fim de fase: GET lê, POST (w, b) grava, POST test=w|b chama o endereço e devolve o código
   server.on("/api/hooks", HTTP_GET, [] {
     if (!guard()) return;  // os links levam o código da conta do serviço
+    server.sendHeader("Cache-Control", "no-store");
     server.send(200, "application/json", "{\"w\":\"" + jsonEscape(hookWork) + "\",\"b\":\"" + jsonEscape(hookBreak) + "\"}");
   });
   server.on("/api/hooks", HTTP_POST, [] {
@@ -2055,6 +2055,11 @@ void startRecovery() {
     p += F("</button></form><form method=post action=/rec/restart>");
     p += formTokenField(); p += F("<button class=p>");
     p += tr("Reiniciar normalmente", "Restart normally", "Reiniciar normalmente");
+    p += F("</button></form><form method=post action=/rec/wipe onsubmit=\"return confirm(this.dataset.q)\" data-q=\"");
+    p += tr("Apagar fotos, historico, ajustes e Wi-Fi?", "Erase photos, history, settings and Wi-Fi?", "Borrar fotos, historial, ajustes y Wi-Fi?");
+    p += F("\">");
+    p += formTokenField(); p += F("<button>");
+    p += tr("Apagar todos os dados pessoais", "Erase all personal data", "Borrar todos los datos personales");
     p += F("</button></form>");
     server.send(200, "text/html", p);
   });
@@ -2081,6 +2086,21 @@ void startRecovery() {
     server.send(200, "text/plain", "ok");
     delay(300);
     safeRestart();
+  });
+  // antes de doar ou vender o relógio: a flash não é criptografada, então apaga de fato
+  // (arquivos, ajustes com senhas, rede salva) e volta como saído da caixa
+  server.on("/rec/wipe", HTTP_POST, [] {
+    if (!formOk()) { deny(); return; }
+    server.send(200, "text/plain", "ok");
+    delay(300);
+    if (fsOk) LittleFS.format();
+    for (int i = 0; i < BOOT_OFF + (int)sizeof(BootCount); i++) EEPROM.write(i, 0);
+    EEPROM.commit();
+    WiFi.persistent(true);
+    WiFi.disconnect(true);
+    ESP.eraseConfig();
+    delay(300);
+    ESP.restart();
   });
   server.on("/api/stats", HTTP_GET, sendStats);
   server.collectHeaders("X-SmallTV", "Authorization", "Content-Length");

@@ -16,6 +16,8 @@ struct String:std::string {
  bool endsWith(const char*p)const{size_t n=strlen(p);return size()>=n&&compare(size()-n,n,p)==0;}
  void toLowerCase(){for(char &c:*this)c=tolower((unsigned char)c);}
  String substring(size_t a,size_t b=std::string::npos)const{return substr(a,b==std::string::npos?b:b-a);}
+ int indexOf(const char*p)const{size_t i=find(p);return i==npos?-1:(int)i;}
+ void replace(const char*a,const char*b){for(size_t i;(i=find(a))!=npos;)std::string::replace(i,strlen(a),b);}
 };
 enum{UPLOAD_FILE_START,UPLOAD_FILE_WRITE,UPLOAD_FILE_END,UPLOAD_FILE_ABORTED};
 struct HTTPUpload{int status;String name="face",filename="photo.jpg";size_t currentSize=1;uint8_t buf[1]={0};}event;
@@ -46,6 +48,7 @@ int main(){
   assert(!opens&&!writes&&!deletes&&!packFaceReady);
  }
  reset();send(handleUpload,UPLOAD_FILE_START);send(handleUpload,UPLOAD_FILE_WRITE);send(handleUpload,UPLOAD_FILE_END);assert(opens==1&&writes==1&&written==1);
+ reset();event.filename="a..b.jpg";send(handleUpload,UPLOAD_FILE_START);assert(uploadPath=="/image/a.b.jpg");
  reset();send(handleUpload,UPLOAD_FILE_START);event.currentSize=3*1024*1024+1;send(handleUpload,UPLOAD_FILE_WRITE);assert(!writes&&deletes==1&&!photoGate.active);
  reset();send(handlePackUpload,UPLOAD_FILE_START);event.currentSize=16385;send(handlePackUpload,UPLOAD_FILE_WRITE);send(handlePackUpload,UPLOAD_FILE_END);assert(!writes&&!packFaceReady&&!packGate.active);
  reset();send(handlePackUpload,UPLOAD_FILE_START);send(handlePackUpload,UPLOAD_FILE_WRITE);send(handlePackUpload,UPLOAD_FILE_END);assert(packFaceReady&&written==1);
@@ -58,6 +61,10 @@ int main(){
  const char*bad[]={"http://a/\\r\\nInjected:1","http://a:65536/","http://a:0/","http://a:/","http://u@host/","https://a/","http://a/fragment#x","http://a/ space","http://a/\\t"};
  for(auto u:bad)assert(!safeHttpUrl(u,strlen(u)));
  const char nul[]="http://a/\\0hidden";assert(!safeHttpUrl(nul,sizeof(nul)-1));
+ const char*hosts[]={"192.168.1.2","192.168.1.2:80","0.0.0.0","255.255.255.255:65535"};
+ for(auto h:hosts)assert(safeIpv4Host(h,strlen(h)));
+ const char*badHosts[]={"smalltv.local","999.1.1.1","1.2.3","1.2.3.4:0","1.2.3.4:65536","1.2.3.4:80:1","1.2.3.4 ",""};
+ for(auto h:badHosts)assert(!safeIpv4Host(h,strlen(h)));
  puts("security: actual upload handlers deny unauthenticated writes; bounds, aborts and URL injection checks passed");
 }
 `);

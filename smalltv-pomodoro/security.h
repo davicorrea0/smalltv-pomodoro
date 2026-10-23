@@ -38,3 +38,27 @@ static bool safeHttpUrl(const char *s, size_t n) {
   }
   return true;
 }
+static bool safeIpv4Host(const char *s, size_t n) {
+  if (!n || n > 21) return false;
+  size_t i = 0;
+  for (int part = 0; part < 4; part++) {
+    if (i >= n || s[i] < '0' || s[i] > '9') return false;
+    unsigned value = 0, digits = 0;
+    while (i < n && s[i] >= '0' && s[i] <= '9') {
+      value = value * 10 + (unsigned)(s[i++] - '0');
+      if (++digits > 3 || value > 255) return false;
+    }
+    if (part < 3) {
+      if (i >= n || s[i++] != '.') return false;
+    }
+  }
+  if (i == n) return true;
+  if (s[i++] != ':' || i == n) return false;
+  unsigned port = 0;
+  while (i < n) {
+    if (s[i] < '0' || s[i] > '9') return false;
+    port = port * 10 + (unsigned)(s[i++] - '0');
+    if (port > 65535) return false;
+  }
+  return port > 0;
+}
