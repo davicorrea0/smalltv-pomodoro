@@ -36,9 +36,15 @@ static bool fsOk = true;
 struct { uint8_t dailyGoal = 2; } cfg;
 ${source.match(/struct StatsHead [^\n]*\n/)[0]}${source.match(/const uint32_t STATS_MAGIC[^\n]*\n/)[0]}${source.match(/const uint16_t STATS_DAYS[^\n]*\n/)[0]}StatsHead stats = {0, 0, 0, 0};
 uint16_t statsStreak = 0, statsBest = 0;
+static bool writerBusy = false;
+bool statsWritePending = false;
+uint16_t statsPendingDay = 0;
+uint8_t statsPendingCount = 0;
+bool fsWriterBusy() { return writerBusy; }
 ${fn('bool statsRead(')}
 ${fn('void statsCompute(')}
 ${fn('void statsWrite(')}
+${fn('void statsFlush() {')}
 ${fn('void statsLoad(')}
 static void boot() { stats = {0, 0, 0, 0}; statsLoad(); }
 static int dayCount(uint16_t day) { uint8_t d[STATS_DAYS]; if (!statsRead(d)) return -1; return d[STATS_DAYS - 1 - (stats.lastDay - day)]; }
@@ -73,6 +79,18 @@ int main() {
   boot();
   assert(disk["/stats.bin"].size() == sizeof(StatsHead) + STATS_DAYS);
   assert(stats.magic == STATS_MAGIC && stats.total == 7 && dayCount(D) == 5);
-  puts("stats: histórico sobrevive a reinícios, anel e formatação ok, arquivo curto antigo recuperado");
+  // um upload mantém outro arquivo aberto para escrita: o histórico espera e persiste ao fechar
+  std::vector<uint8_t> before = disk["/stats.bin"];
+  writerBusy = true;
+  stats.total++;
+  statsWrite(D + 1, 6);
+  assert(statsWritePending && statsPendingDay == D + 1 && statsPendingCount == 6);
+  assert(disk["/stats.bin"] == before);
+  writerBusy = false;
+  statsFlush();
+  assert(!statsWritePending && disk["/stats.bin"] != before);
+  boot();
+  assert(stats.total == 8 && dayCount(D + 1) == 6);
+  puts("stats: histórico sobrevive a reinícios, anel e formatação; escrita espera o upload terminar");
 }
 `);

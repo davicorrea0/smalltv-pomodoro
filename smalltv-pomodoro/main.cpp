@@ -855,6 +855,11 @@ const uint32_t STATS_MAGIC = 0x544F4D31;  // "TOM1"
 const uint16_t STATS_DAYS = 371;
 StatsHead stats = {0, 0, 0, 0};
 uint16_t statsStreak = 0, statsBest = 0;
+bool statsWritePending = false;
+uint16_t statsPendingDay = 0;
+uint8_t statsPendingCount = 0;
+bool fsWriterBusy();
+void statsFlush(void);
 
 // dias desde 1970-01-01 para a data local (algoritmo "days from civil")
 uint16_t dayNumber(const struct tm &t) {
@@ -891,6 +896,15 @@ void statsCompute() {
 // grava o dia "day" com "count" focos, zerando os dias pulados desde o último registro
 void statsWrite(uint16_t day, uint8_t count) {
   if (!fsOk) return;
+  // LittleFS 2.5.1 pode corromper dados com dois arquivos abertos para escrita. Um upload permanece
+  // aberto entre chamadas de handleClient(), então conserva só a atualização mais recente do histórico
+  // e a grava depois que o upload terminar.
+  if (fsWriterBusy()) {
+    statsPendingDay = day;
+    statsPendingCount = count;
+    statsWritePending = true;
+    return;
+  }
   File f = LittleFS.open("/stats.bin", "r+");
   bool fresh = !f || f.size() != sizeof(StatsHead) + STATS_DAYS;  // sem arquivo (ou memória formatada)
   if (fresh) {
@@ -981,7 +995,7 @@ void statsFocus() {
   }
   stats.total++;
   statsWrite(dayNumber(t), cfg.todayCount > 255 ? 255 : cfg.todayCount);
-  statsCompute();
+  if (!statsWritePending) statsCompute();
 }
 
 void statsFlush(const struct tm &t) {
@@ -994,7 +1008,7 @@ void statsFlush(const struct tm &t) {
 
 void statsRollover(const struct tm &t) {
   statsWrite(dayNumber(t), cfg.todayCount > 255 ? 255 : cfg.todayCount);
-  statsCompute();
+  if (!statsWritePending) statsCompute();
 }
 std::vector<String> album;
 size_t albumIdx = 0;
@@ -1771,6 +1785,19 @@ File panelUpload;
 UploadGate panelGate;
 br_sha256_context panelSha;
 String panelResult;
+
+bool fsWriterBusy() {
+  return uploadFile || packUpload || panelUpload;
+}
+
+void statsFlush() {
+  if (!statsWritePending || fsWriterBusy()) return;
+  uint16_t day = statsPendingDay;
+  uint8_t count = statsPendingCount;
+  statsWritePending = false;
+  statsWrite(day, count);
+  if (!statsWritePending) statsCompute();
+}
 
 void handlePanelUpload() {
   HTTPUpload &up = server.upload();
@@ -2773,6 +2800,7 @@ void loop() {
     return;
   }
   server.handleClient();
+  statsFlush();
   wifiGuardLoop();
   alexaLoop();
   tickPomodoro();
