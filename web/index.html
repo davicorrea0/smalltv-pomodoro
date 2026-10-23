@@ -321,7 +321,7 @@ let FACES=[];  // vem do firmware (/api/faces): embutidos (faces_list.h) + pacot
 // site do projeto: catálogo, prévias dos mostradores embutidos e firmware novo (localStorage.site/catalog trocam a origem em testes)
 let SITE='https://davicorrea0.github.io/smalltv-pomodoro/';try{if(localStorage.site)SITE=localStorage.site}catch(e){}
 let CATALOG=SITE+'catalog/';try{if(localStorage.catalog)CATALOG=localStorage.catalog}catch(e){}
-let st=null,at=0,filled=false,lastPhase=null,actx=null,curTab=0;
+let st=null,at=0,holdUntil=0,holdRem=0,filled=false,lastPhase=null,actx=null,curTab=0;
 // pedidos ao próprio relógio levam X-SmallTV: sem ele o relógio recusa ações (proteção contra outros sites)
 const _fetch=window.fetch;window.fetch=(u,o={})=>_fetch(u,/^https?:/.test(u)?o:{...o,headers:{...o.headers,'X-SmallTV':'1'}});
 const post=(u,b)=>fetch(u,{method:'POST',body:b});
@@ -494,7 +494,11 @@ function vcomSet(now){const v=$('vcom').value;$('vcomv').textContent=vcomTxt(v);
 function vcomEnd(save){clearTimeout(vcT);$('vcombox').style.display='none';$('vcomgo').style.display='';
  post('/api/vcom',new URLSearchParams(save?{v:$('vcom').value,save:1}:{stop:1})).then(r=>r.json()).then(j=>{if(st)st.cfg.vcom=j.vcom;toast(t(save?'Ajuste salvo':'Ajuste cancelado'))})}
 function cmd(c){try{actx=actx||new AudioContext()}catch(e){}post('/api/cmd',new URLSearchParams({c})).then(r=>r.json()).then(load)}
-function load(s){if(s.cfg.lang!=null&&s.cfg.lang!=LG)setLang(s.cfg.lang);if(lastPhase&&s.phase!=lastPhase&&s.phase!='idle'&&lastPhase!='idle')beep();lastPhase=s.phase;st=s;at=Date.now();$('net').className='on';
+function load(s){if(s.cfg.lang!=null&&s.cfg.lang!=LG)setLang(s.cfg.lang);if(lastPhase&&s.phase!=lastPhase&&s.phase!='idle'&&lastPhase!='idle')beep();lastPhase=s.phase;
+ // fase que acabou de começar: o relógio ainda está desenhando o anel e só mostra os números depois de s.pdraw ms;
+ // o painel segura o tempo inicial esse tanto, para os dois começarem a descer juntos
+ if(s.running&&s.remaining>=s.total-1500&&(!st||!st.running||st.phase!=s.phase)){holdUntil=Date.now()+(s.pdraw||100);holdRem=s.remaining}
+ st=s;at=Date.now();$('net').className='on';
  document.documentElement.style.setProperty('--ac','var(--'+(s.phase=='idle'?'work':s.phase)+')');
  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('sel',b.dataset.p==s.phase));
  const n=s.cfg.every,d=s.phase=='long'?n:s.cycle%n;$('dots').innerHTML='<i class="f"></i>'.repeat(d)+'<i></i>'.repeat(n-d);
@@ -528,7 +532,7 @@ function load(s){if(s.cfg.lang!=null&&s.cfg.lang!=LG)setLang(s.cfg.lang);if(last
  if(!filled){filled=true;document.querySelectorAll('[data-k]').forEach(e=>{const v=s.cfg[e.dataset.k];if(v===undefined)return;if(e.type=='checkbox')e.checked=!!v!=e.hasAttribute('data-neg');else e.value=v})}
  draw()}
 function draw(){if(!st)return;const s=st,idle=s.phase=='idle';
- const rem=idle?s.cfg.work*60000:Math.max(0,s.remaining-(s.running?Date.now()-at:0)),sec=Math.ceil(rem/1000);
+ const rem=idle?s.cfg.work*60000:Date.now()<holdUntil?holdRem:Math.max(0,s.remaining-(s.running?Date.now()-at:0)),sec=Math.ceil(rem/1000);
  const tm=String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0');
  $('time').textContent=tm;$('phase').textContent=t(LBL[s.phase])+(!idle&&!s.running?' · '+t('PAUSADO'):'');
  $('arc').style.strokeDashoffset=idle||!s.total?C:C*rem/s.total;document.title=idle?'SmallTV':tm+' · '+t(LBL[s.phase])}

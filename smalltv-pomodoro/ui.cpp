@@ -577,30 +577,15 @@ static void ringDot(int deg, uint16_t c) {
 }
 
 void uiRenderPomodoro(const UiState &s) {
-  int target = s.totalMs ? (int)((uint64_t)(s.totalMs - s.remainingMs) * 360 / s.totalMs) : 0;
-  if (screen == 10 && target < lastRing) uiInvalidate();  // fase nova (anel volta ao zero): tela inteira
   bool full = enter(10);
   uint16_t col = phaseColor(s.phase);
-  // anel: trilho apagado + progresso na cor da fase. O trilho inteiro é a coroa entre os raios 104 e 116
-  // (o mesmo que os pontos de raio 6 a 110 do centro): dois círculos cheios em vez de 360 pontos. Com os
-  // pontos, a tela levava um tempo visível desenhando o anel e os números só apareciam depois, com a
-  // contagem (e o painel) já andando.
-  if (full) {
-    G->fillCircle(AX, AY, 116, DIM);
-    G->fillCircle(AX, AY, 103, BG);
+  // anel: trilho apagado + progresso na cor da fase, desenhado só no trecho novo
+  int target = s.totalMs ? (int)((uint64_t)(s.totalMs - s.remainingMs) * 360 / s.totalMs) : 0;
+  if (full || target < lastRing) {
+    for (int d = 0; d < 360; d += 1) ringDot(d, DIM);
     lastRing = 0;
     ringDot(0, col);
   }
-
-  // números antes do resto: são eles que mostram que o foco começou
-  uint32_t secs = (s.remainingMs + 999) / 1000;
-  int m = secs / 60 > 99 ? 99 : secs / 60, sec = secs % 60;
-  // pausado: os dígitos piscam devagar
-  bool show = s.running || (s.timeOk ? s.now.tm_sec % 2 == 0 : true);
-  if (show) drawTime4(TL_POMO, m / 10, m % 10, sec / 10, sec % 10, true, col, BG);
-  else drawTime4(TL_POMO, -1, -1, -1, -1, false, col, BG);
-
-  // progresso na cor da fase, só o trecho novo
   for (int d = lastRing + 1; d <= target; d++) ringDot(d, col);
   if (target > lastRing) lastRing = target;
 
@@ -610,6 +595,13 @@ void uiRenderPomodoro(const UiState &s) {
     G->fillRect(50, 44, 140, 18, BG);  // dentro do anel (raio interno 104)
     textC(120, 46, 2, col, label);
   }
+
+  uint32_t secs = (s.remainingMs + 999) / 1000;
+  int m = secs / 60 > 99 ? 99 : secs / 60, sec = secs % 60;
+  // pausado: os dígitos piscam devagar
+  bool show = s.running || (s.timeOk ? s.now.tm_sec % 2 == 0 : true);
+  if (show) drawTime4(TL_POMO, m / 10, m % 10, sec / 10, sec % 10, true, col, BG);
+  else drawTime4(TL_POMO, -1, -1, -1, -1, false, col, BG);
 
   int total = s.longEvery ? s.longEvery : 1;
   int done = s.phase == PH_LONG ? total : s.cycleDone % total;

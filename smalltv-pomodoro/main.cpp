@@ -38,7 +38,7 @@ extern "C" uint32_t _FS_start;
 
 void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);  // ui.cpp: recorta para a área suja; fora da tela, cai na faixa
 
-#define FW_VERSION "1.19.1"
+#define FW_VERSION "1.19.2"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
@@ -773,7 +773,18 @@ void renderClock() {
   uiRenderClock(s);
 }
 
-void renderPomodoro() { uiRenderPomodoro(makeState()); }
+// Quanto a tela leva para desenhar o Pomodoro inteiro ao entrar (anel e números): o painel segura o tempo
+// inicial por esse tanto, para os números dos dois começarem a descer juntos (ver "pdraw" em /api/state).
+bool pomoShown = false;
+uint16_t pomoDrawMs = 0;
+void renderPomodoro() {
+  uint32_t t0 = millis();
+  uiRenderPomodoro(makeState());
+  if (!pomoShown) {
+    pomoShown = true;
+    pomoDrawMs = millis() - t0;
+  }
+}
 
 void renderAlert() {
   // pisca a tela alternando a inversão de cores
@@ -1471,6 +1482,8 @@ void sendState() {
   j += ESP.getFreeHeap();
   j += F(",\"blk\":");
   j += ESP.getMaxFreeBlockSize();
+  j += F(",\"pdraw\":");  // ms que a tela levou para desenhar o Pomodoro (0 = ainda não mediu)
+  j += pomoDrawMs;
   j += F(",\"ver\":\"" FW_VERSION "\"}");
   server.sendHeader("Cache-Control", "no-store");  // cidade, rede e ajustes: o navegador não guarda
   server.send(200, "application/json", j);
@@ -2656,5 +2669,8 @@ void loop() {
     else { alertUntil = 0; tft.invertDisplay(cfg.invert); }  // volta ao ajuste do painel
   }
   if (phase != IDLE) renderPomodoro();
-  else if (!inAlbum) renderClock();
+  else {
+    pomoShown = false;  // na próxima entrada a tela do Pomodoro é desenhada inteira de novo
+    if (!inAlbum) renderClock();
+  }
 }
