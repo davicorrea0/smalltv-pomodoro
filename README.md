@@ -157,7 +157,7 @@ sim/build.sh
 
 ```
 arduino-cli core install esp8266:esp8266 --additional-urls https://arduino.esp8266.com/stable/package_esp8266com_index.json
-arduino-cli lib install "Adafruit GFX Library" "Adafruit ST7735 and ST7789 Library" "ArduinoJson"
+arduino-cli lib install "Adafruit GFX Library@1.13.0" "Adafruit ST7735 and ST7789 Library@1.11.0" "ArduinoJson@7.4.3"
 (cd web && npm install)  # optional: terser minifies the panel (~1 KB smaller)
 sim/build.sh   # generates assets.h and web.h, checks the code and tests the screens in the simulator
 ./compilar.sh  # builds into build/ and checks the size
