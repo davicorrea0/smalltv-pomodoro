@@ -16,24 +16,28 @@ struct UploadGate {
 struct AuthThrottle {
   struct Entry { uint32_t ip = 0, until = 0, last = 0; uint8_t failures = 0; } entries[4];
   static bool before(uint32_t now, uint32_t deadline) { return (int32_t)(deadline - now) > 0; }
-  Entry *find(uint32_t ip, uint32_t now) {
+  Entry *find(uint32_t ip, uint32_t now, bool create) {
+    Entry *empty = nullptr;
     Entry *oldest = &entries[0];
     for (Entry &e : entries) {
       if (e.ip == ip) return &e;
-      if (!e.ip) return &e;
+      if (!e.ip) { if (!empty) empty = &e; continue; }
       if ((int32_t)(e.last - oldest->last) < 0) oldest = &e;
     }
-    oldest->ip = 0; oldest->failures = 0; oldest->until = oldest->last = now;
-    return oldest;
+    if (!create) return nullptr;
+    Entry *slot = empty ? empty : oldest;
+    *slot = Entry();
+    slot->last = now;
+    return slot;
   }
   bool blocked(uint32_t ip, uint32_t now, uint32_t *waitMs = nullptr) {
-    Entry *e = find(ip, now);
-    bool yes = e->ip == ip && before(now, e->until);
+    Entry *e = find(ip, now, false);
+    bool yes = e && before(now, e->until);
     if (waitMs) *waitMs = yes ? e->until - now : 0;
     return yes;
   }
   uint32_t fail(uint32_t ip, uint32_t now) {
-    Entry *e = find(ip, now);
+    Entry *e = find(ip, now, true);
     if (e->ip != ip || now - e->last > 300000UL) e->failures = 0;
     e->ip = ip;
     if (e->failures < 6) e->failures++;

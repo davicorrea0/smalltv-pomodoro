@@ -53,6 +53,7 @@ bool panelOk();  // proteção do painel (mais abaixo, antes de setupWeb)
 bool readOk();
 uint16_t wifiDowngrades = 0;  // rebaixamentos do Wi-Fi bloqueados desde que ligou (ver wifiGuardLoop)
 bool passOk();
+bool uploadAuthed();
 // Formulários HTML puros (configuração e recuperação) levam um código aleatório da sessão: outra página
 // pode enviar o formulário, mas não consegue ler o código.
 String formToken;
@@ -1299,7 +1300,7 @@ void handlePackUpload() {
     if (packUpload) packUpload.close();
     packGate.begin(false, 0);
     if (up.name == "face") { packUploadError = ""; packFaceReady = false; }
-    if (!panelOk() || !passOk()) {
+    if (!panelOk() || !uploadAuthed()) {
       packUploadError = "Proibido";
       return;
     }
@@ -1534,7 +1535,7 @@ void handleUpload() {
     photoGate.begin(false, 0);
     uploadError = "";
     uploadPath = "";
-    if (!panelOk() || !passOk()) {
+    if (!panelOk() || !uploadAuthed()) {
       uploadError = "Proibido";
       return;
     }
@@ -1706,18 +1707,16 @@ bool authBlocked(uint32_t ip, bool reply) {
   }
   return true;
 }
-bool authed() {
+bool authCheck(bool reply) {
   uint32_t ip = requestIp();
-  if (authBlocked(ip, true)) return false;
+  if (authBlocked(ip, reply)) return false;
   if (passOk()) { authThrottle.success(ip); return true; }
   if (server.hasHeader("Authorization")) authThrottle.fail(ip, millis());
-  askLogin();
+  if (reply) askLogin();
   return false;
 }
-bool authThrottled() { return authBlocked(requestIp(), true); }
-void authFailed() {
-  if (server.hasHeader("Authorization")) authThrottle.fail(requestIp(), millis());
-}
+bool authed() { return authCheck(true); }
+bool uploadAuthed() { return authCheck(false); }
 bool guard() { return (panelOk() || deny()) && authed(); }   // ações (POST)
 bool readOk() { return (hostOk() || deny()) && authed(); }   // leituras
 
@@ -1738,7 +1737,7 @@ void handlePanelUpload() {
     if (panelUpload) panelUpload.close();
     panelGate.begin(false, 0);
     panelResult = "";
-    if (!panelOk() || !passOk() || !fsOk) return;
+    if (!panelOk() || !uploadAuthed() || !fsOk) return;
     if (!LittleFS.exists("/www")) LittleFS.mkdir("/www");
     panelUpload = LittleFS.open("/www/_novo", "w");
     if (!panelUpload) return;
@@ -2287,16 +2286,13 @@ bool otaVerifyGz() {
 
 void setupUpdate() {
   auto authOk = [] {
-    uint32_t ip = requestIp();
-    if (authBlocked(ip, false)) return false;
-    if (panelOk() && (recoveryMode || passOk())) { authThrottle.success(ip); return true; }
-    if (server.hasHeader("Authorization")) authThrottle.fail(ip, millis());
-    return false;
+    if (!panelOk()) return false;
+    if (recoveryMode) return true;
+    return uploadAuthed();
   };
   server.on("/update", HTTP_GET, [] {
     if (!hostOk()) { deny(); return; }
-    if (authThrottled()) return;
-    if (!recoveryMode && !passOk()) { authFailed(); askLogin(); return; }
+    if (!recoveryMode && !authed()) return;
     String p = F("<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>SmallTV</title>"
                  "<style>body{font:16px system-ui;background:#111;color:#eee;max-width:420px;margin:auto;padding:20px}"
                  "input,button{width:100%;padding:12px;margin:8px 0;border-radius:10px;border:1px solid #333;background:#1c1c1c;color:#eee;font:inherit}"
@@ -2358,9 +2354,8 @@ void setupUpdate() {
 #define RECOVERY_AP "SmallTV-Recuperacao"
 void startRecovery() {
   newFormToken();
-  WiFi.mode(WIFI_AP_STA);
+  WiFi.mode(WIFI_AP);
   WiFi.softAP(RECOVERY_AP, cfg.apPass);
-  WiFi.begin();  // tenta também a rede salva: o painel de recuperação abre pelo IP de casa
   String pw = String(tr("senha: ", "password: ", "clave: ")) + cfg.apPass;
   message(tr("Modo de recuperacao", "Recovery mode", "Modo de recuperacion"), RECOVERY_AP, pw.c_str(), "http://192.168.4.1");
   server.on("/", HTTP_GET, [] {

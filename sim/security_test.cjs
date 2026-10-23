@@ -2,6 +2,12 @@
 const fs=require('fs'),path=require('path');
 const source=fs.readFileSync(path.join(__dirname,'../smalltv-pomodoro/main.cpp'),'utf8');
 function fn(name){const a=source.indexOf(`void ${name}() {`),b=source.indexOf('\n}',a);if(a<0||b<0)throw Error(name);return source.slice(a,b+2);}
+for(const name of ['handleUpload','handlePackUpload','handlePanelUpload'])
+ if(!fn(name).includes('uploadAuthed()'))throw Error(`${name} bypasses upload throttle`);
+const recovery=fn('startRecovery');
+if(!recovery.includes('WiFi.mode(WIFI_AP);')||recovery.includes('WiFi.begin()'))throw Error('recovery must be AP-only');
+const update=fn('setupUpdate');
+if(!update.includes('!recoveryMode && !authed()'))throw Error('update page bypasses throttle');
 const out=process.argv[2];if(!out)throw Error('output.cpp required');
 const header=path.relative(path.dirname(path.resolve(out)),path.resolve(__dirname,'../smalltv-pomodoro/security.h')).replaceAll('\\','/');
 fs.writeFileSync(out,`#include "${header}"
@@ -24,7 +30,7 @@ struct HTTPUpload{int status;String name="face",filename="photo.jpg";size_t curr
 struct{HTTPUpload&upload(){return event;}}server;
 static bool allowed=true,password=true,fsOk=true;
 static int opens,writes,deletes,rebuilds;static size_t written;
-bool panelOk(){return allowed;}bool passOk(){return password;}
+bool panelOk(){return allowed;}bool passOk(){return password;}bool uploadAuthed(){return passOk();}
 struct FSInfo{size_t totalBytes=4000000,usedBytes=0;};
 struct File{bool live=false;operator bool()const{return live;}void close(){live=false;}
  size_t write(const uint8_t*,size_t n){assert(live);writes++;written+=n;return n;}};
@@ -97,6 +103,8 @@ int main(){
  assert(throttle.fail(1,100)==1000&&throttle.blocked(1,100,&wait)&&wait==1000);
  assert(throttle.blocked(1,1099,&wait)&&wait==1&&!throttle.blocked(1,1100,&wait));
  assert(throttle.fail(1,1100)==2000);throttle.success(1);assert(!throttle.blocked(1,1100,&wait));
+ AuthThrottle holes;holes.fail(10,100);holes.fail(20,100);holes.success(10);
+ assert(holes.blocked(20,100,&wait)&&wait==1000);assert(!holes.blocked(30,100,&wait)&&wait==0);
  for(int i=0;i<8;i++){wait=throttle.fail(2,2000+i);}assert(wait==32000);
  assert(throttle.blocked(2,3000,&wait));
  AuthThrottle wrap;assert(wrap.fail(3,0xfffffff0UL)==1000);assert(wrap.blocked(3,20,&wait));
