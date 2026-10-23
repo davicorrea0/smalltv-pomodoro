@@ -1482,7 +1482,7 @@ static int JPEGDecodeMCU_P(JPEGIMAGE *pJPEG, int iMCU, int *iDCPredictor)
     }
 
     iPositive = (1 << pJPEG->cApproxBitsLow); // positive bit position being coded
-    iNegative = ((-1) << pJPEG->cApproxBitsLow); // negative bit position being coded
+    iNegative = -iPositive; // negative bit position being coded (SmallTV: same value, without shifting a negative number)
         
     if (pJPEG->iScanStart == 0)
     {
@@ -4611,6 +4611,13 @@ static int DecodeJPEGBody(JPEGIMAGE *pJPEG)
 
     // Requested the Exif thumbnail
     if (pJPEG->ucMode == 0xc2) { // progressive mode - we only decode the first scan (DC values)
+        // SmallTV: a valid progressive file starts with the DC-only scan (Ss = Se = 0). Any AC band in
+        // the first scan would run the AC decoder of JPEGDecodeMCU_P, whose indexes are for another
+        // table layout (reads past usHuffAC).
+        if (pJPEG->iScanStart != 0 || pJPEG->iScanEnd != 0) {
+            pJPEG->iError = JPEG_UNSUPPORTED_FEATURE;
+            return 0;
+        }
         pJPEG->iOptions |= JPEG_SCALE_EIGHTH; // return 1/8 sized image
     }
     if (pJPEG->iOptions & JPEG_EXIF_THUMBNAIL)
