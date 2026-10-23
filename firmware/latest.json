@@ -1,27 +1,27 @@
 {
-  "version": "1.19.0",
+  "version": "1.19.4",
   "date": "2026-10-23",
   "file": "smalltv-pomodoro.bin",
-  "size": 526096,
+  "size": 529136,
   "notes": {
     "pt": [
-      "Aviso de chuva na próxima hora e temperatura em °F",
-      "Correções de segurança (uploads, JPEG, pacotes) e o histórico não se perde mais ao reiniciar",
-      "Firmware 11 KB menor: o painel fica na memória de arquivos"
+      "A tela do Pomodoro não aparece mais por cima do mostrador Previsão LCD",
+      "Painel e relógio começam a contagem juntos",
+      "Hora protegida contra NTP falso e senha errada sem travar o relógio"
     ],
     "en": [
-      "Warning when rain is coming within the hour, and temperature in °F",
-      "Security fixes (uploads, JPEG, face packages) and focus history no longer lost on restart",
-      "Firmware 11 KB smaller: the panel lives in the file storage"
+      "The Pomodoro screen no longer shows on top of the Forecast LCD face",
+      "Panel and clock start the countdown together",
+      "Time protected against fake NTP, and a wrong password no longer freezes the clock"
     ],
     "es": [
-      "Aviso de lluvia en la próxima hora y temperatura en °F",
-      "Correcciones de seguridad (subidas, JPEG, esferas) y el historial ya no se pierde al reiniciar",
-      "Firmware 11 KB más pequeño: el panel vive en la memoria de archivos"
+      "La pantalla del Pomodoro ya no aparece encima de la esfera Pronóstico LCD",
+      "El panel y el reloj empiezan la cuenta juntos",
+      "Hora protegida contra NTP falso y una contraseña incorrecta ya no congela el reloj"
     ]
   },
   "gz": "smalltv-pomodoro.bin.gz",
-  "gzsize": 388873,
-  "panel": "panel-19b99d7f24d4adebc864c210.html.gz",
-  "psri": "sha256-GbmdfyTUrevIZMIQJnSwZIs55OkiQQbOscScqjBq+RQ="
+  "gzsize": 390962,
+  "panel": "panel-c9aae6c30e14326bb1c9ffff.html.gz",
+  "psri": "sha256-yarmww4UMmuxyf//ge5nyz4X0tGCwmjFpIFYgTz6txk="
 }
