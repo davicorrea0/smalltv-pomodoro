@@ -86,6 +86,7 @@ void statusBar(const UiState &s, const char *right, uint16_t bg);  // data à es
 // ---------- clima ----------
 void weatherIcon(int cx, int cy, float s, int code, bool day, uint16_t bg);  // s=1 -> ~40 px
 const char *weatherText(int code);                                          // "Chuva", "Nublado"...
+const char *rainSoonText(uint8_t minutes);  // "chuva 15 min" / "chuva logo" (UiWeather::rainIn); "" se 0
 void cloudShape(int cx, int cy, float s, uint16_t c);
 void sunShape(int cx, int cy, float s);
 void moonShape(int cx, int cy, float s, uint16_t bg);

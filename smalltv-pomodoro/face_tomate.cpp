@@ -44,10 +44,10 @@ static void skyRect(int x, int y, int w, int h, int hour) {
 static uint8_t sceneFace(const UiState &s, bool night, bool rain, bool snow) {
   bool show = s.weatherOn && s.wx.ok;
   if (night) return FACE_SLEEP;
-  if (rain) return FACE_UMBRELLA;
+  if (rain || (show && s.wx.rainIn)) return FACE_UMBRELLA;  // chovendo ou chuva chegando: já abre o guarda-chuva
   if (s.dailyGoal && s.today >= s.dailyGoal) return FACE_CHEER;
-  if (snow || (show && s.wx.t <= 12)) return FACE_SCARF;
-  if (show && s.wx.t >= 30) return FACE_SHADES;
+  if (snow || (show && uiTempC(s, s.wx.t) <= 12)) return FACE_SCARF;
+  if (show && uiTempC(s, s.wx.t) >= 30) return FACE_SHADES;
   return FACE_HAPPY;
 }
 
@@ -98,6 +98,10 @@ static void tomatoScene(const UiState &s) {
     G->fillRoundRect(166, by0, 62, 30, 9, bub);
     G->fillTriangle(168, by0 + 10, 168, by0 + 22, 156, by0 + 20, bub);
     tempText(197, by0 + 8, 2, uiRgb(40, 40, 46), s.wx.t);
+    if (s.wx.rainIn) {  // aviso embaixo do balão, com contorno para ler sobre o céu
+      textC(198, by0 + 37, 1, uiRgb(20, 30, 50), rainSoonText(s.wx.rainIn));
+      textC(197, by0 + 36, 1, uiRgb(230, 242, 255), rainSoonText(s.wx.rainIn));
+    }
   }
 }
 

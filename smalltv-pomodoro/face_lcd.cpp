@@ -123,7 +123,7 @@ void themeLcd(const UiState &s, bool full) {
         text(20, 160, 3, LCD_ON, n);
       }
       degree(74, 156, 1, LCD_ON);
-      text(82, 156, 2, LCD_ON, "C");
+      text(82, 156, 2, LCD_ON, s.fahr ? "F" : "C");
     }
     uiSprite(&SPR_TOMATE_LCD, 96, 158, 2, 0, LCD_BG);  // tomate monocromático, no estilo do LCD
     char f[12];

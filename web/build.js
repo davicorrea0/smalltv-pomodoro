@@ -1,5 +1,6 @@
-// Gera smalltv-pomodoro/web.h a partir de web/index.html: o painel vai comprimido (gzip) na
-// flash e o navegador descompacta sozinho (Content-Encoding: gzip). ~70 KB viram ~19 KB.
+// Gera o painel comprimido (gzip) a partir de web/index.html em web/out/panel-<hash>.html.gz (vai para o
+// site e daí para a memória de arquivos do relógio) e smalltv-pomodoro/web.h com o carregador e o hash.
+// O navegador descompacta sozinho (Content-Encoding: gzip). ~70 KB viram ~19 KB.
 // Edite web/index.html (textos em inglês e espanhol: web/i18n.json) e rode este script
 // (sim/build.sh já roda). Com o terser instalado (npm install em web/), o JavaScript sai minificado.
 //
@@ -35,14 +36,30 @@ const out = path.join(__dirname, '..', 'smalltv-pomodoro', 'web.h');
 
   // tira o que o navegador não usa antes de comprimir: comentários de linha inteira (HTML e JS) e indentação
   const min = html.replace(/<!--[\s\S]*?-->/g, '').split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('//')).join('\n');
-  const gz = zlib.gzipSync(min, { level: 9 });
-  gz[4] = gz[5] = gz[6] = gz[7] = 0;  // zera o horário no cabeçalho gzip: mesmo HTML -> mesmo web.h
-  let h = '// Gerado por web/build.js a partir de web/index.html — não edite à mão.\n';
-  h += '// Painel web comprimido com gzip, servido com "Content-Encoding: gzip".\n';
+  const gzip = s => {
+    const g = zlib.gzipSync(s, { level: 9 });
+    g[4] = g[5] = g[6] = g[7] = 0;  // zera o horário no cabeçalho gzip: mesmo HTML -> mesmo arquivo
+    return g;
+  };
+  const gz = gzip(min);
+  // A partir da 1.19 o painel não vai na flash do programa: fica na memória de arquivos do relógio como
+  // /www/<hash>.gz. O site publica panel/panel-<hash>.html.gz (nunca sobrescrever: cada firmware pede o seu)
+  // e o firmware só serve o arquivo cujo SHA-256 bate com o PANEL_HASH abaixo.
+  const sha = crypto.createHash('sha256').update(gz);
+  const hash = sha.copy().digest('hex').slice(0, 24), sri = 'sha256-' + sha.digest('base64');
+  const file = `panel-${hash}.html.gz`;
+  fs.writeFileSync(path.join(__dirname, 'out', file), gz);
+  // carregador mínimo (web/loader.html), este sim na flash: instala o painel na primeira vez
+  const loader = gzip(fs.readFileSync(path.join(__dirname, 'loader.html'), 'utf8').replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/__PANEL_FILE__/g, file).replace(/__PANEL_SRI__/g, sri).split('\n').map(l => l.trim()).filter(l => l).join('\n'));
+  let h = '// Gerado por web/build.js a partir de web/index.html e web/loader.html — não edite à mão.\n';
   h += '#pragma once\n#include <pgmspace.h>\n\n';
-  h += `static const uint8_t INDEX_HTML_GZ[${gz.length}] PROGMEM = {`;
-  for (let i = 0; i < gz.length; i++) h += (i % 24 ? '' : '\n  ') + '0x' + gz[i].toString(16).padStart(2, '0') + ',';
+  h += `// painel desta versão: ${file} (${gz.length} bytes), SRI ${sri}\n`;
+  h += `#define PANEL_HASH "${hash}"  // 24 primeiros hex do SHA-256: nome do arquivo em /www\n`;
+  h += `static const uint8_t LOADER_HTML_GZ[${loader.length}] PROGMEM = {`;
+  for (let i = 0; i < loader.length; i++) h += (i % 24 ? '' : '\n  ') + '0x' + loader[i].toString(16).padStart(2, '0') + ',';
   h += '\n};\n';
   fs.writeFileSync(out, h);
-  console.log(`painel: ${(fs.statSync(src).size / 1024).toFixed(1)} KB -> ${(gz.length / 1024).toFixed(1)} KB (gzip); dicionário i18n-${ver}.json, cartão share-${shv}.js`);
+  fs.writeFileSync(path.join(__dirname, 'out', 'panel.json'), JSON.stringify({ panel: file, psri: sri, psize: gz.length }) + '\n');  // para o latest.json
+  console.log(`painel: ${(fs.statSync(src).size / 1024).toFixed(1)} KB -> ${(gz.length / 1024).toFixed(1)} KB (gzip) em ${file}; carregador na flash: ${loader.length} bytes; dicionário i18n-${ver}.json, cartão share-${shv}.js`);
 })();

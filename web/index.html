@@ -218,6 +218,9 @@ nav button.on svg{stroke:var(--ac)}
  <div class="card">
   <div id="wx" hidden><b id="wt"></b><div><div id="wd"></div><small id="wm"></small></div></div>
   <label>Mostrar clima<input data-k="won" type="checkbox"></label>
+  <label>Temperatura em °F<input data-k="fahr" type="checkbox"></label>
+  <label>Avisar quando for chover<input data-k="rain" type="checkbox"></label>
+  <small>Com o aviso ligado, o relógio mostra "chuva 15 min" quando a chuva deve começar na próxima hora (o tomate já abre o guarda-chuva).</small>
   <label>Cidade<b id="city">—</b></label>
   <label>Buscar cidade<input id="q" type="search" placeholder="ex.: Campinas"></label>
   <div id="res"></div>
@@ -440,6 +443,8 @@ async function doUpdate(){const u=UPD;if(!u||updating||!confirm(t('Atualizar o r
  try{$('updt').textContent=t('Baixando a versão {0}...',u.version);// a partir da 1.14 o relógio aceita o .bin.gz (menor, e o firmware pode passar de 520 KB)
   const gz=!!u.gz,bin=await (await fetch(SITE+'firmware/'+(gz?u.gz:u.file),{cache:'no-store'})).blob();
   if((gz?u.gzsize:u.size)&&bin.size!=(gz?u.gzsize:u.size))throw 'size';
+  // 1.19+: o painel fica na memória de arquivos; leva já o da versão nova (sem ele, o carregador baixa depois)
+  if(u.panel)try{const p=await (await fetch(SITE+'panel/'+u.panel,{integrity:u.psri,cache:'no-store'})).blob(),pf=new FormData();pf.append('p',p,'panel.gz');await fetch('/api/panel',{method:'POST',body:pf})}catch(e){}
   $('updt').textContent=t('Instalando... não desligue o relógio');const fd=new FormData();fd.append('firmware',bin,gz?'firmware.bin.gz':'firmware.bin');
   const r=await fetch('/update',{method:'POST',body:fd,headers:h}),x=await r.text();
   if(r.status==401)throw t('Senha incorreta');if(!/success/i.test(x))throw x;
@@ -515,7 +520,7 @@ function load(s){if(s.cfg.lang!=null&&s.cfg.lang!=LG)setLang(s.cfg.lang);if(last
  $('pvbar').style.display=s.pv?'block':'none';if(s.pv)$('pvbar').textContent=t('Prévia no relógio por mais {0} s · depois ele volta para {1}',s.pv,cf?cf.n:t('o mostrador salvo'));
  // clima
  $('city').textContent=s.cfg.city||'—';$('wx').hidden=!(s.cfg.won&&s.wx.ok);
- if(s.wx.ok){$('wt').textContent=Math.round(s.wx.t)+'°';$('wd').textContent=(s.cfg.city?s.cfg.city+' · ':'')+s.wx.desc;$('wm').textContent=t('Mín')+' '+Math.round(s.wx.min)+'° · '+t('Máx')+' '+Math.round(s.wx.max)+'° · '+t('Umidade')+' '+s.wx.h+'%'}
+ if(s.wx.ok){const dg=c=>Math.round(s.cfg.fahr?c*9/5+32:c)+'°';$('wt').textContent=dg(s.wx.t);$('wd').textContent=(s.cfg.city?s.cfg.city+' · ':'')+(s.wx.rin?(s.wx.rin<15?t('Chuva logo'):t('Chuva em {0} min',s.wx.rin)):s.wx.desc);$('wm').textContent=t('Mín')+' '+dg(s.wx.min)+' · '+t('Máx')+' '+dg(s.wx.max)+' · '+t('Umidade')+' '+s.wx.h+'%'}
  // fotos
  $('fsinfo').textContent=s.fs.ok?t('{0} usados de {1}',kb(s.fs.used),kb(s.fs.total)):t('Memória de arquivos indisponível');
  $('fsbar').style.width=(s.fs.total?s.fs.used/s.fs.total*100:0)+'%';$('fmt').hidden=!!s.fs.ok;

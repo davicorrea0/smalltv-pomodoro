@@ -1,0 +1,20 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SmallTV Pomodoro</title>
+<!-- Carregador embutido no firmware (web/build.js -> web.h). O painel completo fica na memória de arquivos
+     (LittleFS) e não na flash do programa: na primeira vez (ou depois de atualizar o firmware, ou de formatar
+     a memória) esta página baixa do site o painel desta versão, conferido pelo SRI, entrega ao relógio
+     (que confere de novo pelo SHA-256) e recarrega. Sem internet, oferece a atualização e explica. -->
+<style>body{font:16px system-ui;background:#111;color:#eee;max-width:420px;margin:auto;padding:24px;text-align:center}
+a{color:#ff7a59}small{color:#999;display:block;margin-top:16px}</style></head>
+<body><h2>SmallTV Pomodoro</h2><p id="m"></p><small id="d"></small>
+<script>
+const TT={pt:['Instalando o painel no relógio...','Não deu para baixar o painel do site. Ele é baixado uma vez (cerca de 20 KB) e fica guardado no relógio: conecte este aparelho à internet e recarregue a página.','Atualizar firmware'],
+en:['Installing the panel on the clock...','Could not download the panel from the website. It is downloaded once (about 20 KB) and stored on the clock: connect this device to the internet and reload the page.','Update firmware'],
+es:['Instalando el panel en el reloj...','No se pudo descargar el panel del sitio. Se descarga una vez (unos 20 KB) y queda guardado en el reloj: conecta este dispositivo a internet y recarga la página.','Actualizar firmware']};
+const T=TT[(navigator.language||'pt').slice(0,2)]||TT.pt,tx=i=>T[i];
+let SITE='https://davicorrea0.github.io/smalltv-pomodoro/';try{if(localStorage.site)SITE=localStorage.site}catch(e){}
+document.getElementById('m').textContent=tx(0);
+fetch(SITE+'panel/__PANEL_FILE__',{integrity:'__PANEL_SRI__',cache:'no-store'}).then(r=>{if(!r.ok)throw r.status;return r.blob()})
+.then(b=>{const f=new FormData();f.append('p',b,'panel.gz');return fetch('/api/panel',{method:'POST',body:f,headers:{'X-SmallTV':'1'}})})
+.then(r=>r.text().then(t=>{if(!r.ok)throw t;location.reload()}))
+.catch(e=>{document.getElementById('m').textContent=tx(1);const d=document.getElementById('d');d.textContent=String(e)+' · ';const a=document.createElement('a');a.href='/update';a.textContent=tx(2);d.append(a)});
+</script></body></html>

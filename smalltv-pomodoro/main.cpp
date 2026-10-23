@@ -20,6 +20,7 @@
 #include <ArduinoJson.h>
 #include <WiFiUdp.h>
 #include <eboot_command.h>
+#include <bearssl/bearssl_hash.h>  // SHA-256 do painel recebido (/api/panel)
 #include "src/uzlib/uzlib.h"  // o mesmo descompactador do gerenciador de boot (licença zlib)
 extern "C" uint32_t _FS_start;
 #include "src/JPEGDEC/JPEGDEC.h"  // cópia da JPEGDEC 1.8.4 com as tabelas de cor geradas só durante a decodificação
@@ -35,7 +36,7 @@ extern "C" uint32_t _FS_start;
 
 void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);  // ui.cpp: recorta para a área suja; fora da tela, cai na faixa
 
-#define FW_VERSION "1.18.3"
+#define FW_VERSION "1.19.0"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
@@ -96,6 +97,8 @@ struct Settings {
   uint8_t alexa;        // 1 = aparece para a Alexa como a lâmpada "Pomodoro"
   char apPass[9];       // senha das redes SmallTV-Pomodoro e SmallTV-Recuperacao (sorteada, mostrada na tela)
   uint8_t vcom, vcomChk;  // tensão comum do painel (registrador VCOMS) e marca de calibrado (vcom ^ 0xDA)
+  uint8_t fahr;         // 1 = temperaturas em °F; lixo vira 0
+  uint8_t rainAlert;    // 1 = avisa na tela quando vai chover na próxima hora; lixo vira 1
 };
 const uint32_t SETTINGS_MAGIC = 0x504F4D34;     // "POM4"
 const uint32_t SETTINGS_MAGIC_V3 = 0x504F4D33;  // "POM3": mesmos campos, sem os do v4
@@ -103,7 +106,7 @@ Settings cfg;
 
 void defaultSettings() {
   cfg = Settings{SETTINGS_MAGIC, 25, 5, 15, 4, 80, 0, 0, "<-03>3", "", 0, -1,
-                 THEME_MATRIX, 0, 10, 0, 22, 7, 15, 1, 242, 242, 242, 0, 0, "", 0, 1, 0, 8, ACT_READ, "", 0, 0, 0, 1, "", UI_VCOM_DEFAULT, 0};
+                 THEME_MATRIX, 0, 10, 0, 22, 7, 15, 1, 242, 242, 242, 0, 0, "", 0, 1, 0, 8, ACT_READ, "", 0, 0, 0, 1, "", UI_VCOM_DEFAULT, 0, 0, 1};
 }
 
 // ---------- recuperação: 3 inicializações curtas seguidas ----------
@@ -161,6 +164,8 @@ void loadSettings() {
   if (cfg.nightSun > 1) cfg.nightSun = 0;
   if (cfg.rotMin > 240) cfg.rotMin = 0;
   if (cfg.alexa > 1) cfg.alexa = 1;  // memória de unidades antigas (0xFF): ligado
+  if (cfg.fahr > 1) cfg.fahr = 0;
+  if (cfg.rainAlert > 1) cfg.rainAlert = 1;
   if (!(fabsf(cfg.lat) <= 90 && fabsf(cfg.lon) <= 180)) cfg.lat = cfg.lon = 0;  // lixo ou NaN estouraria o String(float)
   // senha das redes do relógio: 8 letras/dígitos sem os que se confundem, sorteada pelo gerador do chip
   // na primeira vez (ou se a memória tiver lixo) e mostrada na tela quando a rede está no ar
@@ -509,6 +514,7 @@ struct Weather {
   uint16_t version = 0;
   uint8_t nd = 0;  // previsão: hoje e os próximos dias
   UiDay d[UI_DAYS];
+  uint8_t rainIn = 0;  // ver UiWeather::rainIn
 } wx;
 uint32_t wxNext = 0;
 
@@ -565,9 +571,12 @@ bool fetchWeather() {
                "&longitude=" + String(cfg.lon, 4) +
                "&current=temperature_2m,relative_humidity_2m,weather_code,is_day"
                "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset"
+               "&minutely_15=precipitation,precipitation_probability&forecast_minutely_15=4"
                "&timezone=auto&forecast_days=" + String(UI_DAYS);
   if (httpGet(client, url, 5000) != 200) return false;
   JsonDocument filter;
+  filter["minutely_15"]["precipitation"] = true;  // 4 quartos de hora a partir do atual: a próxima hora
+  filter["minutely_15"]["precipitation_probability"] = true;
   filter["current"]["temperature_2m"] = true;
   filter["current"]["relative_humidity_2m"] = true;
   filter["current"]["weather_code"] = true;
@@ -590,6 +599,16 @@ bool fetchWeather() {
   wx.tmin = doc["daily"]["temperature_2m_min"][0];
   // a resposta vem em HTTP puro: um 1e38 forjado estouraria o String(float) de /api/state
   for (float *v : {&wx.t, &wx.tmax, &wx.tmin}) *v = isfinite(*v) ? constrain(*v, -99.0f, 99.0f) : 0;
+  // vai chover: o primeiro quarto de hora com chuva de verdade (≥ 0,1 mm e chance ≥ 40%), se agora
+  // ainda não chove. O atual vira "em instantes" (5); os seguintes, 15/30/45 min.
+  bool rainingNow = (wx.code >= 51 && wx.code <= 67) || (wx.code >= 80 && wx.code <= 82) || wx.code >= 95;
+  JsonArrayConst qp = doc["minutely_15"]["precipitation"], qc = doc["minutely_15"]["precipitation_probability"];
+  wx.rainIn = 0;
+  for (int i = 0; !rainingNow && i < 4 && i < (int)qp.size(); i++)
+    if (qp[i].as<float>() >= 0.1f && (qc[i].isNull() || qc[i].as<int>() >= 40)) {
+      wx.rainIn = i ? i * 15 : 5;
+      break;
+    }
   JsonArrayConst dc = doc["daily"]["weather_code"], dmax = doc["daily"]["temperature_2m_max"],
                  dmin = doc["daily"]["temperature_2m_min"], drain = doc["daily"]["precipitation_probability_max"];
   wx.nd = 0;
@@ -675,8 +694,19 @@ UiState makeState() {
   s.streak = statsStreak;
   s.best = statsBest;
   s.weatherOn = cfg.weatherOn && cfg.city[0];
-  s.wx = {wx.ok, wx.t, wx.tmin, wx.tmax, wx.hum, wx.code, wx.day, wx.version, wx.nd, {}};
+  s.wx = {wx.ok, wx.t, wx.tmin, wx.tmax, wx.hum, wx.code, wx.day, wx.version, wx.nd, {}, (uint8_t)(cfg.rainAlert ? wx.rainIn : 0)};
   memcpy(s.wx.d, wx.d, sizeof wx.d);
+  s.fahr = cfg.fahr;
+  if (s.fahr) {  // °F só na tela: o clima segue guardado em °C
+    auto f = [](float c) { return c * 9 / 5 + 32; };
+    s.wx.t = f(s.wx.t);
+    s.wx.tmin = f(s.wx.tmin);
+    s.wx.tmax = f(s.wx.tmax);
+    for (UiDay &d : s.wx.d) {
+      d.tmin = (int8_t)constrain(lroundf(f(d.tmin)), -99, 127);
+      d.tmax = (int8_t)constrain(lroundf(f(d.tmax)), -99, 127);
+    }
+  }
   s.city = cfg.city;
   s.theme = previewActive() ? previewTheme : cfg.theme;
   s.accent = clockColor();
@@ -1275,6 +1305,8 @@ void sendState() {
   j += String(wx.tmax, 1);
   j += F(",\"h\":");
   j += wx.hum;
+  j += F(",\"rin\":");  // minutos até a chuva (0 = não vai chover na próxima hora)
+  j += wx.rainIn;
   j += F(",\"rise\":");
   j += sunRise;
   j += F(",\"set\":");
@@ -1323,6 +1355,10 @@ void sendState() {
   j += cfg.nightBri;
   j += F(",\"won\":");
   j += cfg.weatherOn;
+  j += F(",\"fahr\":");
+  j += cfg.fahr;
+  j += F(",\"rain\":");
+  j += cfg.rainAlert;
   j += F(",\"lat\":");
   j += String(cfg.lat, 4);
   j += F(",\"lon\":");
@@ -1513,15 +1549,83 @@ bool authed() {
 bool guard() { return (panelOk() || deny()) && authed(); }   // ações (POST)
 bool readOk() { return (hostOk() || deny()) && authed(); }   // leituras
 
+// ---------- painel na memória de arquivos ----------
+// O painel (~19 KB comprimido) não ocupa a flash do programa: fica em /www/<hash>.gz, onde <hash> são os
+// 24 primeiros hex do SHA-256 do arquivo, calculado aqui ao receber. O firmware só serve o arquivo com o
+// PANEL_HASH desta versão (web.h); sem ele, manda o carregador, que baixa o painel do site (com SRI) e
+// envia para /api/panel. Um arquivo qualquer enviado ali só ganha outro nome e nunca é servido; aceitar
+// outros hashes deixa o painel instalar o da próxima versão antes de gravar o firmware novo.
+File panelUpload;
+UploadGate panelGate;
+br_sha256_context panelSha;
+String panelResult;
+
+void handlePanelUpload() {
+  HTTPUpload &up = server.upload();
+  if (up.status == UPLOAD_FILE_START) {
+    if (panelUpload) panelUpload.close();
+    panelGate.begin(false, 0);
+    panelResult = "";
+    if (!panelOk() || !passOk() || !fsOk) return;
+    if (!LittleFS.exists("/www")) LittleFS.mkdir("/www");
+    panelUpload = LittleFS.open("/www/_novo", "w");
+    if (!panelUpload) return;
+    br_sha256_init(&panelSha);
+    panelGate.begin(true, 65536);
+  } else if (up.status == UPLOAD_FILE_WRITE) {
+    if (!panelGate.active) return;
+    if (!panelGate.take(up.currentSize) || panelUpload.write(up.buf, up.currentSize) != up.currentSize) {
+      panelGate.stop();
+      panelUpload.close();
+      LittleFS.remove("/www/_novo");
+      return;
+    }
+    br_sha256_update(&panelSha, up.buf, up.currentSize);
+  } else if (up.status == UPLOAD_FILE_END || up.status == UPLOAD_FILE_ABORTED) {
+    bool ok = panelGate.active && up.status == UPLOAD_FILE_END && panelGate.bytes > 18;
+    panelGate.stop();
+    if (panelUpload) panelUpload.close();
+    if (!ok) {
+      LittleFS.remove("/www/_novo");
+      return;
+    }
+    uint8_t d[32];
+    br_sha256_out(&panelSha, d);
+    char hex[25];
+    for (int i = 0; i < 12; i++) snprintf(hex + i * 2, 3, "%02x", d[i]);
+    String name = String("/www/") + hex + ".gz";
+    LittleFS.remove(name);
+    LittleFS.rename("/www/_novo", name);
+    // guarda só o desta versão e o recém-chegado (o da próxima, durante uma atualização)
+    Dir dir = LittleFS.openDir("/www");
+    std::vector<String> old;
+    while (dir.next())
+      if (dir.fileName() != String(hex) + ".gz" && dir.fileName() != PANEL_HASH ".gz") old.push_back(dir.fileName());
+    for (const String &n : old) LittleFS.remove("/www/" + n);
+    panelResult = hex;
+  }
+}
+
 void setupWeb() {
   server.collectHeaders("X-SmallTV", "Content-Length", "Authorization", "Origin");
-  // painel comprimido (web/index.html -> web/build.js -> web.h); o navegador descompacta
+  // painel: o desta versão na memória de arquivos ou, sem ele, o carregador que o instala
   server.on("/", HTTP_GET, [] {
     if (!readOk()) return;  // com senha, o navegador pede o login já ao abrir o painel
-    server.sendHeader("Content-Encoding", "gzip");
     server.sendHeader("Cache-Control", "no-cache");  // depois de atualizar o firmware, o navegador busca o painel novo
-    server.send_P(200, "text/html", (PGM_P)INDEX_HTML_GZ, sizeof(INDEX_HTML_GZ));
+    File f = fsOk ? LittleFS.open("/www/" PANEL_HASH ".gz", "r") : File();
+    if (f) {
+      server.streamFile(f, "text/html");  // .gz: o servidor manda "Content-Encoding: gzip"
+      f.close();
+      return;
+    }
+    server.sendHeader("Content-Encoding", "gzip");
+    server.send_P(200, "text/html", (PGM_P)LOADER_HTML_GZ, sizeof(LOADER_HTML_GZ));
   });
+  server.on("/api/panel", HTTP_POST, [] {
+    if (!guard()) return;
+    if (!panelResult.length()) server.send(400, "text/plain", "Painel invalido");
+    else server.send(200, "text/plain", panelResult == PANEL_HASH ? "ok" : "guardado " + panelResult);
+  }, handlePanelUpload);
   server.on("/api/state", HTTP_GET, sendState);
   server.on("/api/stats", HTTP_GET, sendStats);
   // avisos de fim de fase: GET lê, POST (w, b) grava, POST test=w|b chama o endereço e devolve o código
@@ -1721,6 +1825,10 @@ void setupWeb() {
     alexaBegin();  // ligada agora: começa a responder à descoberta sem reiniciar
     if (server.hasArg("rot")) rotSet(server.arg("rot"));
     uint8_t won = argRange("won", cfg.weatherOn, 0, 1);
+    uint8_t fahr = argRange("fahr", cfg.fahr, 0, 1), rain = argRange("rain", cfg.rainAlert, 0, 1);
+    if (fahr != cfg.fahr || rain != cfg.rainAlert) uiInvalidate();  // números e aviso mudam na tela
+    cfg.fahr = fahr;
+    cfg.rainAlert = rain;
     String color = server.arg("color");
     if (color.length() == 7 && color[0] == '#') {
       long v = strtol(color.c_str() + 1, nullptr, 16);

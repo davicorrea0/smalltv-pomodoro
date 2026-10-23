@@ -247,6 +247,19 @@ int main() {
   { UiState t = base(10, 9, 0); t.theme = THEME_ANALOG; shot("06_analogico", t, false); }
   { UiState t = base(8, 5, 0); t.theme = THEME_WEATHER; t.wx.code = 61; t.wx.t = 18.2f; shot("07_clima_chuva", t, false); }
   { UiState t = base(13, 0, 0); t.theme = THEME_WEATHER; t.wx.code = 0; t.wx.t = 31; t.wx.hum = 38; shot("08_clima_sol", t, false); }
+  // °F (o firmware converte em makeState: aqui os valores já vêm em °F) e chuva chegando
+  auto fahr = [](UiState t) {
+    t.fahr = true;
+    t.wx.t = t.wx.t * 9 / 5 + 32; t.wx.tmin = t.wx.tmin * 9 / 5 + 32; t.wx.tmax = t.wx.tmax * 9 / 5 + 32;
+    for (UiDay &d : t.wx.d) { d.tmin = d.tmin * 9 / 5 + 32; d.tmax = d.tmax * 9 / 5 + 32; }
+    return t;
+  };
+  { UiState t = base(13, 0, 0); t.theme = THEME_WEATHER; t.wx.code = 0; t.wx.t = 40; t.wx.tmax = 41; shot("08b_clima_fahrenheit_calor", fahr(t), false); }
+  { UiState t = base(16, 20, 0); t.theme = THEME_WEATHER; t.wx.code = 3; t.wx.rainIn = 15; shot("08c_clima_chuva_chegando", t, false); }
+  { UiState t = base(16, 20, 0); t.theme = THEME_TOMATO; t.wx.code = 3; t.wx.rainIn = 30; shot("05e_tomate_chuva_chegando", t, false); }
+  { UiState t = base(18, 26, 43); t.theme = THEME_LCD; t.wx.t = 39; shot("16b_lcd_fahrenheit", fahr(t), false); }
+  { UiState t = base(9, 0, 0); t.theme = THEME_FORECAST_LCD; t.wx.d[0].tmax = 41; shot("16c_previsao_lcd_fahrenheit", fahr(t), false); }
+  { UiState t = base(9, 0, 0); t.theme = THEME_FORECAST_CARDS; t.wx.d[0].tmax = 41; shot("16d_previsao_cartoes_fahrenheit", fahr(t), false); }
 
   { UiState t = base(14, 37, 24); t.theme = THEME_NEON; shot("14_neon", t, false); }
   { UiState t = base(9, 5, 0); t.theme = THEME_FLIP; shot("15_flip", t, false); }

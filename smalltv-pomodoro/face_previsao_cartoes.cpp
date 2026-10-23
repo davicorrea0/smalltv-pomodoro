@@ -15,6 +15,10 @@ static void otxC(int cx, int y, int h, uint16_t c, const char *s, uint16_t bg) {
 
 // Temperatura centralizada em cx: sinal de menos e grau desenhados (a fonte dos números só tem dígitos)
 static void cardTemp(int cx, int y, int h, int v, uint16_t fg) {
+  if (v >= 100) {  // °F em dia quente: três dígitos menores para caber no cartão, na mesma linha de base
+    y += h * 3 / 10;
+    h = h * 7 / 10;
+  }
   char d[4];
   snprintf(d, sizeof d, "%d", v < 0 ? -v : v);
   const int minus = v < 0 ? h * 3 / 8 : 0, r = h > 20 ? 3 : 2;

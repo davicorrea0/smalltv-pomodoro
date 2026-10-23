@@ -36,6 +36,7 @@ struct UiWeather {
   uint16_t version;  // muda a cada atualização: força redesenho do clima
   uint8_t nd;        // dias em d[] (0 se a previsão não veio)
   UiDay d[UI_DAYS];
+  uint8_t rainIn;    // chuva começando na próxima hora: minutos até ela (5 = em instantes, 15, 30, 45); 0 = não
 };
 
 struct UiState {
@@ -56,6 +57,7 @@ struct UiState {
   bool weatherOn;
   UiWeather wx;
   const char *city;
+  bool fahr;  // temperaturas de wx já em °F (os mostradores só desenham o número; ver uiTempC)
   // geral
   uint8_t theme;
   uint16_t accent;  // cor dos números do relógio (RGB565)
@@ -67,6 +69,9 @@ struct UiState {
 constexpr uint16_t uiRgb(uint8_t r, uint8_t g, uint8_t b) {
   return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
 }
+
+// Temperatura de s.wx em °C, para decisões (cachecol, óculos) que não podem mudar com a unidade.
+inline float uiTempC(const UiState &s, float v) { return s.fahr ? (v - 32) * 5 / 9 : v; }
 
 // Sprite em pixel art. Os sprites são gerados de assets/*.txt por assets/gerar.js em
 // assets.h (SPR_<NOME>) e ficam na flash (PROGMEM), com 4 bits por pixel.

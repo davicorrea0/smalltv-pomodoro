@@ -250,6 +250,14 @@ void weatherIcon(int cx, int cy, float s, int c, bool day, uint16_t bg) {
   }
 }
 
+const char *rainSoonText(uint8_t m) {
+  static char b[20];
+  if (!m) return "";
+  if (m < 15) return tr("chuva logo", "rain soon", "lluvia ya");
+  snprintf(b, sizeof b, tr("chuva %u min", "rain %u min", "lluvia %u min"), m);  // curto: cabe ao lado do tomate
+  return b;
+}
+
 const char *weatherText(int c) {
   if (c == 0) return tr("Ceu limpo", "Clear sky", "Despejado");
   if (c <= 2) return tr("Poucas nuvens", "Few clouds", "Poco nuboso");

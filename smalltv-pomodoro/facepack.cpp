@@ -324,6 +324,8 @@ static void variable(const char *k, const UiState &s, char *v, size_t n) {
   else if (!strcmp(k, "TMIN")) wx ? snprintf(v, n, "%d", (int)lroundf(s.wx.tmin)) : snprintf(v, n, "--");
   else if (!strcmp(k, "TMAX")) wx ? snprintf(v, n, "%d", (int)lroundf(s.wx.tmax)) : snprintf(v, n, "--");
   else if (!strcmp(k, "HUM")) wx ? snprintf(v, n, "%d", s.wx.hum) : snprintf(v, n, "--");
+  else if (!strcmp(k, "UNIT")) snprintf(v, n, "%s", s.fahr ? "F" : "C");
+  else if (!strcmp(k, "RAIN")) snprintf(v, n, "%s", wx ? rainSoonText(s.wx.rainIn) : "");
   else if (!strcmp(k, "WX")) snprintf(v, n, "%s", wx ? weatherText(s.wx.code) : "");
   else if (!strcmp(k, "CITY")) snprintf(v, n, "%s", s.city ? s.city : "");
   else if (!strcmp(k, "FOCOS")) snprintf(v, n, "%u", s.today);
@@ -380,8 +382,8 @@ static uint8_t autoMood(const UiState &s) {
   if (!isDay(s)) return FACE_SLEEP;
   if (isRain(s)) return FACE_UMBRELLA;
   if (s.today >= s.dailyGoal && s.today) return FACE_CHEER;
-  if (s.weatherOn && s.wx.ok && s.wx.t < 15) return FACE_SCARF;
-  if (s.weatherOn && s.wx.ok && s.wx.t > 28) return FACE_SHADES;
+  if (s.weatherOn && s.wx.ok && uiTempC(s, s.wx.t) < 15) return FACE_SCARF;  // em °C, qualquer que seja a unidade da tela
+  if (s.weatherOn && s.wx.ok && uiTempC(s, s.wx.t) > 28) return FACE_SHADES;
   return FACE_HAPPY;
 }
 

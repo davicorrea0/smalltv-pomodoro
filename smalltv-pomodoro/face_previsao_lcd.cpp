@@ -45,10 +45,21 @@ static void picto(int x, int y, int p) {
 // número de 2 dígitos em DSEG7 e grau; negativo leva o "-" na casa da dezena, como num LCD real
 // (vai até -9). y = topo, h = altura
 static void dsegTemp(int x, int y, int h, int v) {
-  const int w = h * 618 / 1000, gap = h / 8 + 1;
   if (v < -9) v = -9;
-  if (v > 99) v = 99;
-  dsegDigit(x, y, h, v < 0 ? 10 : v >= 10 ? v / 10 : -1, LCD_ON, LCD_GHOST);
+  if (v > 199) v = 199;
+  if (v >= 100) {  // °F em dia quente: o "1" das centenas e dígitos 3/4 menores, um pouco à esquerda
+    y += h / 4;    // mesma linha de base
+    h = h * 3 / 4;
+    x -= h / 3;
+  }
+  const int w = h * 618 / 1000, gap = h / 8 + 1;
+  if (v >= 100) {
+    dsegDigit(x, y, h, 1, LCD_ON, LCD_GHOST);
+    x += w + gap;
+    v -= 100;
+    dsegDigit(x, y, h, v / 10, LCD_ON, LCD_GHOST);  // 104: o zero do meio aparece
+  } else
+    dsegDigit(x, y, h, v < 0 ? 10 : v >= 10 ? v / 10 : -1, LCD_ON, LCD_GHOST);
   dsegDigit(x + w + gap, y, h, (v < 0 ? -v : v) % 10, LCD_ON, LCD_GHOST);
   int dx = x + 2 * w + gap + 4, r = h > 20 ? 3 : 2;
   G->drawCircle(dx, y + r, r, LCD_ON);

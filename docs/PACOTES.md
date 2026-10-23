@@ -44,6 +44,9 @@ A tela tem **240 × 240** pixels; `x` cresce para a direita e `y` para baixo.
 | `{YYYY}` ano | `{AMPM}` | `{TEMP}` temperatura | `{TMIN}` `{TMAX}` |
 | `{HUM}` umidade | `{WX}` descrição do clima | `{CITY}` cidade | `{IP}` |
 | `{FOCOS}` focos de hoje | `{META}` meta diária | `{STREAK}` dias seguidos na meta | `{BEST}` recorde de dias seguidos |
+| `{UNIT}` `C` ou `F` (1.19.0+) | `{RAIN}` `chuva 15 min` / `chuva logo`, vazio sem chuva na próxima hora (1.19.0+) | | |
+
+`{TEMP}`, `{TMIN}` e `{TMAX}` já vêm na unidade escolhida no painel (°C ou °F).
 
 `°` pode ser escrito direto no texto (`"{TEMP}°"`).
 

@@ -25,9 +25,11 @@ static void paintWeather(void *c) {
   weatherIcon(64, 82, 1.6f, s.wx.code, s.wx.day, BG);
   int v = (int)lroundf(s.wx.t);
   if (v < -9) v = -9;
-  if (v > 99) v = 99;
+  if (v > 199) v = 199;
   const int P = 7, Y = 52;
-  if (v < 0) {
+  if (v >= 100) {  // °F em dia quente: três dígitos menores (5 px) no mesmo espaço, centrados na altura
+    for (int i = 0; i < 3; i++) dmDigit(118 + i * 30, Y + 7, i == 0 ? v / 100 : i == 1 ? v / 10 % 10 : v % 10, 5, TEXT, BG, true);
+  } else if (v < 0) {
     dmDigit(124, Y, DM_MINUS, P, TEXT, BG, true);
     dmDigit(164, Y, -v, P, TEXT, BG, true);
   } else if (v < 10) {
@@ -39,7 +41,7 @@ static void paintWeather(void *c) {
   G->drawCircle(214, Y + 6, 6, TEXT);
   G->drawCircle(214, Y + 6, 5, TEXT);
   char desc[24];
-  snprintf(desc, sizeof desc, "%s", weatherText(s.wx.code));
+  snprintf(desc, sizeof desc, "%s", s.wx.rainIn ? rainSoonText(s.wx.rainIn) : weatherText(s.wx.code));
   textC(120, 124, 2, TEXT, desc);
   if (s.city && s.city[0]) {
     char c[24];
