@@ -57,6 +57,9 @@ int main() {
   for (int i = 13; i < 400; i++) statsWrite(D + i, i % 5);
   boot();
   assert(dayCount(D + 399) == 399 % 5 && dayCount(D + 300) == 300 % 5);
+  // hora no passado (NTP forjado): nada é apagado nem gravado (1.19.1+; antes zerava o histórico)
+  statsWrite(D + 100, 9); boot();
+  assert(dayCount(D + 399) == 399 % 5 && stats.lastDay == D + 399);
   // memória formatada com o relógio ligado: volta a gravar (antes, o "r+" falhava até reiniciar)
   disk.clear(); statsWrite(D + 400, 2); boot();
   assert(dayCount(D + 400) == 2);

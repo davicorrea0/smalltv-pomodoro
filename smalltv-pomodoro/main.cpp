@@ -30,13 +30,14 @@ extern "C" uint32_t _FS_start;
 #include <new>
 #include <vector>
 #include <time.h>
-#include "ui.h"
+#include <sys/time.h>
+#include <coredecls.h>  // settimeofday_cb: avisa quando o SNTP muda a hora#include "ui.h"
 #include "web.h"
 #include "facepack.h"
 
 void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);  // ui.cpp: recorta para a área suja; fora da tela, cai na faixa
 
-#define FW_VERSION "1.19.0"
+#define FW_VERSION "1.19.1"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
@@ -199,6 +200,10 @@ uint16_t clockColor() { return rgb(cfg.colR, cfg.colG, cfg.colB); }
 
 // ---------- tempo ----------
 bool timeValid() { return time(nullptr) > 1700000000; }
+TimeGuard timeGuard;      // hora confirmada por uma segunda fonte (security.h); ver timeGuardBegin
+uint8_t statsPending = 0;  // focos terminados antes da hora ser confirmada (gravados no histórico depois)
+// só grava o histórico com a hora confirmada: um NTP forjado não apaga nem embaralha os dias
+bool timeTrusted() { return timeGuard.ok(time(nullptr), millis()); }
 
 bool localNow(struct tm &t) {
   if (!timeValid()) return false;
@@ -256,6 +261,7 @@ void startPhase(Phase p, bool run) {
 
 void statsFocus();                      // um foco terminou (histórico de focos, mais abaixo)
 void statsRollover(const struct tm &t);  // o dia mudou
+void statsFlush(const struct tm &t);     // grava os focos que terminaram antes da hora ser confirmada
 extern uint16_t statsStreak, statsBest;
 
 int8_t hookPending = -1;  // aviso de fim de fase a enviar no loop: 0 foco, 1 pausa (avisos na Alexa)
@@ -470,6 +476,10 @@ void alexaLoop() {
   if (!cfg.alexa || !strstr(p, "M-SEARCH") || !strstr(p, "ssdp:disc") ||
       !(strstr(p, "upnp:rootd") || strstr(p, "ssdp:all") || strstr(p, "asic:1")))
     return;
+  // no máximo 4 respostas por segundo: o Echo pergunta poucas vezes, e um pedido pequeno vira uma resposta
+  // ~3x maior (dava para usar o relógio para multiplicar tráfego na rede)
+  static RateLimit ssdpLimit;
+  if (!ssdpLimit.take(millis(), 4)) return;
   String ip = WiFi.localIP().toString(), r;
   r.reserve(400);
   r = F("HTTP/1.1 200 OK\r\nEXT:\r\nCACHE-CONTROL: max-age=100\r\nLOCATION: http://");
@@ -517,6 +527,7 @@ struct Weather {
   uint8_t rainIn = 0;  // ver UiWeather::rainIn
 } wx;
 uint32_t wxNext = 0;
+uint8_t wxFails = 0;  // buscas de clima seguidas que falharam
 
 // GET em HTTP/1.0 (resposta sem "chunked", fecha no fim) no lugar do HTTPClient (~4 KB).
 // Devolve o código HTTP (negativo se não conectar) e deixa o cliente no começo do corpo.
@@ -581,6 +592,8 @@ bool fetchWeather() {
   filter["current"]["relative_humidity_2m"] = true;
   filter["current"]["weather_code"] = true;
   filter["current"]["is_day"] = true;
+  filter["current"]["time"] = true;  // hora local do serviço: a segunda fonte que confirma a do SNTP
+  filter["utc_offset_seconds"] = true;
   filter["daily"]["weather_code"] = true;
   filter["daily"]["precipitation_probability_max"] = true;
   filter["daily"]["temperature_2m_max"] = true;
@@ -625,6 +638,16 @@ bool fetchWeather() {
   };
   sunRise = minutes(doc["daily"]["sunrise"][0] | (const char *)nullptr);
   sunSet = minutes(doc["daily"]["sunset"][0] | (const char *)nullptr);
+  int64_t local = isoToEpoch(doc["current"]["time"] | (const char *)nullptr);
+  if (local > 0) {  // confere a hora (veio por TCP): confirma a atual ou a que o SNTP trouxe e foi desfeita
+    timeval tv;
+    gettimeofday(&tv, nullptr);
+    int64_t want = timeGuard.onWeather(local - doc["utc_offset_seconds"].as<int32_t>(), tv.tv_sec, millis());
+    if (want != tv.tv_sec) {
+      timeval w = {(time_t)want, 0};
+      settimeofday(&w, nullptr);
+    }
+  }
   wx.ok = true;
   wx.version++;
   return true;
@@ -634,8 +657,30 @@ void weatherLoop() {
   if (!cfg.weatherOn || !cfg.city[0] || WiFi.status() != WL_CONNECTED) return;
   if ((int32_t)(millis() - wxNext) < 0) return;
   // a cada 15 min; se falhar, tenta de novo em 2 min
-  wxNext = millis() + (fetchWeather() ? 15UL : 2UL) * 60000UL;
+  bool ok = fetchWeather();
+  wxFails = ok ? 0 : wxFails < 255 ? wxFails + 1 : 255;
+  wxNext = millis() + (ok ? 15UL : 2UL) * 60000UL;
 }
+
+// O clima confirma a hora enquanto estiver configurado e respondendo; sem ele, valem duas sincronizações.
+bool weatherConfirms() { return cfg.weatherOn && cfg.city[0] && wxFails < 3; }
+
+void timeGuardBegin() {
+  settimeofday_cb([](bool fromSntp) {
+    if (!fromSntp) return;  // a própria correção abaixo (e a do clima) também chamam este aviso
+    timeval tv;
+    gettimeofday(&tv, nullptr);
+    int64_t want = timeGuard.onSntp(tv.tv_sec, millis(), !weatherConfirms());
+    if (want != tv.tv_sec) {  // salto não confirmado: volta à hora que vinha andando
+      timeval w = {(time_t)want, 0};
+      settimeofday(&w, nullptr);
+    }
+    if (!timeGuard.confirmed && weatherConfirms()) wxNext = millis();  // confirma já pelo clima
+  });
+}
+
+// enquanto a hora não estiver confirmada, o SNTP pergunta a cada minuto (o padrão é a cada hora)
+extern "C" uint32_t sntp_update_delay_MS_rfc_not_less_than_15000() { return timeGuard.confirmed ? 3600000 : 60000; }
 
 const char *weatherText(int code);  // de ui.cpp (o mesmo texto que aparece na tela)
 
@@ -719,8 +764,9 @@ UiState makeState() {
 
 void renderClock() {
   UiState s = makeState();
-  if (s.timeOk) {
+  if (s.timeOk && timeTrusted()) {  // virada do dia e histórico só com a hora confirmada
     checkDayRollover(s.now);
+    statsFlush(s.now);
     s.today = cfg.todayCount;
   }
   uiRenderClock(s);
@@ -803,7 +849,11 @@ void statsWrite(uint16_t day, uint8_t count) {
     f = LittleFS.open("/stats.bin", "w+");
   }
   if (!f) return;
-  if (fresh || stats.magic != STATS_MAGIC || day - stats.lastDay >= STATS_DAYS || day < stats.lastDay) {
+  if (!fresh && stats.magic == STATS_MAGIC && day < stats.lastDay) {  // hora voltou para trás: não apaga nada
+    f.close();
+    return;
+  }
+  if (fresh || stats.magic != STATS_MAGIC || day - stats.lastDay >= STATS_DAYS) {
     if (stats.magic != STATS_MAGIC) stats = {STATS_MAGIC, day, 0, 0};
     // cabeçalho e os 371 dias em sequência desde o começo: o LittleFS não deixa pular para além do fim
     // do arquivo (o seek falha). Até a 1.18.2 este trecho pulava o cabeçalho num arquivo vazio, o arquivo
@@ -876,8 +926,19 @@ void statsLoad() {
 
 void statsFocus() {
   struct tm t;
-  if (!localNow(t)) return;
+  if (!localNow(t) || !timeTrusted()) {  // sem hora confirmada: guarda e grava quando confirmar (statsFlush)
+    if (statsPending < 255) statsPending++;
+    return;
+  }
   stats.total++;
+  statsWrite(dayNumber(t), cfg.todayCount > 255 ? 255 : cfg.todayCount);
+  statsCompute();
+}
+
+void statsFlush(const struct tm &t) {
+  if (!statsPending) return;
+  stats.total += statsPending;
+  statsPending = 0;
   statsWrite(dayNumber(t), cfg.todayCount > 255 ? 255 : cfg.todayCount);
   statsCompute();
 }
@@ -1375,6 +1436,10 @@ void sendState() {
   j += cfg.vcom;
   j += F(",\"wdown\":");  // rebaixamentos do Wi-Fi bloqueados desde que ligou
   j += wifiDowngrades;
+  j += F(",\"tok\":");  // hora confirmada por uma segunda fonte (1) e saltos de hora desfeitos desde que ligou
+  j += timeGuard.confirmed ? 1 : 0;
+  j += F(",\"tund\":");
+  j += timeGuard.undone;
   j += F(",\"pkg\":\"");
   j += cfg.theme == THEME_PACK ? cfg.facePkg : "";
   j += F("\",\"goal\":");
@@ -1540,9 +1605,21 @@ void askLogin() {
   server.sendHeader(F("WWW-Authenticate"), F("Basic realm=\"SmallTV\""));
   server.send(401, "text/plain", "");
 }
+// Senha errada: aquele IP espera 1 s para tentar de novo (security.h). Antes era delay(1000), que
+// congelava tela, timer e Alexa a cada tentativa: um aparelho da rede insistindo travava o relógio.
+AuthThrottle authThrottle;
+bool authThrottled() {
+  if (!server.hasHeader("Authorization") || !authThrottle.blocked(server.client().remoteIP(), millis())) return false;
+  server.send(429, "text/plain", "Aguarde 1 s");
+  return true;
+}
+void authFailed() {
+  if (server.hasHeader("Authorization")) authThrottle.fail(server.client().remoteIP(), millis());
+}
 bool authed() {
+  if (authThrottled()) return false;
   if (passOk()) return true;
-  if (server.hasHeader("Authorization")) delay(1000);  // tentou e errou
+  authFailed();
   askLogin();
   return false;
 }
@@ -2092,14 +2169,16 @@ bool otaVerifyGz() {
 }
 
 void setupUpdate() {
-  auto authOk = [] {
+  auto authOk = [] {  // sem mandar resposta: também roda no meio do envio
+    if (server.hasHeader("Authorization") && authThrottle.blocked(server.client().remoteIP(), millis())) return false;
     if (panelOk() && (recoveryMode || passOk())) return true;
-    if (server.hasHeader("Authorization")) delay(1000);
+    authFailed();
     return false;
   };
   server.on("/update", HTTP_GET, [] {
     if (!hostOk()) { deny(); return; }
-    if (!recoveryMode && !passOk()) { askLogin(); return; }
+    if (authThrottled()) return;
+    if (!recoveryMode && !passOk()) { authFailed(); askLogin(); return; }
     String p = F("<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>SmallTV</title>"
                  "<style>body{font:16px system-ui;background:#111;color:#eee;max-width:420px;margin:auto;padding:20px}"
                  "input,button{width:100%;padding:12px;margin:8px 0;border-radius:10px;border:1px solid #333;background:#1c1c1c;color:#eee;font:inherit}"
@@ -2481,6 +2560,7 @@ void setup() {
 
   // Usa a rede salva no ESP8266 (inclusive a que o firmware original já tinha configurado).
   wifiGuardBegin();
+  timeGuardBegin();
   if (!connectStored(20000)) {
     startPortal();
     return;
@@ -2521,6 +2601,7 @@ void loop() {
   if (now - lastBriCheck > 5000) {
     lastBriCheck = now;
     updateBrightness();
+    timeGuard.tick(time(nullptr), now);
   }
 
   if (vcomTestUntil) {

@@ -65,6 +65,34 @@ int main(){
  for(auto h:hosts)assert(safeIpv4Host(h,strlen(h)));
  const char*badHosts[]={"smalltv.local","999.1.1.1","1.2.3","1.2.3.4:0","1.2.3.4:65536","1.2.3.4:80:1","1.2.3.4 ",""};
  for(auto h:badHosts)assert(!safeIpv4Host(h,strlen(h)));
+ // hora do clima
+ assert(isoToEpoch("1970-01-01T00:00")==0);assert(isoToEpoch("2026-10-23T00:30")==1792715400LL);
+ assert(isoToEpoch("2026-13-01T00:00")==-1&&isoToEpoch("2026-10-23")==-1&&isoToEpoch(nullptr)==-1&&isoToEpoch("2026-10-23T0a:30")==-1);
+ {const int64_t T=1792715400LL;  // TimeGuard: hora confirmada pelo clima; salto do SNTP desfeito até confirmar
+  TimeGuard g;uint32_t ms=1000;
+  assert(g.onSntp(T,ms,false)==T&&!g.ok(T,ms));                       // logo ao ligar: mostra, não grava
+  assert(g.onWeather(T-300,T+5,ms+5000)==T+5&&g.ok(T+5,ms+5000));        // clima confirma
+  ms+=3600000;int64_t now=T+5+3600-5;
+  assert(g.onSntp(now+3,ms,false)==now+3&&g.ok(now+3,ms));             // correção pequena: aceita
+  int64_t fake=now-40*86400;                                           // pacote forjado: 40 dias atrás
+  assert(g.onSntp(fake,ms+10,false)==now+3&&g.undone==1&&g.ok(now+3,ms+10));
+  assert(g.onSntp(T+100*86400,ms+20,false)==now+3&&g.undone==2);       // e para o futuro
+  ms+=900000;now+=900;                                                 // clima de novo: a hora real segue confirmada
+  assert(g.onWeather(now-600,now,ms)==now&&g.ok(now,ms));
+  TimeGuard h;assert(h.onSntp(T,1000,false)==T);                       // ligou com hora falsa; o clima traz a real
+  assert(h.onWeather(T+86400*3-300,T+20,21000)==T+20&&!h.ok(T+20,21000));
+  assert(h.onSntp(T+86400*3,60000,false)==T+86400*3&&!h.ok(T+86400*3,60000));
+  assert(h.onWeather(T+86400*3-300,T+86400*3+30,90000)==T+86400*3+30&&h.ok(T+86400*3+30,90000));
+  TimeGuard k;assert(k.onSntp(T,1000,true)==T&&!k.ok(T,1000));         // sem clima: duas sincronizações
+  assert(k.onSntp(T+60,61000,true)==T+60&&k.ok(T+60,61000));
+  assert(k.onSntp(T-86400,121000,true)==T+120&&k.undone==1);           // salto: desfeito
+  assert(k.onSntp(T-86400+60,181000,true)==T-86400+60);                // repetido 1 min depois: confirmado (sem clima, é o limite)
+  TimeGuard w;w.confirm(T,4000000000u);assert(w.ok(T+400000,(uint32_t)(4000000000ull+400000000ull)));  // millis() voltando a zero
+ }
+ {AuthThrottle a;assert(!a.blocked(7,1000));a.fail(7,1000);assert(a.blocked(7,1500)&&!a.blocked(8,1500)&&!a.blocked(7,2001));
+  for(uint32_t ip=10;ip<20;ip++)a.fail(ip,3000+ip);assert(a.blocked(19,3100)&&!a.blocked(7,3100));}
+ {RateLimit r;int n=0;for(int i=0;i<50;i++)n+=r.take(5000+i,4);assert(n==4);assert(r.take(6001,4));}
  puts("security: actual upload handlers deny unauthenticated writes; bounds, aborts and URL injection checks passed");
+ puts("security: hora protegida contra NTP falso, bloqueio de senha por IP e limite de SSDP ok");
 }
 `);
