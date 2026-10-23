@@ -15,7 +15,7 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     env:
-      ARDUINO_CLI: "1.5.1"
+      ARDUINO_CLI_VERSION: "1.5.1"  # (ARDUINO_CLI é o caminho do programa no compilar.sh)
       ESP8266_CORE: "esp8266:esp8266@3.1.2"
       ESP8266_INDEX: "https://arduino.esp8266.com/stable/package_esp8266com_index.json"
       GFX: /home/runner/Arduino/libraries/Adafruit_GFX_Library
@@ -33,10 +33,10 @@ jobs:
       - name: arduino-cli (conferido pelo SHA-256 do release oficial)
         run: |
           set -o pipefail
-          base="https://github.com/arduino/arduino-cli/releases/download/v${ARDUINO_CLI}"
-          file="arduino-cli_${ARDUINO_CLI}_Linux_64bit.tar.gz"
+          base="https://github.com/arduino/arduino-cli/releases/download/v${ARDUINO_CLI_VERSION}"
+          file="arduino-cli_${ARDUINO_CLI_VERSION}_Linux_64bit.tar.gz"
           curl -fsSLO "$base/$file"
-          curl -fsSL "$base/${ARDUINO_CLI}-checksums.txt" | grep " $file\$" | sha256sum -c -
+          curl -fsSL "$base/${ARDUINO_CLI_VERSION}-checksums.txt" | grep " $file\$" | sha256sum -c -
           mkdir -p "$HOME/bin" && tar -xzf "$file" -C "$HOME/bin" arduino-cli
           echo "$HOME/bin" >> "$GITHUB_PATH"
 
