@@ -23,7 +23,8 @@
 #include "src/uzlib/uzlib.h"  // o mesmo descompactador do gerenciador de boot (licença zlib)
 extern "C" uint32_t _FS_start;
 #include "src/JPEGDEC/JPEGDEC.h"  // cópia da JPEGDEC 1.8.4 com as tabelas de cor geradas só durante a decodificação
-#include <AnimatedGIF.h>
+#include "src/AnimatedGIF/AnimatedGIF.h"
+#include "gifcheck.h"
 #include <new>
 #include <vector>
 #include <time.h>
@@ -33,7 +34,7 @@ extern "C" uint32_t _FS_start;
 
 void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);  // ui.cpp: recorta para a área suja; fora da tela, cai na faixa
 
-#define FW_VERSION "1.18.0"
+#define FW_VERSION "1.18.1"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
@@ -890,9 +891,10 @@ bool drawJpg(const String &f) {
   return ok;
 }
 int32_t gifRead(GIFFILE *f, uint8_t *buf, int32_t len) {
+  yield();  // inclusive arquivos que gastam muito tempo em códigos LZW sem produzir pixels
   File *fl = (File *)f->fHandle;
   int32_t n = len;
-  if (f->iSize - f->iPos < len) n = f->iSize - f->iPos - 1;  // igual ao exemplo oficial da biblioteca
+  if (f->iSize - f->iPos < len) n = f->iSize - f->iPos;
   if (n <= 0) return 0;
   n = fl->read(buf, n);
   f->iPos = fl->position();
@@ -903,6 +905,19 @@ int32_t gifSeek(GIFFILE *f, int32_t pos) {
   fl->seek(pos);
   f->iPos = fl->position();
   return f->iPos;
+}
+
+static int gifCheckRead(void *ctx, uint8_t *buf, int n) {
+  yield();  // a conferência completa de um arquivo grande não pode disparar o watchdog
+  return ((File *)ctx)->read(buf, n);
+}
+
+static bool validGif(const String &path) {
+  File file = LittleFS.open(path, "r");
+  if (!file) return false;
+  const char *error = gifCheck(gifCheckRead, &file, 480, 480);
+  file.close();
+  return error == nullptr;
 }
 
 void gifDraw(GIFDRAW *p) {
@@ -960,6 +975,10 @@ bool showAlbumItem(const String &f) {
   inAlbum = true;
   curFile = f;
   if (isGif(f)) {
+    if (!validGif(f)) {
+      uiError(tr("GIF fora do padrao", "Unsupported GIF", "GIF fuera de norma"));
+      return false;
+    }
     gif = new (std::nothrow) AnimatedGIF();  // ~24 KB contíguos de RAM
     if (!gif) {
       uiError(tr("Sem memoria p/ GIF", "No memory for GIF", "Sin memoria p/ GIF"));
@@ -967,6 +986,7 @@ bool showAlbumItem(const String &f) {
     }
     gif->begin(GIF_PALETTE_RGB565_LE);
     if (!gif->open(f.c_str(), mediaOpen, mediaClose, gifRead, gifSeek, gifDraw)) {
+      gif->close();
       delete gif;
       gif = nullptr;
       uiError(tr("GIF invalido", "Invalid GIF", "GIF invalido"));
@@ -1305,6 +1325,10 @@ void handleUpload() {
   } else if (up.status == UPLOAD_FILE_END || up.status == UPLOAD_FILE_ABORTED) {
     if (uploadFile) uploadFile.close();
     if (up.status == UPLOAD_FILE_ABORTED && uploadPath.length()) LittleFS.remove(uploadPath);
+    if (up.status == UPLOAD_FILE_END && !uploadError.length() && isGif(uploadPath) && !validGif(uploadPath)) {
+      LittleFS.remove(uploadPath);
+      uploadError = tr("GIF fora do padrao", "Unsupported GIF", "GIF fuera de norma");
+    }
     rebuildAlbum();
   }
 }
