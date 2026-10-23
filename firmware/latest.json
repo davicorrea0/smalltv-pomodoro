@@ -1,25 +1,25 @@
 {
-  "version": "1.18.1",
+  "version": "1.18.2",
   "date": "2026-10-22",
   "file": "smalltv-pomodoro.bin",
-  "size": 532400,
+  "size": 533328,
   "notes": {
     "pt": [
-      "Correção de segurança no decoder de GIF, com leituras e dicionário LZW limitados",
-      "GIFs malformados são verificados no envio e antes da reprodução",
-      "200 mil testes de mutação e animações válidas com os mesmos pixels"
+      "Proteção contra rebaixamento do Wi-Fi para rede sem criptografia",
+      "Rede salva passa a exigir WPA ou melhor",
+      "Inclui a correção de segurança dos GIFs da 1.18.1"
     ],
     "en": [
-      "GIF security fix with checked reads and bounded LZW dictionary",
-      "Malformed GIF structure checked on upload and before playback",
-      "200,000 mutation tests and matching pixels for valid animations"
+      "Guard against Wi-Fi downgrade to an unencrypted network",
+      "Saved network now requires WPA or better",
+      "Includes the 1.18.1 GIF security fix"
     ],
     "es": [
-      "Corrección de seguridad en GIF con lecturas y diccionario LZW limitados",
-      "Estructura de GIF verificada al enviar y antes de reproducir",
-      "200 mil pruebas de mutación y los mismos píxeles en animaciones válidas"
+      "Protección contra la degradación del Wi-Fi a una red sin cifrado",
+      "La red guardada ahora exige WPA o superior",
+      "Incluye la corrección de seguridad de GIF de la 1.18.1"
     ]
   },
   "gz": "smalltv-pomodoro.bin.gz",
-  "gzsize": 398994
+  "gzsize": 399577
 }
