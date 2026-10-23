@@ -1,27 +1,30 @@
 {
-  "version": "1.19.5",
+  "version": "1.19.6",
   "date": "2026-10-23",
   "file": "smalltv-pomodoro.bin",
-  "size": 531328,
+  "size": 530576,
   "notes": {
     "pt": [
-      "Fotos → Ver o que ocupa espaço: arquivos agrupados por tipo e tamanho",
-      "Libere espaço apagando arquivos e pastas que sobraram do firmware original",
-      "Histórico, avisos, painel e mostrador em uso ficam protegidos contra exclusão"
+      "Tentativas repetidas de senha passam a esperar de 1 a 32 s sem travar o relógio",
+      "Uploads só criam ou alteram arquivos depois da autenticação completa",
+      "O histórico espera uploads terminarem antes de gravar no LittleFS",
+      "O modo de recuperação fica isolado na rede própria do relógio"
     ],
     "en": [
-      "Photos → See what uses space: files grouped by type and size",
-      "Free space by deleting files and folders left by the original firmware",
-      "History, webhooks, panel and the active face are protected from deletion"
+      "Repeated wrong passwords wait from 1 to 32 s without freezing the clock",
+      "Uploads only create or change files after complete authentication",
+      "History waits for uploads to finish before writing to LittleFS",
+      "Recovery mode stays isolated on the clock's own network"
     ],
     "es": [
-      "Fotos → Ver qué ocupa espacio: archivos agrupados por tipo y tamaño",
-      "Libera espacio borrando archivos y carpetas del firmware original",
-      "El historial, los avisos, el panel y la esfera en uso están protegidos contra borrado"
+      "Los intentos repetidos de contraseña esperan de 1 a 32 s sin bloquear el reloj",
+      "Las cargas solo crean o cambian archivos después de la autenticación completa",
+      "El historial espera que terminen las cargas antes de escribir en LittleFS",
+      "El modo de recuperación queda aislado en la red propia del reloj"
     ]
   },
   "gz": "smalltv-pomodoro.bin.gz",
-  "gzsize": 392489,
+  "gzsize": 391820,
   "panel": "panel-0ee149b64a2cd34ae09ad59d.html.gz",
   "psri": "sha256-DuFJtkos00rgmtWdCWcfa9TAB5j4LWZGAcp5o1hU+3g="
 }
