@@ -42,6 +42,15 @@ int main(int argc,char **argv) {
     auto v=load(argv[2]);int ok=decode(v);
     printf("%s ok=%d draws=%d hash=%08x\n",argv[2],ok,drawn,rowsHash);return 0;
   }
+  // valid <arquivos>: cada JPEG válido precisa chegar a desenhar algo. Um endurecimento que recusa
+  // tudo deixa o fuzzing "sem falhas" (nada passa do cabeçalho): este modo pega isso.
+  if(argc>=3 && !strcmp(argv[1],"valid")) {
+    int bad=0;
+    for(int i=2;i<argc;i++){auto v=load(argv[i]);drawn=0;rowsHash=2166136261U;int ok=decode(v);
+      printf("%s ok=%d draws=%d hash=%08x\n",argv[i],ok,drawn,rowsHash);if(!drawn)bad++;}
+    if(bad)printf("ERRO: %d JPEG(s) válido(s) não decodificaram\n",bad);
+    return bad?1:0;
+  }
   if(argc<5) return 2;
   bool fast=!strcmp(argv[1],"fast");
   std::vector<std::vector<uint8_t>> seeds;

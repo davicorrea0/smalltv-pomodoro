@@ -507,11 +507,9 @@ static int JPEGGetHuffTables(uint8_t *pBuf, int iLen, JPEGIMAGE *pJPEG)
             for (i=0; i<16; i++)
             {
                 j += pBuf[iOffset];
-                unsigned int symbol = pBuf[iOffset++];
-                if ((ucTable < 4 && symbol > 11) || (ucTable >= 4 && (symbol & 15) > 10)) return -1;
-                pHuffVals[iTableOffset+i] = symbol;
+                pHuffVals[iTableOffset+i] = pBuf[iOffset++];
             }
-            int slots = 1;
+            int slots = 1; // SmallTV: Kraft inequality - code counts must fit a prefix code
             for (int bits=0; bits<16; bits++) {
                 slots = slots*2 - pHuffVals[iTableOffset+bits];
                 if (slots < 0) return -1;
@@ -524,7 +522,10 @@ static int JPEGGetHuffTables(uint8_t *pBuf, int iLen, JPEGIMAGE *pJPEG)
             iTableOffset += 16;
             for (i=0; i<j; i++)
             {  // copy huffman table
-                pHuffVals[iTableOffset+i] = pBuf[iOffset++];
+                unsigned int symbol = pBuf[iOffset++];
+                // SmallTV: 8-bit baseline/progressive symbols - DC magnitude <= 11, AC size nibble <= 10
+                if ((ucTable < 4 && symbol > 11) || (ucTable >= 4 && (symbol & 15) > 10)) return -1;
+                pHuffVals[iTableOffset+i] = symbol;
             }
             iLen -= j;
         }
@@ -1066,7 +1067,7 @@ static int JPEGGetSOS(JPEGIMAGE *pJPEG, int *iOff)
         }
         if (j == 4) // error, not found
             return 1;
-        if ((c & 0xf) > 3 || (c & 0xf0) > 0x30)
+        if ((c & 0xf) > 1 || (c & 0xf0) > 0x10)  // SmallTV: only Huffman tables 0-1 exist; 2-3 read past ucHuffDC
             return 1; // bogus table numbers
         pJPEG->JPCI[j].dc_tbl_no = c >> 4;
         pJPEG->JPCI[j].ac_tbl_no = c & 0xf;
@@ -1476,6 +1477,7 @@ static int JPEGDecodeMCU_P(JPEGIMAGE *pJPEG, int iMCU, int *iDCPredictor)
     if (ulBitOff > (REGISTER_WIDTH-17)) { // need to get more data
         pBuf += (ulBitOff >> 3);
         ulBitOff &= 7;
+        if (pBuf > pJPEG->ucFileBuf + JPEG_FILE_BUF_SIZE - sizeof(my_ulong)) return -1; // SmallTV: corrupt data would read past the buffer
         ulBits = MOTOLONG(pBuf);
     }
 
@@ -1514,6 +1516,7 @@ static int JPEGDecodeMCU_P(JPEGIMAGE *pJPEG, int iMCU, int *iDCPredictor)
             {
                 pBuf += (ulBitOff >> 3);
                 ulBitOff &= 7;
+                if (pBuf > pJPEG->ucFileBuf + JPEG_FILE_BUF_SIZE - sizeof(my_ulong)) return -1; // SmallTV: corrupt data would read past the buffer
                 ulBits = MOTOLONG(pBuf);
             }
             ulCode = ulBits << ulBitOff;
@@ -1542,6 +1545,7 @@ static int JPEGDecodeMCU_P(JPEGIMAGE *pJPEG, int iMCU, int *iDCPredictor)
                 if (ulBitOff > (REGISTER_WIDTH-17)) { // need to get more data
                     pBuf += (ulBitOff >> 3);
                     ulBitOff &= 7;
+                    if (pBuf > pJPEG->ucFileBuf + JPEG_FILE_BUF_SIZE - sizeof(my_ulong)) return -1; // SmallTV: corrupt data would read past the buffer
                     ulBits = MOTOLONG(pBuf);
                 }
                 ulCode = (ulBits >> (REGISTER_WIDTH - 16 - ulBitOff)) & 0xffff; // get as lower 16 bits
@@ -1589,6 +1593,7 @@ static int JPEGDecodeMCU_P(JPEGIMAGE *pJPEG, int iMCU, int *iDCPredictor)
                         if (ulBitOff > (REGISTER_WIDTH-17)) { // need to get more data
                             pBuf += (ulBitOff >> 3);
                             ulBitOff &= 7;
+                            if (pBuf > pJPEG->ucFileBuf + JPEG_FILE_BUF_SIZE - sizeof(my_ulong)) return -1; // SmallTV: corrupt data would read past the buffer
                             ulBits = MOTOLONG(pBuf);
                         }
                         ulCode = (ulBits >> (REGISTER_WIDTH-1-ulBitOff)) & 1; // just get 1 bit
@@ -1750,6 +1755,7 @@ static int JPEGDecodeMCU(JPEGIMAGE *pJPEG, int iMCU, int *iDCPredictor)
     if (ulBitOff > (REGISTER_WIDTH-17)) { // need to get more data
         pBuf += (ulBitOff >> 3);
         ulBitOff &= 7;
+        if (pBuf > pJPEG->ucFileBuf + JPEG_FILE_BUF_SIZE - sizeof(my_ulong)) return -1; // SmallTV: corrupt data would read past the buffer
         ulBits = MOTOLONG(pBuf);
     }
     if (iMCU < 0) { // skip this block (cropped, or grayscale output from color)
@@ -1790,6 +1796,7 @@ static int JPEGDecodeMCU(JPEGIMAGE *pJPEG, int iMCU, int *iDCPredictor)
             {
                 pBuf += (ulBitOff >> 3);
                 ulBitOff &= 7;
+                if (pBuf > pJPEG->ucFileBuf + JPEG_FILE_BUF_SIZE - sizeof(my_ulong)) return -1; // SmallTV: corrupt data would read past the buffer
                 ulBits = MOTOLONG(pBuf);
             }
             ulCode = ulBits << ulBitOff;
@@ -1820,6 +1827,7 @@ static int JPEGDecodeMCU(JPEGIMAGE *pJPEG, int iMCU, int *iDCPredictor)
             {
                 pBuf += (ulBitOff >> 3);
                 ulBitOff &= 7;
+                if (pBuf > pJPEG->ucFileBuf + JPEG_FILE_BUF_SIZE - sizeof(my_ulong)) return -1; // SmallTV: corrupt data would read past the buffer
                 ulBits = MOTOLONG(pBuf);
             }
             ulCode = (ulBits >> (REGISTER_WIDTH - 16 - ulBitOff)) & 0xffff; // get as lower 16 bits
@@ -1854,6 +1862,7 @@ static int JPEGDecodeMCU(JPEGIMAGE *pJPEG, int iMCU, int *iDCPredictor)
             {
                 pBuf += (ulBitOff >> 3);
                 ulBitOff &= 7;
+                if (pBuf > pJPEG->ucFileBuf + JPEG_FILE_BUF_SIZE - sizeof(my_ulong)) return -1; // SmallTV: corrupt data would read past the buffer
                 ulBits = MOTOLONG(pBuf);
             }
         } // while
@@ -1866,6 +1875,7 @@ static int JPEGDecodeMCU(JPEGIMAGE *pJPEG, int iMCU, int *iDCPredictor)
             {
                 pBuf += (ulBitOff >> 3);
                 ulBitOff &= 7;
+                if (pBuf > pJPEG->ucFileBuf + JPEG_FILE_BUF_SIZE - sizeof(my_ulong)) return -1; // SmallTV: corrupt data would read past the buffer
                 ulBits = MOTOLONG(pBuf);
             }
             ulCode = (ulBits >> (REGISTER_WIDTH - 16 - ulBitOff)) & 0xffff; // get as lower 16 bits
@@ -1900,6 +1910,7 @@ static int JPEGDecodeMCU(JPEGIMAGE *pJPEG, int iMCU, int *iDCPredictor)
             {
                 pBuf += (ulBitOff >> 3);
                 ulBitOff &= 7;
+                if (pBuf > pJPEG->ucFileBuf + JPEG_FILE_BUF_SIZE - sizeof(my_ulong)) return -1; // SmallTV: corrupt data would read past the buffer
                 ulBits = MOTOLONG(pBuf);
             }
       } // while
@@ -4677,10 +4688,9 @@ static int DecodeJPEGBody(JPEGIMAGE *pJPEG)
             iCb = MCU5;
             mcuCX = mcuCY = 16;
             break;
-        default: // to suppress compiler warning
-            cx = cy = 0;
-            iCr = iCb = 0;
-            break;
+        default: // SmallTV: unknown subsampling left mcuCX = 0 (division by zero below); refuse it
+            pJPEG->iError = JPEG_UNSUPPORTED_FEATURE;
+            return 0;
     }
     // Scale down the MCUs by the requested amount
     mcuCX >>= iScaleShift;
