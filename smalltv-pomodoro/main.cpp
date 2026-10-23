@@ -38,7 +38,7 @@ extern "C" uint32_t _FS_start;
 
 void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);  // ui.cpp: recorta para a área suja; fora da tela, cai na faixa
 
-#define FW_VERSION "1.19.5"
+#define FW_VERSION "1.19.6"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
@@ -1689,10 +1689,14 @@ void sendStorage() {
       String p = base + "/" + d.fileName();
       bool dir = d.isDirectory();
       if (dir && dirs.size() < 64) dirs.push_back(p);
-      chunk += first ? "{" : ",{";
+      chunk += first ? F("{\"p\":\"") : F(",{\"p\":\"");
       first = false;
-      chunk += "\"p\":\"" + jsonEscape(p) + "\",\"s\":" + String(dir ? 0 : d.fileSize()) + (dir ? ",\"d\":1" : "") +
-               (fsKeep(p) ? ",\"k\":1" : "") + "}";
+      jsonEscapeAppend(chunk, p.c_str());
+      chunk += F("\",\"s\":");
+      chunk += dir ? 0 : d.fileSize();
+      if (dir) chunk += F(",\"d\":1");
+      if (fsKeep(p)) chunk += F(",\"k\":1");
+      chunk += '}';
       n++;
       if (chunk.length() > 700) {
         server.sendContent(chunk);

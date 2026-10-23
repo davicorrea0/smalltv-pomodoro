@@ -160,25 +160,6 @@ struct TimeGuard {
   void tick(int64_t now, uint32_t ms) { if (ok(now, ms) && (uint32_t)(ms - refMs) > 3600000) { ref = now; refMs = ms; } }
 };
 
-// Senha errada: o mesmo IP espera 1 s antes de tentar de novo (antes era delay(1000), que congelava tela,
-// timer e Alexa a cada tentativa). Guarda os 4 IPs mais recentes.
-struct AuthThrottle {
-  struct { uint32_t ip, at; } f[4] = {};
-  bool blocked(uint32_t ip, uint32_t ms) const {
-    for (auto &e : f) if (e.at && e.ip == ip && ms - e.at < 1000) return true;
-    return false;
-  }
-  void fail(uint32_t ip, uint32_t ms) {
-    int o = 0;
-    for (int i = 0; i < 4; i++) {
-      if (f[i].ip == ip) { o = i; break; }
-      if (!f[i].at || ms - f[i].at > ms - f[o].at) o = i;
-    }
-    f[o].ip = ip;
-    f[o].at = ms | 1;
-  }
-};
-
 // No máximo n vezes por segundo (respostas SSDP: um pedido pequeno vira uma resposta ~3x maior).
 struct RateLimit {
   uint32_t at = 0;
