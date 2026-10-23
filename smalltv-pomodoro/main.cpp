@@ -766,12 +766,21 @@ void statsCompute() {
 // grava o dia "day" com "count" focos, zerando os dias pulados desde o último registro
 void statsWrite(uint16_t day, uint8_t count) {
   if (!fsOk) return;
-  File f = LittleFS.open("/stats.bin", stats.magic == STATS_MAGIC ? "r+" : "w+");
+  File f = LittleFS.open("/stats.bin", "r+");
+  bool fresh = !f || f.size() != sizeof(StatsHead) + STATS_DAYS;  // sem arquivo (ou memória formatada)
+  if (fresh) {
+    if (f) f.close();
+    f = LittleFS.open("/stats.bin", "w+");
+  }
   if (!f) return;
-  if (stats.magic != STATS_MAGIC || day - stats.lastDay >= STATS_DAYS || day < stats.lastDay) {
+  if (fresh || stats.magic != STATS_MAGIC || day - stats.lastDay >= STATS_DAYS || day < stats.lastDay) {
     if (stats.magic != STATS_MAGIC) stats = {STATS_MAGIC, day, 0, 0};
+    // cabeçalho e os 371 dias em sequência desde o começo: o LittleFS não deixa pular para além do fim
+    // do arquivo (o seek falha). Até a 1.18.2 este trecho pulava o cabeçalho num arquivo vazio, o arquivo
+    // ficava com 371 bytes e o boot seguinte descartava o histórico (ver statsLoad).
     uint8_t zero[64] = {0};
-    f.seek(sizeof(StatsHead));
+    f.seek(0);
+    f.write((const uint8_t *)&stats, sizeof stats);
     for (int i = 0; i < STATS_DAYS; i += sizeof zero) f.write(zero, min((int)sizeof zero, STATS_DAYS - i));
   } else
     for (uint16_t d = stats.lastDay + 1; d < day; d++) {  // dias com o relógio desligado: zero
@@ -814,7 +823,22 @@ void sendStats() {
 
 void statsLoad() {
   File f = fsOk ? LittleFS.open("/stats.bin", "r") : File();
-  if (f && f.size() == sizeof(StatsHead) + STATS_DAYS) f.read((uint8_t *)&stats, sizeof stats);
+  size_t n = f ? f.size() : 0;
+  if (n == sizeof(StatsHead) + STATS_DAYS) f.read((uint8_t *)&stats, sizeof stats);
+  else if (n >= STATS_DAYS && n < sizeof(StatsHead) + STATS_DAYS) {
+    // arquivo curto gravado até a 1.18.2 (ver statsWrite): mesmo cabeçalho e os dias a partir do byte 12,
+    // só que faltando o fim. Recupera o que tem e regrava no tamanho certo.
+    uint8_t ring[STATS_DAYS] = {0};
+    f.read((uint8_t *)&stats, sizeof stats);
+    f.read(ring, n - sizeof(StatsHead));
+    f.close();
+    File w = stats.magic == STATS_MAGIC ? LittleFS.open("/stats.bin", "w") : File();
+    if (w) {
+      w.write((const uint8_t *)&stats, sizeof stats);
+      w.write(ring, STATS_DAYS);
+      w.close();
+    }
+  }
   if (f) f.close();
   if (stats.magic != STATS_MAGIC) stats = {0, 0, 0, 0};
   statsCompute();
