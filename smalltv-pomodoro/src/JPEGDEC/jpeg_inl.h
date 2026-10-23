@@ -496,6 +496,7 @@ static int JPEGGetHuffTables(uint8_t *pBuf, int iLen, JPEGIMAGE *pJPEG)
     while (iLen > 17)  // while there are tables to copy (we may have combined more than 1 table together)
     {
         ucTable = pBuf[iOffset++]; // get table index
+        if ((ucTable & 0xee) != 0) return -1; // SmallTV: DC/AC IDs 0..1 only
         if (ucTable & 0x10) // convert AC offset of 0x10 into offset of 4
             ucTable ^= 0x14;
         pJPEG->ucHuffTableUsed |= (1 << ucTable); // mark this table as being defined
@@ -506,7 +507,14 @@ static int JPEGGetHuffTables(uint8_t *pBuf, int iLen, JPEGIMAGE *pJPEG)
             for (i=0; i<16; i++)
             {
                 j += pBuf[iOffset];
-                pHuffVals[iTableOffset+i] = pBuf[iOffset++];
+                unsigned int symbol = pBuf[iOffset++];
+                if ((ucTable < 4 && symbol > 11) || (ucTable >= 4 && (symbol & 15) > 10)) return -1;
+                pHuffVals[iTableOffset+i] = symbol;
+            }
+            int slots = 1;
+            for (int bits=0; bits<16; bits++) {
+                slots = slots*2 - pHuffVals[iTableOffset+bits];
+                if (slots < 0) return -1;
             }
             iLen -= 17; // subtract length of bit lengths
             if (j == 0 || j > 256 || j > iLen) // bogus bit lengths
@@ -521,7 +529,7 @@ static int JPEGGetHuffTables(uint8_t *pBuf, int iLen, JPEGIMAGE *pJPEG)
             iLen -= j;
         }
     }
-    return 0;
+    return iLen == 0 ? 0 : -1;
 } /* JPEGGetHuffTables() */
 #ifdef FUTURE
 //
@@ -575,7 +583,7 @@ static int JPEGMakeHuffTables_Slow(JPEGIMAGE *pJPEG, int bThumbnail)
                 while (iLen)
                 {
                     //               if (iBitNum > 6) // do long table
-                    if ((cc >> (iBitNum-5)) == 0x1f) // first 5 bits are 1 - use long table
+                    if (iBitNum >= 5 && (cc >> (iBitNum-5)) == 0x1f) // first 5 bits are 1 - use long table
                     {
                         count = iMaxLength - iBitNum;
                         codestart = cc << count;
@@ -764,7 +772,7 @@ static int JPEGMakeHuffTables(JPEGIMAGE *pJPEG, int bThumbnail)
                 while (iLen)
                 {
                     //               if (iBitNum > 6) // do long table
-                    if ((cc >> (iBitNum-5)) == 0x1f) // first 5 bits are 1 - use long table
+                    if (iBitNum >= 5 && (cc >> (iBitNum-5)) == 0x1f) // first 5 bits are 1 - use long table
                     {
                         count = iMaxLength - iBitNum;
                         codestart = cc << count;
@@ -848,7 +856,7 @@ static int JPEGMakeHuffTables(JPEGIMAGE *pJPEG, int bThumbnail)
                 iLen = *pBits++; // get number of codes for this bit length
                 while (iLen)
                 {
-                    if ((cc >> (iBitNum-6)) == 0x3f) // first 6 bits are 1 - use long table
+                    if (iBitNum >= 6 && (cc >> (iBitNum-6)) == 0x3f) // first 6 bits are 1 - use long table
                     {
                         count = 16 - iBitNum;
                         codestart = cc << count;
@@ -1201,7 +1209,7 @@ static void JPEGGetMoreData(JPEGIMAGE *pPage)
         return; // buffer is already full; no need to read more data
     if (pPage->iVLCOff != 0)
     {
-        memcpy(pPage->ucFileBuf, &pPage->ucFileBuf[pPage->iVLCOff], pPage->iVLCSize - pPage->iVLCOff);
+        memmove(pPage->ucFileBuf, &pPage->ucFileBuf[pPage->iVLCOff], pPage->iVLCSize - pPage->iVLCOff);
         pPage->iVLCSize -= pPage->iVLCOff;
         pPage->iVLCOff = 0;
         pPage->bb.pBuf = pPage->ucFileBuf; // reset VLC source pointer too
@@ -1278,7 +1286,7 @@ static int JPEGParseInfo(JPEGIMAGE *pPage, int bExtractThumb)
             // move existing bytes down
             if (iOffset)
             {
-                memcpy(pPage->ucFileBuf, &pPage->ucFileBuf[iOffset], iBytesRead - iOffset);
+                memmove(pPage->ucFileBuf, &pPage->ucFileBuf[iOffset], iBytesRead - iOffset);
                 iBytesRead -= iOffset;
                 iOffset = 0;
             }
@@ -1286,6 +1294,7 @@ static int JPEGParseInfo(JPEGIMAGE *pPage, int bExtractThumb)
             iFilePos += i;
             iBytesRead += i;
         }
+        if (iOffset < 0 || iOffset + 4 > iBytesRead) { pPage->iError = JPEG_INVALID_FILE; return 0; }
         usMarker = MOTOSHORT(&s[iOffset]);
         iOffset += 2;
         usLen = MOTOSHORT(&s[iOffset]); // marker length
@@ -1295,6 +1304,8 @@ static int JPEGParseInfo(JPEGIMAGE *pPage, int bExtractThumb)
             iOffset++;
             continue; // skip 1 byte and try to resync
         }
+        if (usLen < 2) { pPage->iError = JPEG_INVALID_FILE; return 0; }
+        if ((usMarker == 0xffc0 || usMarker == 0xffc2 || usMarker == 0xffc4 || usMarker == 0xffdb || usMarker == 0xffda || usMarker == 0xffdd) && usLen > iBytesRead - iOffset) { pPage->iError = JPEG_INVALID_FILE; return 0; }
         switch (usMarker)
         {
             case 0xffc1: // extended mode
@@ -1302,33 +1313,11 @@ static int JPEGParseInfo(JPEGIMAGE *pPage, int bExtractThumb)
                 pPage->iError = JPEG_UNSUPPORTED_FEATURE;
                 return 0; // currently unsupported modes
                 
-            case 0xffe1: // App1 (EXIF?)
-                if (s[iOffset+2] == 'E' && s[iOffset+3] == 'x' && (s[iOffset+8] == 'M' || s[iOffset+8] == 'I')) // the EXIF data we want
-                {
-                    int bMotorola, IFD, iTagCount;
-                    pPage->iEXIF = iFilePos - iBytesRead + iOffset + 8; // start of TIFF file
-                    // Get the orientation value (if present)
-                    bMotorola = (s[iOffset+8] == 'M');
-                    IFD = TIFFLONG(&s[iOffset+12], bMotorola);
-                    iTagCount = TIFFSHORT(&s[iOffset+16], bMotorola);
-                    GetTIFFInfo(pPage, bMotorola, IFD+iOffset+8);
-                    // The second IFD defines the thumbnail (if present)
-                    if (iTagCount >= 1 && iTagCount < 32) // valid number of tags for EXIF data 'page'
-                    {
-                       // point to next IFD
-                        IFD += (12 * iTagCount) + 2;
-                        IFD = TIFFLONG(&s[IFD + iOffset + 8], bMotorola);
-                        if (IFD != 0 && IFD + iOffset + 8 < JPEG_FILE_BUF_SIZE) // Thumbnail present?
-                        {
-                            pPage->ucHasThumb = 1;
-                            GetTIFFInfo(pPage, bMotorola, IFD+iOffset+8); // info for second 'page' of TIFF
-                            pPage->iThumbData += iOffset + 8; // absolute offset in the file
-                        }
-                    }
-                }
+            case 0xffe1: // SmallTV does not use EXIF rotation or thumbnails. Skip untrusted TIFF offsets.
                 break;
             case 0xffc0: // SOFx - start of frame (baseline)
             case 0xffc2: // (progressive)
+                if (usLen < 8 || s[iOffset+2] != 8 || (s[iOffset+7] != 1 && s[iOffset+7] != 3) || usLen != 8 + 3*s[iOffset+7]) { pPage->iError = JPEG_INVALID_FILE; return 0; }
                 pPage->ucMode = (uint8_t)usMarker;
                 pPage->ucBpp = s[iOffset+2]; // bits per sample
                 pPage->iCropX = pPage->iCropY = 0; // initialize crop rectangle to full image size
@@ -1384,7 +1373,7 @@ static int JPEGParseInfo(JPEGIMAGE *pPage, int bExtractThumb)
                 while (usLen > 0)
                 {
                     ucTable = s[iOffset++]; // table number
-                    if ((ucTable & 0xf) > 3) // invalid table number
+                    if ((ucTable & 0xf) > 3 || (ucTable >> 4) > 1 || usLen < ((ucTable & 0xf0) ? 129 : 65)) // invalid table number
                     {
                         pPage->iError = JPEG_DECODE_ERROR;
                         return 0;
@@ -1417,7 +1406,7 @@ static int JPEGParseInfo(JPEGIMAGE *pPage, int bExtractThumb)
 //        if (pPage->ucBpp != 8) // need to match up table IDs
 //        {
             iOffset -= usLen;
-            JPEGGetSOS(pPage, &iOffset); // get Start-Of-Scan info for decoding
+            if (JPEGGetSOS(pPage, &iOffset)) { pPage->iError = JPEG_INVALID_FILE; return 0; }
 //        }
         if (!JPEGMakeHuffTables(pPage, 0)) //int bThumbnail) DEBUG
         {

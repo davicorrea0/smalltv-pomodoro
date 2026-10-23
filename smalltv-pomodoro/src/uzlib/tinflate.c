@@ -313,6 +313,7 @@ static int tinf_decode_trees(TINF_DATA *d, TINF_TREE *lt, TINF_TREE *dt)
 
    /* get 5 bits HLIT (257-286) */
    hlit = tinf_read_bits(d, 5, 257);
+   if (hlit > 286) return TINF_DATA_ERROR; /* SmallTV: RFC 1951 limit. */
 
    /* get 5 bits HDIST (1-32) */
    hdist = tinf_read_bits(d, 5, 1);
@@ -415,6 +416,7 @@ static int tinf_inflate_block_data(TINF_DATA *d, TINF_TREE *lt, TINF_TREE *dt)
         if (d->eof) {
             return TINF_DATA_ERROR;
         }
+        if (sym < 0) return TINF_DATA_ERROR;
 
         /* literal byte */
         if (sym < 256) {
@@ -437,7 +439,7 @@ static int tinf_inflate_block_data(TINF_DATA *d, TINF_TREE *lt, TINF_TREE *dt)
         d->curlen = tinf_read_bits(d, length_bits[sym], length_base[sym]);
 
         dist = tinf_decode_symbol(d, dt);
-        if (dist >= 30) {
+        if (dist < 0 || dist >= 30) { /* SmallTV: errors are negative, never table indices. */
             return TINF_DATA_ERROR;
         }
 
@@ -446,7 +448,7 @@ static int tinf_inflate_block_data(TINF_DATA *d, TINF_TREE *lt, TINF_TREE *dt)
 
         /* calculate and validate actual LZ offset to use */
         if (d->dict_ring) {
-            if (offs > d->dict_size) {
+            if (offs > d->dict_size || offs > d->dict_filled) {
                 return TINF_DICT_ERROR;
             }
             /* Note: unlike full-dest-in-memory case below, we don't
@@ -558,6 +560,7 @@ void uzlib_uncompress_init(TINF_DATA *d, void *dict, unsigned int dictLen)
    d->dict_size = dictLen;
    d->dict_ring = dict;
    d->dict_idx = 0;
+   d->dict_filled = 0;
    d->curlen = 0;
 }
 

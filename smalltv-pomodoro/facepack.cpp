@@ -130,7 +130,7 @@ bool facePackLoad(char *json, size_t len, char *err, size_t errLen) {
   size_t pcap = 1;
   for (JsonObjectConst l : layers) {
     const char *t = l["text"] | (const char *)nullptr, *f = l["file"] | (const char *)nullptr;
-    pcap += (t ? strlen(t) + 1 : 0) + (f ? strlen(f) + 1 : 0);
+    pcap += (t ? strlen(t) + 1 : 1) + (f ? strlen(f) + 1 : 1);  // sem o campo, a camada guarda "" (1 byte)
     if (l["text"].is<JsonObjectConst>())  // {"pt": ..., "en": ..., "es": ...}
       for (const char *k : {"pt", "en", "es"}) pcap += strlen(l["text"][k] | (l["text"]["pt"] | "")) + 1;
   }
@@ -231,6 +231,16 @@ bool facePackLoad(char *json, size_t len, char *err, size_t errLen) {
     }
     uint8_t defSize = L.type == L_TEXT ? 2 : L.type == L_WEATHER ? 10 : L.type == L_ARC ? 10 : L.type == L_LINE || L.type == L_HAND || L.type == L_TICKS ? 3 : 1;
     L.size = l["size"] | defSize;
+    // Limites de desenho: um raio de 30000 ou 30000 marcas prenderia o relógio num quadro só (watchdog) e
+    // ele cairia na recuperação. Os mostradores da galeria usam no máximo ~480 de coordenada, raio 170,
+    // 60 marcas e traço 26.
+    bool stroke = L.type == L_LINE || L.type == L_HAND || L.type == L_TICKS || L.type == L_ARC;
+    if (abs(L.x) > 960 || abs(L.y) > 960 || abs(L.w) > 960 || abs(L.h) > 960 || L.r < 0 || L.r > 360 ||
+        (L.type == L_TICKS && (L.mx < 1 || L.mx > 120 || abs(L.w) > 240)) || (stroke && L.size > 64)) {
+      snprintf(err, errLen, "camada %d: tamanho ou posicao fora do limite", nLay + 1);
+      facePackUnload();
+      return false;
+    }
     L.font = pick(l["font"] | (const char *)nullptr, FONTS, F_FONTS, F_PIXEL);
     L.align = pick(l["align"] | (const char *)nullptr, ALIGNS, 3, A_LEFT);
     L.when = pick(l["when"] | (const char *)nullptr, WHENS, W_WHENS, W_ALWAYS);
@@ -253,11 +263,15 @@ bool facePackLoad(char *json, size_t len, char *err, size_t errLen) {
       JsonObjectConst tx = l["text"];
       const char *pt = tx["pt"] | "";
       L.str = addStr(pt);
-      addStr(tx["en"] | pt);
-      addStr(tx["es"] | pt);
+      if (addStr(tx["en"] | pt) == 0xFFFF || addStr(tx["es"] | pt) == 0xFFFF) L.str = 0xFFFF;
       L.tr = 1;
     } else if (L.type == L_TEXT) L.str = addStr(l["text"] | "");
     else if (L.type == L_IMAGE) L.str = addStr(l["file"] | "");
+    if ((L.type == L_TEXT || L.type == L_IMAGE) && L.str == 0xFFFF) {  // não coube no pool: nunca ler pool + 0xFFFF
+      snprintf(err, errLen, "camada %d: texto grande demais", nLay + 1);
+      facePackUnload();
+      return false;
+    }
     else if (L.type == L_SPRITE) {
       const char *sn = l["sprite"] | "";
       L.str = 0xFFFF;

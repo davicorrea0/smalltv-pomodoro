@@ -25,6 +25,7 @@ extern "C" uint32_t _FS_start;
 #include "src/JPEGDEC/JPEGDEC.h"  // cópia da JPEGDEC 1.8.4 com as tabelas de cor geradas só durante a decodificação
 #include "src/AnimatedGIF/AnimatedGIF.h"
 #include "gifcheck.h"
+#include "security.h"
 #include <new>
 #include <vector>
 #include <time.h>
@@ -34,7 +35,7 @@ extern "C" uint32_t _FS_start;
 
 void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);  // ui.cpp: recorta para a área suja; fora da tela, cai na faixa
 
-#define FW_VERSION "1.18.2"
+#define FW_VERSION "1.18.3"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
@@ -48,6 +49,17 @@ ESP8266WebServer server(80);
 bool panelOk();  // proteção do painel (mais abaixo, antes de setupWeb)
 bool readOk();
 uint16_t wifiDowngrades = 0;  // rebaixamentos do Wi-Fi bloqueados desde que ligou (ver wifiGuardLoop)
+bool passOk();
+// Formulários HTML puros (configuração e recuperação) levam um código aleatório da sessão: outra página
+// pode enviar o formulário, mas não consegue ler o código.
+String formToken;
+void newFormToken() {
+  char token[33];
+  snprintf(token, sizeof token, "%08x%08x%08x%08x", ESP.random(), ESP.random(), ESP.random(), ESP.random());
+  formToken = token;
+}
+String formTokenField() { return "<input type=hidden name=csrf value=\"" + formToken + "\">"; }
+bool formOk() { return formToken.length() && server.arg("csrf") == formToken; }
 
 // ---------- cores ----------
 constexpr uint16_t rgb(uint8_t r, uint8_t g, uint8_t b) { return uiRgb(r, g, b); }
@@ -149,6 +161,7 @@ void loadSettings() {
   if (cfg.nightSun > 1) cfg.nightSun = 0;
   if (cfg.rotMin > 240) cfg.rotMin = 0;
   if (cfg.alexa > 1) cfg.alexa = 1;  // memória de unidades antigas (0xFF): ligado
+  if (!(fabsf(cfg.lat) <= 90 && fabsf(cfg.lon) <= 180)) cfg.lat = cfg.lon = 0;  // lixo ou NaN estouraria o String(float)
   // senha das redes do relógio: 8 letras/dígitos sem os que se confundem, sorteada pelo gerador do chip
   // na primeira vez (ou se a memória tiver lixo) e mostrada na tela quando a rede está no ar
   static const char AP_CHARS[] = "abcdefghjkmnpqrstuvwxyz23456789";
@@ -398,6 +411,10 @@ void alexaApi() {
     server.send(404, "text/plain", "");
     return;
   }
+  if (server.hasHeader("Origin")) {  // o Echo não manda Origin; navegador manda: é outro site tentando mexer no timer
+    server.send(403, "text/plain", "");
+    return;
+  }
   alexaSeen = millis() | 1;  // um Echo falou com o relógio (o painel mostra)
   alexaIp = server.client().remoteIP();
   if (body.indexOf("devicetype") > 0) {  // pede um usuário da API do Hue: qualquer um serve
@@ -463,6 +480,10 @@ void alexaLoop() {
 }
 
 void sendHueDescription() {
+  if (!cfg.alexa) {  // com a Alexa desligada não se anuncia (nem expõe o MAC)
+    server.send(404, "text/plain", "");
+    return;
+  }
   String ip = WiFi.localIP().toString(), x;
   x.reserve(900);
   x = F("<?xml version=\"1.0\" ?><root xmlns=\"urn:schemas-upnp-org:device-1-0\"><specVersion><major>1</major><minor>0</minor></specVersion><URLBase>http://");
@@ -493,8 +514,22 @@ uint32_t wxNext = 0;
 
 // GET em HTTP/1.0 (resposta sem "chunked", fecha no fim) no lugar do HTTPClient (~4 KB).
 // Devolve o código HTTP (negativo se não conectar) e deixa o cliente no começo do corpo.
+static bool httpLine(WiFiClient &c, String &line, uint32_t start, uint16_t timeoutMs) {
+  line = "";
+  while (millis() - start < timeoutMs) {
+    if (c.available()) {
+      int ch = c.read();
+      if (ch == '\n') return true;
+      if (ch < 0) continue;
+      if (line.length() >= 512) return false;
+      line += (char)ch;
+    } else if (!c.connected()) return false;
+    else delay(1);
+  }
+  return false;
+}
 int httpGet(WiFiClient &c, const String &url, uint16_t timeoutMs) {
-  if (!url.startsWith("http://")) return -1;
+  if (!safeHttpUrl(url.c_str(), url.length())) return -1;
   int end = 7;
   while (end < (int)url.length() && url[end] != '/' && url[end] != '?') end++;
   String host = url.substring(7, end), path = url.substring(end);
@@ -508,15 +543,20 @@ int httpGet(WiFiClient &c, const String &url, uint16_t timeoutMs) {
   c.setTimeout(timeoutMs);
   if (!host.length() || !port || !c.connect(host.c_str(), port)) return -1;
   c.print("GET " + path + F(" HTTP/1.0\r\nHost: ") + host + F("\r\nUser-Agent: SmallTV\r\nConnection: close\r\n\r\n"));
-  String line = c.readStringUntil('\n');  // "HTTP/1.1 200 OK"
+  uint32_t start = millis();
+  String line;
+  if (!httpLine(c, line, start, timeoutMs)) return -2;
   int sp = line.indexOf(' ');
   int code = sp > 0 ? line.substring(sp + 1).toInt() : 0;
   if (code <= 0) return -2;
-  while (c.connected() || c.available()) {  // pula os cabeçalhos até a linha vazia
-    line = c.readStringUntil('\n');
-    if (line.length() <= 1) break;
+  size_t total = line.length();
+  for (int headers = 0; headers < 48; headers++) {
+    if (!httpLine(c, line, start, timeoutMs)) return -2;
+    total += line.length();
+    if (total > 8192) return -2;
+    if (line.length() <= 1) return code;
   }
-  return code;
+  return -2;
 }
 
 bool fetchWeather() {
@@ -548,6 +588,8 @@ bool fetchWeather() {
   wx.day = doc["current"]["is_day"] | 1;
   wx.tmax = doc["daily"]["temperature_2m_max"][0];
   wx.tmin = doc["daily"]["temperature_2m_min"][0];
+  // a resposta vem em HTTP puro: um 1e38 forjado estouraria o String(float) de /api/state
+  for (float *v : {&wx.t, &wx.tmax, &wx.tmin}) *v = isfinite(*v) ? constrain(*v, -99.0f, 99.0f) : 0;
   JsonArrayConst dc = doc["daily"]["weather_code"], dmax = doc["daily"]["temperature_2m_max"],
                  dmin = doc["daily"]["temperature_2m_min"], drain = doc["daily"]["precipitation_probability_max"];
   wx.nd = 0;
@@ -839,14 +881,18 @@ void mediaClose(void *) {
 }
 
 int32_t jpgRead(JPEGFILE *f, uint8_t *buf, int32_t len) {
+  yield();
   File *fl = (File *)f->fHandle;
-  int32_t n = fl->read(buf, len);
+  int32_t n = len;
+  if (f->iSize - f->iPos < len) n = f->iSize - f->iPos;
+  if (n <= 0) return 0;
+  n = fl->read(buf, n);
   f->iPos = fl->position();
   return n;
 }
 int32_t jpgSeek(JPEGFILE *f, int32_t pos) {
   File *fl = (File *)f->fHandle;
-  fl->seek(pos);
+  if (pos < 0 || pos > f->iSize || !fl->seek(pos)) return -1;
   f->iPos = fl->position();
   return f->iPos;
 }
@@ -860,6 +906,31 @@ int jpgDraw(JPEGDRAW *p) {
   return 1;
 }
 
+const int MAX_JPEG_DIM = 1920;  // escala máxima 1/8: nunca entrega mais de 240 px ao display
+bool jpgDimensionsOk(JPEGDEC *jpg) {
+  return jpg->getWidth() > 0 && jpg->getHeight() > 0 && jpg->getWidth() <= MAX_JPEG_DIM && jpg->getHeight() <= MAX_JPEG_DIM;
+}
+int jpgCheckDraw(JPEGDRAW *) {
+  yield();
+  return 1;
+}
+bool validJpg(const String &path) {
+  JPEGDEC *jpg = new (std::nothrow) JPEGDEC();
+  if (!jpg) return false;
+  bool opened = jpg->open(path.c_str(), mediaOpen, mediaClose, jpgRead, jpgSeek, jpgCheckDraw);
+  bool ok = false;
+  if (opened && jpgDimensionsOk(jpg)) {
+    int sc = 1;
+    while (sc < 8 && (jpg->getWidth() / sc > 240 || jpg->getHeight() / sc > 240)) sc *= 2;
+    int opt = sc == 2 ? JPEG_SCALE_HALF : sc == 4 ? JPEG_SCALE_QUARTER : sc == 8 ? JPEG_SCALE_EIGHTH : 0;
+    jpg->setPixelType(RGB565_LITTLE_ENDIAN);
+    ok = jpg->decode(0, 0, opt);
+  }
+  jpg->close();
+  delete jpg;
+  return ok;
+}
+
 // Camada "image" dos pacotes: JPEG em /faces/<arquivo>, no ponto (x, y), sem escala.
 bool drawJpgAt(const char *file, int x, int y) {
   String path = String("/faces/") + file;
@@ -867,11 +938,11 @@ bool drawJpgAt(const char *file, int x, int y) {
   JPEGDEC *jpg = new (std::nothrow) JPEGDEC();
   if (!jpg) return false;
   bool ok = false;
-  if (jpg->open(path.c_str(), mediaOpen, mediaClose, jpgRead, jpgSeek, jpgDraw)) {
+  if (jpg->open(path.c_str(), mediaOpen, mediaClose, jpgRead, jpgSeek, jpgDraw) && jpgDimensionsOk(jpg)) {
     jpg->setPixelType(RGB565_LITTLE_ENDIAN);
     ok = jpg->decode(x, y, 0);
-    jpg->close();
   }
+  jpg->close();
   delete jpg;
   return ok;
 }
@@ -880,14 +951,14 @@ bool drawJpg(const String &f) {
   JPEGDEC *jpg = new (std::nothrow) JPEGDEC();  // ~18 KB: só existe durante a decodificação
   if (!jpg) return false;
   bool ok = false;
-  if (jpg->open(f.c_str(), mediaOpen, mediaClose, jpgRead, jpgSeek, jpgDraw)) {
+  if (jpg->open(f.c_str(), mediaOpen, mediaClose, jpgRead, jpgSeek, jpgDraw) && jpgDimensionsOk(jpg)) {
     int w = jpg->getWidth(), h = jpg->getHeight(), sc = 1;
     while (sc < 8 && (w / sc > 240 || h / sc > 240)) sc *= 2;
     int opt = sc == 2 ? JPEG_SCALE_HALF : sc == 4 ? JPEG_SCALE_QUARTER : sc == 8 ? JPEG_SCALE_EIGHTH : 0;
     jpg->setPixelType(RGB565_LITTLE_ENDIAN);
     ok = jpg->decode(max(0, (240 - w / sc) / 2), max(0, (240 - h / sc) / 2), opt);
-    jpg->close();
   }
+  jpg->close();
   delete jpg;
   return ok;
 }
@@ -1083,26 +1154,42 @@ void restoreActivePack() {
 
 File packUpload;
 String packUploadError;
+UploadGate packGate;
+bool packFaceReady = false;
 
 // Recebe "face" (o .json) e, opcional, "preview" (o .png) em arquivos temporários.
 void handlePackUpload() {
   HTTPUpload &up = server.upload();
   if (up.status == UPLOAD_FILE_START) {
-    if (up.name == "face") packUploadError = "";
-    if (!panelOk()) {
+    if (packUpload) packUpload.close();
+    packGate.begin(false, 0);
+    if (up.name == "face") { packUploadError = ""; packFaceReady = false; }
+    if (!panelOk() || !passOk()) {
       packUploadError = "Proibido";
       return;
     }
+    if (up.name != "face" && up.name != "preview") { packUploadError = "Campo invalido"; return; }
+    if (packUploadError.length()) return;
     if (!fsOk) {
       packUploadError = "Sistema de arquivos indisponivel";
       return;
     }
     if (!LittleFS.exists("/faces")) LittleFS.mkdir("/faces");
+    if (up.name == "face") { LittleFS.remove("/faces/_novo.json"); LittleFS.remove("/faces/_novo.png"); }
     packUpload = LittleFS.open(up.name == "preview" ? "/faces/_novo.png" : "/faces/_novo.json", "w");
+    if (!packUpload) { packUploadError = "Falha ao criar arquivo"; return; }
+    packGate.begin(true, up.name == "face" ? 16384 : 65536);
   } else if (up.status == UPLOAD_FILE_WRITE) {
-    if (packUpload && packUpload.write(up.buf, up.currentSize) != up.currentSize) packUploadError = "Memoria cheia";
+    if (!packGate.active) return;
+    if (!packGate.take(up.currentSize)) packUploadError = "Arquivo grande demais";
+    else if (packUpload.write(up.buf, up.currentSize) != up.currentSize) packUploadError = "Memoria cheia";
+    if (packUploadError.length()) { packUpload.close(); packGate.stop(); }
   } else if (up.status == UPLOAD_FILE_END || up.status == UPLOAD_FILE_ABORTED) {
     if (packUpload) packUpload.close();
+    if (up.status == UPLOAD_FILE_ABORTED) packUploadError = "Envio interrompido";
+    if (packGate.active && !packUploadError.length() && up.name == "face") packFaceReady = true;
+    packGate.stop();
+    if (packUploadError.length()) packFaceReady = false;
   }
 }
 
@@ -1286,13 +1373,16 @@ bool mediaPath(const String &p) {
 
 File uploadFile;
 String uploadPath, uploadError;
+UploadGate photoGate;
 
 void handleUpload() {
   HTTPUpload &up = server.upload();
   if (up.status == UPLOAD_FILE_START) {
+    if (uploadFile) uploadFile.close();
+    photoGate.begin(false, 0);
     uploadError = "";
     uploadPath = "";
-    if (!panelOk()) {
+    if (!panelOk() || !passOk()) {
       uploadError = "Proibido";
       return;
     }
@@ -1304,6 +1394,7 @@ void handleUpload() {
     String name;
     for (char c : up.filename)
       if (isalnum(c) || c == '-' || c == '_' || c == '.') name += c;
+    while (name.indexOf("..") >= 0) name.replace("..", ".");  // mediaPath recusa "..": o arquivo não poderia ser apagado
     if (name.length() > 28) name = name.substring(name.length() - 28);
     if (!isJpg(name) && !isGif(name)) {
       uploadError = "Use JPG ou GIF";
@@ -1319,18 +1410,26 @@ void handleUpload() {
     uploadPath = "/image/" + name;
     uploadFile = LittleFS.open(uploadPath, "w");
     if (!uploadFile) uploadError = "Falha ao criar arquivo";
+    else photoGate.begin(true, 3 * 1024 * 1024);
   } else if (up.status == UPLOAD_FILE_WRITE) {
-    if (uploadFile && uploadFile.write(up.buf, up.currentSize) != up.currentSize) {
-      uploadError = "Memoria cheia";
+    if (!photoGate.active) return;
+    if (!photoGate.take(up.currentSize)) uploadError = "Arquivo grande demais";
+    else if (uploadFile.write(up.buf, up.currentSize) != up.currentSize) uploadError = "Memoria cheia";
+    if (uploadError.length()) {
+      photoGate.stop();
       uploadFile.close();
       LittleFS.remove(uploadPath);
     }
   } else if (up.status == UPLOAD_FILE_END || up.status == UPLOAD_FILE_ABORTED) {
+    photoGate.stop();
     if (uploadFile) uploadFile.close();
     if (up.status == UPLOAD_FILE_ABORTED && uploadPath.length()) LittleFS.remove(uploadPath);
     if (up.status == UPLOAD_FILE_END && !uploadError.length() && isGif(uploadPath) && !validGif(uploadPath)) {
       LittleFS.remove(uploadPath);
       uploadError = tr("GIF fora do padrao", "Unsupported GIF", "GIF fuera de norma");
+    } else if (up.status == UPLOAD_FILE_END && !uploadError.length() && isJpg(uploadPath) && !validJpg(uploadPath)) {
+      LittleFS.remove(uploadPath);
+      uploadError = tr("JPG fora do padrao", "Unsupported JPG", "JPG fuera de norma");
     }
     rebuildAlbum();
   }
@@ -1392,7 +1491,7 @@ bool guard() { return (panelOk() || deny()) && authed(); }   // ações (POST)
 bool readOk() { return (hostOk() || deny()) && authed(); }   // leituras
 
 void setupWeb() {
-  server.collectHeaders("X-SmallTV", "Content-Length", "Authorization");
+  server.collectHeaders("X-SmallTV", "Content-Length", "Authorization", "Origin");
   // painel comprimido (web/index.html -> web/build.js -> web.h); o navegador descompacta
   server.on("/", HTTP_GET, [] {
     if (!readOk()) return;  // com senha, o navegador pede o login já ao abrir o painel
@@ -1405,7 +1504,7 @@ void setupWeb() {
   // avisos de fim de fase: GET lê, POST (w, b) grava, POST test=w|b chama o endereço e devolve o código
   server.on("/api/hooks", HTTP_GET, [] {
     if (!guard()) return;  // os links levam o código da conta do serviço
-    server.send(200, "application/json", "{\"w\":\"" + hookWork + "\",\"b\":\"" + hookBreak + "\"}");
+    server.send(200, "application/json", "{\"w\":\"" + jsonEscape(hookWork) + "\",\"b\":\"" + jsonEscape(hookBreak) + "\"}");
   });
   server.on("/api/hooks", HTTP_POST, [] {
     if (!guard()) return;
@@ -1414,8 +1513,15 @@ void setupWeb() {
       server.send(200, "text/plain", String(code));
       return;
     }
-    hookWork = hookClean(server.arg("w"));
-    hookBreak = hookClean(server.arg("b"));
+    String work = hookClean(server.arg("w")), pause = hookClean(server.arg("b"));
+    String rawWork = server.arg("w"), rawPause = server.arg("b");
+    rawWork.trim(); rawPause.trim();
+    if ((rawWork.length() && !work.length()) || (rawPause.length() && !pause.length())) {
+      server.send(400, "text/plain", "Use um endereco http:// valido (sem espacos ou controles)");
+      return;
+    }
+    hookWork = work;
+    hookBreak = pause;
     File f = fsOk ? LittleFS.open("/hooks.txt", "w") : File();
     if (f) {
       f.print(hookWork + "\n" + hookBreak + "\n");
@@ -1437,6 +1543,7 @@ void setupWeb() {
       int e = d.indexOf(',', i);
       if (e < 0) e = d.length();
       int n = d.substring(i, e).toInt();
+      if (v.size() >= STATS_DAYS) { server.send(400, "text/plain", "Backup invalido"); return; }
       v.push_back(n < 0 ? 0 : n > 255 ? 255 : n);
       i = e + 1;
     }
@@ -1488,6 +1595,7 @@ void setupWeb() {
   // prévia PNG de um mostrador para a galeria do painel. As dos embutidos ficam no site (geradas pelo
   // simulador, sem ocupar a flash do relógio); as dos pacotes instalados, no LittleFS.
   server.on("/face", HTTP_GET, [] {
+    if (!readOk()) return;
     if (server.hasArg("pkg")) {  // prévia de pacote instalado (/faces/<id>.png, se veio junto)
       String id = server.arg("pkg");
       File f = fsOk && idOk(id) ? LittleFS.open("/faces/" + id + ".png", "r") : File();
@@ -1604,9 +1712,11 @@ void setupWeb() {
       applyTimezone();
     }
     bool newPlace = false;
-    if (server.hasArg("lat") && server.hasArg("lon") && safeText(server.arg("city"))) {
-      cfg.lat = parseDec(server.arg("lat"));
-      cfg.lon = parseDec(server.arg("lon"));
+    // fora de ±90/±180 não é lugar; e um número enorme estouraria o String(float) de 33 bytes do core
+    float lat = parseDec(server.arg("lat")), lon = parseDec(server.arg("lon"));
+    if (server.hasArg("lat") && server.hasArg("lon") && safeText(server.arg("city")) && fabsf(lat) <= 90 && fabsf(lon) <= 180) {
+      cfg.lat = lat;
+      cfg.lon = lon;
       strlcpy(cfg.city, server.arg("city").c_str(), sizeof(cfg.city));
       newPlace = true;
     }
@@ -1626,10 +1736,16 @@ void setupWeb() {
   server.on("/api/files", HTTP_GET, sendFiles);
   // instala um pacote de mostrador: valida no motor, usa o "id" do JSON como nome do arquivo
   server.on("/api/faceinstall", HTTP_POST, [] {
+    const bool ready = packFaceReady;
+    packFaceReady = false;
     if (!guard()) return;
     String msg;
-    bool ok = !packUploadError.length() && loadPackFile("/faces/_novo.json", msg);
+    bool ok = ready && !packUploadError.length() && loadPackFile("/faces/_novo.json", msg);
     String id = ok ? facePackId() : "", name = ok ? facePackName() : "";
+    if (ok && id[0] == '_') {  // "_novo" e afins são os temporários do envio
+      ok = false;
+      msg = "id invalido";
+    }
     if (ok) {
       LittleFS.remove("/faces/" + id + ".json");
       LittleFS.rename("/faces/_novo.json", "/faces/" + id + ".json");
@@ -1761,7 +1877,7 @@ void setupWeb() {
 // grava no cabeçalho (offsets 4112 e 4116; todas as versões V9.0.x originais também têm) e se cabe no
 // espaço livre. Arquivo truncado, corrompido ou de outro aparelho é recusado e o firmware atual fica.
 // Usuário "admin"; senha vazia (ou o modo de recuperação) dispensa a autenticação.
-struct OtaCheck { uint32_t got, size, want, crc; uint8_t field[8]; String err; bool authOk, begun, gz; } ota;
+struct OtaCheck { uint32_t got, size, want, crc; uint8_t field[8]; String err; bool authOk, begun, gz, finished; } ota;
 
 void otaConsume(const uint8_t *p, size_t n) {
   for (size_t i = 0; i < n && !ota.err.length(); i++, ota.got++) {
@@ -1845,12 +1961,13 @@ bool otaVerifyGz() {
 
 void setupUpdate() {
   auto authOk = [] {
-    if (recoveryMode || (panelOk() && passOk())) return true;
+    if (panelOk() && (recoveryMode || passOk())) return true;
     if (server.hasHeader("Authorization")) delay(1000);
     return false;
   };
   server.on("/update", HTTP_GET, [] {
-    if (!recoveryMode && !passOk()) return askLogin();
+    if (!hostOk()) { deny(); return; }
+    if (!recoveryMode && !passOk()) { askLogin(); return; }
     String p = F("<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>SmallTV</title>"
                  "<style>body{font:16px system-ui;background:#111;color:#eee;max-width:420px;margin:auto;padding:20px}"
                  "input,button{width:100%;padding:12px;margin:8px 0;border-radius:10px;border:1px solid #333;background:#1c1c1c;color:#eee;font:inherit}"
@@ -1863,8 +1980,9 @@ void setupUpdate() {
            "fetch('/update',{method:'POST',body:new FormData(e.target),headers:{'X-SmallTV':'1'}}).then(r=>r.text()).then(t=>document.body.innerHTML=t)}</script>");
     server.send(200, "text/html", p);
   });
-  server.on("/update", HTTP_POST, [] {
-      if (!ota.authOk) return askLogin();
+  server.on("/update", HTTP_POST, [authOk] {
+      if (!authOk() || !ota.authOk) return askLogin();
+      if (!ota.err.length() && !ota.finished) ota.err = F("envio incompleto");
       if (ota.err.length()) {
         server.send(400, "text/plain", "Update error: " + ota.err);
         return;
@@ -1875,7 +1993,7 @@ void setupUpdate() {
     }, [authOk] {
       HTTPUpload &up = server.upload();
       if (up.status == UPLOAD_FILE_START) {
-        ota = {0, 0, 0, 0xFFFFFFFF, {0}, String(), authOk(), false, false};
+        ota = {0, 0, 0, 0xFFFFFFFF, {0}, String(), authOk(), false, false, false};
         if (!ota.authOk) ota.err = F("senha");
         else if (inAlbum) stopAlbum();  // libera RAM e o LittleFS durante a gravação
       } else if (up.status == UPLOAD_FILE_WRITE && !ota.err.length()) {
@@ -1898,6 +2016,7 @@ void setupUpdate() {
         if (ota.gz) {}
         else if (ota.err.length()) Update.end();
         else if (!Update.end(true)) ota.err = Update.getErrorString();
+        ota.finished = !ota.err.length();
       } else if (up.status == UPLOAD_FILE_ABORTED) {
         Update.end();
         ota.err = F("envio interrompido");
@@ -1909,6 +2028,7 @@ void setupUpdate() {
 // ---------- modo de recuperação ----------
 #define RECOVERY_AP "SmallTV-Recuperacao"
 void startRecovery() {
+  newFormToken();
   WiFi.mode(WIFI_AP_STA);
   WiFi.softAP(RECOVERY_AP, cfg.apPass);
   WiFi.begin();  // tenta também a rede salva: o painel de recuperação abre pelo IP de casa
@@ -1926,11 +2046,14 @@ void startRecovery() {
     p += tr("Atualizar firmware", "Update firmware", "Actualizar firmware");
     p += F("</a><a href=/api/stats download=historico.json>");
     p += tr("Baixar historico de focos", "Download focus history", "Descargar historial");
-    p += F("</a><form method=post action=/rec/factory><button>");
+    p += F("</a><form method=post action=/rec/factory>");
+    p += formTokenField(); p += F("<button>");
     p += tr("Voltar aos ajustes de fabrica", "Reset settings to defaults", "Restablecer ajustes");
-    p += F("</button></form><form method=post action=/rec/wifi><button>");
+    p += F("</button></form><form method=post action=/rec/wifi>");
+    p += formTokenField(); p += F("<button>");
     p += tr("Esquecer o Wi-Fi", "Forget Wi-Fi", "Olvidar el Wi-Fi");
-    p += F("</button></form><form method=post action=/rec/restart><button class=p>");
+    p += F("</button></form><form method=post action=/rec/restart>");
+    p += formTokenField(); p += F("<button class=p>");
     p += tr("Reiniciar normalmente", "Restart normally", "Reiniciar normalmente");
     p += F("</button></form>");
     server.send(200, "text/html", p);
@@ -1940,6 +2063,7 @@ void startRecovery() {
     server.send(303, "text/plain", msg);
   };
   server.on("/rec/factory", HTTP_POST, [done] {
+    if (!formOk()) { deny(); return; }
     uint8_t lang = cfg.lang;
     defaultSettings();
     cfg.lang = lang;
@@ -1947,17 +2071,19 @@ void startRecovery() {
     done(F("ok"));
   });
   server.on("/rec/wifi", HTTP_POST, [done] {
+    if (!formOk()) { deny(); return; }
     WiFi.persistent(true);
     WiFi.disconnect(true);
     done(F("ok"));
   });
   server.on("/rec/restart", HTTP_POST, [] {
+    if (!formOk()) { deny(); return; }
     server.send(200, "text/plain", "ok");
     delay(300);
     safeRestart();
   });
   server.on("/api/stats", HTTP_GET, sendStats);
-  server.collectHeaders("Content-Length");  // /update com .bin.gz
+  server.collectHeaders("X-SmallTV", "Authorization", "Content-Length");
   setupUpdate();
   server.begin();
 }
@@ -2010,7 +2136,8 @@ void rotLoop() {
 // Um endereço por evento em /hooks.txt (fim do foco, fim da pausa). Quando a fase termina o relógio
 // chama o endereço (GET), e o serviço dispara uma rotina: a Virtual Smart Home e o Voice Monkey fazem a
 // Alexa falar, o IFTTT liga a centenas de serviços. Vai sem criptografia (http): os três aceitam, e
-// TLS não cabe no relógio. Um "https://" colado no painel vira "http://".
+// TLS não cabe no relógio. Um "https://" colado no painel vira "http://"; o resto do endereço é conferido
+// por safeHttpUrl (security.h) antes de montar o pedido.
 
 void hooksLoad() {
   File f = fsOk ? LittleFS.open("/hooks.txt", "r") : File();
@@ -2018,14 +2145,14 @@ void hooksLoad() {
   hookWork = f.readStringUntil('\n');
   hookBreak = f.readStringUntil('\n');
   f.close();
-  hookWork.trim();
-  hookBreak.trim();
+  hookWork = hookClean(hookWork);
+  hookBreak = hookClean(hookBreak);
 }
 
 String hookClean(String u) {
   u.trim();
   if (u.startsWith("https://")) u = "http://" + u.substring(8);
-  if (!u.startsWith("http://") || u.length() > 400 || u.indexOf('"') >= 0 || u.indexOf('\\') >= 0 || u.indexOf(' ') >= 0) return "";
+  if (!safeHttpUrl(u.c_str(), u.length())) return "";
   return u;
 }
 
@@ -2104,6 +2231,7 @@ String htmlEscape(const String &s) {
 }
 
 void startPortal() {
+  newFormToken();
   portalMode = true;
   WiFi.mode(WIFI_AP_STA);
   WiFi.softAP(AP_NAME, cfg.apPass);
@@ -2123,6 +2251,7 @@ void startPortal() {
     p += F("<input name=s list=l required><datalist id=l>");
     p += opts;
     p += F("</datalist>");
+    p += formTokenField();
     p += tr("Senha", "Password", "Contrase&ntilde;a");
     p += F("<input name=p type=password><button>");
     p += tr("Conectar", "Connect", "Conectar");
@@ -2130,6 +2259,7 @@ void startPortal() {
     server.send(200, "text/html", p);
   });
   server.on("/save", HTTP_POST, [] {
+    if (!formOk()) { deny(); return; }
     String p = F("<meta charset=utf-8><body style='font:16px system-ui;background:#111;color:#eee;padding:20px'>");
     PGM_P done[3] = {PSTR("Conectando... O rel&oacute;gio vai reiniciar e mostrar o endere&ccedil;o do painel na tela."),
                      PSTR("Connecting... The clock will restart and show the panel address on screen."),
