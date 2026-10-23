@@ -1,25 +1,25 @@
 {
-  "version": "1.18.0",
+  "version": "1.18.1",
   "date": "2026-10-22",
   "file": "smalltv-pomodoro.bin",
-  "size": 531136,
+  "size": 532400,
   "notes": {
     "pt": [
-      "Novo mostrador Previsão LCD, no visor do LCD retrô",
-      "Previsão em cartões com fonte suave e ícones em pixel art",
-      "Sem imagem fantasma (0,850 V) e GIFs sem travar"
+      "Correção de segurança no decoder de GIF, com leituras e dicionário LZW limitados",
+      "GIFs malformados são verificados no envio e antes da reprodução",
+      "200 mil testes de mutação e animações válidas com os mesmos pixels"
     ],
     "en": [
-      "New Forecast LCD face, on the Retro LCD screen",
-      "Forecast cards with a smooth font and pixel art icons",
-      "No ghosting (0.850 V) and smooth GIFs"
+      "GIF security fix with checked reads and bounded LZW dictionary",
+      "Malformed GIF structure checked on upload and before playback",
+      "200,000 mutation tests and matching pixels for valid animations"
     ],
     "es": [
-      "Nueva esfera Pronóstico LCD, en la pantalla del LCD retro",
-      "Pronóstico en tarjetas con fuente suave e íconos en pixel art",
-      "Sin imagen fantasma (0,850 V) y GIF sin trabas"
+      "Corrección de seguridad en GIF con lecturas y diccionario LZW limitados",
+      "Estructura de GIF verificada al enviar y antes de reproducir",
+      "200 mil pruebas de mutación y los mismos píxeles en animaciones válidas"
     ]
   },
   "gz": "smalltv-pomodoro.bin.gz",
-  "gzsize": 398202
+  "gzsize": 398994
 }
