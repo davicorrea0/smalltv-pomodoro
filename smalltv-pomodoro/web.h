@@ -3,6 +3,7 @@
 #include <pgmspace.h>
 
 // painel desta versão: panel-c74592d10ccae8f097b515dc.html.gz (21225 bytes), SRI sha256-x0WS0QzK6PCXtRXcq97RS4U/XJ7oSIpzxbRikAl3EyA=
+// conteúdo do painel antes do gzip: sha256 f1aac176e05883c279e5782b64776307f5d7c73ccfda28ba424291bfd32b6c44
 #define PANEL_HASH "c74592d10ccae8f097b515dc"  // 24 primeiros hex do SHA-256: nome do arquivo em /www
 static const uint8_t LOADER_HTML_GZ[1146] PROGMEM = {
   0x1f,0x8b,0x08,0x00,0x00,0x00,0x00,0x00,0x02,0x0a,0x95,0x55,0x4b,0x73,0xdb,0x36,0x10,0xbe,0xeb,0x57,0x20,0xca,0x01,0xe2,

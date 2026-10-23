@@ -52,9 +52,14 @@ jobs:
 
       - name: simulador (mostradores, redesenho incremental, troca de telas) e painel
         run: |
+          want=$(grep "conteúdo do painel antes do gzip" smalltv-pomodoro/web.h)
           bash sim/build.sh
           git checkout -- faces/ docs/ || true
-          git diff --exit-code -- smalltv-pomodoro/web.h || { echo "::error::web.h gerado é diferente do commitado: rode sim/build.sh e commite"; exit 1; }
+          got=$(grep "conteúdo do painel antes do gzip" smalltv-pomodoro/web.h)
+          # o conteúdo do painel tem que ser o commitado; os bytes do gzip podem variar de máquina para máquina,
+          # então o firmware é compilado com o web.h commitado (o painel publicado sai da mesma máquina que ele)
+          [ "$want" = "$got" ] || { echo "::error::painel (web/) mudou sem o web.h ser regerado: rode sim/build.sh e commite"; exit 1; }
+          git checkout -- smalltv-pomodoro/web.h
 
       - name: testes de segurança (handlers, histórico, fuzzing de GIF e JPEG)
         run: bash sim/testes.sh 3000

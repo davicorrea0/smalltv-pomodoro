@@ -61,6 +61,9 @@ const out = path.join(__dirname, '..', 'smalltv-pomodoro', 'web.h');
   let h = '// Gerado por web/build.js a partir de web/index.html e web/loader.html — não edite à mão.\n';
   h += '#pragma once\n#include <pgmspace.h>\n\n';
   h += `// painel desta versão: ${file} (${gz.length} bytes), SRI ${sri}\n`;
+  // o gzip do Node (zlib com otimizações do processador) pode dar bytes diferentes em outra máquina com o mesmo
+  // conteúdo; esta linha só depende do conteúdo e é o que o build automático do GitHub compara
+  h += `// conteúdo do painel antes do gzip: sha256 ${crypto.createHash('sha256').update(min).digest('hex')}\n`;
   h += `#define PANEL_HASH "${hash}"  // 24 primeiros hex do SHA-256: nome do arquivo em /www\n`;
   h += `static const uint8_t LOADER_HTML_GZ[${loader.length}] PROGMEM = {`;
   for (let i = 0; i < loader.length; i++) h += (i % 24 ? '' : '\n  ') + '0x' + loader[i].toString(16).padStart(2, '0') + ',';
