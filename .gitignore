@@ -17,3 +17,4 @@ smalltv-loader/
 # painel: dependências do build e dicionário gerado para publicar no site
 web/node_modules/
 web/out/
+build/testes/

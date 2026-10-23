@@ -1,0 +1,17 @@
+{
+  "pt": [
+    "Fuso automático: ao escolher a cidade, o relógio ajusta o fuso e o horário de verão",
+    "Diagnóstico no painel: motivo do último reinício, sinal do Wi-Fi e memória",
+    "Opção de receber versões de teste antes de todo mundo"
+  ],
+  "en": [
+    "Automatic time zone: picking the city sets the time zone and daylight saving",
+    "Diagnostics in the panel: last restart reason, Wi-Fi signal and memory",
+    "Option to get test versions before everyone else"
+  ],
+  "es": [
+    "Huso automático: al elegir la ciudad, el reloj ajusta el huso y el horario de verano",
+    "Diagnóstico en el panel: motivo del último reinicio, señal del Wi-Fi y memoria",
+    "Opción de recibir versiones de prueba antes que todos"
+  ]
+}

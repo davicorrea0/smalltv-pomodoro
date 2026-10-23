@@ -66,6 +66,8 @@ const out = path.join(__dirname, '..', 'smalltv-pomodoro', 'web.h');
   for (let i = 0; i < loader.length; i++) h += (i % 24 ? '' : '\n  ') + '0x' + loader[i].toString(16).padStart(2, '0') + ',';
   h += '\n};\n';
   fs.writeFileSync(out, h);
-  fs.writeFileSync(path.join(__dirname, 'out', 'panel.json'), JSON.stringify({ panel: file, psri: sri, psize: gz.length }) + '\n');  // para o latest.json
+  // para o latest.json e o scripts/publicar.sh ("site": os arquivos que vão para panel/ no site)
+  fs.writeFileSync(path.join(__dirname, 'out', 'panel.json'), JSON.stringify({ panel: file, psri: sri, psize: gz.length,
+    site: [file, `i18n-${ver}.json`, `tz-${tzv}.json`, `share-${shv}.js`] }) + '\n');
   console.log(`painel: ${(fs.statSync(src).size / 1024).toFixed(1)} KB -> ${(gz.length / 1024).toFixed(1)} KB (gzip) em ${file}; carregador na flash: ${loader.length} bytes; dicionário i18n-${ver}.json, fusos tz-${tzv}.json, cartão share-${shv}.js`);
 })();
