@@ -48,6 +48,36 @@ void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);  // ui.cpp:
 
 
 Adafruit_ST7789 tft(-1, PIN_DC, PIN_RST);
+
+// Linhas de pixels para a tela. A Adafruit GFX 1.13 manda cada linha pelo SPI.writeBytes, que lê a
+// memória de 4 em 4 bytes: com a linha num endereço que não é múltiplo de 4 (texto da fonte vetorial,
+// recortes, faixas de largura ímpar) o ESP8266 dá exceção de alinhamento e reinicia (issue #4).
+// Toda linha passa por aqui: desalinhada, vai por uma cópia alinhada.
+static void tftPixels(uint16_t *px, int n) {
+  static uint32_t al[120];  // 240 pixels
+  if (!((uintptr_t)px & 3)) {
+    tft.writePixels(px, n);
+    return;
+  }
+  while (n > 0) {
+    int k = n < 240 ? n : 240;
+    memcpy(al, px, k * 2);
+    tft.writePixels((uint16_t *)al, k);
+    px += k;
+    n -= k;
+  }
+}
+
+// drawRGBBitmap com o recorte da tela feito antes, para cada linha passar por tftPixels
+static void tftBitmap(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h) {
+  int x0 = max<int>(x, 0), y0 = max<int>(y, 0), x1 = min<int>(x + w, tft.width()), y1 = min<int>(y + h, tft.height());
+  if (x1 <= x0 || y1 <= y0) return;
+  tft.startWrite();
+  tft.setAddrWindow(x0, y0, x1 - x0, y1 - y0);
+  for (int r = y0; r < y1; r++) tftPixels(px + (r - y) * w + (x0 - x), x1 - x0);
+  tft.endWrite();
+}
+
 ESP8266WebServer server(80);
 bool panelOk();  // proteção do painel (mais abaixo, antes de setupWeb)
 bool readOk();
@@ -1092,7 +1122,7 @@ int32_t jpgSeek(JPEGFILE *f, int32_t pos) {
 int jpgDraw(JPEGDRAW *p) {
   if (p->y >= 240) return 0;
   if (!uiClip.on) {
-    tft.drawRGBBitmap(p->x, p->y, p->pPixels, p->iWidth, p->iHeight);
+    tftBitmap(p->x, p->y, p->pPixels, p->iWidth, p->iHeight);
     return 1;
   }
   blit(p->x, p->y, p->pPixels, p->iWidth, p->iHeight);  // recorta para a área suja; fora da tela, cai na faixa
@@ -1210,13 +1240,13 @@ void gifDraw(GIFDRAW *p) {
       while (x < w && s[x] != tr) buf[n++] = pal[s[x++]];
       if (n) {
         tft.setAddrWindow(x0 + start, y, n, 1);
-        tft.writePixels(buf, n);
+        tftPixels(buf, n);
       }
     }
   } else {
     for (int i = 0; i < w; i++) buf[i] = pal[s[i]];
     tft.setAddrWindow(x0, y, w, 1);
-    tft.writePixels(buf, w);
+    tftPixels(buf, w);
   }
   tft.endWrite();
 }
@@ -2813,7 +2843,7 @@ void setup() {
   uiFrameHook = [] { yield(); };  // a animação é guiada pelo relógio: só cede tempo ao Wi-Fi
   uiMillis = [] { return (uint32_t)millis(); };
   // linhas de pixels pelo caminho rápido do ST7789 (drawRGBBitmap não é virtual no Adafruit_GFX)
-  uiBlit = [](int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h) { tft.drawRGBBitmap(x, y, px, w, h); };
+  uiBlit = tftBitmap;
   applyPanel();
 
   // Monta o LittleFS do firmware original SEM formatar: se falhar, os arquivos ficam intactos.

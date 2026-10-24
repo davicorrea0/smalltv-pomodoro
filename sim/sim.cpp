@@ -228,11 +228,10 @@ static int checkIncremental(const char *name, UiState s, bool pomo) {
 // Pacotes de mostrador (faces/*.json na raiz do repositório): prévia em out/pack-<id>.raw e
 // o mesmo teste de redesenho dos mostradores embutidos.
 static int testPackages(const UiState &pomo) {
-  int fails = 0;
+  int fails = 0, packs = 0;
   DIR *dir = opendir("../faces");
-  if (!dir) return 0;
   struct dirent *e;
-  while ((e = readdir(dir))) {
+  while (dir && (e = readdir(dir))) {
     size_t n = strlen(e->d_name);
     if (n < 6 || strcmp(e->d_name + n - 5, ".json") || !strcmp(e->d_name, "catalog.json")) continue;
     char path[160];
@@ -258,8 +257,13 @@ static int testPackages(const UiState &pomo) {
     t.theme = THEME_PACK;
     fails += checkIncremental(name, t, false) != 0;
     facePackUnload();
+    packs++;
   }
-  closedir(dir);
+  if (dir) closedir(dir);
+  if (!packs) {  // pasta ilegível não pode passar como "nenhum pacote, nenhum erro"
+    printf("pacotes: ERRO, nenhum lido de ../faces\n");
+    fails++;
+  }
   (void)pomo;
   return fails;
 }
