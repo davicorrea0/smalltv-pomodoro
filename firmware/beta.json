@@ -1,0 +1,30 @@
+{
+  "version": "1.19.8",
+  "date": "2026-10-24",
+  "file": "beta/smalltv-pomodoro.bin",
+  "size": 531984,
+  "notes": {
+    "pt": [
+      "Corrige o reinício em ciclo com Previsão em cartões e mostradores da galeria com fonte grande (issue #4)",
+      "Fuso automático: ao escolher a cidade, o relógio ajusta o fuso e o horário de verão",
+      "Diagnóstico no painel: motivo do último reinício, sinal do Wi-Fi e memória",
+      "Opção de receber versões de teste antes de todo mundo"
+    ],
+    "en": [
+      "Fixes the restart loop with Forecast cards and gallery faces with large fonts (issue #4)",
+      "Automatic time zone: picking the city sets the time zone and daylight saving",
+      "Diagnostics in the panel: last restart reason, Wi-Fi signal and memory",
+      "Option to get test versions before everyone else"
+    ],
+    "es": [
+      "Corrige el reinicio en bucle con Pronóstico en tarjetas y esferas de la galería con fuente grande (issue #4)",
+      "Huso automático: al elegir la ciudad, el reloj ajusta el huso y el horario de verano",
+      "Diagnóstico en el panel: motivo del último reinicio, señal del Wi-Fi y memoria",
+      "Opción de recibir versiones de prueba antes que todos"
+    ]
+  },
+  "gz": "beta/smalltv-pomodoro.bin.gz",
+  "gzsize": 392662,
+  "panel": "panel-c74592d10ccae8f097b515dc.html.gz",
+  "psri": "sha256-x0WS0QzK6PCXtRXcq97RS4U/XJ7oSIpzxbRikAl3EyA="
+}
