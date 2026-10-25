@@ -1,27 +1,30 @@
 {
-  "version": "1.19.7",
-  "date": "2026-10-23",
+  "version": "1.19.8",
+  "date": "2026-10-25",
   "file": "smalltv-pomodoro.bin",
-  "size": 530928,
+  "size": 531984,
   "notes": {
     "pt": [
-      "Atualiza a biblioteca gráfica Adafruit GFX para 1.13.0",
-      "Inclui correções recentes de renderização e estabilidade no ESP8266",
-      "Preserva as telas e os reforços de segurança da versão 1.19.6"
+      "Corrige o reinício em ciclo com Previsão em cartões e mostradores da galeria com fonte grande (issue #4)",
+      "Fuso automático: ao escolher a cidade, o relógio ajusta o fuso e o horário de verão",
+      "Diagnóstico no painel: motivo do último reinício, sinal do Wi-Fi e memória",
+      "Opção de receber versões de teste antes de todo mundo"
     ],
     "en": [
-      "Updates the Adafruit GFX graphics library to 1.13.0",
-      "Includes recent ESP8266 rendering and stability fixes",
-      "Preserves all screens and the security hardening from version 1.19.6"
+      "Fixes the restart loop with Forecast cards and gallery faces with large fonts (issue #4)",
+      "Automatic time zone: picking the city sets the time zone and daylight saving",
+      "Diagnostics in the panel: last restart reason, Wi-Fi signal and memory",
+      "Option to get test versions before everyone else"
     ],
     "es": [
-      "Actualiza la biblioteca gráfica Adafruit GFX a la versión 1.13.0",
-      "Incluye correcciones recientes de renderizado y estabilidad en ESP8266",
-      "Conserva todas las pantallas y las mejoras de seguridad de la versión 1.19.6"
+      "Corrige el reinicio en bucle con Pronóstico en tarjetas y esferas de la galería con fuente grande (issue #4)",
+      "Huso automático: al elegir la ciudad, el reloj ajusta el huso y el horario de verano",
+      "Diagnóstico en el panel: motivo del último reinicio, señal del Wi-Fi y memoria",
+      "Opción de recibir versiones de prueba antes que todos"
     ]
   },
   "gz": "smalltv-pomodoro.bin.gz",
-  "gzsize": 392026,
-  "panel": "panel-0ee149b64a2cd34ae09ad59d.html.gz",
-  "psri": "sha256-DuFJtkos00rgmtWdCWcfa9TAB5j4LWZGAcp5o1hU+3g="
+  "gzsize": 392662,
+  "panel": "panel-c74592d10ccae8f097b515dc.html.gz",
+  "psri": "sha256-x0WS0QzK6PCXtRXcq97RS4U/XJ7oSIpzxbRikAl3EyA="
 }
