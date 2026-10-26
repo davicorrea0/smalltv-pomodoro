@@ -18,3 +18,5 @@ smalltv-loader/
 web/node_modules/
 web/out/
 build/testes/
+*.key
+*private*.pem
