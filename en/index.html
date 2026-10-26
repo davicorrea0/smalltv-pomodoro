@@ -150,14 +150,15 @@
       <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/lua.svg" alt=""></span>Night brightness</h3><p>Set a schedule to dim the screen at night so it doesn't light up the bedroom.</p></div>
       <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/celular.svg" alt=""></span>Web panel</h3><p>Open the IP shown on the screen from your phone or computer: faces, Pomodoro, photos and settings, including screen color and rotation. In Portuguese, English or Spanish.</p></div>
       <div class="card feature"><h3><span class="ico"><img class="px" src="../img/jogo/planta/dourada.svg" alt=""></span>Focus game</h3><p>Day streaks with the goal reached, a plant that grows into the golden tomato, a yearly garden, 10 achievements and a shareable day card. <a href="game.html">See the game</a>.</p></div>
-      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/seta.svg" alt=""></span>One-tap updates</h3><p>When a new version is out, the panel tells you and updates the clock with one tap (from v1.8). You can also upload the file at <code>/update</code> (the <code>.bin.gz</code>, without unzipping it) and go back to the original firmware.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/seta.svg" alt=""></span>One-tap updates</h3><p>When a new version is out, the panel tells you and updates the clock with one tap (from v1.8). You can also upload the file at <code>/update</code> (the <code>.bin.gz</code>, without unzipping it) with a project signature from v1.20.0. Stock firmware can be restored through physical recovery.</p></div>
     </div>
   </div>
 </section>
 
 <section id="new">
   <div class="wrap">
-    <div class="eyebrow">New in v1.19 (current: v1.19.5)</div>
+    <p class="note"><strong>v1.20.0 · Signed updates:</strong> the clock verifies the project RSA-2048/SHA-256 signature before installing. Altered or unsigned files are rejected. Keep using the <code>.bin.gz</code> without extracting it.</p>
+    <div class="eyebrow">Novelties · current version: v1.20.0</div>
     <h2><span class="h-ico"><img class="px" src="../img/icons/nuvem.svg" alt=""></span>Rain warning, °F and more security</h2>
     <div class="grid three">
       <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/nuvem.svg" alt=""></span>Rain is coming</h3><p>When rain should start within the next hour, the screen shows “rain 15 min” and the tomato opens its umbrella. It uses Open-Meteo's 15-minute forecast. Turn it on or off in <strong>Settings → Weather</strong>.</p></div>
@@ -283,9 +284,9 @@
 
     <details class="note" id="revert" style="margin-top:14px">
       <summary>Going back to the original firmware</summary>
-      <p style="color:var(--muted)">Download the official <code>.bin</code> from <a href="https://github.com/GeekMagicClock/smalltv-ultra">GeekMagicClock/smalltv-ultra</a> and upload it in the SmallTV Pomodoro panel under <strong>Settings → Update firmware</strong> (or at <code>/update</code>, user <code>admin</code>).</p>
-      <p style="color:var(--muted);margin:0">This works because SmallTV Pomodoro uses the same flash layout as the original and stays under the size limit (about 530 KB). The file system is mounted without automatic formatting: your photos are not erased.</p>
-    </details>
+      <p style="color:var(--muted)">From v1.20.0, normal updates require the project signature. To restore stock firmware, unplug and plug the clock back in three times in a row to enter recovery mode. Join its recovery Wi-Fi with the password on the display, then open <code>http://192.168.4.1/update</code> and upload an unsigned official image from <a href="https://github.com/GeekMagicClock/smalltv-ultra">GeekMagicClock/smalltv-ultra</a>.</p>
+      <p style="color:var(--muted);margin:0">Recovery requires physical access to the clock. Use the unsigned image in this mode; normal updates use the signed <code>.bin.gz</code> without extracting it.</p>
+</details>
   </div>
 </section>
 

@@ -150,14 +150,15 @@
       <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/lua.svg" alt=""></span>Brilho noturno</h3><p>Escolha um horário para a tela ficar mais fraca à noite e não iluminar o quarto.</p></div>
       <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/celular.svg" alt=""></span>Painel web</h3><p>Abra no celular ou no computador o IP que aparece na tela: mostradores, Pomodoro, fotos e ajustes, incluindo cor e rotação da tela. Em português, inglês ou espanhol.</p></div>
       <div class="card feature"><h3><span class="ico"><img class="px" src="img/jogo/planta/dourada.svg" alt=""></span>Jogo do foco</h3><p>Sequência de dias com a meta batida, planta que cresce até o tomate dourado, horta do ano, 10 conquistas e cartão do dia para compartilhar. <a href="jogo.html">Ver o jogo</a>.</p></div>
-      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/seta.svg" alt=""></span>Atualização em um toque</h3><p>Quando sai uma versão nova, o painel avisa e atualiza o relógio com um toque (a partir da v1.8). Também dá para enviar o arquivo em <code>/update</code> (o <code>.bin.gz</code>, sem descompactar) e voltar ao firmware original.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/seta.svg" alt=""></span>Atualização em um toque</h3><p>Quando sai uma versão nova, o painel avisa e atualiza o relógio com um toque (a partir da v1.8). Também dá para enviar o arquivo em <code>/update</code> (o <code>.bin.gz</code>, sem descompactar) com assinatura do projeto a partir da v1.20.0. Para voltar ao original, use o modo de recuperação físico.</p></div>
     </div>
   </div>
 </section>
 
 <section id="novo">
   <div class="wrap">
-    <div class="eyebrow">Novo na v1.19 (atual: v1.19.5)</div>
+    <p class="note"><strong>v1.20.0 · Atualizações assinadas:</strong> o relógio verifica a assinatura RSA-2048/SHA-256 do projeto antes de instalar. Arquivos alterados ou sem assinatura são recusados. Continue usando o <code>.bin.gz</code> sem descompactar.</p>
+    <div class="eyebrow">Novidades · versão atual: v1.20.0</div>
     <h2><span class="h-ico"><img class="px" src="img/icons/nuvem.svg" alt=""></span>Aviso de chuva, °F e mais segurança</h2>
     <div class="grid three">
       <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/nuvem.svg" alt=""></span>Vai chover</h3><p>Quando a chuva deve começar na próxima hora, a tela mostra “chuva 15 min” e o tomate já abre o guarda-chuva. Usa a previsão de 15 em 15 minutos do Open-Meteo. Liga e desliga em <strong>Ajustes → Clima</strong>.</p></div>
@@ -283,9 +284,9 @@
 
     <details class="note" id="voltar" style="margin-top:14px">
       <summary>Voltar ao firmware original</summary>
-      <p style="color:var(--muted)">Baixe o <code>.bin</code> oficial em <a href="https://github.com/GeekMagicClock/smalltv-ultra">GeekMagicClock/smalltv-ultra</a> e envie no painel do SmallTV Pomodoro em <strong>Ajustes → Atualizar firmware</strong> (ou em <code>/update</code>, usuário <code>admin</code>).</p>
-      <p style="color:var(--muted);margin:0">Funciona porque o SmallTV Pomodoro usa o mesmo layout de memória do original e fica abaixo do tamanho limite (cerca de 530 KB). O sistema de arquivos é montado sem formatação automática: suas fotos não são apagadas.</p>
-    </details>
+      <p style="color:var(--muted)">A partir da v1.20.0, as atualizações normais exigem a assinatura do projeto. Para voltar ao original, desligue e ligue o relógio três vezes seguidas para entrar no modo de recuperação. Conecte-se à rede Wi-Fi de recuperação com a senha exibida na tela, abra <code>http://192.168.4.1/update</code> e envie uma imagem oficial sem assinatura de <a href="https://github.com/GeekMagicClock/smalltv-ultra">GeekMagicClock/smalltv-ultra</a>.</p>
+      <p style="color:var(--muted);margin:0">A recuperação exige acesso físico ao relógio. Nesse modo, use a imagem sem assinatura; nas atualizações normais, use o <code>.bin.gz</code> assinado sem descompactar.</p>
+</details>
   </div>
 </section>
 
