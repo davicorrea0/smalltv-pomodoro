@@ -13,14 +13,12 @@
 #    (aviso: acima disso essas versões precisam passar antes pela 1.14);
 #  - voltar ao firmware original: sem compressão até ~532 KB; acima disso, pelo .gz dele (compactar.js).
 cd "$(dirname "$0")"
-node scripts/assinar.cjs header || exit 1
 CLI="${ARDUINO_CLI:-arduino-cli}"
 "$CLI" compile --fqbn "esp8266:esp8266:generic:eesz=4M3M,xtal=160,ip=lm2n" --build-property "build.float=" \
   --output-dir build smalltv-pomodoro "$@" || exit 1
 node compactar.js build/smalltv-pomodoro.ino.bin > /dev/null || exit 1
 size=$(wc -c < build/smalltv-pomodoro.ino.bin)
 gz=$(wc -c < build/smalltv-pomodoro.ino.bin.gz)
-gz=$((gz + 260))  # RSA-2048 signature + length, also budgeted in keyless CI builds
 r() { echo $(( ($1 + 4095) / 4096 * 4096 )); }
 if [ $(( $(r $size) + $(r $((gz + 512))) )) -gt 1048576 ]; then
   echo "firmware com $size bytes (.gz $gz): não caberia na próxima atualização comprimida"
@@ -29,8 +27,3 @@ fi
 [ "$size" -gt 524288 ] && echo "aviso: $size bytes; relógios com versão anterior à 1.14 precisam instalar a 1.14 antes"
 left=$(( 1048576 - $(r $size) - $(r $((gz + 512))) ))
 echo "firmware: $size bytes, .gz $gz bytes (o firmware ainda pode crescer ~$(( left * 100 / 174 / 1024 )) KB)"
-
-# CI builds without secrets; release publication below requires signed artifacts.
-if [ -n "${SMALLTV_SIGNING_KEY:-}" ]; then
-  node scripts/assinar.cjs sign build/smalltv-pomodoro.ino.bin build/smalltv-pomodoro.ino.bin.gz || exit 1
-fi

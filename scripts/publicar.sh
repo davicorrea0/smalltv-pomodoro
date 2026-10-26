@@ -41,7 +41,7 @@ node -e 'const n=require("./'"$NOTAS"'");for(const l of ["pt","en","es"])if(!Arr
 
 say "segredos no que mudou desde o último release estável"
 LAST=$(gh release list -R "$REPO" -L 20 --exclude-pre-releases --json tagName -q '.[0].tagName')
-if git diff --unified=0 "$LAST" HEAD -- . ':!*.bin' ':!*.gz' | grep '^+' | grep -v '^+++' | grep -inE 'password\s*[:=]|api[_-]?key\s*[:=]|secret\s*[:=]|token\s*[:=]|BEGIN [A-Z ]*PRIVATE KEY|Bearer [A-Za-z0-9_-]{20,}' |
+if git diff "$LAST" HEAD -- . ':!*.bin' ':!*.gz' | grep -inE 'password\s*[:=]|api[_-]?key\s*[:=]|secret\s*[:=]|token\s*[:=]|BEGIN [A-Z ]*PRIVATE KEY|Bearer [A-Za-z0-9_-]{20,}' |
   grep -vE 'password=(true|false)|allowed=password|formToken = token|\.token\b'; then
   die "possível segredo no diff (linhas acima): confira antes de publicar"
 fi
@@ -65,17 +65,14 @@ else  # Windows: gera os .cpp com o node daqui e roda no WSL
 fi
 
 say "firmware"
-[ -n "${SMALLTV_SIGNING_KEY:-}" ] || die "defina SMALLTV_SIGNING_KEY (chave privada fora do Git)"
-rm -f build/smalltv-pomodoro.ino.bin.signed build/smalltv-pomodoro.ino.bin.gz.signed
 sh compilar.sh | grep -E "firmware:|caberia"
-BIN=build/smalltv-pomodoro.ino.bin.signed
-GZ=build/smalltv-pomodoro.ino.bin.gz.signed
-node scripts/assinar.cjs verify "$BIN" "$GZ"
+BIN=build/smalltv-pomodoro.ino.bin
+GZ=$BIN.gz
 grep -q "FW_VERSION" smalltv-pomodoro/main.cpp && grep -aq "$VER" "$BIN" || die "o binário não traz a versão $VER"
 
 say "site (gh-pages)"
 W=$(mktemp -d)/gh-pages
-git -c core.autocrlf=false worktree add -q --detach "$W" origin/gh-pages
+git worktree add -q --detach "$W" origin/gh-pages
 trap 'git worktree remove --force "$W" 2>/dev/null || true' EXIT
 for f in $(node -p 'require("./web/out/panel.json").site.join(" ")'); do
   if [ -f "$W/panel/$f" ]; then

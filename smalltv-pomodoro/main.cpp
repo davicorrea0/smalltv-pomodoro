@@ -20,8 +20,6 @@
 #include <ArduinoJson.h>
 #include <WiFiUdp.h>
 #include <eboot_command.h>
-#include <BearSSLHelpers.h>
-#include "ota-public.h"
 #include <bearssl/bearssl_hash.h>  // SHA-256 do painel recebido (/api/panel)
 #include "src/uzlib/uzlib.h"  // o mesmo descompactador do gerenciador de boot (licença zlib)
 extern "C" uint32_t _FS_start;
@@ -40,7 +38,7 @@ extern "C" uint32_t _FS_start;
 
 void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);  // ui.cpp: recorta para a área suja; fora da tela, cai na faixa
 
-#define FW_VERSION "1.20.0"
+#define FW_VERSION "1.19.8"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
@@ -2393,28 +2391,16 @@ void setupWeb() {
 }
 
 // ---------- atualização do firmware (/update) ----------
-// Na LAN exige assinatura RSA-2048/SHA256; recuperação física aceita também o firmware original.
-// Além da assinatura, confere o arquivo
+// Aceita o nosso firmware e o original da GeekMagic (para voltar ao de fábrica), mas confere o arquivo
 // antes de trocar: imagem do ESP8266 (0xE9 no início e no aplicativo), o tamanho e o CRC32 que o elf2bin
 // grava no cabeçalho (offsets 4112 e 4116; todas as versões V9.0.x originais também têm) e se cabe no
 // espaço livre. Arquivo truncado, corrompido ou de outro aparelho é recusado e o firmware atual fica.
 // Usuário "admin"; senha vazia (ou o modo de recuperação) dispensa a autenticação.
 struct OtaCheck { uint32_t got, size, want, crc; uint8_t field[8]; String err; bool authOk, begun, gz, finished; } ota;
-static uint32_t otaReceived;
-static BearSSL::PublicKey otaKey;
-static BearSSL::HashSHA256 otaHash;
-static BearSSL::SigningVerifier *otaVerifier = nullptr;
-static void otaReleaseSignature() {
-  Update.installSignature(nullptr, nullptr);
-  delete otaVerifier;
-  otaVerifier = nullptr;
-}
 
-void otaConsume(const uint8_t *p, size_t n, bool signedRaw = false) {
+void otaConsume(const uint8_t *p, size_t n) {
   for (size_t i = 0; i < n && !ota.err.length(); i++, ota.got++) {
     uint32_t o = ota.got;
-    // The Updater checks the signature trailer; the image CRC excludes it.
-    if (signedRaw && ota.size && o >= ota.size) return;
     uint8_t v = p[i];
     if ((o == 0 || o == 4096) && v != 0xE9) ota.err = F("nao e um firmware do ESP8266");
     if (o >= 4112 && o < 4120) {
@@ -2506,8 +2492,7 @@ void setupUpdate() {
                  "input,button{width:100%;padding:12px;margin:8px 0;border-radius:10px;border:1px solid #333;background:#1c1c1c;color:#eee;font:inherit}"
                  "button{background:#ff5a47;border:0;font-weight:700}</style><h2>");
     p += tr("Atualizar firmware", "Update firmware", "Actualizar firmware");
-    p += recoveryMode ? tr("</h2><p>Recuperacao: aceita firmware sem assinatura.</p>", "</h2><p>Recovery: unsigned firmware allowed.</p>", "</h2><p>Recuperacion: permite firmware sin firma.</p>") : tr("</h2><p>Use firmware assinado pelo projeto (.bin ou .bin.gz).</p>", "</h2><p>Use project-signed firmware (.bin or .bin.gz).</p>", "</h2><p>Use firmware firmado por el proyecto (.bin o .bin.gz).</p>");
-    p += F("<form method=post enctype=multipart/form-data><input type=file name=firmware accept=.bin,.gz required><button>");
+    p += F("</h2><form method=post enctype=multipart/form-data><input type=file name=firmware accept=.bin,.gz required><button>");
     p += tr("Enviar", "Upload", "Enviar");
     p += F("</button></form><small>v" FW_VERSION "</small>"
            "<script>document.forms[0].onsubmit=e=>{e.preventDefault();document.body.innerHTML='...';"
@@ -2518,8 +2503,6 @@ void setupUpdate() {
       if (!authOk() || !ota.authOk) return askLogin();
       if (!ota.err.length() && !ota.finished) ota.err = F("envio incompleto");
       if (ota.err.length()) {
-        eboot_command_clear();
-        otaReleaseSignature();
         server.send(400, "text/plain", "Update error: " + ota.err);
         return;
       }
@@ -2530,23 +2513,8 @@ void setupUpdate() {
       HTTPUpload &up = server.upload();
       if (up.status == UPLOAD_FILE_START) {
         ota = {0, 0, 0, 0xFFFFFFFF, {0}, String(), authOk(), false, false, false};
-        otaReceived = 0;
         if (!ota.authOk) ota.err = F("senha");
-        else {
-          eboot_command_clear();
-          if (inAlbum) stopAlbum();
-          otaReleaseSignature();
-          // Recovery is AP-only and requires the random password on the display.
-          // It is the physical escape hatch for stock firmware and lost keys.
-          if (!recoveryMode) {
-            if (!otaKey.parse(OTA_PUBLIC_KEY) || !otaKey.isRSA()) ota.err = F("chave publica invalida");
-            else {
-              otaVerifier = new (std::nothrow) BearSSL::SigningVerifier(&otaKey);
-              if (!otaVerifier) ota.err = F("sem memoria para assinatura");
-              else Update.installSignature(&otaHash, otaVerifier);
-            }
-          }
-        }
+        else if (inAlbum) stopAlbum();  // libera RAM e o LittleFS durante a gravação
       } else if (up.status == UPLOAD_FILE_WRITE && !ota.err.length()) {
         if (!ota.begun) {  // primeiro pedaço: .gz vai para o fim da área (tamanho do envio); .bin, para o espaço livre
           ota.begun = true;
@@ -2554,36 +2522,22 @@ void setupUpdate() {
           uint32_t size = ota.gz ? server.header("Content-Length").toInt() : (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000;
           if (!size || !Update.begin(size, U_FLASH)) ota.err = size ? Update.getErrorString() : String(F("tamanho desconhecido"));
         }
-        otaReceived += up.currentSize;
-        if (!ota.gz) otaConsume(up.buf, up.currentSize, !recoveryMode);
+        if (!ota.gz) otaConsume(up.buf, up.currentSize);
         if (!ota.err.length() && Update.write(up.buf, up.currentSize) != up.currentSize) ota.err = Update.getErrorString();
-        if (ota.err.length()) {
-          Update.end();
-          eboot_command_clear();
-          otaReleaseSignature();
-        }
+        if (ota.err.length()) Update.end();  // desiste: o firmware atual continua
       } else if (up.status == UPLOAD_FILE_END && !ota.err.length()) {
         if (!ota.begun) ota.err = F("arquivo vazio");
         else if (ota.gz) {
           if (!Update.end(true)) ota.err = Update.getErrorString();
-          else {
-            otaReleaseSignature();  // free the crypto stack before the 8 KB gzip dictionary
-            otaVerifyGz();
-          }
-        } else if (ota.got < 4120 || ota.got != ota.size || otaReceived != ota.size + (recoveryMode ? 0U : 260U)) ota.err = F("arquivo incompleto ou sem assinatura");
+          else otaVerifyGz();
+        } else if (ota.got < 4120 || ota.got != ota.size) ota.err = F("arquivo incompleto");
         else if (ota.crc != ota.want) ota.err = F("arquivo corrompido (CRC)");
         if (ota.gz) {}
         else if (ota.err.length()) Update.end();
         else if (!Update.end(true)) ota.err = Update.getErrorString();
-        if (ota.err.length()) eboot_command_clear();
-        otaReleaseSignature();
         ota.finished = !ota.err.length();
       } else if (up.status == UPLOAD_FILE_ABORTED) {
-        if (ota.authOk) {
-          Update.end();
-          eboot_command_clear();
-          otaReleaseSignature();
-        }
+        Update.end();
         ota.err = F("envio interrompido");
       }
       yield();
