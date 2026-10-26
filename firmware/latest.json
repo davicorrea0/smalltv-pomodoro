@@ -1,27 +1,30 @@
 {
-  "version": "1.20.0",
-  "date": "2026-10-26",
+  "version": "1.19.8",
+  "date": "2026-10-25",
   "file": "smalltv-pomodoro.bin",
-  "size": 568644,
+  "size": 531984,
   "notes": {
     "pt": [
-      "Atualizações pelo painel verificam a assinatura RSA-2048/SHA-256 do projeto antes de instalar",
-      "Arquivos alterados, sem assinatura ou assinados com outra chave são recusados",
-      "O modo de recuperação físico permite voltar ao firmware original; envie o .bin.gz sem descompactar"
+      "Corrige o reinício em ciclo com Previsão em cartões e mostradores da galeria com fonte grande (issue #4)",
+      "Fuso automático: ao escolher a cidade, o relógio ajusta o fuso e o horário de verão",
+      "Diagnóstico no painel: motivo do último reinício, sinal do Wi-Fi e memória",
+      "Opção de receber versões de teste antes de todo mundo"
     ],
     "en": [
-      "Panel updates verify the project RSA-2048/SHA-256 signature before installation",
-      "Modified, unsigned or incorrectly signed firmware is rejected",
-      "Physical recovery mode can restore stock firmware; upload the .bin.gz without extracting it"
+      "Fixes the restart loop with Forecast cards and gallery faces with large fonts (issue #4)",
+      "Automatic time zone: picking the city sets the time zone and daylight saving",
+      "Diagnostics in the panel: last restart reason, Wi-Fi signal and memory",
+      "Option to get test versions before everyone else"
     ],
     "es": [
-      "Las actualizaciones verifican la firma RSA-2048/SHA-256 del proyecto antes de instalar",
-      "Se rechazan archivos modificados, sin firma o firmados con otra clave",
-      "La recuperación física permite volver al firmware original; envía el .bin.gz sin descomprimir"
+      "Corrige el reinicio en bucle con Pronóstico en tarjetas y esferas de la galería con fuente grande (issue #4)",
+      "Huso automático: al elegir la ciudad, el reloj ajusta el huso y el horario de verano",
+      "Diagnóstico en el panel: motivo del último reinicio, señal del Wi-Fi y memoria",
+      "Opción de recibir versiones de prueba antes que todos"
     ]
   },
   "gz": "smalltv-pomodoro.bin.gz",
-  "gzsize": 422883,
+  "gzsize": 392662,
   "panel": "panel-c74592d10ccae8f097b515dc.html.gz",
   "psri": "sha256-x0WS0QzK6PCXtRXcq97RS4U/XJ7oSIpzxbRikAl3EyA="
 }
