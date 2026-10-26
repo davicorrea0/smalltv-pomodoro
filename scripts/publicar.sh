@@ -75,7 +75,7 @@ grep -q "FW_VERSION" smalltv-pomodoro/main.cpp && grep -aq "$VER" "$BIN" || die 
 
 say "site (gh-pages)"
 W=$(mktemp -d)/gh-pages
-git worktree add -q --detach "$W" origin/gh-pages
+git -c core.autocrlf=false worktree add -q --detach "$W" origin/gh-pages
 trap 'git worktree remove --force "$W" 2>/dev/null || true' EXIT
 for f in $(node -p 'require("./web/out/panel.json").site.join(" ")'); do
   if [ -f "$W/panel/$f" ]; then
