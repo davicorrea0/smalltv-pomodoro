@@ -65,9 +65,12 @@ else  # Windows: gera os .cpp com o node daqui e roda no WSL
 fi
 
 say "firmware"
+[ -n "${SMALLTV_SIGNING_KEY:-}" ] || die "defina SMALLTV_SIGNING_KEY (chave privada fora do Git)"
+rm -f build/smalltv-pomodoro.ino.bin.signed build/smalltv-pomodoro.ino.bin.gz.signed
 sh compilar.sh | grep -E "firmware:|caberia"
-BIN=build/smalltv-pomodoro.ino.bin
-GZ=$BIN.gz
+BIN=build/smalltv-pomodoro.ino.bin.signed
+GZ=build/smalltv-pomodoro.ino.bin.gz.signed
+node scripts/assinar.cjs verify "$BIN" "$GZ"
 grep -q "FW_VERSION" smalltv-pomodoro/main.cpp && grep -aq "$VER" "$BIN" || die "o binário não traz a versão $VER"
 
 say "site (gh-pages)"
