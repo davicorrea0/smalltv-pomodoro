@@ -41,7 +41,7 @@ node -e 'const n=require("./'"$NOTAS"'");for(const l of ["pt","en","es"])if(!Arr
 
 say "segredos no que mudou desde o último release estável"
 LAST=$(gh release list -R "$REPO" -L 20 --exclude-pre-releases --json tagName -q '.[0].tagName')
-if git diff "$LAST" HEAD -- . ':!*.bin' ':!*.gz' | grep -inE 'password\s*[:=]|api[_-]?key\s*[:=]|secret\s*[:=]|token\s*[:=]|BEGIN [A-Z ]*PRIVATE KEY|Bearer [A-Za-z0-9_-]{20,}' |
+if git diff --unified=0 "$LAST" HEAD -- . ':!*.bin' ':!*.gz' | grep '^+' | grep -v '^+++' | grep -inE 'password\s*[:=]|api[_-]?key\s*[:=]|secret\s*[:=]|token\s*[:=]|BEGIN [A-Z ]*PRIVATE KEY|Bearer [A-Za-z0-9_-]{20,}' |
   grep -vE 'password=(true|false)|allowed=password|formToken = token|\.token\b'; then
   die "possível segredo no diff (linhas acima): confira antes de publicar"
 fi
