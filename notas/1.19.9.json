@@ -1,0 +1,17 @@
+{
+  "pt": [
+    "Proteção na atualização comprimida: um .bin.gz com dados depois do gzip é recusado antes da troca",
+    "Era o que fazia a 1.20.0 de teste apagar o gerenciador de boot e o relógio não ligar mais",
+    "Instale esta versão antes de qualquer atualização futura"
+  ],
+  "en": [
+    "Compressed update guard: a .bin.gz with data after the gzip stream is refused before the swap",
+    "This is what made the 1.20.0 test build erase the bootloader so the clock no longer started",
+    "Install this version before any future update"
+  ],
+  "es": [
+    "Protección en la actualización comprimida: un .bin.gz con datos después del gzip se rechaza antes del cambio",
+    "Era lo que hacía que la 1.20.0 de prueba borrara el gestor de arranque y el reloj no encendiera",
+    "Instala esta versión antes de cualquier actualización futura"
+  ]
+}

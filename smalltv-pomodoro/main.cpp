@@ -38,7 +38,7 @@ extern "C" uint32_t _FS_start;
 
 void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);  // ui.cpp: recorta para a área suja; fora da tela, cai na faixa
 
-#define FW_VERSION "1.19.8"
+#define FW_VERSION "1.19.9"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
@@ -2470,6 +2470,16 @@ bool otaVerifyGz() {
     else if (ota.got < 4120 || ota.got != ota.size) ota.err = F("imagem incompleta");
     else if (ota.crc != ota.want) ota.err = F("imagem corrompida (CRC)");
     else if (ota.size > src) ota.err = F("firmware grande demais para descompactar");
+    else {
+      // O eboot não lê o tamanho do gzip: usa os 4 ÚLTIMOS bytes da área gravada como o tamanho da
+      // imagem. Qualquer coisa depois do gzip (como os 260 bytes de assinatura da 1.20.0) vira o
+      // tamanho, e o eboot grava só o começo por cima do setor 0 e apaga o próprio gerenciador de
+      // boot: o relógio não liga mais. Só libera a troca se esse número for o da imagem conferida.
+      uint8_t t[4];
+      if (cmd.args[2] < 4 || !ESP.flashRead(src + cmd.args[2] - 4, t, 4)) ota.err = F("fim do arquivo ilegivel");
+      else if ((uint32_t)(t[0] | t[1] << 8 | t[2] << 16 | (uint32_t)t[3] << 24) != ota.got)
+        ota.err = F("dados depois do gzip (envie o .bin.gz sem assinatura ou o .bin)");
+    }
   } else ota.err = F("sem memoria para conferir");
   free(dict);
   free(gzBuf);

@@ -69,6 +69,11 @@ sh compilar.sh | grep -E "firmware:|caberia"
 BIN=build/smalltv-pomodoro.ino.bin
 GZ=$BIN.gz
 grep -q "FW_VERSION" smalltv-pomodoro/main.cpp && grep -aq "$VER" "$BIN" || die "o binário não traz a versão $VER"
+# O eboot usa os 4 últimos bytes do .gz como tamanho da imagem: bytes depois do gzip (assinatura, por
+# exemplo) apagam o gerenciador de boot e o relógio não liga mais (foi o que aconteceu com a 1.20.0).
+node -e 'const fs=require("fs"),z=fs.readFileSync(process.argv[1]),b=fs.statSync(process.argv[2]).size;
+if(z.readUInt32LE(z.length-4)!==b||require("zlib").gunzipSync(z).length!==b)process.exit(1)' "$GZ" "$BIN" ||
+  die "o .bin.gz não termina com o tamanho do .bin (o eboot apagaria o gerenciador de boot)"
 
 say "site (gh-pages)"
 W=$(mktemp -d)/gh-pages
