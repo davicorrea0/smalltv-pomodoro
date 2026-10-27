@@ -184,6 +184,50 @@ static bool mdnsAsksFor(const uint8_t *p, size_t n, const char *name, bool *qu) 
   return false;
 }
 
+// Outro aparelho já responde por "<name>.local"? (resposta mDNS com um registro desse nome)
+static bool mdnsHasAnswer(const uint8_t *p, size_t n, const char *name) {
+  if (n < 12 || !(p[2] & 0x80)) return false;  // só respostas
+  unsigned qd = (unsigned)p[4] << 8 | p[5], rr = ((unsigned)p[6] << 8 | p[7]) + ((unsigned)p[8] << 8 | p[9]) + ((unsigned)p[10] << 8 | p[11]);
+  if (qd > 16 || rr > 64) return false;
+  char want[40], got[64];
+  if (snprintf(want, sizeof want, "%s.local", name) >= (int)sizeof want) return false;
+  for (char *c = want; *c; c++) *c = (char)tolower((unsigned char)*c);
+  size_t i = 12;
+  for (unsigned q = 0; q < qd; q++) {
+    if (!dnsReadName(p, n, i, got, sizeof got) || i + 4 > n) return false;
+    i += 4;
+  }
+  for (unsigned r = 0; r < rr; r++) {
+    if (!dnsReadName(p, n, i, got, sizeof got) || i + 10 > n) return false;
+    if (!strcmp(got, want)) return true;
+    size_t len = (size_t)p[i + 8] << 8 | p[i + 9];
+    i += 10 + len;
+    if (i > n) return false;
+  }
+  return false;
+}
+
+// Pergunta de sondagem (RFC 6762, 8.1): "alguém já usa <name>.local?", tipo ANY, pedindo resposta direta.
+static size_t mdnsProbeQuery(uint8_t *o, size_t cap, const char *name) {
+  size_t k = strlen(name);
+  if (!k || k > 63 || cap < 12 + k + 8 + 4) return 0;
+  memset(o, 0, 12);
+  o[5] = 1;
+  size_t i = 12;
+  o[i++] = (uint8_t)k;
+  memcpy(o + i, name, k);
+  i += k;
+  o[i++] = 5;
+  memcpy(o + i, "local", 5);
+  i += 5;
+  o[i++] = 0;
+  o[i++] = 0;
+  o[i++] = 255;
+  o[i++] = 0x80;  // QU: responder direto
+  o[i++] = 1;
+  return i;
+}
+
 // Monta a resposta com o registro A. legacy: quem perguntou não usa a porta 5353 (resolvedor comum):
 // devolve o mesmo id, repete a pergunta e usa TTL curto, como pede a RFC 6762 (6.7). 0 se não couber.
 static size_t mdnsAnswer(uint8_t *o, size_t cap, const char *name, const uint8_t ip[4], uint16_t id, bool legacy) {

@@ -388,17 +388,18 @@ void command(const String &c) {
 //   Pausa       ligar: pausa curta ("em 10%": de 10 minutos); desligar: volta ao foco
 //   Pausa longa ligar: pausa longa ("em 30%": de 30 minutos); desligar: volta ao foco
 // A lâmpada acesa mostra a fase atual no app da Alexa.
-// Nome na rede: "smalltv-" + 4 hex do chip, igual em todo boot e diferente entre relógios. Vale para o
-// DHCP (roteadores que mostram o nome) e para o mDNS: http://smalltv-1a2b.local sem decorar o IP.
-char netName[16];
+// Nome na rede, sem decorar o IP:
+//  - lanName: http://smalltv.local; com outro relógio já usando, smalltv-2.local, -3... (conferido ao conectar)
+//  - netName: "smalltv-" + 4 hex do chip, sempre válido como reserva e usado no DHCP.
+// Só o registro A, com o leitor de pacotes de security.h (testado): o ESP8266mDNS custaria ~21 KB.
+char netName[16], lanName[12];
 WiFiUDP hueUdp;
-// Nome na rede (smalltv-xxxx.local): só o registro A, com o leitor de pacotes de security.h (testado).
 WiFiUDP mdnsUdp;
 IPAddress mdnsIp;
 
-void mdnsSend(uint16_t id, bool legacy, bool direct) {
+void mdnsSend(const char *name, uint16_t id, bool legacy, bool direct) {
   uint8_t out[80], ip[4] = {mdnsIp[0], mdnsIp[1], mdnsIp[2], mdnsIp[3]};
-  size_t m = mdnsAnswer(out, sizeof out, netName, ip, id, legacy);
+  size_t m = mdnsAnswer(out, sizeof out, name, ip, id, legacy);
   if (!m) return;
   if (direct) mdnsUdp.beginPacket(mdnsUdp.remoteIP(), mdnsUdp.remotePort());
   else mdnsUdp.beginPacketMulticast(IPAddress(224, 0, 0, 251), 5353, mdnsIp);
@@ -406,21 +407,64 @@ void mdnsSend(uint16_t id, bool legacy, bool direct) {
   mdnsUdp.endPacket();
 }
 
+void mdnsAnnounce() {
+  if (lanName[0]) mdnsSend(lanName, 0, false, false);
+  mdnsSend(netName, 0, false, false);
+}
+
+bool mdnsJoin() {
+  mdnsIp = WiFi.localIP();
+  mdnsUdp.stop();
+  return mdnsUdp.beginMulticast(mdnsIp, IPAddress(224, 0, 0, 251), 5353);
+}
+
+// Alguém já responde por esse nome? Pergunta 3 vezes, 250 ms cada (RFC 6762, 8.1).
+bool mdnsTaken(const char *name) {
+  uint8_t q[48], b[256];
+  size_t m = mdnsProbeQuery(q, sizeof q, name);
+  for (int t = 0; t < 3 && m; t++) {
+    mdnsUdp.beginPacketMulticast(IPAddress(224, 0, 0, 251), 5353, mdnsIp);
+    mdnsUdp.write(q, m);
+    mdnsUdp.endPacket();
+    for (uint32_t t0 = millis(); millis() - t0 < 250; delay(10)) {
+      if (mdnsUdp.parsePacket() <= 0) continue;
+      int n = mdnsUdp.read(b, sizeof b);
+      if (n > 0 && mdnsHasAnswer(b, n, name)) return true;
+    }
+  }
+  return false;
+}
+
+// Ao conectar: escolhe o nome curto livre e se anuncia.
+void mdnsStart() {
+  lanName[0] = 0;
+  if (!mdnsJoin()) return;
+  for (int i = 1; i <= 9; i++) {
+    char name[sizeof lanName];
+    if (i == 1) strlcpy(name, HOSTNAME, sizeof name);
+    else snprintf(name, sizeof name, HOSTNAME "-%d", i);
+    if (!mdnsTaken(name)) {
+      strlcpy(lanName, name, sizeof lanName);
+      break;
+    }
+  }
+  mdnsAnnounce();
+}
+
 void mdnsLoop() {
   if (WiFi.status() != WL_CONNECTED) return;
-  if (WiFi.localIP() != mdnsIp) {  // ligou ou o IP mudou: entra de novo no grupo e se anuncia
-    mdnsIp = WiFi.localIP();
-    mdnsUdp.stop();
-    if (mdnsUdp.beginMulticast(mdnsIp, IPAddress(224, 0, 0, 251), 5353)) mdnsSend(0, false, false);
+  if (WiFi.localIP() != mdnsIp) {  // o IP mudou: entra de novo no grupo e se anuncia com o mesmo nome
+    if (mdnsJoin()) mdnsAnnounce();
   }
   int len = mdnsUdp.parsePacket();
   if (len <= 0) return;
   uint8_t b[256];  // a pergunta vem no começo; o resto (respostas conhecidas) pode ficar de fora
   int n = mdnsUdp.read(b, sizeof b);
-  bool qu = false;
-  if (n <= 0 || !mdnsAsksFor(b, n, netName, &qu)) return;
-  bool legacy = mdnsUdp.remotePort() != 5353;
-  mdnsSend((uint16_t)(b[0] << 8 | b[1]), legacy, legacy || qu);
+  if (n <= 0) return;
+  bool legacy = mdnsUdp.remotePort() != 5353, qu = false;
+  uint16_t id = (uint16_t)(b[0] << 8 | b[1]);
+  if (lanName[0] && mdnsAsksFor(b, n, lanName, &qu)) mdnsSend(lanName, id, legacy, legacy || qu);
+  else if (mdnsAsksFor(b, n, netName, &qu)) mdnsSend(netName, id, legacy, legacy || qu);
 }
 bool alexaUp = false;     // ouvindo a descoberta
 uint8_t alexaBri = 255;   // último brilho pedido (1-255)
@@ -1664,7 +1708,7 @@ void sendState() {
   j += F("},\"pv\":");
   j += previewActive() ? (previewUntil - millis()) / 1000 + 1 : 0;
   j += F(",\"name\":\"");
-  j += netName;
+  j += lanName[0] ? lanName : netName;
   j += F("\",\"heap\":");
   j += ESP.getFreeHeap();
   j += F(",\"blk\":");
@@ -1867,7 +1911,8 @@ bool fsRemoveAll(const String &p, int depth) {
 bool hostOk() {
   const String &h = server.hostHeader();
   // IPv4 de verdade (4 partes até 255, porta opcional) ou o nome exato deste relógio em .local
-  return safeIpv4Host(h.c_str(), h.length()) || safeOwnHost(h.c_str(), h.length(), netName);
+  return safeIpv4Host(h.c_str(), h.length()) || safeOwnHost(h.c_str(), h.length(), netName) ||
+         (lanName[0] && safeOwnHost(h.c_str(), h.length(), lanName));
 }
 bool panelOk() { return hostOk() && server.header("X-SmallTV") == "1"; }
 bool deny() {
@@ -2998,7 +3043,8 @@ void setup() {
   applyTimezone();
   setupWeb();
   alexaBegin();
-  String addr = String(netName) + ".local";
+  mdnsStart();
+  String addr = String(lanName[0] ? lanName : netName) + ".local";
   message(tr("Conectado", "Connected", "Conectado"), addr.c_str(), WiFi.localIP().toString().c_str());
   delay(3000);  // tempo de ler o endereço do painel
 }

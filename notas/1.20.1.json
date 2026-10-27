@@ -2,16 +2,16 @@
   "pt": [
     "Atualizações assinadas: pela rede o relógio só troca para um firmware assinado por este projeto",
     "A assinatura vai à parte do arquivo e é conferida antes da troca; sem ela, o firmware atual continua",
-    "Endereço fixo na rede: http://smalltv-xxxx.local (aparece na tela ao ligar), sem decorar o IP"
+    "Endereço fixo na rede: http://smalltv.local (aparece na tela ao ligar), sem decorar o IP"
   ],
   "en": [
     "Signed updates: over the network the clock only switches to firmware signed by this project",
     "The signature travels apart from the file and is checked before the swap; without it, the current firmware keeps running",
-    "Fixed network address: http://smalltv-xxxx.local (shown on screen at startup), no need to remember the IP"
+    "Fixed network address: http://smalltv.local (shown on screen at startup), no need to remember the IP"
   ],
   "es": [
     "Actualizaciones firmadas: por la red el reloj solo cambia a un firmware firmado por este proyecto",
     "La firma va aparte del archivo y se verifica antes del cambio; sin ella, sigue el firmware actual",
-    "Dirección fija en la red: http://smalltv-xxxx.local (aparece en pantalla al encender), sin memorizar la IP"
+    "Dirección fija en la red: http://smalltv.local (aparece en pantalla al encender), sin memorizar la IP"
   ]
 }

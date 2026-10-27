@@ -136,6 +136,18 @@ int main(){
   assert(m==12+20+4+2+10+4&&o[0]==0x12&&o[1]==0x34&&o[5]==1&&o[36]==0xC0&&o[37]==12&&!memcmp(o+m-4,ip,4));
   {size_t j=12;char nb[64];assert(dnsReadName(o,m,j,nb,sizeof nb)&&!strcmp(nb,"smalltv-1a2b.local")&&j==32);}
   assert(!mdnsAnswer(o,40,"smalltv-1a2b",ip,0,false));
+  // sondagem: a pergunta que o relógio manda e a resposta de outro relógio que já usa o nome
+  m=mdnsProbeQuery(o,sizeof o,"smalltv");
+  assert(m==12+15+4&&o[5]==1&&o[2]==0&&o[m-4]==0&&o[m-3]==255&&o[m-2]==0x80);
+  assert(mdnsAsksFor(o,m,"smalltv",&qu)&&qu);                              // outro relógio responderia
+  m=mdnsAnswer(o,sizeof o,"SmallTV",ip,0,false);
+  assert(mdnsHasAnswer(o,m,"smalltv")&&!mdnsHasAnswer(o,m,"smalltv-2"));
+  m=mdnsAnswer(o,sizeof o,"smalltv",ip,7,true);assert(mdnsHasAnswer(o,m,"smalltv"));  // com pergunta + ponteiro
+  assert(!mdnsHasAnswer(o,20,"smalltv"));                                   // pacote cortado no meio do nome
+  {uint8_t pq[64];size_t pm=mdnsProbeQuery(pq,sizeof pq,"smalltv");assert(!mdnsHasAnswer(pq,pm,"smalltv"));}  // pergunta não é resposta
+  {std::string big=q({0,0,0x84,0,0,0,0,1,0,0,0,0})+q({5})+"other"+q({5})+"local"+q({0,0,1,0,1,0,0,0,120,0xFF,0xFF});
+   assert(!mdnsHasAnswer((const uint8_t*)big.data(),big.size(),"smalltv"));}  // tamanho de dados maior que o pacote
+
  }
  // hora do clima
  assert(isoToEpoch("1970-01-01T00:00")==0);assert(isoToEpoch("2026-10-23T00:30")==1792715400LL);
