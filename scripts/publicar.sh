@@ -75,6 +75,18 @@ node -e 'const fs=require("fs"),z=fs.readFileSync(process.argv[1]),b=fs.statSync
 if(z.readUInt32LE(z.length-4)!==b||require("zlib").gunzipSync(z).length!==b)process.exit(1)' "$GZ" "$BIN" ||
   die "o .bin.gz não termina com o tamanho do .bin (o eboot apagaria o gerenciador de boot)"
 
+say "assinatura (à parte do firmware, nunca dentro dele)"
+# A chave privada fica fora do repositório (~/.smalltv-pomodoro/ota-private.pem ou SMALLTV_SIGNING_KEY).
+# O ota_key.h compilado precisa ser o da ota-public.pem: senão o relógio recusaria tudo o que assinamos.
+cp smalltv-pomodoro/ota_key.h build/ota_key.h.antes
+node scripts/assinar.cjs header >/dev/null
+cmp -s smalltv-pomodoro/ota_key.h build/ota_key.h.antes || { mv build/ota_key.h.antes smalltv-pomodoro/ota_key.h; die "o ota_key.h não é o da ota-public.pem"; }
+rm -f build/ota_key.h.antes
+node -e 'if(!require("fs").readFileSync(process.argv[1]).includes(require("./scripts/assinar.cjs").rawKey().n))process.exit(1)' "$BIN" ||
+  die "o binário não traz a chave pública de ota-public.pem"
+node scripts/assinar.cjs sign "$BIN" "$GZ"
+node scripts/assinar.cjs verify "$BIN" "$GZ"
+
 say "site (gh-pages)"
 W=$(mktemp -d)/gh-pages
 git -c core.autocrlf=false worktree add -q --detach "$W" origin/gh-pages
@@ -90,11 +102,14 @@ done
 mkdir -p "$W/$DIR"
 cp "$BIN" "$W/$DIR/smalltv-pomodoro.bin"
 cp "$GZ" "$W/$DIR/smalltv-pomodoro.bin.gz"
+cp "$BIN.sig" "$W/$DIR/smalltv-pomodoro.bin.sig"
+cp "$GZ.sig" "$W/$DIR/smalltv-pomodoro.bin.gz.sig"
 PREFIX=$([ $BETA = 1 ] && echo "beta/" || echo "")
 node -e '
 const fs=require("fs"),[w,dir,json,ver,notas,prefix]=process.argv.slice(1),p=require("./web/out/panel.json");
 const j={version:ver,date:new Date().toISOString().slice(0,10),file:prefix+"smalltv-pomodoro.bin",size:fs.statSync(w+"/"+dir+"/smalltv-pomodoro.bin").size,
- notes:require("./"+notas),gz:prefix+"smalltv-pomodoro.bin.gz",gzsize:fs.statSync(w+"/"+dir+"/smalltv-pomodoro.bin.gz").size,panel:p.panel,psri:p.psri};
+ notes:require("./"+notas),gz:prefix+"smalltv-pomodoro.bin.gz",gzsize:fs.statSync(w+"/"+dir+"/smalltv-pomodoro.bin.gz").size,panel:p.panel,psri:p.psri,
+ sig:fs.readFileSync(w+"/"+dir+"/smalltv-pomodoro.bin.sig").toString("base64"),gzsig:fs.readFileSync(w+"/"+dir+"/smalltv-pomodoro.bin.gz.sig").toString("base64")};
 fs.writeFileSync(w+"/"+json,JSON.stringify(j,null,2)+"\n");console.log(json+":",JSON.stringify({version:j.version,size:j.size,gzsize:j.gzsize,panel:j.panel}))' "$W" "$DIR" "$JSON" "$VER" "$NOTAS" "$PREFIX"
 git -C "$W" add -A
 git -C "$W" status --short
@@ -116,10 +131,12 @@ TARGET=$(git rev-parse HEAD)
 R=$(mktemp -d)
 cp "$BIN" "$R/smalltv-pomodoro-$TAG.bin"
 cp "$GZ" "$R/smalltv-pomodoro-$TAG.bin.gz"
+cp "$BIN.sig" "$R/smalltv-pomodoro-$TAG.bin.sig"
+cp "$GZ.sig" "$R/smalltv-pomodoro-$TAG.bin.gz.sig"
 (cd "$R" && sha256sum smalltv-pomodoro-"$TAG".bin smalltv-pomodoro-"$TAG".bin.gz | sed 's/ \*/  /' > SHA256SUMS.txt)
-node -e 'const n=require("./'"$NOTAS"'");console.log(n.pt.map(x=>"- "+x).join("\n")+"\n\n## Como instalar\nPelo painel: \"Atualizar agora\". Pelo `/update`: envie o **`.bin.gz` sem descompactar**. Confira os arquivos com `SHA256SUMS.txt`.")' > "$R/notas.md"
+node -e 'const n=require("./'"$NOTAS"'");console.log(n.pt.map(x=>"- "+x).join("\n")+"\n\n## Como instalar\nPelo painel: \"Atualizar agora\". Pelo `/update`: envie o **`.bin.gz` sem descompactar** junto com o **`.bin.gz.sig`** (a assinatura; sem ela o relógio recusa). Confira os arquivos com `SHA256SUMS.txt`.")' > "$R/notas.md"
 gh release create "$TAG" -R "$REPO" --target "$TARGET" $([ $BETA = 1 ] && echo --prerelease || echo --latest) \
-  --title "Pomodoro $VER" --notes-file "$R/notas.md" "$R"/smalltv-pomodoro-"$TAG".bin "$R"/smalltv-pomodoro-"$TAG".bin.gz "$R"/SHA256SUMS.txt
+  --title "Pomodoro $VER" --notes-file "$R/notas.md" "$R"/smalltv-pomodoro-"$TAG".bin "$R"/smalltv-pomodoro-"$TAG".bin.gz "$R"/smalltv-pomodoro-"$TAG".bin.sig "$R"/smalltv-pomodoro-"$TAG".bin.gz.sig "$R"/SHA256SUMS.txt
 
 say "conferindo no ar"
 for i in $(seq 1 40); do

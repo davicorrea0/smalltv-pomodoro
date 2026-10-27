@@ -21,6 +21,10 @@
 #include <WiFiUdp.h>
 #include <eboot_command.h>
 #include <bearssl/bearssl_hash.h>  // SHA-256 do painel recebido (/api/panel)
+#include <bearssl/bearssl_rsa.h>  // conferência da assinatura das atualizações (RSA-2048)
+#include <StackThunk.h>
+#include <libb64/cdecode.h>
+#include "ota_key.h"  // chave PÚBLICA das atualizações (gerada por scripts/assinar.cjs)
 #include "src/uzlib/uzlib.h"  // o mesmo descompactador do gerenciador de boot (licença zlib)
 extern "C" uint32_t _FS_start;
 #include "src/JPEGDEC/JPEGDEC.h"  // cópia da JPEGDEC 1.8.4 com as tabelas de cor geradas só durante a decodificação
@@ -38,7 +42,7 @@ extern "C" uint32_t _FS_start;
 
 void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);  // ui.cpp: recorta para a área suja; fora da tela, cai na faixa
 
-#define FW_VERSION "1.19.9"
+#define FW_VERSION "1.20.1"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
@@ -1943,7 +1947,7 @@ void handlePanelUpload() {
 }
 
 void setupWeb() {
-  server.collectHeaders("X-SmallTV", "Content-Length", "Authorization", "Origin");
+  server.collectHeaders("X-SmallTV", "Content-Length", "Authorization", "Origin", "X-Firmware-Sig");
   // painel: o desta versão na memória de arquivos ou, sem ele, o carregador que o instala
   server.on("/", HTTP_GET, [] {
     if (!readOk()) return;  // com senha, o navegador pede o login já ao abrir o painel
@@ -2488,6 +2492,60 @@ bool otaVerifyGz() {
   return !ota.err.length();
 }
 
+// ---------- assinatura das atualizações ----------
+// Pela rede, o relógio só troca de firmware se o arquivo vier com a assinatura do projeto: RSA-2048 sobre o
+// SHA-256 do arquivo exatamente como enviado (.bin ou .bin.gz), em base64 no cabeçalho X-Firmware-Sig.
+// A assinatura NÃO vai dentro do arquivo: na 1.20.0 ela ia no fim do .bin.gz e o eboot usou os 4 últimos
+// bytes como tamanho da imagem, apagando o gerenciador de boot. Também não usa a assinatura do Updater do
+// núcleo (que espera o mesmo sufixo). A conta é feita antes de Update.end(true): sem assinatura válida
+// nada é agendado e o firmware atual continua. O modo de recuperação (físico: rede própria com a senha na
+// tela) aceita firmware sem assinatura, para voltar ao original ou se a chave se perder.
+// Só a conta RSA do BearSSL (i15, a menor), com a chave em bytes: as classes do núcleo (PublicKey,
+// SigningVerifier) trazem junto o leitor de PEM e as curvas elípticas, ~30 KB a mais no firmware.
+// A conta roda na pilha extra do núcleo (6,2 KB, alocada só durante a conferência).
+extern "C" uint32_t thunk_br_rsa_i15_pkcs1_vrfy(const unsigned char *x, size_t xlen, const unsigned char *oid,
+                                                size_t hlen, const br_rsa_public_key *pk, unsigned char *out);
+make_stack_thunk(br_rsa_i15_pkcs1_vrfy);
+static br_sha256_context otaHash;
+static uint8_t otaSig[256];
+static bool otaSigGiven;
+
+static void otaSigBegin() {
+  br_sha256_init(&otaHash);
+  otaSigGiven = false;
+  const String &b64 = server.header("X-Firmware-Sig");
+  if (b64.length() < 340 || b64.length() > 348) return;  // 256 bytes = 344 caracteres
+  char buf[264];
+  base64_decodestate st;
+  base64_init_decodestate(&st);
+  if (base64_decode_block(b64.c_str(), b64.length(), buf, &st) != 256) return;
+  memcpy(otaSig, buf, 256);
+  otaSigGiven = true;
+}
+
+static bool otaSigOk() {
+  if (recoveryMode) return true;
+  if (!otaSigGiven) {
+    ota.err = F("firmware sem assinatura (use o arquivo do site ou o modo de recuperacao)");
+    return false;
+  }
+  if (ESP.getMaxFreeBlockSize() < 7500) {  // a conta usa uma pilha extra de 6,2 KB
+    ota.err = F("sem memoria para conferir a assinatura");
+    return false;
+  }
+  uint8_t n[sizeof OTA_KEY_N], e[sizeof OTA_KEY_E], want[32], got[32];
+  memcpy_P(n, OTA_KEY_N, sizeof n);  // o BearSSL lê a chave byte a byte: precisa estar na RAM
+  memcpy_P(e, OTA_KEY_E, sizeof e);
+  br_rsa_public_key key = {n, sizeof n, e, sizeof e};
+  br_sha256_out(&otaHash, want);
+  stack_thunk_add_ref();
+  bool ok = thunk_br_rsa_i15_pkcs1_vrfy(otaSig, sizeof otaSig, BR_HASH_OID_SHA256, sizeof got, &key, got) &&
+            !memcmp(got, want, sizeof got);
+  stack_thunk_del_ref();
+  if (!ok) ota.err = F("assinatura invalida");
+  return ok;
+}
+
 void setupUpdate() {
   auto authOk = [] {
     if (!panelOk()) return false;
@@ -2502,11 +2560,20 @@ void setupUpdate() {
                  "input,button{width:100%;padding:12px;margin:8px 0;border-radius:10px;border:1px solid #333;background:#1c1c1c;color:#eee;font:inherit}"
                  "button{background:#ff5a47;border:0;font-weight:700}</style><h2>");
     p += tr("Atualizar firmware", "Update firmware", "Actualizar firmware");
-    p += F("</h2><form method=post enctype=multipart/form-data><input type=file name=firmware accept=.bin,.gz required><button>");
+    p += F("</h2><form method=post enctype=multipart/form-data><input type=file name=firmware accept=.bin,.gz required>");
+    if (!recoveryMode) {  // fora do modo de recuperação só entra firmware assinado: o .sig vem junto no site
+      p += tr("Assinatura (.sig)", "Signature (.sig)", "Firma (.sig)");
+      p += F("<input type=file name=sig accept=.sig required>");
+    }
+    p += F("<button>");
     p += tr("Enviar", "Upload", "Enviar");
+    // Só o firmware vai no corpo; a assinatura segue em base64 no cabeçalho X-Firmware-Sig.
     p += F("</button></form><small>v" FW_VERSION "</small>"
-           "<script>document.forms[0].onsubmit=e=>{e.preventDefault();document.body.innerHTML='...';"
-           "fetch('/update',{method:'POST',body:new FormData(e.target),headers:{'X-SmallTV':'1'}}).then(r=>r.text()).then(t=>document.body.innerHTML=t)}</script>");
+           "<script>document.forms[0].onsubmit=async e=>{e.preventDefault();const f=e.target,h={'X-SmallTV':'1'},d=new FormData();"
+           "d.append('firmware',f.firmware.files[0]);"
+           "if(f.sig&&f.sig.files[0])h['X-Firmware-Sig']=btoa(String.fromCharCode(...new Uint8Array(await f.sig.files[0].arrayBuffer())));"
+           "document.body.innerHTML='...';"
+           "fetch('/update',{method:'POST',body:d,headers:h}).then(r=>r.text()).then(t=>document.body.innerHTML=t)}</script>");
     server.send(200, "text/html", p);
   });
   server.on("/update", HTTP_POST, [authOk] {
@@ -2523,6 +2590,7 @@ void setupUpdate() {
       HTTPUpload &up = server.upload();
       if (up.status == UPLOAD_FILE_START) {
         ota = {0, 0, 0, 0xFFFFFFFF, {0}, String(), authOk(), false, false, false};
+        otaSigBegin();
         if (!ota.authOk) ota.err = F("senha");
         else if (inAlbum) stopAlbum();  // libera RAM e o LittleFS durante a gravação
       } else if (up.status == UPLOAD_FILE_WRITE && !ota.err.length()) {
@@ -2533,15 +2601,18 @@ void setupUpdate() {
           if (!size || !Update.begin(size, U_FLASH)) ota.err = size ? Update.getErrorString() : String(F("tamanho desconhecido"));
         }
         if (!ota.gz) otaConsume(up.buf, up.currentSize);
+        br_sha256_update(&otaHash, up.buf, up.currentSize);
         if (!ota.err.length() && Update.write(up.buf, up.currentSize) != up.currentSize) ota.err = Update.getErrorString();
         if (ota.err.length()) Update.end();  // desiste: o firmware atual continua
       } else if (up.status == UPLOAD_FILE_END && !ota.err.length()) {
         if (!ota.begun) ota.err = F("arquivo vazio");
         else if (ota.gz) {
-          if (!Update.end(true)) ota.err = Update.getErrorString();
+          if (!otaSigOk()) Update.end();  // assinatura antes de agendar a troca: sem ela nada muda
+          else if (!Update.end(true)) ota.err = Update.getErrorString();
           else otaVerifyGz();
         } else if (ota.got < 4120 || ota.got != ota.size) ota.err = F("arquivo incompleto");
         else if (ota.crc != ota.want) ota.err = F("arquivo corrompido (CRC)");
+        else otaSigOk();
         if (ota.gz) {}
         else if (ota.err.length()) Update.end();
         else if (!Update.end(true)) ota.err = Update.getErrorString();
@@ -2631,7 +2702,7 @@ void startRecovery() {
     ESP.restart();
   });
   server.on("/api/stats", HTTP_GET, sendStats);
-  server.collectHeaders("X-SmallTV", "Authorization", "Content-Length");
+  server.collectHeaders("X-SmallTV", "Authorization", "Content-Length", "X-Firmware-Sig");
   setupUpdate();
   server.begin();
 }

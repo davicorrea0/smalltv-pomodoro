@@ -18,3 +18,7 @@ smalltv-loader/
 web/node_modules/
 web/out/
 build/testes/
+
+# chaves de assinatura nunca vão ao Git (a privada fica em ~/.smalltv-pomodoro)
+*.key
+*private*.pem

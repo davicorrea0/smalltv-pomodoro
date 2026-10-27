@@ -286,7 +286,7 @@ nav button.on svg{stroke:var(--ac)}
   <div class="row"><button class="btn" onclick="location='/update'">Atualizar firmware</button>
   <button class="btn" onclick="if(confirm(t('Apagar Wi-Fi salvo e reiniciar?')))post('/api/wifireset').then(()=>toast(t('Reiniciando...')))">Resetar Wi-Fi</button></div>
   <p><button class="btn" id="fmt" hidden onclick="if(confirm(t('Formatar a memória? Todas as fotos e GIFs serão apagados.')))post('/api/format').then(r=>r.text()).then(x=>{toast(t(x));files()})">Formatar memória de arquivos</button></p>
-  <small>Usuário do /update: admin. Para voltar ao firmware original, envie o .bin da GeekMagic em "Atualizar firmware". Se o relógio travar, ligue e desligue 3 vezes seguidas (cada vez por menos de 30 s): ele abre o modo de recuperação, com a rede SmallTV-Recuperacao. Versão <span id="ver"></span> · RAM livre <span id="heap"></span></small>
+  <small>Usuário do /update: admin. Pela rede o relógio só aceita firmware assinado deste projeto; para voltar ao firmware original, use o modo de recuperação. Se o relógio travar, ligue e desligue 3 vezes seguidas (cada vez por menos de 30 s): ele abre o modo de recuperação, com a rede SmallTV-Recuperacao. Versão <span id="ver"></span> · RAM livre <span id="heap"></span></small>
  </div>
  </div>
  <div class="grp">
@@ -459,10 +459,11 @@ function showUpdate(){const u=UPD;if(!u)return;$('updt').textContent=t(u.beta?'V
  ((u.notes||{})[LANGS[LG]]||(u.notes||{}).pt||[]).forEach(x=>n.appendChild(el('li',null,x)));$('upd').classList.add('v')}
 function skipUpdate(){try{localStorage.updSkip=UPD.version}catch(e){}$('upd').classList.remove('v')}
 async function doUpdate(){const u=UPD;if(!u||updating||!confirm(t('Atualizar o relógio para a versão {0}? Ele reinicia sozinho no fim.',u.version)))return;
- const h={};  // com senha, o navegador já manda o login do painel
+ const gz=!!u.gz,sig=gz?u.gzsig:u.sig,h={};  // com senha, o navegador já manda o login do painel
+ if(sig)h['X-Firmware-Sig']=sig;  // 1.20.1+: sem a assinatura do arquivo o relógio recusa a troca
  updating=true;$('updgo').disabled=true;
  try{$('updt').textContent=t('Baixando a versão {0}...',u.version);// a partir da 1.14 o relógio aceita o .bin.gz (menor, e o firmware pode passar de 520 KB)
-  const gz=!!u.gz,bin=await (await fetch(SITE+'firmware/'+(gz?u.gz:u.file),{cache:'no-store'})).blob();
+  const bin=await (await fetch(SITE+'firmware/'+(gz?u.gz:u.file),{cache:'no-store'})).blob();
   if((gz?u.gzsize:u.size)&&bin.size!=(gz?u.gzsize:u.size))throw 'size';
   // 1.19+: o painel fica na memória de arquivos; leva já o da versão nova (sem ele, o carregador baixa depois)
   if(u.panel)try{const p=await (await fetch(SITE+'panel/'+u.panel,{integrity:u.psri,cache:'no-store'})).blob(),pf=new FormData();pf.append('p',p,'panel.gz');await fetch('/api/panel',{method:'POST',body:pf})}catch(e){}

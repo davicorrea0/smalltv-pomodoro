@@ -11,6 +11,37 @@ const gzv=source.slice(source.indexOf('bool otaVerifyGz() {'),source.indexOf('\n
 if(!gzv.includes('cmd.args[2] - 4')||!gzv.includes('!= ota.got'))throw Error('otaVerifyGz must check the eboot size trailer');
 const update=fn('setupUpdate');
 if(!update.includes('!recoveryMode && !authed()'))throw Error('update page bypasses throttle');
+// Signed OTA (1.20.1): the signature travels apart from the file and is checked before Update.end(true)
+// schedules the swap, on both the .bin and the .bin.gz paths. Never the core's appended-signature scheme.
+if(/installSignature|UpdaterHashClass/.test(source))throw Error('do not use the core appended signature (it bricked 1.20.0)');
+const end=update.slice(update.indexOf('UPLOAD_FILE_END'),update.indexOf('UPLOAD_FILE_ABORTED'));
+const ends=[...end.matchAll(/Update\.end\(true\)/g)].map(m=>m.index);
+if(ends.length!==2)throw Error('expected two Update.end(true) in the upload end');
+const gzEnd=end.slice(end.indexOf('if (ota.gz) {'),ends[0]);
+if(!gzEnd.includes('if (!otaSigOk()) Update.end();'))throw Error('.bin.gz swap scheduled without the signature check');
+const binEnd=end.slice(end.indexOf('arquivo corrompido (CRC)'),ends[1]);
+if(!binEnd.includes('else otaSigOk();')||!binEnd.includes('if (ota.err.length()) Update.end();'))throw Error('.bin swap scheduled without the signature check');
+const sigOk=source.slice(source.indexOf('static bool otaSigOk() {'),source.indexOf('\n}',source.indexOf('static bool otaSigOk() {')));
+if(!sigOk.includes('if (recoveryMode) return true;')||!sigOk.includes('stack_thunk_add_ref();')||!sigOk.includes('getMaxFreeBlockSize()'))
+ throw Error('otaSigOk: recovery escape, thunk stack and heap check are required');
+if(!update.includes('br_sha256_update(&otaHash, up.buf, up.currentSize);')||!update.includes('otaSigBegin();'))throw Error('upload must hash every byte');
+// collectHeaders replaces the list: the normal server (setupWeb) and recovery (startRecovery) each set theirs once
+for(const [name,hs] of [['setupWeb',['Origin','X-Firmware-Sig','Authorization','X-SmallTV']],['startRecovery',['Authorization','X-SmallTV']]]){
+ const ch=[...fn(name).matchAll(/server\.collectHeaders\(([^)]*)\)/g)];
+ if(ch.length!==1||!hs.every(h=>ch[0][1].includes('"'+h+'"')))throw Error(name+': collectHeaders must be called once with '+hs);
+}
+{ // signer and verifier agree on the published key; a changed byte or another key fails
+ const crypto=require('crypto'),{sign,verify,rawKey}=require('../scripts/assinar.cjs');
+ const kh=fs.readFileSync(path.join(__dirname,'../smalltv-pomodoro/ota_key.h'),'utf8');
+ const bytes=name=>Buffer.from(kh.match(new RegExp(name+'\\[\\d+\\] PROGMEM = \\{([^}]*)\\}'))[1].match(/0x[0-9a-f]{2}/g).map(Number));
+ const raw=rawKey();
+ if(!bytes('OTA_KEY_N').equals(raw.n)||!bytes('OTA_KEY_E').equals(raw.e)||raw.n.length!==256)
+  throw Error('ota_key.h differs from ota-public.pem (node scripts/assinar.cjs header)');
+ const k=crypto.generateKeyPairSync('rsa',{modulusLength:2048}),data=crypto.randomBytes(5000),sig=sign(data,k.privateKey);
+ if(!verify(data,sig,k.publicKey)||sig.length!==256||sig.toString('base64').length!==344)throw Error('sign/verify');
+ const bad=Buffer.from(data);bad[100]^=1;
+ if(verify(bad,sig,k.publicKey)||verify(data,sig))throw Error('tampered file or foreign key accepted');
+}
 const out=process.argv[2];if(!out)throw Error('output.cpp required');
 const header=path.relative(path.dirname(path.resolve(out)),path.resolve(__dirname,'../smalltv-pomodoro/security.h')).replaceAll('\\','/');
 fs.writeFileSync(out,`#include "${header}"
