@@ -388,7 +388,40 @@ void command(const String &c) {
 //   Pausa       ligar: pausa curta ("em 10%": de 10 minutos); desligar: volta ao foco
 //   Pausa longa ligar: pausa longa ("em 30%": de 30 minutos); desligar: volta ao foco
 // A lâmpada acesa mostra a fase atual no app da Alexa.
+// Nome na rede: "smalltv-" + 4 hex do chip, igual em todo boot e diferente entre relógios. Vale para o
+// DHCP (roteadores que mostram o nome) e para o mDNS: http://smalltv-1a2b.local sem decorar o IP.
+char netName[16];
 WiFiUDP hueUdp;
+// Nome na rede (smalltv-xxxx.local): só o registro A, com o leitor de pacotes de security.h (testado).
+WiFiUDP mdnsUdp;
+IPAddress mdnsIp;
+
+void mdnsSend(uint16_t id, bool legacy, bool direct) {
+  uint8_t out[80], ip[4] = {mdnsIp[0], mdnsIp[1], mdnsIp[2], mdnsIp[3]};
+  size_t m = mdnsAnswer(out, sizeof out, netName, ip, id, legacy);
+  if (!m) return;
+  if (direct) mdnsUdp.beginPacket(mdnsUdp.remoteIP(), mdnsUdp.remotePort());
+  else mdnsUdp.beginPacketMulticast(IPAddress(224, 0, 0, 251), 5353, mdnsIp);
+  mdnsUdp.write(out, m);
+  mdnsUdp.endPacket();
+}
+
+void mdnsLoop() {
+  if (WiFi.status() != WL_CONNECTED) return;
+  if (WiFi.localIP() != mdnsIp) {  // ligou ou o IP mudou: entra de novo no grupo e se anuncia
+    mdnsIp = WiFi.localIP();
+    mdnsUdp.stop();
+    if (mdnsUdp.beginMulticast(mdnsIp, IPAddress(224, 0, 0, 251), 5353)) mdnsSend(0, false, false);
+  }
+  int len = mdnsUdp.parsePacket();
+  if (len <= 0) return;
+  uint8_t b[256];  // a pergunta vem no começo; o resto (respostas conhecidas) pode ficar de fora
+  int n = mdnsUdp.read(b, sizeof b);
+  bool qu = false;
+  if (n <= 0 || !mdnsAsksFor(b, n, netName, &qu)) return;
+  bool legacy = mdnsUdp.remotePort() != 5353;
+  mdnsSend((uint16_t)(b[0] << 8 | b[1]), legacy, legacy || qu);
+}
 bool alexaUp = false;     // ouvindo a descoberta
 uint8_t alexaBri = 255;   // último brilho pedido (1-255)
 uint32_t alexaSeen = 0;   // millis() do último pedido de um Echo (0 = nenhum desde que ligou)
@@ -1630,7 +1663,9 @@ void sendState() {
   j += alexaMin;
   j += F("},\"pv\":");
   j += previewActive() ? (previewUntil - millis()) / 1000 + 1 : 0;
-  j += F(",\"heap\":");
+  j += F(",\"name\":\"");
+  j += netName;
+  j += F("\",\"heap\":");
   j += ESP.getFreeHeap();
   j += F(",\"blk\":");
   j += ESP.getMaxFreeBlockSize();
@@ -1831,7 +1866,8 @@ bool fsRemoveAll(const String &p, int depth) {
 // Wi-Fi e o modo de recuperação (exigem estar perto do relógio).
 bool hostOk() {
   const String &h = server.hostHeader();
-  return safeIpv4Host(h.c_str(), h.length());  // IPv4 de verdade (4 partes até 255, porta opcional)
+  // IPv4 de verdade (4 partes até 255, porta opcional) ou o nome exato deste relógio em .local
+  return safeIpv4Host(h.c_str(), h.length()) || safeOwnHost(h.c_str(), h.length(), netName);
 }
 bool panelOk() { return hostOk() && server.header("X-SmallTV") == "1"; }
 bool deny() {
@@ -2830,7 +2866,7 @@ void wifiGuardLoop() {
 
 bool connectStored(uint32_t timeoutMs) {
   WiFi.mode(WIFI_STA);
-  WiFi.hostname(HOSTNAME);
+  WiFi.hostname(netName);
   wifiHarden();
   WiFi.begin();
   uint32_t t0 = millis();
@@ -2906,6 +2942,7 @@ void startPortal() {
 
 // ---------- setup / loop ----------
 void setup() {
+  snprintf(netName, sizeof netName, HOSTNAME "-%04x", (unsigned)(ESP.getChipId() & 0xFFFF));
   pinMode(PIN_BL, OUTPUT);
   loadSettings();
   BootCount bc;
@@ -2961,6 +2998,9 @@ void setup() {
   applyTimezone();
   setupWeb();
   alexaBegin();
+  String addr = String(netName) + ".local";
+  message(tr("Conectado", "Connected", "Conectado"), addr.c_str(), WiFi.localIP().toString().c_str());
+  delay(3000);  // tempo de ler o endereço do painel
 }
 
 uint32_t lastRender = 0, lastBriCheck = 0;
@@ -2980,6 +3020,7 @@ void loop() {
     return;
   }
   server.handleClient();
+  mdnsLoop();
   statsFlush();
   wifiGuardLoop();
   alexaLoop();

@@ -2,6 +2,8 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdio.h>
+#include <ctype.h>
 // Allocation-free checks shared with the regression tests.
 struct UploadGate {
   size_t bytes = 0, limit = 0;
@@ -98,6 +100,128 @@ static bool safeIpv4Host(const char *s, size_t n) {
     if (port > 65535) return false;
   }
   return port > 0;
+}
+
+// O nome do próprio relógio na rede local ("smalltv-1a2b.local", porta opcional), sem diferenciar
+// maiúsculas. Só esse nome exato: um nome qualquer reabriria o DNS rebinding que o IPv4 fecha.
+static bool safeOwnHost(const char *s, size_t n, const char *name) {
+  size_t k = strlen(name);
+  if (!k || n < k + 6) return false;
+  for (size_t i = 0; i < k; i++)
+    if (tolower((unsigned char)s[i]) != tolower((unsigned char)name[i])) return false;
+  const char *dot = ".local";
+  for (size_t i = 0; i < 6; i++)
+    if (tolower((unsigned char)s[k + i]) != dot[i]) return false;
+  size_t i = k + 6;
+  if (i == n) return true;
+  if (s[i++] != ':' || i == n || n - i > 5) return false;
+  unsigned port = 0;
+  for (; i < n; i++) {
+    if (s[i] < '0' || s[i] > '9') return false;
+    port = port * 10 + (unsigned)(s[i] - '0');
+  }
+  return port > 0 && port <= 65535;
+}
+
+// ---------- mDNS mínimo (RFC 6762): só responde "qual o IPv4 de <nome>.local?" ----------
+// O ESP8266mDNS do núcleo custa ~21 KB; para abrir o painel pelo nome basta o registro A.
+// Lê um nome DNS em p[i..n) (ponteiros de compressão: no máximo 8 saltos), em minúsculas e com pontos.
+// Rótulo com '.' ou byte nulo é recusado ("smalltv-1a2b.local" num rótulo só não vira o nosso nome).
+static bool dnsReadName(const uint8_t *p, size_t n, size_t &i, char *out, size_t cap) {
+  size_t pos = i, len = 0;
+  bool jumped = false;
+  int jumps = 0;
+  for (;;) {
+    if (pos >= n) return false;
+    uint8_t c = p[pos];
+    if (c == 0) {
+      pos++;
+      break;
+    }
+    if ((c & 0xC0) == 0xC0) {
+      if (pos + 1 >= n || ++jumps > 8) return false;
+      if (!jumped) i = pos + 2;
+      jumped = true;
+      pos = ((size_t)(c & 0x3F) << 8) | p[pos + 1];
+      continue;
+    }
+    if (c & 0xC0 || pos + 1 + c > n) return false;
+    if (len) {
+      if (len + 1 >= cap) return false;
+      out[len++] = '.';
+    }
+    for (size_t k = 0; k < c; k++) {
+      uint8_t ch = p[pos + 1 + k];
+      if (ch == '.' || ch == 0 || len + 1 >= cap) return false;
+      out[len++] = (char)tolower(ch);
+    }
+    pos += 1 + c;
+  }
+  if (!jumped) i = pos;
+  out[len] = 0;
+  return true;
+}
+
+// É uma pergunta (não resposta) pelo registro A ou ANY, classe IN, de "<name>.local"? *qu = pediu
+// resposta direta (bit QU). Nome comparado sem diferenciar maiúsculas.
+static bool mdnsAsksFor(const uint8_t *p, size_t n, const char *name, bool *qu) {
+  if (n < 12 || (p[2] & 0xF8)) return false;  // QR=1 (resposta) ou opcode diferente de consulta
+  unsigned qd = (unsigned)p[4] << 8 | p[5];
+  if (qd > 16) return false;
+  char want[40], got[64];
+  if (snprintf(want, sizeof want, "%s.local", name) >= (int)sizeof want) return false;
+  for (char *c = want; *c; c++) *c = (char)tolower((unsigned char)*c);
+  size_t i = 12;
+  for (unsigned q = 0; q < qd; q++) {
+    if (!dnsReadName(p, n, i, got, sizeof got) || i + 4 > n) return false;
+    unsigned type = (unsigned)p[i] << 8 | p[i + 1], cls = (unsigned)p[i + 2] << 8 | p[i + 3];
+    i += 4;
+    if ((type == 1 || type == 255) && (cls & 0x7FFF) == 1 && !strcmp(got, want)) {
+      if (qu) *qu = cls & 0x8000;
+      return true;
+    }
+  }
+  return false;
+}
+
+// Monta a resposta com o registro A. legacy: quem perguntou não usa a porta 5353 (resolvedor comum):
+// devolve o mesmo id, repete a pergunta e usa TTL curto, como pede a RFC 6762 (6.7). 0 se não couber.
+static size_t mdnsAnswer(uint8_t *o, size_t cap, const char *name, const uint8_t ip[4], uint16_t id, bool legacy) {
+  size_t k = strlen(name), need = 12 + (legacy ? k + 8 + 4 + 2 : k + 8) + 10 + 4;
+  if (!k || k > 63 || cap < need) return 0;
+  size_t i = 0;
+  auto u16 = [&](unsigned v) { o[i++] = (uint8_t)(v >> 8); o[i++] = (uint8_t)v; };
+  auto qname = [&] {
+    o[i++] = (uint8_t)k;
+    memcpy(o + i, name, k);
+    i += k;
+    o[i++] = 5;
+    memcpy(o + i, "local", 5);
+    i += 5;
+    o[i++] = 0;
+  };
+  u16(legacy ? id : 0);
+  u16(0x8400);  // resposta com autoridade
+  u16(legacy ? 1 : 0);
+  u16(1);
+  u16(0);
+  u16(0);
+  if (legacy) {
+    qname();
+    u16(1);
+    u16(1);
+    u16(0xC00C);  // aponta para o nome da pergunta
+  } else {
+    qname();
+  }
+  u16(1);                         // A
+  u16(legacy ? 0x0001 : 0x8001);  // IN (+ cache-flush no mDNS)
+  u16(0);
+  u16(legacy ? 10 : 120);  // TTL
+  u16(4);
+  memcpy(o + i, ip, 4);
+  i += 4;
+  return i;
 }
 
 // "2026-10-23T00:30" -> segundos desde 1970 (como se fosse UTC; quem chama tira o fuso). -1 se inválido.

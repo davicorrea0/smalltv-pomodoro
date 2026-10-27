@@ -542,7 +542,7 @@ function load(s){if(s.cfg.lang!=null&&s.cfg.lang!=LG)setLang(s.cfg.lang);if(last
  const met=s.today>=s.cfg.goal;if(met!=$('goalbar').classList.contains('v')){$('goalbar').classList.toggle('v',met);const gi=$('goalimg').getContext('2d');gi.clearRect(0,0,16,16);spr(gi,SPR.t_comemorando,0,0,1)}
  if(STATS&&(s.today!=lastToday||STATS.goal!=s.cfg.goal))loadStats();lastToday=s.today;  // um foco terminou: horta e conquistas novas
  if(!updChecked){updChecked=true;checkUpdate()}
- $('clock').textContent=s.clock;$('ver').textContent=s.ver;$('heap').textContent=kb(s.heap)+' ('+t('bloco')+' '+kb(s.blk)+')';$('oldl').style.display=s.cfg.lock?'':'none';
+ $('clock').textContent=s.clock;$('ver').textContent=s.ver+(s.name?' · http://'+s.name+'.local':'');$('heap').textContent=kb(s.heap)+' ('+t('bloco')+' '+kb(s.blk)+')';$('oldl').style.display=s.cfg.lock?'':'none';
  // mostrador atual
  const ck=curKey(s),cf=FACES.find(f=>fkey(f)==ck);
  if(cf&&$('curimg').dataset.k!=ck){$('curimg').dataset.k=ck;$('curimg').onerror=cf.pkg?()=>{$('curimg').onerror=null;$('curimg').src=CATALOG+encodeURIComponent(cf.pkg)+'.png'}:null;$('curimg').src=faceSrc(cf);$('curname').textContent=cf.n;$('curdesc').textContent=cf.d}

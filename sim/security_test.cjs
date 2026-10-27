@@ -105,6 +105,38 @@ int main(){
  for(auto h:hosts)assert(safeIpv4Host(h,strlen(h)));
  const char*badHosts[]={"smalltv.local","999.1.1.1","1.2.3","1.2.3.4:0","1.2.3.4:65536","1.2.3.4:80:1","1.2.3.4 ",""};
  for(auto h:badHosts)assert(!safeIpv4Host(h,strlen(h)));
+ const char*own[]={"smalltv-1a2b.local","SmallTV-1A2B.LOCAL","smalltv-1a2b.local:80","smalltv-1a2b.local:65535"};
+ for(auto h:own)assert(safeOwnHost(h,strlen(h),"smalltv-1a2b"));
+ const char*notOwn[]={"smalltv-1a2c.local","smalltv-1a2b.local.evil.com","evil.smalltv-1a2b.local","smalltv-1a2b.loca","smalltv-1a2b.local:","smalltv-1a2b.local:0","smalltv-1a2b.local:655350","smalltv-1a2b.local:8a","smalltv-1a2b","smalltv-1a2b.localx",""};
+ for(auto h:notOwn)assert(!safeOwnHost(h,strlen(h),"smalltv-1a2b"));
+ assert(!safeOwnHost("x.local",7,""));
+ {// mDNS mínimo: pergunta A/ANY pelo nosso nome; resposta, compressão maliciosa e rótulo com ponto
+  auto q=[](std::initializer_list<uint8_t> b){return std::string(b.begin(),b.end());};
+  const std::string hdr=q({0x12,0x34,0,0,0,1,0,0,0,0,0,0});
+  const std::string nm=q({12})+"SmallTV-1a2b"+q({5})+"local"+q({0});
+  auto ask=[&](const std::string&s,bool*qu=nullptr){return mdnsAsksFor((const uint8_t*)s.data(),s.size(),"smalltv-1a2b",qu);};
+  bool qu=false;
+  assert(ask(hdr+nm+q({0,1,0,1}),&qu)&&!qu);
+  assert(ask(hdr+nm+q({0,255,0x80,1}),&qu)&&qu);
+  assert(!ask(hdr+nm+q({0,28,0,1})));                       // AAAA: não respondemos
+  assert(!ask(hdr+nm+q({0,1,0,3})));                        // classe diferente de IN
+  assert(!ask(hdr+nm+q({0,1})));                            // pergunta cortada
+  std::string resp=hdr+nm+q({0,1,0,1});resp[2]=(char)0x84;assert(!ask(resp));  // é resposta, não pergunta
+  assert(!ask(hdr+q({18})+"smalltv-1a2b.local"+q({0,0,1,0,1})));  // um rótulo só, com pontos
+  assert(!ask(hdr+q({12})+"smalltv-1a2c"+q({5})+"local"+q({0,0,1,0,1})));
+  std::string two=q({0,0,0,0,0,2,0,0,0,0,0,0})+q({5})+"other"+q({5})+"local"+q({0,0,1,0,1})+q({12})+"smalltv-1a2b"+q({0xC0,18,0,1,0,1});
+  assert(ask(two));                                         // 2ª pergunta com ponteiro para ".local"
+  assert(!ask(hdr+q({0xC0,12,0,1,0,1})));                   // ponteiro para si mesmo: laço limitado
+  assert(!ask(hdr+q({0xC0,200,0,1,0,1})));                  // ponteiro para fora do pacote
+  assert(!ask(hdr.substr(0,11)));
+  uint8_t o[80],ip[4]={192,168,1,9};
+  size_t m=mdnsAnswer(o,sizeof o,"smalltv-1a2b",ip,0x1234,false);
+  assert(m==12+20+10+4&&o[0]==0&&o[1]==0&&o[2]==0x84&&o[7]==1&&o[5]==0&&!memcmp(o+m-4,ip,4)&&o[12+20+2]==0x80);
+  m=mdnsAnswer(o,sizeof o,"smalltv-1a2b",ip,0x1234,true);
+  assert(m==12+20+4+2+10+4&&o[0]==0x12&&o[1]==0x34&&o[5]==1&&o[36]==0xC0&&o[37]==12&&!memcmp(o+m-4,ip,4));
+  {size_t j=12;char nb[64];assert(dnsReadName(o,m,j,nb,sizeof nb)&&!strcmp(nb,"smalltv-1a2b.local")&&j==32);}
+  assert(!mdnsAnswer(o,40,"smalltv-1a2b",ip,0,false));
+ }
  // hora do clima
  assert(isoToEpoch("1970-01-01T00:00")==0);assert(isoToEpoch("2026-10-23T00:30")==1792715400LL);
  assert(isoToEpoch("2026-13-01T00:00")==-1&&isoToEpoch("2026-10-23")==-1&&isoToEpoch(nullptr)==-1&&isoToEpoch("2026-10-23T0a:30")==-1);
