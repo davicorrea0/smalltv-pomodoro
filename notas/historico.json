@@ -1,0 +1,254 @@
+{
+  "_sobre": "Notas curtas (pt/en/es) das versões publicadas antes de notas/<versão>.json existir, resumidas das páginas de release do GitHub. \"aviso\" marca uma versão que não deve ser usada. Lido por scripts/releases-page.cjs.",
+  "1.3.2": {
+    "pt": ["Primeira versão pública: 8 mostradores (Matriz, Tomate, Analógico, Clima, Neon, Flip, LCD retrô e Palavras)", "Pomodoro com anel de progresso e o mascote tomate", "Clima sem chave de API, álbum de fotos e GIFs, brilho noturno e atualização pelo /update"],
+    "en": ["First public release: 8 faces (Matrix, Tomato, Analog, Weather, Neon, Flip, Retro LCD and Words)", "Pomodoro with a progress ring and the tomato mascot", "Weather without an API key, photo and GIF album, night brightness and updates via /update"],
+    "es": ["Primera versión pública: 8 esferas (Matriz, Tomate, Analógico, Clima, Neón, Flip, LCD retro y Palabras)", "Pomodoro con anillo de progreso y la mascota tomate", "Clima sin clave de API, álbum de fotos y GIF, brillo nocturno y actualización por /update"]
+  },
+  "1.3.3": {
+    "pt": ["Dígitos do LCD retrô retos e mais grossos, legíveis de longe"],
+    "en": ["Retro LCD digits upright and bolder, readable from across the room"],
+    "es": ["Dígitos del LCD retro rectos y más gruesos, legibles de lejos"]
+  },
+  "1.3.4": {
+    "pt": ["LCD retrô com o desenho da fonte DSEG7, como um relógio LCD de verdade"],
+    "en": ["Retro LCD drawn with the DSEG7 font, like a real LCD clock"],
+    "es": ["LCD retro con el diseño de la fuente DSEG7, como un reloj LCD de verdad"]
+  },
+  "1.4.0": {
+    "pt": ["Painel novo em abas (Relógio, Foco, Fotos, Ajustes)", "Galeria de mostradores com prévia e teste de 15 s no relógio"],
+    "en": ["New tabbed panel (Clock, Focus, Photos, Settings)", "Face gallery with previews and a 15 s try-out on the clock"],
+    "es": ["Panel nuevo con pestañas (Reloj, Foco, Fotos, Ajustes)", "Galería de esferas con vista previa y prueba de 15 s en el reloj"]
+  },
+  "1.4.1": {
+    "pt": ["Flip com a fonte Bebas Neue e virada de plaquinhas em perspectiva"],
+    "en": ["Flip face with Bebas Neue and a perspective flap animation"],
+    "es": ["Flip con la fuente Bebas Neue y giro de paletas en perspectiva"]
+  },
+  "1.4.2": {
+    "pt": ["Virada do Flip mais natural, com aceleração e quique", "Biblioteca de sprites em pixel art e escolha da atividade do foco"],
+    "en": ["More natural Flip animation, with acceleration and bounce", "Pixel art sprite library and a choice of focus activity"],
+    "es": ["Giro del Flip más natural, con aceleración y rebote", "Biblioteca de sprites en pixel art y elección de la actividad del foco"]
+  },
+  "1.5.0": {
+    "pt": ["Firmware 25 KB menor (painel comprimido e rede mais leve)", "Cada mostrador vira um arquivo próprio, com guia para criar novos"],
+    "en": ["Firmware 25 KB smaller (compressed panel, lighter network stack)", "Each face is its own file, with a guide to create new ones"],
+    "es": ["Firmware 25 KB más pequeño (panel comprimido y red más ligera)", "Cada esfera es un archivo propio, con guía para crear nuevas"]
+  },
+  "1.6.0": {
+    "pt": ["Mostradores instaláveis: arquivos .json de poucos KB, sem regravar o firmware", "Galeria online no painel e 3 mostradores de exemplo"],
+    "en": ["Installable faces: small .json files, no reflashing needed", "Online gallery in the panel and 3 sample faces"],
+    "es": ["Esferas instalables: archivos .json de pocos KB, sin regrabar el firmware", "Galería en línea en el panel y 3 esferas de ejemplo"]
+  },
+  "1.6.1": {
+    "pt": ["Instalar um mostrador já o coloca em uso", "Painel não fica preso no cache depois de atualizar"],
+    "en": ["Installing a face switches to it right away", "The panel no longer sticks in the cache after an update"],
+    "es": ["Instalar una esfera ya la pone en uso", "El panel ya no queda en caché después de actualizar"]
+  },
+  "1.6.2": {
+    "pt": ["Galeria do painel igual à do site, instalação com um toque"],
+    "en": ["Panel gallery matches the website, one-tap install"],
+    "es": ["Galería del panel igual a la del sitio, instalación con un toque"]
+  },
+  "1.6.3": {
+    "pt": ["Mostradores baixados sempre aparecem com prévia no painel"],
+    "en": ["Downloaded faces always show a preview in the panel"],
+    "es": ["Las esferas descargadas siempre aparecen con vista previa en el panel"]
+  },
+  "1.6.4": {
+    "pt": ["Prévias da galeria carregam em fila (não faltam mais no celular)"],
+    "en": ["Gallery previews load in a queue (no more missing ones on phones)"],
+    "es": ["Las vistas previas cargan en cola (ya no faltan en el móvil)"]
+  },
+  "1.6.5": {
+    "pt": ["Neon centralizado e fontes novas para pacotes: Outfit e Righteous"],
+    "en": ["Centered Neon face and new package fonts: Outfit and Righteous"],
+    "es": ["Neón centrado y fuentes nuevas para paquetes: Outfit y Righteous"]
+  },
+  "1.6.6": {
+    "pt": ["Camadas novas de pacote: anéis de progresso e marcações analógicas", "10 mostradores novos na galeria"],
+    "en": ["New package layers: progress rings and analog ticks", "10 new faces in the gallery"],
+    "es": ["Capas nuevas de paquete: anillos de progreso y marcas analógicas", "10 esferas nuevas en la galería"]
+  },
+  "1.6.7": {
+    "pt": ["Painel com layout próprio para computador (barra lateral e colunas)"],
+    "en": ["Desktop layout for the panel (sidebar and columns)"],
+    "es": ["Panel con diseño propio para computadora (barra lateral y columnas)"]
+  },
+  "1.6.8": {
+    "pt": ["A galeria avisa quando um mostrador precisa de firmware mais novo"],
+    "en": ["The gallery warns when a face needs newer firmware"],
+    "es": ["La galería avisa cuando una esfera necesita un firmware más nuevo"]
+  },
+  "1.7.0": {
+    "pt": ["Português, inglês e espanhol no painel e na tela, incluindo o mostrador Palavras"],
+    "en": ["Portuguese, English and Spanish in the panel and on screen, including the Words face"],
+    "es": ["Portugués, inglés y español en el panel y en la pantalla, incluida la esfera Palabras"]
+  },
+  "1.8.0": {
+    "pt": ["Sequência de dias com planta que cresce até o tomate dourado, horta e conquistas", "Cartão do dia para compartilhar e aviso de versão nova com atualização em um toque"],
+    "en": ["Day streak with a plant that grows into a golden tomato, garden and achievements", "Shareable day card and new-version notice with one-tap update"],
+    "es": ["Racha de días con una planta que crece hasta el tomate dorado, huerta y logros", "Tarjeta del día para compartir y aviso de versión nueva con actualización en un toque"]
+  },
+  "1.8.1": {
+    "pt": ["Conquistas e cartão de compartilhar redesenhados em pixel art"],
+    "en": ["Achievements and share card redrawn in pixel art"],
+    "es": ["Logros y tarjeta para compartir rediseñados en pixel art"]
+  },
+  "1.9.0": {
+    "pt": ["Modo de recuperação (ligar e desligar 3 vezes)", "Atualização que confere o arquivo antes da troca, backup e restauração no painel"],
+    "en": ["Recovery mode (power-cycle 3 times)", "Updates checked before switching, backup and restore in the panel"],
+    "es": ["Modo de recuperación (encender y apagar 3 veces)", "Actualización verificada antes del cambio, copia de seguridad y restauración en el panel"]
+  },
+  "1.9.1": {
+    "pt": ["O selo \"em uso\" segue o idioma do painel"],
+    "en": ["The \"in use\" tag follows the panel language"],
+    "es": ["La etiqueta \"en uso\" sigue el idioma del panel"]
+  },
+  "1.9.2": {
+    "pt": ["Ponteiros sem piscar: os mostradores desenham fora da tela e mostram a imagem pronta"],
+    "en": ["Flicker-free hands: faces draw off screen and show the finished image"],
+    "es": ["Agujas sin parpadeo: las esferas dibujan fuera de pantalla y muestran la imagen lista"]
+  },
+  "1.10.0": {
+    "pt": ["Brilho noturno que segue o sol e rodízio de mostradores", "Mostradores da galeria com texto em português, inglês e espanhol"],
+    "en": ["Night brightness that follows the sun, and face rotation", "Gallery faces with text in Portuguese, English and Spanish"],
+    "es": ["Brillo nocturno que sigue al sol y rotación de esferas", "Esferas de la galería con texto en portugués, inglés y español"]
+  },
+  "1.11.0": {
+    "aviso": {
+      "pt": "Não instale: grande demais, deixaria a próxima atualização pelo Wi-Fi sem espaço. Use a 1.11.1.",
+      "en": "Do not install: too large, it would leave no room for the next Wi-Fi update. Use 1.11.1.",
+      "es": "No la instales: demasiado grande, dejaría sin espacio la próxima actualización por Wi-Fi. Usa la 1.11.1."
+    },
+    "pt": ["Controle pela Alexa (versão de teste)"],
+    "en": ["Alexa control (test release)"],
+    "es": ["Control por Alexa (versión de prueba)"]
+  },
+  "1.11.1": {
+    "pt": ["Controle pela Alexa", "Firmware 6,6 KB menor, com folga para as próximas atualizações"],
+    "en": ["Alexa control", "Firmware 6.6 KB smaller, with room for future updates"],
+    "es": ["Control por Alexa", "Firmware 6,6 KB más pequeño, con margen para las próximas actualizaciones"]
+  },
+  "1.11.2": {
+    "pt": ["O painel mostra a conexão com a Alexa: último contato, Echo e último comando"],
+    "en": ["The panel shows the Alexa link: last contact, Echo and last command"],
+    "es": ["El panel muestra la conexión con Alexa: último contacto, Echo y último comando"]
+  },
+  "1.12.0": {
+    "pt": ["Mais controles pela Alexa: começar, pausar, encerrar, foco de N minutos e pausas"],
+    "en": ["More Alexa controls: start, pause, stop, N-minute focus and breaks"],
+    "es": ["Más controles por Alexa: iniciar, pausar, terminar, foco de N minutos y pausas"]
+  },
+  "1.13.0": {
+    "pt": ["A Alexa pode avisar quando o foco ou a pausa terminam"],
+    "en": ["Alexa can announce when a focus or break ends"],
+    "es": ["Alexa puede avisar cuando termina el foco o la pausa"]
+  },
+  "1.13.1": {
+    "pt": ["Segurança: sites abertos no navegador não mandam mais comandos ao relógio (CSRF e DNS rebinding)"],
+    "en": ["Security: websites open in the browser can no longer command the clock (CSRF and DNS rebinding)"],
+    "es": ["Seguridad: los sitios abiertos en el navegador ya no envían órdenes al reloj (CSRF y DNS rebinding)"]
+  },
+  "1.14.0": {
+    "pt": ["Atualização comprimida (.bin.gz) conferida por inteiro antes da troca, com espaço para o firmware crescer"],
+    "en": ["Compressed updates (.bin.gz) fully checked before switching, with room for the firmware to grow"],
+    "es": ["Actualización comprimida (.bin.gz) verificada por completo antes del cambio, con espacio para que el firmware crezca"]
+  },
+  "1.14.1": {
+    "pt": ["Senha opcional no painel inteiro e nas redes de configuração e recuperação", "Código baixado do site travado por impressão digital"],
+    "en": ["Optional password for the whole panel and for the setup and recovery networks", "Code downloaded from the site pinned by fingerprint"],
+    "es": ["Contraseña opcional en todo el panel y en las redes de configuración y recuperación", "Código descargado del sitio fijado por huella digital"]
+  },
+  "1.15.0": {
+    "pt": ["Mostrador Previsão (hoje e os próximos 4 dias)", "7,7 KB a mais de memória livre e firmware 11 KB menor", "Clima e Flip sem piscar"],
+    "en": ["Forecast face (today and the next 4 days)", "7.7 KB more free memory and firmware 11 KB smaller", "Weather and Flip without flicker"],
+    "es": ["Esfera Previsión (hoy y los próximos 4 días)", "7,7 KB más de memoria libre y firmware 11 KB más pequeño", "Clima y Flip sin parpadeo"]
+  },
+  "1.15.1": {
+    "aviso": {
+      "pt": "Não use: as tensões da tela desta versão aumentavam a imagem fantasma. Instale a 1.15.2 ou mais nova.",
+      "en": "Do not use: this version's screen voltages made ghosting worse. Install 1.15.2 or newer.",
+      "es": "No la uses: las tensiones de pantalla de esta versión aumentaban la imagen fantasma. Instala la 1.15.2 o más nueva."
+    },
+    "pt": ["Teste de tensões da tela contra imagem fantasma (retirada)"],
+    "en": ["Screen voltage test against ghosting (withdrawn)"],
+    "es": ["Prueba de tensiones de pantalla contra la imagen fantasma (retirada)"]
+  },
+  "1.15.2": {
+    "pt": ["Volta a configuração de tela da 1.15.0, mantendo tudo dela"],
+    "en": ["Restores the 1.15.0 screen settings, keeping everything else from it"],
+    "es": ["Vuelve a la configuración de pantalla de la 1.15.0, manteniendo todo lo demás"]
+  },
+  "1.16.0": {
+    "pt": ["Ajuste anti-fantasma: controle da tensão da tela (VCOM) com estampas de teste"],
+    "en": ["Anti-ghosting tuning: screen voltage (VCOM) control with test patterns"],
+    "es": ["Ajuste antifantasma: control de la tensión de pantalla (VCOM) con patrones de prueba"]
+  },
+  "1.16.1": {
+    "pt": ["Tensão da tela padrão em 0,850 V, que tirou a imagem fantasma", "GIFs não travam mais com o painel aberto"],
+    "en": ["Default screen voltage of 0.850 V, which removed ghosting", "GIFs no longer stall while the panel is open"],
+    "es": ["Tensión de pantalla por defecto en 0,850 V, que quitó la imagen fantasma", "Los GIF ya no se traban con el panel abierto"]
+  },
+  "1.17.0": {
+    "pt": ["Mostrador Previsão em cartões: hoje e os próximos 3 dias"],
+    "en": ["Forecast cards face: today and the next 3 days"],
+    "es": ["Esfera Previsión en tarjetas: hoy y los próximos 3 días"]
+  },
+  "1.18.0": {
+    "pt": ["Mostrador Previsão LCD, com dígitos DSEG7", "Previsão em cartões redesenhado em Outfit e pixel art"],
+    "en": ["Forecast LCD face, with DSEG7 digits", "Forecast cards redrawn with Outfit and pixel art"],
+    "es": ["Esfera Previsión LCD, con dígitos DSEG7", "Previsión en tarjetas rediseñada con Outfit y pixel art"]
+  },
+  "1.18.1": {
+    "pt": ["Correção de segurança: GIFs malformados no álbum não travam nem corrompem o relógio"],
+    "en": ["Security fix: malformed GIFs in the album no longer crash or corrupt the clock"],
+    "es": ["Corrección de seguridad: los GIF malformados del álbum ya no traban ni corrompen el reloj"]
+  },
+  "1.18.2": {
+    "pt": ["Proteção do Wi-Fi contra o rebaixamento para uma rede sem criptografia (CVE-2020-12638)"],
+    "en": ["Wi-Fi protection against downgrade to an unencrypted network (CVE-2020-12638)"],
+    "es": ["Protección del Wi-Fi contra la degradación a una red sin cifrado (CVE-2020-12638)"]
+  },
+  "1.19.0-rc1": {
+    "pt": ["Versão de teste da 1.19.0"],
+    "en": ["Test release of 1.19.0"],
+    "es": ["Versión de prueba de la 1.19.0"]
+  },
+  "1.19.0": {
+    "pt": ["Aviso de chuva na próxima hora, com o tomate de guarda-chuva", "Temperatura em °F", "Firmware 11 KB menor: o painel passa para a memória de arquivos"],
+    "en": ["Rain alert for the next hour, with the tomato holding an umbrella", "Temperature in °F", "Firmware 11 KB smaller: the panel moves to file storage"],
+    "es": ["Aviso de lluvia en la próxima hora, con el tomate con paraguas", "Temperatura en °F", "Firmware 11 KB más pequeño: el panel pasa a la memoria de archivos"]
+  },
+  "1.19.4": {
+    "pt": ["A tela do Pomodoro não aparece mais por cima da Previsão LCD", "Painel e relógio começam a contagem juntos", "Hora protegida contra NTP falso"],
+    "en": ["The Pomodoro screen no longer shows over Forecast LCD", "Panel and clock start the countdown together", "Time protected against fake NTP"],
+    "es": ["La pantalla del Pomodoro ya no aparece sobre la Previsión LCD", "Panel y reloj empiezan la cuenta juntos", "Hora protegida contra NTP falso"]
+  },
+  "1.19.5": {
+    "pt": ["Veja o que ocupa a memória de arquivos e apague o que sobrou do firmware original"],
+    "en": ["See what fills the file storage and delete leftovers from the stock firmware"],
+    "es": ["Mira qué ocupa la memoria de archivos y borra lo que quedó del firmware original"]
+  },
+  "1.19.6": {
+    "pt": ["Espera progressiva para senhas erradas, sem travar a tela", "Uploads só gravam depois da autenticação completa", "Recuperação só pela rede própria do relógio"],
+    "en": ["Progressive delay for wrong passwords, without freezing the screen", "Uploads only write after full authentication", "Recovery only over the clock's own network"],
+    "es": ["Espera progresiva para contraseñas incorrectas, sin trabar la pantalla", "Las subidas solo graban tras la autenticación completa", "Recuperación solo por la red propia del reloj"]
+  },
+  "1.19.7": {
+    "pt": ["Biblioteca gráfica Adafruit GFX atualizada para a 1.13.0"],
+    "en": ["Adafruit GFX graphics library updated to 1.13.0"],
+    "es": ["Biblioteca gráfica Adafruit GFX actualizada a la 1.13.0"]
+  },
+  "1.20.0": {
+    "aviso": {
+      "pt": "Não use. Publicada e retirada no mesmo dia: o .bin.gz desta versão apagava o gerenciador de boot e o relógio não ligava mais. Instale a 1.19.9 ou mais nova; para um relógio que já não liga, veja o guia de recuperação.",
+      "en": "Do not use. Published and pulled the same day: this version's .bin.gz erased the bootloader and the clock no longer started. Install 1.19.9 or newer; for a clock that no longer starts, see the recovery guide.",
+      "es": "No la uses. Publicada y retirada el mismo día: el .bin.gz de esta versión borraba el gestor de arranque y el reloj ya no encendía. Instala la 1.19.9 o más nueva; si el reloj ya no enciende, mira la guía de recuperación."
+    },
+    "publicada": "2026-10-26",
+    "pt": ["Atualizações assinadas (refeitas na 1.20.1); retirada do ar, os arquivos não estão mais disponíveis"],
+    "en": ["Signed updates (redone in 1.20.1); taken down, its files are no longer available"],
+    "es": ["Actualizaciones firmadas (rehechas en la 1.20.1); retirada, sus archivos ya no están disponibles"]
+  }
+}
