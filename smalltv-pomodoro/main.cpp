@@ -2255,9 +2255,12 @@ void setupWeb() {
     for (uint8_t t = 0; t < THEME_COUNT; t++) {
       if (t) j += ',';
       j += F("{\"n\":\"");
-      jsonEscapeAppend(j, uiFaceName(t));
+      char nb[40], db[72];  // nome e descrição estão na flash
+      strncpy_P(nb, uiFaceName(t), sizeof nb - 1), nb[sizeof nb - 1] = 0;
+      strncpy_P(db, uiFaceDesc(t), sizeof db - 1), db[sizeof db - 1] = 0;
+      jsonEscapeAppend(j, nb);
       j += F("\",\"d\":\"");
-      jsonEscapeAppend(j, uiFaceDesc(t));
+      jsonEscapeAppend(j, db);
       j += F("\"}");
     }
     // pacotes instalados: nome/descrição/autor vêm do <id>.txt gravado na instalação

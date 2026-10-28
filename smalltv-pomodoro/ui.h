@@ -14,8 +14,8 @@ enum UiTheme : uint8_t {
 #undef X
   THEME_COUNT
 };
-const char *uiFaceName(uint8_t t);  // nome no painel
-const char *uiFaceDesc(uint8_t t);  // descrição curta
+PGM_P uiFaceName(uint8_t t);  // nome no painel (na flash: copie com strncpy_P)
+PGM_P uiFaceDesc(uint8_t t);  // descrição curta (na flash, idem)
 enum UiPhase : uint8_t { PH_IDLE = 0, PH_WORK, PH_SHORT, PH_LONG };
 // O que a pessoa faz durante o foco: muda o desenho ao lado do tomate e o título da tela.
 enum UiActivity : uint8_t { ACT_READ = 0, ACT_STUDY, ACT_CODE, ACT_TASKS, ACT_DRAW, ACT_COUNT };
