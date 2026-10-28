@@ -11,7 +11,7 @@
       "file": "tomate-pulando.json",
       "preview": "tomate-pulando.png",
       "anim": "tomate-pulando.gif",
-      "size": 4522,
+      "size": 4713,
       "fw": "1.21.0",
       "tags": [
         "pixel"
@@ -26,12 +26,13 @@
       "desc_en": "Glass capsules, amber filaments and discreet seconds.",
       "file": "nixie.json",
       "preview": "nixie.png",
-      "size": 3524,
+      "size": 3640,
       "fw": "1.10.0",
       "tags": [
         "digital",
         "retro"
-      ]
+      ],
+      "anim": "nixie.gif"
     },
     {
       "id": "koi",
@@ -43,7 +44,7 @@
       "file": "koi.json",
       "preview": "koi.png",
       "anim": "koi.gif",
-      "size": 3139,
+      "size": 14868,
       "fw": "1.21.0",
       "tags": [
         "pixel"
@@ -59,7 +60,7 @@
       "file": "janela.json",
       "preview": "janela.png",
       "anim": "janela.gif",
-      "size": 4643,
+      "size": 12111,
       "fw": "1.21.0",
       "tags": [
         "pixel"
@@ -74,7 +75,7 @@
       "desc_en": "A transit board whose route fills with focus sessions.",
       "file": "metro.json",
       "preview": "metro.png",
-      "size": 1956,
+      "size": 1957,
       "fw": "1.10.0",
       "tags": [
         "digital",
@@ -90,7 +91,7 @@
       "desc_en": "Playful 80s geometry in coral, blue and yellow.",
       "file": "memphis.json",
       "preview": "memphis.png",
-      "size": 1625,
+      "size": 1626,
       "fw": "1.10.0",
       "tags": [
         "digital",
@@ -106,7 +107,7 @@
       "desc_en": "A calm analog dial without per-second hand updates.",
       "file": "compasso.json",
       "preview": "compasso.png",
-      "size": 1735,
+      "size": 1736,
       "fw": "1.10.0",
       "tags": [
         "analogico"
@@ -121,7 +122,7 @@
       "desc_en": "Pixel lighthouse, ocean bands and focus on the sand.",
       "file": "mare.json",
       "preview": "mare.png",
-      "size": 2661,
+      "size": 2662,
       "fw": "1.10.0",
       "tags": [
         "digital",
@@ -137,7 +138,7 @@
       "desc_en": "A little greenhouse; the plant grows with your streak.",
       "file": "jardim.json",
       "preview": "jardim.png",
-      "size": 2091,
+      "size": 2092,
       "fw": "1.10.0",
       "tags": [
         "digital",
@@ -153,7 +154,7 @@
       "desc_en": "Vinyl grooves with a rim that tracks the seconds.",
       "file": "vinil.json",
       "preview": "vinil.png",
-      "size": 2280,
+      "size": 2281,
       "fw": "1.10.0",
       "tags": [
         "digital",
@@ -169,7 +170,7 @@
       "desc_en": "Sun and moon above terracotta pixel dunes.",
       "file": "duna.json",
       "preview": "duna.png",
-      "size": 2166,
+      "size": 2167,
       "fw": "1.10.0",
       "tags": [
         "digital",
@@ -185,7 +186,7 @@
       "desc_en": "Editorial typography, cream paper and a red circle.",
       "file": "papel.json",
       "preview": "papel.png",
-      "size": 1609,
+      "size": 1610,
       "fw": "1.10.0",
       "tags": [
         "digital"
@@ -201,7 +202,7 @@
       "file": "arcade.json",
       "preview": "arcade.png",
       "anim": "arcade.gif",
-      "size": 3752,
+      "size": 5354,
       "fw": "1.21.0",
       "tags": [
         "pixel",
@@ -217,7 +218,7 @@
       "desc_en": "Widget-style grid of cards: time, weather and focus",
       "file": "bento.json",
       "preview": "bento.png",
-      "size": 2243,
+      "size": 2368,
       "fw": "1.10.0",
       "tags": [
         "digital"
@@ -232,7 +233,7 @@
       "desc_en": "80s retro sunset with a neon perspective grid",
       "file": "synthwave.json",
       "preview": "synthwave.png",
-      "size": 3793,
+      "size": 4019,
       "fw": "1.6.0",
       "tags": [
         "digital",
@@ -249,7 +250,7 @@
       "file": "aquario.json",
       "preview": "aquario.png",
       "anim": "aquario.gif",
-      "size": 11680,
+      "size": 12352,
       "fw": "1.21.0",
       "tags": [
         "pixel"
@@ -264,7 +265,7 @@
       "desc_en": "The clock as a shell session, in phosphor green",
       "file": "terminal.json",
       "preview": "terminal.png",
-      "size": 2762,
+      "size": 2913,
       "fw": "1.10.0",
       "tags": [
         "digital",
@@ -280,7 +281,7 @@
       "desc_en": "Neo-brutalism: flat colors, black borders and hard shadows",
       "file": "brutal.json",
       "preview": "brutal.png",
-      "size": 2575,
+      "size": 2723,
       "fw": "1.6.0",
       "tags": [
         "digital"
@@ -295,7 +296,7 @@
       "desc_en": "Railway station clock: bold black bars and a red seconds hand",
       "file": "estacao.json",
       "preview": "estacao.png",
-      "size": 2989,
+      "size": 3169,
       "fw": "1.6.0",
       "tags": [
         "analogico"
@@ -311,7 +312,7 @@
       "file": "8bit-verde.json",
       "preview": "8bit-verde.png",
       "anim": "8bit-verde.gif",
-      "size": 7068,
+      "size": 8548,
       "fw": "1.21.0",
       "tags": [
         "pixel",
@@ -327,7 +328,7 @@
       "desc_en": "Northern lights bands over mountains, with the time in Geo",
       "file": "aurora.json",
       "preview": "aurora.png",
-      "size": 3419,
+      "size": 3629,
       "fw": "1.6.0",
       "tags": [
         "digital"
@@ -342,7 +343,7 @@
       "desc_en": "Hands as orbits around the sun, under a starry sky",
       "file": "orbita.json",
       "preview": "orbita.png",
-      "size": 2688,
+      "size": 2849,
       "fw": "1.6.0",
       "tags": [
         "analogico"
@@ -357,7 +358,7 @@
       "desc_en": "Primary shapes and colors from the Bauhaus school",
       "file": "bauhaus.json",
       "preview": "bauhaus.png",
-      "size": 1669,
+      "size": 1763,
       "fw": "1.6.5",
       "tags": [
         "digital"
@@ -372,7 +373,7 @@
       "desc_en": "Black and white blocks with unlit segments showing and one red dot",
       "file": "mono.json",
       "preview": "mono.png",
-      "size": 1862,
+      "size": 1961,
       "fw": "1.10.0",
       "tags": [
         "digital"
@@ -387,7 +388,7 @@
       "desc_en": "The time huge in Bebas Neue, with weather and a focus bar",
       "file": "bebas-gigante.json",
       "preview": "bebas-gigante.png",
-      "size": 1867,
+      "size": 1968,
       "fw": "1.10.0",
       "tags": [
         "digital"
@@ -402,7 +403,7 @@
       "desc_en": "A pixel art café table: a window that follows the day and a tomato that reacts to the weather",
       "file": "cafe-pixel.json",
       "preview": "cafe-pixel.png",
-      "size": 2694,
+      "size": 2838,
       "fw": "1.10.0",
       "tags": [
         "pixel"
@@ -417,7 +418,7 @@
       "desc_en": "Night-blue analog with a seconds hand",
       "file": "radar-analogico.json",
       "preview": "radar-analogico.png",
-      "size": 3146,
+      "size": 3338,
       "fw": "1.6.0",
       "tags": [
         "analogico"
@@ -432,7 +433,7 @@
       "desc_en": "Three progress rings: daily focus, minutes of the hour and hours of the day",
       "file": "aneis.json",
       "preview": "aneis.png",
-      "size": 1718,
+      "size": 1809,
       "fw": "1.6.6",
       "tags": [
         "esportivo"
@@ -447,7 +448,7 @@
       "desc_en": "Complication grid: time, large weather and three stats below",
       "file": "modular.json",
       "preview": "modular.png",
-      "size": 3753,
+      "size": 3961,
       "fw": "1.10.0",
       "tags": [
         "digital",
@@ -463,7 +464,7 @@
       "desc_en": "Analog dial with subdials and stats in all four corners",
       "file": "infografico.json",
       "preview": "infografico.png",
-      "size": 3083,
+      "size": 3257,
       "fw": "1.6.6",
       "tags": [
         "analogico",
@@ -479,7 +480,7 @@
       "desc_en": "Classic cream dial with Roman numerals",
       "file": "romano.json",
       "preview": "romano.png",
-      "size": 3598,
+      "size": 3804,
       "fw": "1.6.6",
       "tags": [
         "analogico"
@@ -494,7 +495,7 @@
       "desc_en": "Giant hours stacked over minutes",
       "file": "duo.json",
       "preview": "duo.png",
-      "size": 966,
+      "size": 1018,
       "fw": "1.6.6",
       "tags": [
         "digital"
@@ -509,7 +510,7 @@
       "desc_en": "Soft radial gradient with white hands",
       "file": "gradiente.json",
       "preview": "gradiente.png",
-      "size": 2355,
+      "size": 2498,
       "fw": "1.6.6",
       "tags": [
         "analogico"
@@ -524,7 +525,7 @@
       "desc_en": "Fitness band style: big time and colorful progress bars",
       "file": "fitness.json",
       "preview": "fitness.png",
-      "size": 2464,
+      "size": 2599,
       "fw": "1.10.0",
       "tags": [
         "esportivo",
@@ -540,7 +541,7 @@
       "desc_en": "Pixel art astronaut floating near a planet",
       "file": "astronauta.json",
       "preview": "astronauta.png",
-      "size": 3524,
+      "size": 3725,
       "fw": "1.10.0",
       "tags": [
         "pixel"
@@ -555,7 +556,7 @@
       "desc_en": "Colorful diagonal stripes with the time on a black card",
       "file": "listras.json",
       "preview": "listras.png",
-      "size": 2116,
+      "size": 2239,
       "fw": "1.6.6",
       "tags": [
         "digital"
@@ -570,7 +571,7 @@
       "desc_en": "Band-style capsule screen, stacked time and stats on the sides",
       "file": "pilula.json",
       "preview": "pilula.png",
-      "size": 2479,
+      "size": 2616,
       "fw": "1.10.0",
       "tags": [
         "esportivo",
@@ -587,7 +588,7 @@
       "file": "gato-soneca.json",
       "preview": "gato-soneca.png",
       "anim": "gato-soneca.gif",
-      "size": 4413,
+      "size": 13817,
       "fw": "1.21.0",
       "tags": [
         "pixel"
@@ -603,7 +604,7 @@
       "file": "fogueira.json",
       "preview": "fogueira.png",
       "anim": "fogueira.gif",
-      "size": 7019,
+      "size": 8747,
       "fw": "1.21.0",
       "tags": [
         "pixel"
@@ -619,7 +620,7 @@
       "file": "inverno.json",
       "preview": "inverno.png",
       "anim": "inverno.gif",
-      "size": 10134,
+      "size": 9941,
       "fw": "1.21.0",
       "tags": [
         "pixel"
@@ -635,7 +636,7 @@
       "file": "pausa-cafe.json",
       "preview": "pausa-cafe.png",
       "anim": "pausa-cafe.gif",
-      "size": 3399,
+      "size": 4614,
       "fw": "1.21.0",
       "tags": [
         "pixel"
