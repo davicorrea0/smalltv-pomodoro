@@ -65,7 +65,9 @@ else  # Windows: gera os .cpp com o node daqui e roda no WSL
 fi
 
 say "firmware"
-sh compilar.sh | grep -E "firmware:|caberia"
+# Layout da flash (LAYOUT, padrão 4M2M; ver compilar.sh). Enquanto houver relógios no 4M3M (RELOGIOS_4M3M=1, o padrão) o
+# compilar.sh recusa firmware + .gz que não caibam no 1 MB do layout antigo: a primeira versão 4M2M é instalada por ele.
+sh compilar.sh | grep -E "firmware|caberia|RELOGIOS"
 BIN=build/smalltv-pomodoro.ino.bin
 GZ=$BIN.gz
 grep -q "FW_VERSION" smalltv-pomodoro/main.cpp && grep -aq "$VER" "$BIN" || die "o binário não traz a versão $VER"
@@ -106,7 +108,7 @@ PREFIX=$([ $BETA = 1 ] && echo "beta/" || echo "")
 node -e '
 const fs=require("fs"),[w,dir,json,ver,notas,prefix]=process.argv.slice(1),p=require("./web/out/panel.json");
 const j={version:ver,date:new Date().toISOString().slice(0,10),file:prefix+"smalltv-pomodoro.bin",size:fs.statSync(w+"/"+dir+"/smalltv-pomodoro.bin").size,
- notes:require("./"+notas),gz:prefix+"smalltv-pomodoro.bin.gz",gzsize:fs.statSync(w+"/"+dir+"/smalltv-pomodoro.bin.gz").size,panel:p.panel,psri:p.psri,
+ notes:require("./"+notas),gz:prefix+"smalltv-pomodoro.bin.gz",gzsize:fs.statSync(w+"/"+dir+"/smalltv-pomodoro.bin.gz").size,...(process.env.LAYOUT||"4M2M")=="4M2M"?{layout:"4m2m"}:{},panel:p.panel,psri:p.psri,
  sig:fs.readFileSync(w+"/"+dir+"/smalltv-pomodoro.bin.sig").toString("base64"),gzsig:fs.readFileSync(w+"/"+dir+"/smalltv-pomodoro.bin.gz.sig").toString("base64")};
 fs.writeFileSync(w+"/"+json,JSON.stringify(j,null,2)+"\n");console.log(json+":",JSON.stringify({version:j.version,size:j.size,gzsize:j.gzsize,panel:j.panel}))' "$W" "$DIR" "$JSON" "$VER" "$NOTAS" "$PREFIX"
 git -C "$W" add -A
