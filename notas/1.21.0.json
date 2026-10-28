@@ -1,0 +1,17 @@
+{
+  "pt": [
+    "Mostradores instaláveis agora podem ter animação: sprites com vários quadros (exemplo: tomate pulando)",
+    "O painel mostra a última queda do relógio (exceção ou watchdog), com botão para limpar",
+    "Publicação confere o .bin.gz como o gerenciador de boot o lê, e há guia de recuperação pelo USB-TTL"
+  ],
+  "en": [
+    "Installable faces can now be animated: sprites with several frames (example: jumping tomato)",
+    "The panel shows the clock's last crash (exception or watchdog), with a button to clear it",
+    "Releases check the .bin.gz the way the bootloader reads it, plus a USB-TTL recovery guide"
+  ],
+  "es": [
+    "Las esferas instalables ahora pueden tener animación: sprites con varios cuadros (ejemplo: tomate saltando)",
+    "El panel muestra la última caída del reloj (excepción o watchdog), con un botón para borrarla",
+    "La publicación verifica el .bin.gz como lo lee el gestor de arranque, y hay guía de recuperación por USB-TTL"
+  ]
+}
