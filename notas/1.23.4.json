@@ -1,0 +1,29 @@
+{
+  "pt": [
+    "Corrige: a 1.23.2 e a 1.23.3 não instalavam atualizações (o relógio reiniciava e voltava para a versão antiga). Se o seu está numa delas, instale esta pelo modo de recuperação (desligue e ligue 3 vezes seguidas, menos de 30 s cada)",
+    "Liga mais rápido e sem tela preta: a tela de início aparece na hora, o Wi-Fi conecta direto no roteador da última vez e uma barra em pixel art mostra as etapas (Wi-Fi, hora)",
+    "A hora aparece logo depois de reiniciar por atualização ou ajuste, e o relógio tenta outro servidor de hora se o primeiro demorar",
+    "smalltv.local mais confiável: o Wi-Fi não cochila mais (perdia as perguntas da rede) e a resposta vai também direto para quem perguntou",
+    "Uns 5 KB a mais de memória livre, o que ajuda os GIFs",
+    "O backup do painel agora leva também as fotos e os GIFs (preparação para a 1.24, que reorganiza a memória de arquivos)",
+    "Diagnóstico mostra quanto tempo levou cada etapa do último início"
+  ],
+  "en": [
+    "Fix: 1.23.2 and 1.23.3 could not install updates (the clock restarted back into the old version). If yours is on one of them, install this one through recovery mode (unplug and plug it back in 3 times in a row, less than 30 s each)",
+    "Starts faster and without a black screen: the start screen shows up right away, Wi-Fi connects straight to the last router, and a pixel-art bar shows the steps (Wi-Fi, time)",
+    "The time shows up right after a restart from an update or setting change, and the clock tries another time server if the first one is slow",
+    "More reliable smalltv.local: Wi-Fi no longer naps (it missed network queries) and the answer also goes straight to whoever asked",
+    "About 5 KB more free memory, which helps GIFs",
+    "The panel backup now includes photos and GIFs too (getting ready for 1.24, which reorganizes the file storage)",
+    "Diagnostics show how long each step of the last start took"
+  ],
+  "es": [
+    "Corrige: la 1.23.2 y la 1.23.3 no instalaban actualizaciones (el reloj se reiniciaba y volvía a la versión anterior). Si el tuyo está en una de ellas, instala esta desde el modo de recuperación (desconéctalo y conéctalo 3 veces seguidas, menos de 30 s cada vez)",
+    "Arranca más rápido y sin pantalla negra: la pantalla de inicio aparece enseguida, el Wi-Fi se conecta directo al último router y una barra en pixel art muestra los pasos (Wi-Fi, hora)",
+    "La hora aparece enseguida tras reiniciar por una actualización o un ajuste, y el reloj prueba otro servidor de hora si el primero tarda",
+    "smalltv.local más confiable: el Wi-Fi ya no se duerme (perdía las consultas de la red) y la respuesta también va directo a quien preguntó",
+    "Unos 5 KB más de memoria libre, lo que ayuda a los GIF",
+    "La copia del panel ahora incluye también las fotos y los GIF (preparación para la 1.24, que reorganiza la memoria de archivos)",
+    "El diagnóstico muestra cuánto tardó cada paso del último arranque"
+  ]
+}

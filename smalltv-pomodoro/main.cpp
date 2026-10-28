@@ -46,7 +46,7 @@ extern "C" uint32_t _FS_start;
 
 void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);  // ui.cpp: recorta para a área suja; fora da tela, cai na faixa
 
-#define FW_VERSION "1.23.3"
+#define FW_VERSION "1.23.4"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
@@ -188,12 +188,16 @@ static_assert(sizeof(WifiHint) == 16, "registro do Wi-Fi mudou de tamanho");
 static_assert(sizeof(CrashRec) == 28, "registro da queda mudou de tamanho");
 static_assert(sizeof(FW_VERSION) <= sizeof(CrashRec::ver), "a versao nao cabe no registro da queda");
 const uint32_t CRASH_RTC_TAG = 0x55505453;  // "UPTS"
+// Memória RTC de usuário: os blocos 0-31 (128 bytes) são do comando que a atualização deixa para o eboot
+// (Updater, eboot_command em 0x60001200). Escrever ali entre o fim da atualização e o reinício corrompe o
+// comando, e o eboot liga a versão antiga (foi o que a 1.23.2 fazia ao guardar a hora). Nossos dados: do 32 em diante.
+const uint32_t RTC_CRASH_BLOCK = 32;  // 2 blocos: marca e segundos ligado
 CrashRec crashRec;  // magic != CRASH_MAGIC: nenhuma queda guardada
 
 // roda no travamento (o core chama no lugar do aviso extra): guarda há quanto tempo estava ligado
 extern "C" void custom_crash_callback(struct rst_info *, uint32_t, uint32_t) {
   uint32_t v[2] = {CRASH_RTC_TAG, millis() / 1000};
-  ESP.rtcUserMemoryWrite(0, v, sizeof v);
+  ESP.rtcUserMemoryWrite(RTC_CRASH_BLOCK, v, sizeof v);
 }
 
 void crashLoad() {
@@ -202,7 +206,7 @@ void crashLoad() {
   const rst_info *r = ESP.getResetInfoPtr();
   if (!r || !(r->reason == REASON_WDT_RST || r->reason == REASON_EXCEPTION_RST || r->reason == REASON_SOFT_WDT_RST)) return;
   uint32_t v[2] = {0, 0};
-  ESP.rtcUserMemoryRead(0, v, sizeof v);
+  ESP.rtcUserMemoryRead(RTC_CRASH_BLOCK, v, sizeof v);
   uint8_t n = crashRec.magic ? crashRec.n : 0;
   crashRec = {CRASH_MAGIC, (uint8_t)(n < 255 ? n + 1 : n), (uint8_t)r->reason, (uint8_t)r->exccause, 0,
               r->epc1, r->excvaddr, v[0] == CRASH_RTC_TAG ? v[1] : 0, {}};
@@ -327,11 +331,13 @@ void softTime(int64_t sec, uint8_t src) {
   bootNote(src);
 }
 
-// A hora passa pelo reinício por software na memória RTC (blocos 0-1 são da queda, ver custom_crash_callback).
+// A hora passa pelo reinício por software na memória RTC (fora dos blocos 0-31 do eboot e dos 32-33 da queda).
 // Volta como hora de reserva: aparece na hora, mas só o SNTP junto do clima a confirma.
-const uint32_t RTC_CLOCK_BLOCK = 8;
+const uint32_t RTC_CLOCK_BLOCK = 40;
 void rtcTimeSave() {
   if (!timeTrusted()) return;
+  eboot_command cmd;
+  if (eboot_command_read(&cmd) == 0) return;  // atualização à espera do eboot: não mexe na memória RTC agora
   RtcClock c = rtcClockMake((uint32_t)time(nullptr), system_get_rtc_time());
   ESP.rtcUserMemoryWrite(RTC_CLOCK_BLOCK, (uint32_t *)&c, sizeof c);
 }
