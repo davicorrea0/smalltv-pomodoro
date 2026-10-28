@@ -123,7 +123,7 @@ Em vez de `px`, use `frames`: uma lista de quadros, cada um no mesmo formato de 
 }
 ```
 
-O quadro vem do relógio do aparelho, então a animação anda sozinha e só a área do sprite é redesenhada. Um sprite com `px` continua parado. Limites: todos os quadros com o mesmo tamanho (até 32×32), no máximo **8 quadros** por sprite e **6 KB** de sprites no pacote (cada quadro de 32×32 ocupa 512 bytes; um de 16×16, 128). Veja um exemplo completo em [`faces/tomate-pulando.json`](../faces/tomate-pulando.json).
+O quadro vem do relógio do aparelho, então a animação anda sozinha e só a área do sprite é redesenhada. Um sprite com `px` continua parado. Limites: todos os quadros com o mesmo tamanho (até 32×32), no máximo **8 quadros** por sprite e **6 KB** de sprites no pacote (cada quadro de 32×32 ocupa 512 bytes; um de 16×16, 128). Veja um exemplo completo em [`faces/tomate-pulando.json`](../faces/tomate-pulando.json); outros animados: [`fogueira`](../faces/fogueira.json) (chama de 6 quadros), [`inverno`](../faces/inverno.json) (um sprite de neve repetido em duas escalas), [`gato-soneca`](../faces/gato-soneca.json), [`pausa-cafe`](../faces/pausa-cafe.json), [`aquario`](../faces/aquario.json) e [`janela`](../faces/janela.json) (chuva).
 
 ## Limites
 
