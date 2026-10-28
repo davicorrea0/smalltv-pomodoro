@@ -748,36 +748,39 @@ void uiRenderPomodoro(const UiState &s) {
 }
 
 // ---------- telas avulsas ----------
+static int8_t bootLast = -1;  // posição desenhada da barra do início (-1: tela nova, desenha a moldura)
 void uiMessage(const char *title, const char *l1, const char *l2, const char *l3) {
   uiScrollEnd();
   screen = SCR_MSG;
+  bootLast = -1;
   G->fillScreen(BG);
-  mascot(96, 26, 3, FACE_HAPPY);
-  textC(120, 90, 2, TEXT, title);
-  textC(120, 118, 2, WORK, l1);
-  textC(120, 150, 1, MUTED, l2);
-  textC(120, 164, 1, MUTED, l3);
+  mascot(96, 34, 3, FACE_HAPPY);  // conjunto (tomate, textos e a barra do início) centralizado na altura
+  textC(120, 98, 2, TEXT, title);
+  textC(120, 126, 2, WORK, l1);
+  textC(120, 158, 1, MUTED, l2);
+  textC(120, 172, 1, MUTED, l3);
 }
 
-// Tela de início: duas etapas (Wi-Fi, hora). done = quantas já terminaram: bolinhas cheias e, enquanto falta
-// alguma, uma barra que vai e volta (não há como saber quanto falta); pronto, a barra enche. Desenha só a
-// faixa de baixo, sem refazer a tela.
+// Tela de início: barra em pixel art (moldura de cantos recortados e 16 blocos de 8x8). Enquanto falta alguma
+// etapa (Wi-Fi, hora), 4 blocos acesos vão e voltam aos saltos, de bloco em bloco (não há como saber quanto
+// falta); done >= 2: todos acendem. Só redesenha quando a posição muda, sem refazer a tela.
 void uiBootProgress(uint32_t ms, uint8_t done) {
   if (screen != SCR_MSG) return;
-  const int bx = 40, bw = 160, by = 206, sw = 48;
-  for (int i = 0; i < 2; i++) {
-    G->fillCircle(112 + i * 16, 192, 4, BG);
-    if (i < done) G->fillCircle(112 + i * 16, 192, 4, WORK);
-    else G->drawCircle(112 + i * 16, 192, 4, MUTED);
+  const int N = 16, B = 8, GAP = 2, LIT = 4, w = N * (B + GAP) - GAP + 8, h = B + 8, x0 = 120 - w / 2, y0 = 192;
+  int pos = done >= 2 ? N : (int)(ms / 90 % (2 * (N - LIT)));
+  if (pos < N && pos > N - LIT) pos = 2 * (N - LIT) - pos;
+  if (pos == bootLast) return;
+  if (bootLast < 0) {  // moldura: 2 px, sem os cantos
+    G->fillRect(x0 + 2, y0, w - 4, 2, MUTED);
+    G->fillRect(x0 + 2, y0 + h - 2, w - 4, 2, MUTED);
+    G->fillRect(x0, y0 + 2, 2, h - 4, MUTED);
+    G->fillRect(x0 + w - 2, y0 + 2, 2, h - 4, MUTED);
   }
-  if (done >= 2) {
-    G->fillRect(bx, by, bw, 6, WORK);
-    return;
+  bootLast = pos;
+  for (int i = 0; i < N; i++) {
+    bool on = pos == N || (i >= pos && i < pos + LIT);
+    G->fillRect(x0 + 4 + i * (B + GAP), y0 + 4, B, B, on ? WORK : CARD2);
   }
-  uint32_t p = ms % 1400;
-  int x = bx + (int)((p < 700 ? p : 1400 - p) * (bw - sw) / 700);
-  G->fillRect(bx, by, bw, 6, CARD2);
-  G->fillRect(x, by, sw, 6, WORK);
 }
 
 // Enquanto o relógio não tem hora: quatro pontinhos no alto, um aceso que vai e volta, por cima do mostrador
