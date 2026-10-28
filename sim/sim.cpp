@@ -255,11 +255,11 @@ static int testPackages(const UiState &pomo) {
     UiState st = base(14, 37, 24);
     st.theme = THEME_PACK;
     shot(name, st, false);
-    if (strstr(buf, "\"frames\"")) {  // sprite animado: alguns quadros da animação para conferir
+    if (strstr(buf, "\"frames\"") || strstr(buf, "\"glow\"")) {  // sprite animado: alguns quadros da animação para conferir
       for (int k = 1; k <= 3; k++) {
         char fn[64];
         UiState a = st;
-        a.ms = k * 170;
+        a.ms = k * (strstr(buf, "\"glow\"") ? 600 : 170);
         snprintf(fn, sizeof fn, "%s-q%d", name, k);
         shot(fn, a, false);
       }
