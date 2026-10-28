@@ -25,6 +25,8 @@ static const char WD_L[3][7][4] PROGMEM = {{"DOM", "SEG", "TER", "QUA", "QUI", "
 static const char MO_L[3][12][4] PROGMEM = {{"JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"},
                                             {"JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"},
                                             {"ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"}};
+static uint16_t rowBuf[240] __attribute__((aligned(4)));
+uint16_t *uiRowBuf() { return rowBuf; }
 uint8_t uiLang = 0;
 char WD[7][4] = {"DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SAB"};  // português até o uiSetLang
 char MO[12][4] = {"JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"};
@@ -151,7 +153,7 @@ void uiInvalidateSlide() {
 }
 
 // ---------- dígitos em pixel art 5x7 (células sólidas) ----------
-static const uint8_t DM[11][7] = {
+static const uint8_t DM[11][7] PROGMEM = {
     {0x0E, 0x11, 0x11, 0x11, 0x11, 0x11, 0x0E}, {0x04, 0x0C, 0x04, 0x04, 0x04, 0x04, 0x0E},
     {0x0E, 0x11, 0x01, 0x06, 0x08, 0x10, 0x1F}, {0x1F, 0x01, 0x02, 0x06, 0x01, 0x11, 0x0E},
     {0x02, 0x06, 0x0A, 0x12, 0x1F, 0x02, 0x02}, {0x1F, 0x10, 0x1E, 0x01, 0x01, 0x11, 0x0E},
@@ -165,7 +167,7 @@ static const uint8_t DM[11][7] = {
 // substitui o dígito anterior sem limpar a área antes (sem flicker).
 void dmDigit(int x, int y, int d, int p, uint16_t on, uint16_t off, bool drawOff) {
   for (int row = 0; row < 7; row++) {
-    uint8_t bits = d < 0 ? 0 : DM[d][row];
+    uint8_t bits = d < 0 ? 0 : pgm_read_byte(&DM[d][row]);
     for (int col = 0; col < 5;) {
       bool lit = bits & (0x10 >> col);
       int run = 1;  // junta células vizinhas iguais num retângulo só (menos chamadas SPI)
@@ -310,15 +312,15 @@ uint8_t uiSpriteFrame(const UiSprite *sp, uint32_t ms) {
 }
 
 // Mascote: tomate 16x16 com uma expressão por asset.
-static const UiSprite *const FACES[] = {&SPR_TOMATE_FELIZ, &SPR_TOMATE_DORMINDO, &SPR_TOMATE_FOCADO, &SPR_TOMATE_RELAX,
+static const UiSprite *const FACES[] PROGMEM = {&SPR_TOMATE_FELIZ, &SPR_TOMATE_DORMINDO, &SPR_TOMATE_FOCADO, &SPR_TOMATE_RELAX,
                                         &SPR_TOMATE_COMEMORANDO, &SPR_TOMATE_GUARDA_CHUVA, &SPR_TOMATE_CACHECOL, &SPR_TOMATE_OCULOS};
 
-void mascot(int x, int y, int sc, uint8_t face, int32_t bg) { uiSprite(FACES[face], x, y, sc, 0, bg); }
+void mascot(int x, int y, int sc, uint8_t face, int32_t bg) { uiSprite((const UiSprite *)pgm_read_ptr(&FACES[face]), x, y, sc, 0, bg); }
 
 const UiSprite *plantSprite(uint16_t streak) {
-  static const UiSprite *const STAGE[8] = {&SPR_PLANTA_SEMENTE, &SPR_PLANTA_BROTO, &SPR_PLANTA_FLOR, &SPR_PLANTA_FLOR,
+  static const UiSprite *const STAGE[8] PROGMEM = {&SPR_PLANTA_SEMENTE, &SPR_PLANTA_BROTO, &SPR_PLANTA_FLOR, &SPR_PLANTA_FLOR,
                                            &SPR_PLANTA_VERDE, &SPR_PLANTA_VERDE, &SPR_PLANTA_MADURA, &SPR_PLANTA_DOURADA};
-  return STAGE[streak < 7 ? streak : 7];
+  return (const UiSprite *)pgm_read_ptr(&STAGE[streak < 7 ? streak : 7]);
 }
 
 void streakBadge(int x, int y, uint16_t streak, uint16_t c) {
@@ -330,7 +332,7 @@ void streakBadge(int x, int y, uint16_t streak, uint16_t c) {
 }
 
 // Atividades do foco (UiActivity): objeto ao lado do tomate e título da tela do Pomodoro.
-static const UiSprite *const ACTIVITY_SPRITE[ACT_COUNT] = {&SPR_LIVRO, &SPR_CADERNO, &SPR_NOTEBOOK, &SPR_PRANCHETA, &SPR_PALETA_PINTOR};
+static const UiSprite *const ACTIVITY_SPRITE[ACT_COUNT] PROGMEM = {&SPR_LIVRO, &SPR_CADERNO, &SPR_NOTEBOOK, &SPR_PRANCHETA, &SPR_PALETA_PINTOR};
 static const char *activityLabel(uint8_t a) {
   switch (a) {
     case 1: return tr("ESTUDANDO", "STUDYING", "ESTUDIANDO");
@@ -522,25 +524,27 @@ void uiPaint(bool direct, int x, int y, int w, int h, void (*draw)(void *), void
 // Sem bitmap na flash: serve em qualquer tamanho e espessura (Neon fino, Flip grosso).
 // =====================================================================================
 struct Stk { int8_t t; int16_t a, b, c, d, e; };  // t=0 linha (a,b)-(c,d); t=1 arco: centro (a,b), raio c, de d a e graus
-static const Stk GEO0[] = {{1, 30, 30, 30, 180, 360}, {0, 0, 30, 0, 70, 0}, {0, 60, 30, 60, 70, 0}, {1, 30, 70, 30, 0, 180}};
-static const Stk GEO1[] = {{0, 30, 0, 30, 100, 0}, {0, 8, 22, 30, 0, 0}};
-static const Stk GEO2[] = {{1, 30, 30, 30, 180, 380}, {0, 58, 40, 0, 100, 0}, {0, 0, 100, 60, 100, 0}};
-static const Stk GEO3[] = {{0, 0, 0, 60, 0, 0}, {0, 60, 0, 30, 40, 0}, {1, 30, 70, 30, 270, 510}};
-static const Stk GEO4[] = {{0, 45, 100, 45, 0, 0}, {0, 45, 0, 0, 70, 0}, {0, 0, 70, 60, 70, 0}};
-static const Stk GEO5[] = {{0, 60, 0, 5, 0, 0}, {0, 5, 0, 5, 48, 0}, {0, 5, 48, 2, 60, 0}, {1, 30, 70, 30, 200, 510}};
-static const Stk GEO6[] = {{1, 30, 70, 30, 0, 360}, {0, 1, 62, 42, 0, 0}};
-static const Stk GEO7[] = {{0, 0, 0, 60, 0, 0}, {0, 60, 0, 20, 100, 0}};
-static const Stk GEO8[] = {{1, 30, 26, 26, 0, 360}, {1, 30, 70, 30, 0, 360}};
-static const Stk GEO9[] = {{1, 30, 30, 30, 0, 360}, {0, 59, 38, 18, 100, 0}};
-static const Stk *const GEO[10] = {GEO0, GEO1, GEO2, GEO3, GEO4, GEO5, GEO6, GEO7, GEO8, GEO9};
-static const uint8_t GEO_N[10] = {4, 2, 3, 3, 3, 4, 2, 2, 2, 2};
+static const Stk GEO0[] PROGMEM = {{1, 30, 30, 30, 180, 360}, {0, 0, 30, 0, 70, 0}, {0, 60, 30, 60, 70, 0}, {1, 30, 70, 30, 0, 180}};
+static const Stk GEO1[] PROGMEM = {{0, 30, 0, 30, 100, 0}, {0, 8, 22, 30, 0, 0}};
+static const Stk GEO2[] PROGMEM = {{1, 30, 30, 30, 180, 380}, {0, 58, 40, 0, 100, 0}, {0, 0, 100, 60, 100, 0}};
+static const Stk GEO3[] PROGMEM = {{0, 0, 0, 60, 0, 0}, {0, 60, 0, 30, 40, 0}, {1, 30, 70, 30, 270, 510}};
+static const Stk GEO4[] PROGMEM = {{0, 45, 100, 45, 0, 0}, {0, 45, 0, 0, 70, 0}, {0, 0, 70, 60, 70, 0}};
+static const Stk GEO5[] PROGMEM = {{0, 60, 0, 5, 0, 0}, {0, 5, 0, 5, 48, 0}, {0, 5, 48, 2, 60, 0}, {1, 30, 70, 30, 200, 510}};
+static const Stk GEO6[] PROGMEM = {{1, 30, 70, 30, 0, 360}, {0, 1, 62, 42, 0, 0}};
+static const Stk GEO7[] PROGMEM = {{0, 0, 0, 60, 0, 0}, {0, 60, 0, 20, 100, 0}};
+static const Stk GEO8[] PROGMEM = {{1, 30, 26, 26, 0, 360}, {1, 30, 70, 30, 0, 360}};
+static const Stk GEO9[] PROGMEM = {{1, 30, 30, 30, 0, 360}, {0, 59, 38, 18, 100, 0}};
+static const Stk *const GEO[10] PROGMEM = {GEO0, GEO1, GEO2, GEO3, GEO4, GEO5, GEO6, GEO7, GEO8, GEO9};
+static const uint8_t GEO_N[10] PROGMEM = {4, 2, 3, 3, 3, 4, 2, 2, 2, 2};
 
 // s = pixels por unidade da grade (o dígito ocupa 6s x 10s); w = espessura do traço.
 void geoDigit(float x, float y, int d, float s, float w, uint16_t c) {
   if (d < 0 || d > 9) return;
   const float k = s / 10.0f;
-  for (int i = 0; i < GEO_N[d]; i++) {
-    const Stk &st = GEO[d][i];
+  const Stk *strokes = (const Stk *)pgm_read_ptr(&GEO[d]);
+  for (int i = 0, n = pgm_read_byte(&GEO_N[d]); i < n; i++) {
+    Stk st;
+    memcpy_P(&st, &strokes[i], sizeof st);
     if (st.t == 0) {
       thickLine(x + st.a * k, y + st.b * k, x + st.c * k, y + st.d * k, w, c);
       continue;
@@ -579,23 +583,27 @@ void tempDesc(int cy, uint8_t sz, uint16_t ct, uint16_t cd, float t, const char 
 }
 
 // Tabela gerada de faces_list.h: o número do tema indexa a função, o nome e a descrição.
-static void (*const FACE_FN[THEME_COUNT])(const UiState &, bool) = {
+typedef void (*FaceFn)(const UiState &, bool);
+static const FaceFn FACE_FN[THEME_COUNT] PROGMEM = {
 #define X(id, fn, name, desc) fn,
     UI_FACES(X)
 #undef X
 };
-static const char *const FACE_NAME[THEME_COUNT] = {
-#define X(id, fn, name, desc) name,
+#define X(id, fn, name, desc) static const char FNAME_##id[] PROGMEM = name; static const char FDESC_##id[] PROGMEM = desc;
+UI_FACES(X)
+#undef X
+static const char *const FACE_NAME[THEME_COUNT] PROGMEM = {
+#define X(id, fn, name, desc) FNAME_##id,
     UI_FACES(X)
 #undef X
 };
-static const char *const FACE_DESC[THEME_COUNT] = {
-#define X(id, fn, name, desc) desc,
+static const char *const FACE_DESC[THEME_COUNT] PROGMEM = {
+#define X(id, fn, name, desc) FDESC_##id,
     UI_FACES(X)
 #undef X
 };
-const char *uiFaceName(uint8_t t) { return t < THEME_COUNT ? FACE_NAME[t] : ""; }
-const char *uiFaceDesc(uint8_t t) { return t < THEME_COUNT ? FACE_DESC[t] : ""; }
+PGM_P uiFaceName(uint8_t t) { return t < THEME_COUNT ? (PGM_P)pgm_read_ptr(&FACE_NAME[t]) : PSTR(""); }
+PGM_P uiFaceDesc(uint8_t t) { return t < THEME_COUNT ? (PGM_P)pgm_read_ptr(&FACE_DESC[t]) : PSTR(""); }
 
 // ---------- troca de mostrador por rolagem de hardware ----------
 // Anel de 320 linhas: o mostrador antigo (linhas 0..239) sobe e sai pelo topo, passa o vão preto da
@@ -610,7 +618,7 @@ static void slideStrip(void *p) {
   SlideCtx *c = (SlideCtx *)p;
   resetCaches();  // cada faixa é um desenho completo do zero
   G->fillScreen(BG);
-  FACE_FN[c->t](*c->s, true);
+  ((FaceFn)pgm_read_ptr(&FACE_FN[c->t]))(*c->s, true);
 }
 static uint32_t slideNow() {
   static uint32_t fake;  // sem relógio (simulador): 20 ms por consulta
@@ -656,7 +664,7 @@ void uiRenderClock(const UiState &s) {
     }
   }
   bool full = enter(t);
-  FACE_FN[t](s, full);
+  ((FaceFn)pgm_read_ptr(&FACE_FN[t]))(s, full);
 }
 
 // ---------- Pomodoro: anel de progresso ----------
@@ -720,7 +728,7 @@ void uiRenderPomodoro(const UiState &s) {
     if (key >= 64) uiSprite(&SPR_TOMATE_FIM, 104, 138, 2, key - 64, BG);    // bg repinta o quadro anterior
     else {
       mascot(86, 144, 2, key / 8, BG);
-      uiSprite(key % 8 == 7 ? &SPR_CAFE : ACTIVITY_SPRITE[key % 8], 122, 144, 2, 0, BG);
+      uiSprite(key % 8 == 7 ? &SPR_CAFE : (const UiSprite *)pgm_read_ptr(&ACTIVITY_SPRITE[key % 8]), 122, 144, 2, 0, BG);
     }
     lastFace = key;
   }

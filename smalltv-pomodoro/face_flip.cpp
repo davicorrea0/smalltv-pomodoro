@@ -109,7 +109,6 @@ static const float FL_D = 14.0f * FL_HALF;  // distância do observador (perspec
 static const uint16_t FL_TOP = uiRgb(46, 46, 52), FL_BOT = uiRgb(37, 37, 42), FL_FG = uiRgb(244, 242, 234);
 static const uint8_t FL_CORNER[10] = {7, 5, 3, 2, 2, 1, 1, 0, 0, 0};  // recuo dos cantos arredondados (raio 10)
 static uint8_t flCov[FL_BW];
-static uint16_t flRowBuf[FL_BW];
 
 // Mistura inteira de cores RGB565: n/16 de b sobre a.
 uint16_t mix16(uint16_t a, uint16_t b, int n) {
@@ -184,6 +183,7 @@ static void flRow(int cx, int yr, int value, float srcTop, float dy, int shade, 
   int inset = sr < 10 ? FL_CORNER[sr < 0 ? 0 : sr] : sr >= FL_H - 10 ? FL_CORNER[FL_H - 1 - sr] : 0;
   float half = (FL_W / 2 - inset) * sx;
   int l = (int)(FL_BW / 2 - half + 0.5f), r = (int)(FL_BW / 2 + half + 0.5f);
+  uint16_t *flRowBuf = uiRowBuf();  // FL_BW <= 240
   for (int x = 0; x < FL_BW; x++) {
     int c = flCov[x] > 64 ? 64 : flCov[x];
     flRowBuf[x] = (x < l || x >= r) ? BG : pal[(c + 2) / 4];
