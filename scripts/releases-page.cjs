@@ -3,7 +3,7 @@
 // Uso: node scripts/releases-page.cjs <pasta do site> [--releases releases.json]
 //
 // Fontes:
-//  - notas/<versão>.json        notas da versão em pt/en/es (as que o publicar.sh exige)
+//  - notas/<versão>.json        notas da versão (o publicar.sh exige pt/en/es; o site usa pt e en)
 //  - notas/historico.json       notas curtas das versões antigas e o "aviso" das que não devem ser usadas
 //  - releases do GitHub         data e arquivos para baixar (gh api; ou --releases com o JSON da API já baixado)
 // Uma versão sem release (retirada do ar) entra só com as notas e o aviso.
@@ -50,7 +50,7 @@ const L = {
     desc: 'Todas as versões do firmware SmallTV Pomodoro, com as novidades de cada uma e os arquivos para baixar.',
     lead: 'Todas as versões do firmware, da mais nova para a mais antiga, com o que mudou em cada uma e os arquivos. Para atualizar, o mais fácil é o botão <strong>Atualizar agora</strong> no painel do relógio; os arquivos daqui são para instalar pelo <code>/update</code> ou conferir.',
     avoid: v => `<strong>Não use a ${v.map(x => `<a href="#v${x}">v${x}</a>`).join(' nem a ')}.</strong> A 1.15.1 aumentava a imagem fantasma da tela e a 1.20.0 podia deixar o relógio sem ligar. Se o seu já não liga, siga o <a href="https://github.com/${REPO}/blob/main/docs/RECUPERACAO.md">guia de recuperação</a>.`,
-    notesIn: 'Notas em', latest: 'mais recente', pre: 'teste', bad: 'não use', gone: 'retirada',
+    latest: 'mais recente', pre: 'teste', bad: 'não use', gone: 'retirada',
     files: 'Arquivos', gh: 'Ver no GitHub', sig: 'assinatura', sums: 'SHA256SUMS',
     help: 'Pelo <code>/update</code>, envie o <code>.bin.gz</code> sem descompactar; a partir da 1.20.1 envie junto o <code>.bin.gz.sig</code> (a assinatura). O <code>.bin</code> sem compressão serve para gravar pelo cabo USB-TTL. <code>SHA256SUMS.txt</code> confere os arquivos.',
     count: n => `${n} versões`, nav: ['Início', 'Galeria', 'Versões', 'Jogo'], navHref: ['./', 'galeria.html', 'versoes.html', 'jogo.html'],
@@ -62,7 +62,7 @@ const L = {
     desc: 'Every SmallTV Pomodoro firmware release, with what changed in each one and the files to download.',
     lead: 'Every firmware release, newest first, with what changed in each one and its files. The easiest way to update is the <strong>Update now</strong> button in the clock\'s panel; the files here are for installing through <code>/update</code> or for checking.',
     avoid: v => `<strong>Do not use ${v.map(x => `<a href="#v${x}">v${x}</a>`).join(' or ')}.</strong> 1.15.1 made screen ghosting worse and 1.20.0 could leave the clock unable to start. If yours no longer starts, follow the <a href="https://github.com/${REPO}/blob/main/docs/RECUPERACAO.md">recovery guide</a> (in Portuguese).`,
-    notesIn: 'Notes in', latest: 'latest', pre: 'test', bad: 'do not use', gone: 'withdrawn',
+    latest: 'latest', pre: 'test', bad: 'do not use', gone: 'withdrawn',
     files: 'Files', gh: 'View on GitHub', sig: 'signature', sums: 'SHA256SUMS',
     help: 'Through <code>/update</code>, send the <code>.bin.gz</code> without unpacking it; from 1.20.1 on, send the <code>.bin.gz.sig</code> (the signature) with it. The uncompressed <code>.bin</code> is for flashing over a USB-TTL cable. <code>SHA256SUMS.txt</code> checks the files.',
     count: n => `${n} releases`, nav: ['Home', 'Gallery', 'Releases', 'Game'], navHref: ['./', 'gallery.html', 'releases.html', 'game.html'],
@@ -92,17 +92,15 @@ function item(x, t) {
   if (x.aviso) tags.push(`<span class="tag bad">${x.rel ? t.bad : t.gone}</span>`);
   const when = x.rel ? x.rel.published_at : x.data;
   const date = when ? new Date(when.length === 10 ? when + 'T12:00:00Z' : when).toLocaleDateString(t.date.locale, { ...t.date.opt, timeZone: 'America/Sao_Paulo' }) : '';
-  const notes = ['pt', 'en', 'es'].filter(l => x.notas[l]).map(l =>
-    `<ul class="list" lang="${l}" data-l="${l}">${x.notas[l].map(n => `<li>${esc(n)}</li>`).join('')}</ul>`).join('\n      ');
-  const aviso = x.aviso ? `<div class="notes">${['pt', 'en', 'es'].filter(l => x.aviso[l]).map(l =>
-    `<div class="note warn" lang="${l}" data-l="${l}">${esc(x.aviso[l])}</div>`).join('')}</div>\n    ` : '';
+  // o site tem português e inglês: cada página mostra as notas no seu idioma
+  const lang = t === L.en ? 'en' : 'pt';
+  const notes = `<ul class="list">${x.notas[lang].map(n => `<li>${esc(n)}</li>`).join('')}</ul>`;
+  const aviso = x.aviso ? `<div class="note warn">${esc(x.aviso[lang])}</div>\n    ` : '';
   const files = x.aviso ? [] : fileLinks(x, t);
   const gh = x.rel ? `<a class="btn small" href="${esc(x.rel.html_url)}"><span class="gh" aria-hidden="true"></span>${t.gh}</a>` : '';
   return `  <article class="rel${x.aviso ? ' avoid' : ''}" id="v${x.v}">
     <div class="rel-head"><h2>${x.v}</h2>${tags.join('')}${date ? `<time datetime="${esc(when.slice(0, 10))}">${date}</time>` : ''}</div>
-    ${aviso}<div class="notes">
-      ${notes}
-    </div>
+    ${aviso}${notes}
     ${files.length || gh ? `<div class="btns">${files.join('')}${gh}</div>` : ''}
   </article>`;
 }
@@ -127,7 +125,7 @@ function page(t, code) {
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Silkscreen&display=swap">
 <link rel="stylesheet" href="${t.root}style.css?v=15">
 </head>
-<body data-notes="${code}">
+<body>
 <!-- gerado por scripts/releases-page.cjs (repositório principal); não edite à mão -->
 
 <header class="top">
@@ -148,11 +146,6 @@ function page(t, code) {
       <h1>${t.h1} <span class="count">${t.count(list.length)}</span></h1>
       <p>${t.lead}</p>
       <div class="note warn">${t.avoid(AVOID)}</div>
-      <div class="tabs" role="group" aria-label="${t.notesIn}">
-        <button type="button" data-set="pt" aria-pressed="${code === 'pt'}">Português</button>
-        <button type="button" data-set="en" aria-pressed="${code === 'en'}">English</button>
-        <button type="button" data-set="es" aria-pressed="false">Español</button>
-      </div>
     </div>
   </div>
 
@@ -178,22 +171,6 @@ ${list.map(x => item(x, t)).join('\n')}
   </div>
 </footer>
 
-<script>
-// idioma das notas: o da página, ou o último escolhido
-(function () {
-  var b = document.body, btns = document.querySelectorAll("[data-set]");
-  function set(l) {
-    b.setAttribute("data-notes", l);
-    for (var i = 0; i < btns.length; i++) btns[i].setAttribute("aria-pressed", btns[i].getAttribute("data-set") === l);
-  }
-  try { var s = localStorage.getItem("notas-idioma"); if (s) set(s); } catch (e) {}
-  for (var i = 0; i < btns.length; i++) btns[i].addEventListener("click", function () {
-    var l = this.getAttribute("data-set");
-    set(l);
-    try { localStorage.setItem("notas-idioma", l); } catch (e) {}
-  });
-})();
-</script>
 </body>
 </html>
 `;
