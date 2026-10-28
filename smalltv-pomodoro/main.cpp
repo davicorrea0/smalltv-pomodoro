@@ -290,9 +290,32 @@ void applyTimezone() {
 }
 
 // ---------- brilho (com horário noturno) ----------
+// PWM a 20 kHz (fora da faixa audível e de piscar) com 1023 degraus; pino invertido (0 = aceso no máximo).
+// Curva gama 2.2 (perceptual) sobre o 0-100 do cfg; 1 % já sai com ~1 % de duty, para não apagar.
+const uint16_t BL_RANGE = 1023;
+const uint32_t BL_HZ = 20000;
+const uint16_t BL_MIN = 10;      // duty mínimo para qualquer brilho > 0
+const uint16_t BL_FADE_MS = 400;  // rampa entre dois níveis (dia/noite, slider)
 int curBri = -1;
+uint16_t blFrom = 0, blTo = 0, blNow = 0;
+uint32_t blT0 = 0;
+bool blBoot = true;  // primeira escrita (boot): sem rampa
+
+uint16_t briDuty(int b) {
+  if (b <= 0) return 0;
+  return BL_MIN + (uint16_t)((BL_RANGE - BL_MIN) * powf(b / 100.0f, 2.2f) + 0.5f);
+}
 
 int16_t sunRise = -1, sunSet = -1;  // minutos do dia (hora local), da última busca do clima
+
+// Chamada a cada volta do loop: anda da posição atual até o alvo em BL_FADE_MS e só mexe no PWM quando muda
+void briFade() {
+  uint32_t el = millis() - blT0;
+  uint16_t lvl = el >= BL_FADE_MS ? blTo : blFrom + (int32_t)(blTo - blFrom) * (int32_t)el / (int32_t)BL_FADE_MS;
+  if (lvl == blNow) return;
+  blNow = lvl;
+  analogWrite(PIN_BL, BL_RANGE - lvl);
+}
 
 void updateBrightness(bool force = false) {
   int b = cfg.brightness;
@@ -306,8 +329,17 @@ void updateBrightness(bool force = false) {
   }
   if (b == curBri && !force) return;
   curBri = b;
-  analogWriteRange(255);
-  analogWrite(PIN_BL, 255 - map(b, 0, 100, 0, 255));
+  blFrom = blNow;
+  blTo = briDuty(b);
+  blT0 = millis();
+  if (blBoot) {  // boot: acende direto no nível pedido
+    blBoot = false;
+    blFrom = blTo;
+    blNow = blTo;
+    analogWrite(PIN_BL, BL_RANGE - blTo);
+    return;
+  }
+  briFade();
 }
 
 // ---------- Pomodoro ----------
@@ -3055,6 +3087,8 @@ void startPortal() {
 void setup() {
   snprintf(netName, sizeof netName, HOSTNAME "-%04x", (unsigned)(ESP.getChipId() & 0xFFFF));
   pinMode(PIN_BL, OUTPUT);
+  analogWriteRange(BL_RANGE);
+  analogWriteFreq(BL_HZ);
   loadSettings();
   BootCount bc;
   EEPROM.get(BOOT_OFF, bc);
@@ -3152,6 +3186,7 @@ void loop() {
     updateBrightness();
     timeGuard.tick(time(nullptr), now);
   }
+  briFade();
 
   if (vcomTestUntil) {
     if ((int32_t)(now - vcomTestUntil) < 0) {
