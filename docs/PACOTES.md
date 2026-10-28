@@ -65,7 +65,7 @@ Toda camada aceita `"when"` para aparecer só em certas condições: `day`, `nig
 | `rect` | `x`, `y`, `w`, `h`, `r` (cantos), `color` (preenchimento), `stroke` (contorno) |
 | `circle` | `x`, `y` (centro), `r`, `color`, `stroke` |
 | `line` | `x`, `y`, `x2`, `y2`, `size` (espessura), `color` |
-| `text` | `x`, `y`, `text`, `font`, `size`, `align` (`left`/`center`/`right`; `x` é o ponto de alinhamento), `color`, e conforme a fonte `off` ou `bg` |
+| `text` | `x`, `y`, `text`, `font`, `size`, `align` (`left`/`center`/`right`; `x` é o ponto de alinhamento), `color`, e conforme a fonte `off` ou `bg`; opcionais `glow`, `pulse`, `spread`, `base` (veja "Brilho pulsante") |
 | `sprite` | `x`, `y`, `sprite` (nome em `sprites`), `size` (ampliação inteira) |
 | `mascot` | o tomate do projeto: `x`, `y`, `size`, `mood`: `auto` (dorme à noite, guarda-chuva na chuva, comemora a meta, cachecol no frio, óculos no calor), `feliz`, `dormindo`, `focado`, `relax`, `comemorando`, `guarda-chuva`, `cachecol`, `oculos` |
 | `plant` | a planta do tomate, que cresce com a sequência (semente, broto, flor, tomate verde, maduro, dourado com 7+ dias): `x`, `y`, `size` (ampliação do desenho de 16×16) (requer firmware 1.8.0+) |
@@ -124,6 +124,22 @@ Em vez de `px`, use `frames`: uma lista de quadros, cada um no mesmo formato de 
 ```
 
 O quadro vem do relógio do aparelho, então a animação anda sozinha e só a área do sprite é redesenhada. Um sprite com `px` continua parado. Limites: todos os quadros com o mesmo tamanho (até 32×32), no máximo **8 quadros** por sprite e **6 KB** de sprites no pacote (cada quadro de 32×32 ocupa 512 bytes; um de 16×16, 128). Veja um exemplo completo em [`faces/tomate-pulando.json`](../faces/tomate-pulando.json); outros animados: [`fogueira`](../faces/fogueira.json) (chama de 6 quadros), [`inverno`](../faces/inverno.json) (um sprite de neve repetido em duas escalas), [`gato-soneca`](../faces/gato-soneca.json), [`pausa-cafe`](../faces/pausa-cafe.json), [`aquario`](../faces/aquario.json) e [`janela`](../faces/janela.json) (chuva).
+
+### Brilho pulsante
+
+Uma camada `text` pode ter um halo que respira atrás das letras, como um tubo nixie (requer firmware 1.22.0+; antes disso o campo é ignorado e o pacote instala sem brilho):
+
+```json
+{ "type": "text", "x": 66, "y": 78, "font": "geo", "size": 58, "w": 8, "color": "#4a2d1b", "text": "{HH}", "align": "center",
+  "glow": "#ff8a2a", "base": "#1c1e1a", "spread": 3, "pulse": 2400 }
+```
+
+- `glow`: cor do halo (ativa o recurso);
+- `spread`: alcance de 1 a 3 px (padrão 2);
+- `pulse`: período em ms, de 400 a 10000 (sem ele, o brilho fica fixo);
+- `base`: cor da superfície sob o halo (padrão: `bg` do pacote). O halo é uma mistura de `base` com `glow`, então use a cor real do que está atrás do texto.
+
+A intensidade varia em 8 níveis e só a área do texto é redesenhada a cada mudança. Em `geo` o halo é o próprio traço mais grosso (barato); nas outras fontes custa 8 desenhos por pixel de alcance, então prefira textos pequenos. Exemplo: [`faces/nixie.json`](../faces/nixie.json).
 
 ## Limites
 
