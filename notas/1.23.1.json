@@ -1,20 +1,20 @@
 {
   "pt": [
-    "Versão de teste",
-    "Tirada a opção de tela a 80 MHz da 1.23.0: o chip da tela não aguenta e a imagem virava lixo; quem ligou volta sozinho aos 40 MHz",
-    "Mudar o brilho ou o horário noturno no painel não apaga e redesenha mais a tela (piscava a cada movimento do controle)",
-    "Continuam da 1.23.0: brilho suave (PWM a 20 kHz, curva que acompanha o olho, transição de 400 ms) e troca automática de mostrador rolando"
+    "Brilho mais suave: PWM a 20 kHz (sem piscar nem chiado), curva de brilho que acompanha o olho e transição de 400 ms entre dia e noite",
+    "Mudar o brilho ou o horário noturno no painel não apaga e redesenha mais a tela",
+    "Troca automática de mostrador agora entra rolando, pela rolagem do próprio chip da tela",
+    "Diagnóstico mostra quanto tempo levou a última troca de tela inteira"
   ],
   "en": [
-    "Test version",
-    "Removed the 80 MHz display option from 1.23.0: the display chip can't keep up and the image turned to garbage; clocks that had it on go back to 40 MHz by themselves",
-    "Changing brightness or night hours in the panel no longer clears and redraws the screen (it flickered with every slider move)",
-    "Still from 1.23.0: smoother brightness (20 kHz PWM, a curve that follows the eye, 400 ms fade) and automatic face rotation that slides in"
+    "Smoother brightness: 20 kHz PWM (no flicker or whine), a brightness curve that follows the eye, and a 400 ms fade between day and night",
+    "Changing brightness or night hours in the panel no longer clears and redraws the screen",
+    "Automatic face rotation now slides in using the display chip's own hardware scrolling",
+    "Diagnostics show how long the last full-screen redraw took"
   ],
   "es": [
-    "Versión de prueba",
-    "Se quitó la opción de pantalla a 80 MHz de la 1.23.0: el chip de la pantalla no aguanta y la imagen se volvía basura; los relojes que la tenían vuelven solos a 40 MHz",
-    "Cambiar el brillo o el horario nocturno en el panel ya no borra y redibuja la pantalla (parpadeaba con cada movimiento del control)",
-    "Siguen de la 1.23.0: brillo más suave (PWM a 20 kHz, curva que sigue al ojo, transición de 400 ms) y cambio automático de esfera deslizando"
+    "Brillo más suave: PWM a 20 kHz (sin parpadeo ni zumbido), curva de brillo que sigue al ojo y transición de 400 ms entre día y noche",
+    "Cambiar el brillo o el horario nocturno en el panel ya no borra y redibuja la pantalla",
+    "El cambio automático de esfera ahora entra deslizando, con el desplazamiento por hardware del chip de la pantalla",
+    "El diagnóstico muestra cuánto tardó el último redibujado de pantalla completa"
   ]
 }
