@@ -324,6 +324,15 @@
       "file": "compasso.json",
       "preview": "compasso.png",
       "size": 1735
+    },
+    {
+      "id": "tomate-pulando",
+      "name": "Tomate Pulando",
+      "author": "davicorrea0",
+      "desc": "Um tomate em pixel art que pula e pisca ao lado da hora (sprite animado de 6 quadros)",
+      "file": "tomate-pulando.json",
+      "preview": "tomate-pulando.png",
+      "size": 4522
     }
   ]
 }

@@ -25,7 +25,8 @@ static const char *const WHENS[W_WHENS] = {"always", "day", "night", "rain", "dr
 static const char *const VARS[V_VARS] = {"sec", "min", "hour", "focos", "hum"};
 static const char *const MOODS[9] = {"feliz", "dormindo", "focado", "relax", "comemorando", "guarda-chuva", "cachecol", "oculos", "auto"};
 static const int32_t C_NONE = -1, C_ACCENT = -2;
-static const uint8_t MAX_LAYERS = 48, MAX_SPRITES = 12;
+static const uint8_t MAX_LAYERS = 48, MAX_SPRITES = 12, MAX_FRAMES = 8;
+static const uint16_t MAX_SPR_BYTES = 6144;
 
 struct Layer {
   uint8_t type, font, align, when, var, size;
@@ -138,13 +139,27 @@ bool facePackLoad(char *json, size_t len, char *err, size_t errLen) {
   size_t scap = 0;
   uint8_t ns = 0;
   for (JsonPairConst kv : sprites) {
-    JsonArrayConst px = kv.value()["px"];
-    size_t w = px.size() ? strlen(px[0] | "") : 0, h = px.size();
+    JsonArrayConst fr = kv.value()["frames"], px = fr.isNull() ? kv.value()["px"] : fr[0];
+    size_t w = px.size() ? strlen(px[0] | "") : 0, h = px.size(), nf = fr.isNull() ? 1 : fr.size();
+    int fps = kv.value()["fps"] | 4;
     if (!w || w > 32 || h > 32 || ++ns > MAX_SPRITES) {
       snprintf(err, errLen, "sprite \"%s\": ate 32x32 e no maximo %d sprites", kv.key().c_str(), MAX_SPRITES);
       return false;
     }
-    scap += 3 + 15 * 2 + (w * h + 1) / 2;
+    if (nf < 1 || nf > MAX_FRAMES || fps < 1 || fps > 10) {
+      snprintf(err, errLen, "sprite \"%s\": de 1 a %d quadros e \"fps\" de 1 a 10", kv.key().c_str(), MAX_FRAMES);
+      return false;
+    }
+    for (size_t k = 1; k < nf; k++)
+      if (fr[k].size() != h || strlen(fr[k][0] | "") != w) {
+        snprintf(err, errLen, "sprite \"%s\": todos os quadros precisam ter o mesmo tamanho", kv.key().c_str());
+        return false;
+      }
+    scap += 4 + 15 * 2 + nf * ((w * h + 1) / 2);
+    if (scap > MAX_SPR_BYTES) {
+      snprintf(err, errLen, "sprites grandes demais: %d bytes no total (maximo %d)", (int)scap, MAX_SPR_BYTES);
+      return false;
+    }
   }
   lay = (Layer *)calloc(layers.size(), sizeof(Layer));
   pool = (char *)malloc(pcap);
@@ -165,8 +180,8 @@ bool facePackLoad(char *json, size_t len, char *err, size_t errLen) {
   ns = 0;
   for (JsonPairConst kv : sprites) {
     JsonObjectConst palObj = kv.value()["pal"];
-    JsonArrayConst px = kv.value()["px"];
-    uint8_t w = strlen(px[0] | ""), h = px.size(), n = 0;
+    JsonArrayConst fr = kv.value()["frames"], px0 = fr.isNull() ? kv.value()["px"] : fr[0];
+    uint8_t w = strlen(px0[0] | ""), h = px0.size(), n = 0, nf = fr.isNull() ? 1 : fr.size();
     char keys[16];
     uint16_t colors[15];
     for (JsonPairConst c : palObj) {
@@ -185,23 +200,28 @@ bool facePackLoad(char *json, size_t len, char *err, size_t errLen) {
     p[0] = w;
     p[1] = h;
     p[2] = n;
+    p[3] = (kv.value()["fps"] | 4) << 4 | nf;  // fps (1-10) e quadros (1-8), um quadro depois do outro
     for (uint8_t i = 0; i < n; i++) {
-      p[3 + i * 2] = colors[i] >> 8;
-      p[4 + i * 2] = colors[i] & 255;
+      p[4 + i * 2] = colors[i] >> 8;
+      p[5 + i * 2] = colors[i] & 255;
     }
-    uint8_t *pix = p + 3 + n * 2;
-    memset(pix, 0, (w * h + 1) / 2);
-    for (uint8_t r = 0; r < h; r++) {
-      const char *row = px[r] | "";
-      for (uint8_t c = 0; c < w && row[c]; c++) {
-        uint8_t v = 0;
-        for (uint8_t i = 0; i < n; i++)
-          if (keys[i] == row[c]) v = i + 1;
-        int idx = r * w + c;
-        pix[idx / 2] |= idx & 1 ? v : v << 4;
+    const int fsz = (w * h + 1) / 2;
+    uint8_t *pix = p + 4 + n * 2;
+    memset(pix, 0, fsz * nf);
+    for (uint8_t k = 0; k < nf; k++) {
+      JsonArrayConst px = fr.isNull() ? kv.value()["px"] : fr[k];
+      for (uint8_t r = 0; r < h; r++) {
+        const char *row = px[r] | "";
+        for (uint8_t c = 0; c < w && row[c]; c++) {
+          uint8_t v = 0;
+          for (uint8_t i = 0; i < n; i++)
+            if (keys[i] == row[c]) v = i + 1;
+          int idx = r * w + c;
+          pix[k * fsz + idx / 2] |= idx & 1 ? v : v << 4;
+        }
       }
     }
-    sprUsed += 3 + n * 2 + (w * h + 1) / 2;
+    sprUsed += 4 + n * 2 + fsz * nf;
   }
 
   // camadas
@@ -540,6 +560,12 @@ static Box measure(const Layer &L, const UiState &s, const char *txt) {
   return {0, 0, 0, 0};
 }
 
+// quadro do sprite no instante s.ms (1 quadro = parado)
+static uint8_t sprFrame(const Layer &L, const UiState &s) {
+  uint8_t nf = spr[L.str + 3] & 15;
+  return nf > 1 ? (s.ms * (spr[L.str + 3] >> 4) / 1000) % nf : 0;
+}
+
 static uint32_t signature(const Layer &L, const UiState &s, char *txt, size_t n) {
   uint32_t h = 2166136261u;
   txt[0] = 0;
@@ -551,6 +577,7 @@ static uint32_t signature(const Layer &L, const UiState &s, char *txt, size_t n)
     case L_BAR: { int mx, v = value(L, s, mx); int fw = L.mx > 0 ? (v > L.mx ? L.mx : v) * L.w / L.mx : (v > mx ? mx : v) * L.w / mx; h = fnv(h, &fw, sizeof fw); break; }
     case L_HAND: { int a = (int)(handAngle(L, s) * 1000); h = fnv(h, &a, sizeof a); break; }
     case L_ARC: { int mx, v = value(L, s, mx); if (L.mx > 0) mx = L.mx; int q = (v > mx ? mx : v) * 720 / mx; h = fnv(h, &q, sizeof q); break; }
+    case L_SPRITE: if ((spr[L.str + 3] & 15) > 1) { uint8_t f = sprFrame(L, s); h = fnv(h, &f, 1); } break;  // só animado muda
   }
   return h | 1;  // nunca 0 (0 = invisível)
 }
@@ -612,7 +639,7 @@ static void drawLayer(const Layer &L, const UiState &s, const char *txt) {
     case L_SPRITE: {
       const uint8_t *p = spr + L.str;
       uint8_t w = p[0], h = p[1], n = p[2];
-      const uint8_t *pix = p + 3 + n * 2;
+      const uint8_t *pix = p + 4 + n * 2 + sprFrame(L, s) * ((w * h + 1) / 2);
       for (int r = 0; r < h; r++)
         for (int c = 0; c < w;) {
           int i = r * w + c;
@@ -622,7 +649,7 @@ static void drawLayer(const Layer &L, const UiState &s, const char *txt) {
             if ((k & 1 ? pix[k / 2] & 15 : pix[k / 2] >> 4) != v) break;
             run++;
           }
-          if (v) G->fillRect(L.x + c * L.size, L.y + r * L.size, run * L.size, L.size, (p[1 + v * 2] << 8) | p[2 + v * 2]);
+          if (v) G->fillRect(L.x + c * L.size, L.y + r * L.size, run * L.size, L.size, (p[2 + v * 2] << 8) | p[3 + v * 2]);
           c += run;
         }
       break;

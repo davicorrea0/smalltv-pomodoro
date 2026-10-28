@@ -1,0 +1,191 @@
+{
+  "format": 1,
+  "id": "tomate-pulando",
+  "name": "Tomate Pulando",
+  "author": "davicorrea0",
+  "desc": "Um tomate em pixel art que pula e pisca ao lado da hora (sprite animado de 6 quadros)",
+  "bg": "#1f2a1c",
+  "sprites": {
+    "tomate": {
+      "fps": 6,
+      "pal": {
+        "r": "#e63946",
+        "R": "#ff8a8a",
+        "E": "#2b1a1a",
+        "K": "#7a1620",
+        "g": "#4caf50",
+        "G": "#2e7d32",
+        "s": "#10170f"
+      },
+      "frames": [
+        [
+          "................",
+          "................",
+          "................",
+          "......gg........",
+          ".....gGg.g......",
+          "......gGgg......",
+          "....rrrrrrrr....",
+          "...rRRrrrrrrr...",
+          "..rRRrrrrrrrrr..",
+          "..rRrrrrrrrrrr..",
+          ".rrrrrrrrrrrrrr.",
+          ".rrEErrrrrrEErr.",
+          ".rrEErrrrrrEErr.",
+          ".rrrrrrrrrrrrrr.",
+          "..rrrrKKKKrrrr..",
+          ".....ssssss....."
+        ],
+        [
+          "................",
+          "................",
+          "......gg........",
+          ".....gGg.g......",
+          "......gGgg......",
+          "....rrrrrrrr....",
+          "...rRRrrrrrrr...",
+          "..rRRrrrrrrrrr..",
+          "..rRrrrrrrrrrr..",
+          ".rrrrrrrrrrrrrr.",
+          ".rrEErrrrrrEErr.",
+          ".rrEErrrrrrEErr.",
+          ".rrrrrrrrrrrrrr.",
+          "..rrrrKKKKrrrr..",
+          "..rrrrrKKrrrrr..",
+          "....ssssssss...."
+        ],
+        [
+          "................",
+          "........gg......",
+          "......g.gGg.....",
+          "......ggGg......",
+          "....rrrrrrrr....",
+          "...rRRrrrrrrr...",
+          "..rRRrrrrrrrrr..",
+          "..rRrrrrrrrrrr..",
+          ".rrrrrrrrrrrrrr.",
+          ".rrEErrrrrrEErr.",
+          ".rrEErrrrrrEErr.",
+          ".rrrrrrrrrrrrrr.",
+          "..rrrrKKKKrrrr..",
+          "..rrrrrKKrrrrr..",
+          "...rrrrrrrrrr...",
+          "...ssssssssss..."
+        ],
+        [
+          "........gg......",
+          "......g.gGg.....",
+          "......ggGg......",
+          "....rrrrrrrr....",
+          "...rRRrrrrrrr...",
+          "..rRRrrrrrrrrr..",
+          "..rRrrrrrrrrrr..",
+          ".rrrrrrrrrrrrrr.",
+          ".rrEErrrrrrEErr.",
+          ".rrEErrrrrrEErr.",
+          ".rrrrrrrrrrrrrr.",
+          "..rrrrKKKKrrrr..",
+          "..rrrrrKKrrrrr..",
+          "...rrrrrrrrrr...",
+          "....rrrrrrrr....",
+          "...ssssssssss..."
+        ],
+        [
+          "................",
+          "......gg........",
+          ".....gGg.g......",
+          "......gGgg......",
+          "....rrrrrrrr....",
+          "...rRRrrrrrrr...",
+          "..rRRrrrrrrrrr..",
+          "..rRrrrrrrrrrr..",
+          ".rrrrrrrrrrrrrr.",
+          ".rrEErrrrrrEErr.",
+          ".rrEErrrrrrEErr.",
+          ".rrrrrrrrrrrrrr.",
+          "..rrrrKKKKrrrr..",
+          "..rrrrrKKrrrrr..",
+          "...rrrrrrrrrr...",
+          "...ssssssssss..."
+        ],
+        [
+          "................",
+          "................",
+          "......gg........",
+          ".....gGg.g......",
+          "......gGgg......",
+          "....rrrrrrrr....",
+          "...rRRrrrrrrr...",
+          "..rRRrrrrrrrrr..",
+          "..rRrrrrrrrrrr..",
+          ".rrrrrrrrrrrrrr.",
+          ".rrrrrrrrrrrrrr.",
+          ".rrKKrrrrrrKKrr.",
+          ".rrrrrrrrrrrrrr.",
+          "..rrrrKKKKrrrr..",
+          "..rrrrrKKrrrrr..",
+          "....ssssssss...."
+        ]
+      ]
+    }
+  },
+  "layers": [
+    {
+      "type": "rect",
+      "x": 0,
+      "y": 176,
+      "w": 240,
+      "h": 64,
+      "color": "#2e3b27"
+    },
+    {
+      "type": "rect",
+      "x": 0,
+      "y": 176,
+      "w": 240,
+      "h": 4,
+      "color": "#4a5e3d"
+    },
+    {
+      "type": "text",
+      "x": 120,
+      "y": 14,
+      "font": "dm",
+      "size": 6,
+      "align": "center",
+      "color": "#fefae0",
+      "text": "{HH}:{MM}"
+    },
+    {
+      "type": "text",
+      "x": 120,
+      "y": 66,
+      "font": "pixel",
+      "size": 1,
+      "align": "center",
+      "color": "#b7c9a8",
+      "text": "{WD} {DD} {MON}"
+    },
+    {
+      "type": "sprite",
+      "x": 72,
+      "y": 82,
+      "size": 6,
+      "sprite": "tomate"
+    },
+    {
+      "type": "text",
+      "x": 120,
+      "y": 196,
+      "font": "pixel",
+      "size": 2,
+      "align": "center",
+      "color": "#fefae0",
+      "text": {
+        "pt": "{FOCOS}/{META} focos",
+        "en": "{FOCOS}/{META} done",
+        "es": "{FOCOS}/{META} focos"
+      }
+    }
+  ]
+}

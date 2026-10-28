@@ -106,6 +106,25 @@ Toda camada aceita `"when"` para aparecer só em certas condições: `day`, `nig
 
 Cada caractere de `px` é um pixel; `.` é transparente e os demais vêm de `pal` (até 15 cores, um caractere cada). Até 32×32 e até 12 sprites por pacote.
 
+### Sprites animados
+
+Em vez de `px`, use `frames`: uma lista de quadros, cada um no mesmo formato de `px` e com a mesma `pal`. `fps` (1 a 10, padrão 4) é a velocidade.
+
+```json
+"sprites": {
+  "pisca": {
+    "fps": 2,
+    "pal": { "o": "#3a2a20", "y": "#ffd166" },
+    "frames": [
+      ["..oooo..", ".oyyyyo.", ".oyooyo.", ".oyyyyo.", "..oooo.."],
+      ["..oooo..", ".oyyyyo.", ".oyyyyo.", ".oyyyyo.", "..oooo.."]
+    ]
+  }
+}
+```
+
+O quadro vem do relógio do aparelho, então a animação anda sozinha e só a área do sprite é redesenhada. Um sprite com `px` continua parado. Limites: todos os quadros com o mesmo tamanho (até 32×32), no máximo **8 quadros** por sprite e **6 KB** de sprites no pacote (cada quadro de 32×32 ocupa 512 bytes; um de 16×16, 128). Veja um exemplo completo em [`faces/tomate-pulando.json`](../faces/tomate-pulando.json).
+
 ## Limites
 
 - arquivo de até **16 KB**, até **48 camadas**;
