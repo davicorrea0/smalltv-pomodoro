@@ -69,6 +69,8 @@ fs.writeFileSync(out,`#include "${header}"
 #include <cstdio>
 #include <cctype>
 #include <limits>
+#define F(s) (s)
+#define PSTR(s) (s)
 struct String:std::string {
  using std::string::string;using std::string::operator=;
  String(const std::string&s):std::string(s){}

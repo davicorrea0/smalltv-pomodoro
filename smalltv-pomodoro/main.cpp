@@ -1533,13 +1533,13 @@ bool idOk(const String &id) {
 bool loadPackFile(const String &path, String &msg) {
   File f = fsOk ? LittleFS.open(path, "r") : File();
   if (!f) {
-    msg = "arquivo nao encontrado";
+    msg = F("arquivo nao encontrado");
     return false;
   }
   size_t n = f.size();
   if (n == 0 || n > 16384) {
     f.close();
-    msg = "pacote vazio ou maior que 16 KB";
+    msg = F("pacote vazio ou maior que 16 KB");
     return false;
   }
   char err[96];
@@ -1576,28 +1576,28 @@ void handlePackUpload() {
     packGate.begin(false, 0);
     if (up.name == "face") { packUploadError = ""; packFaceReady = false; }
     if (!panelOk() || !uploadAuthed()) {
-      packUploadError = "Proibido";
+      packUploadError = F("Proibido");
       return;
     }
-    if (up.name != "face" && up.name != "preview") { packUploadError = "Campo invalido"; return; }
+    if (up.name != "face" && up.name != "preview") { packUploadError = F("Campo invalido"); return; }
     if (packUploadError.length()) return;
     if (!fsOk) {
-      packUploadError = "Sistema de arquivos indisponivel";
+      packUploadError = F("Sistema de arquivos indisponivel");
       return;
     }
     if (!LittleFS.exists("/faces")) LittleFS.mkdir("/faces");
     if (up.name == "face") { LittleFS.remove("/faces/_novo.json"); LittleFS.remove("/faces/_novo.png"); }
     packUpload = LittleFS.open(up.name == "preview" ? "/faces/_novo.png" : "/faces/_novo.json", "w");
-    if (!packUpload) { packUploadError = "Falha ao criar arquivo"; return; }
+    if (!packUpload) { packUploadError = F("Falha ao criar arquivo"); return; }
     packGate.begin(true, up.name == "face" ? 16384 : 65536);
   } else if (up.status == UPLOAD_FILE_WRITE) {
     if (!packGate.active) return;
-    if (!packGate.take(up.currentSize)) packUploadError = "Arquivo grande demais";
-    else if (packUpload.write(up.buf, up.currentSize) != up.currentSize) packUploadError = "Memoria cheia";
+    if (!packGate.take(up.currentSize)) packUploadError = F("Arquivo grande demais");
+    else if (packUpload.write(up.buf, up.currentSize) != up.currentSize) packUploadError = F("Memoria cheia");
     if (packUploadError.length()) { packUpload.close(); packGate.stop(); }
   } else if (up.status == UPLOAD_FILE_END || up.status == UPLOAD_FILE_ABORTED) {
     if (packUpload) packUpload.close();
-    if (up.status == UPLOAD_FILE_ABORTED) packUploadError = "Envio interrompido";
+    if (up.status == UPLOAD_FILE_ABORTED) packUploadError = F("Envio interrompido");
     if (packGate.active && !packUploadError.length() && up.name == "face") packFaceReady = true;
     packGate.stop();
     if (packUploadError.length()) packFaceReady = false;
@@ -1878,11 +1878,11 @@ void handleUpload() {
     uploadError = "";
     uploadPath = "";
     if (!panelOk() || !uploadAuthed()) {
-      uploadError = "Proibido";
+      uploadError = F("Proibido");
       return;
     }
     if (!fsOk) {
-      uploadError = "Sistema de arquivos indisponivel";
+      uploadError = F("Sistema de arquivos indisponivel");
       return;
     }
     // nome seguro: letras, números, - _ . e no máximo 28 caracteres (limite do LittleFS é 31)
@@ -1892,24 +1892,24 @@ void handleUpload() {
     while (name.indexOf("..") >= 0) name.replace("..", ".");  // mediaPath recusa "..": o arquivo não poderia ser apagado
     if (name.length() > 28) name = name.substring(name.length() - 28);
     if (!isJpg(name) && !isGif(name)) {
-      uploadError = "Use JPG ou GIF";
+      uploadError = F("Use JPG ou GIF");
       return;
     }
     FSInfo fi;
     LittleFS.info(fi);
     if (fi.totalBytes - fi.usedBytes < 16384) {
-      uploadError = "Memoria cheia";
+      uploadError = F("Memoria cheia");
       return;
     }
     if (!LittleFS.exists("/image")) LittleFS.mkdir("/image");
     uploadPath = "/image/" + name;
     uploadFile = LittleFS.open(uploadPath, "w");
-    if (!uploadFile) uploadError = "Falha ao criar arquivo";
+    if (!uploadFile) uploadError = F("Falha ao criar arquivo");
     else photoGate.begin(true, 3 * 1024 * 1024);
   } else if (up.status == UPLOAD_FILE_WRITE) {
     if (!photoGate.active) return;
-    if (!photoGate.take(up.currentSize)) uploadError = "Arquivo grande demais";
-    else if (uploadFile.write(up.buf, up.currentSize) != up.currentSize) uploadError = "Memoria cheia";
+    if (!photoGate.take(up.currentSize)) uploadError = F("Arquivo grande demais");
+    else if (uploadFile.write(up.buf, up.currentSize) != up.currentSize) uploadError = F("Memoria cheia");
     if (uploadError.length()) {
       photoGate.stop();
       uploadFile.close();
@@ -2035,7 +2035,7 @@ bool hostOk() {
 }
 bool panelOk() { return hostOk() && server.header("X-SmallTV") == "1"; }
 bool deny() {
-  server.send(403, "text/plain", "Proibido");
+  server.send_P(403, PSTR("text/plain"), PSTR("Proibido"));
   return false;
 }
 // Senha do painel (a mesma do /update, usuário admin): com ela definida, todo o painel e a API pedem
@@ -2059,7 +2059,7 @@ bool authBlocked(uint32_t ip, bool reply) {
   if (!cfg.otaPass[0] || !authThrottle.blocked(ip, millis(), &wait)) return false;
   if (reply) {
     server.sendHeader("Retry-After", String((wait + 999) / 1000));
-    server.send(429, "text/plain", "Tente novamente em alguns segundos");
+    server.send_P(429, PSTR("text/plain"), PSTR("Tente novamente em alguns segundos"));
   }
   return true;
 }
@@ -2163,7 +2163,7 @@ void setupWeb() {
   });
   server.on("/api/panel", HTTP_POST, [] {
     if (!guard()) return;
-    if (!panelResult.length()) server.send(400, "text/plain", "Painel invalido");
+    if (!panelResult.length()) server.send_P(400, PSTR("text/plain"), PSTR("Painel invalido"));
     else server.send(200, "text/plain", panelResult == PANEL_HASH ? "ok" : "guardado " + panelResult);
   }, handlePanelUpload);
   server.on("/api/state", HTTP_GET, sendState);
@@ -2199,7 +2199,7 @@ void setupWeb() {
     String rawWork = server.arg("w"), rawPause = server.arg("b");
     rawWork.trim(); rawPause.trim();
     if ((rawWork.length() && !work.length()) || (rawPause.length() && !pause.length())) {
-      server.send(400, "text/plain", "Use um endereco http:// valido (sem espacos ou controles)");
+      server.send_P(400, PSTR("text/plain"), PSTR("Use um endereco http:// valido (sem espacos ou controles)"));
       return;
     }
     hookWork = work;
@@ -2215,7 +2215,7 @@ void setupWeb() {
   server.on("/api/statsimport", HTTP_POST, [] {
     if (!guard()) return;
     if (!fsOk || !server.hasArg("days") || !server.hasArg("day")) {
-      server.send(400, "text/plain", "Backup invalido");
+      server.send_P(400, PSTR("text/plain"), PSTR("Backup invalido"));
       return;
     }
     const String &d = server.arg("days");
@@ -2226,12 +2226,12 @@ void setupWeb() {
       int e = d.indexOf(',', i);
       if (e < 0) e = d.length();
       int n = d.substring(i, e).toInt();
-      if (v.size() >= STATS_DAYS) { server.send(400, "text/plain", "Backup invalido"); return; }
+      if (v.size() >= STATS_DAYS) { server.send_P(400, PSTR("text/plain"), PSTR("Backup invalido")); return; }
       v.push_back(n < 0 ? 0 : n > 255 ? 255 : n);
       i = e + 1;
     }
     if (v.empty() || v.size() > STATS_DAYS) {
-      server.send(400, "text/plain", "Backup invalido");
+      server.send_P(400, PSTR("text/plain"), PSTR("Backup invalido"));
       return;
     }
     stats = {STATS_MAGIC, day, (uint16_t)server.arg("best").toInt(), (uint32_t)server.arg("total").toInt()};
@@ -2459,7 +2459,7 @@ void setupWeb() {
     String id = ok ? facePackId() : "", name = ok ? facePackName() : "";
     if (ok && id[0] == '_') {  // "_novo" e afins são os temporários do envio
       ok = false;
-      msg = "id invalido";
+      msg = F("id invalido");
     }
     if (ok) {
       LittleFS.remove("/faces/" + id + ".json");
@@ -2493,7 +2493,7 @@ void setupWeb() {
     if (!guard()) return;
     const String &id = server.arg("pkg");
     if (!fsOk || !idOk(id) || !LittleFS.remove("/faces/" + id + ".json")) {
-      server.send(400, "text/plain", "Pacote nao encontrado");
+      server.send_P(400, PSTR("text/plain"), PSTR("Pacote nao encontrado"));
       return;
     }
     LittleFS.remove("/faces/" + id + ".png");
@@ -2520,7 +2520,7 @@ void setupWeb() {
       viewUntil = 0;
     }
     if (!fsOk || !mediaPath(f) || !LittleFS.remove(f)) {
-      server.send(400, "text/plain", "Nao foi possivel apagar");
+      server.send_P(400, PSTR("text/plain"), PSTR("Nao foi possivel apagar"));
       return;
     }
     rebuildAlbum();
@@ -2533,7 +2533,7 @@ void setupWeb() {
     String f = server.arg("f");
     if (!fsOk || !f.startsWith("/") || f.length() < 2 || f.length() > 96 || f.indexOf("..") >= 0 || f.indexOf("//") >= 0 ||
         f.endsWith("/") || fsKeep(f) || !LittleFS.exists(f)) {
-      server.send(400, "text/plain", "Nao foi possivel apagar");
+      server.send_P(400, PSTR("text/plain"), PSTR("Nao foi possivel apagar"));
       return;
     }
     if (curFile == f || curFile.startsWith(f + "/")) {  // o arquivo na tela, ou a pasta dele
@@ -2552,11 +2552,11 @@ void setupWeb() {
     if (!guard()) return;
     const String &f = server.arg("f");
     if (phase != IDLE) {
-      server.send(409, "text/plain", "Pomodoro em andamento");
+      server.send_P(409, PSTR("text/plain"), PSTR("Pomodoro em andamento"));
       return;
     }
     if (!fsOk || !mediaPath(f) || !showAlbumItem(f)) {
-      server.send(400, "text/plain", "Arquivo invalido");
+      server.send_P(400, PSTR("text/plain"), PSTR("Arquivo invalido"));
       return;
     }
     viewUntil = millis() + cfg.albumDelay * 1000UL;
@@ -2578,7 +2578,7 @@ void setupWeb() {
     File file;
     if (fsOk && mediaPath(f)) file = LittleFS.open(f, "r");
     if (!file) {
-      server.send(404, "text/plain", "nao encontrado");
+      server.send_P(404, PSTR("text/plain"), PSTR("nao encontrado"));
       return;
     }
     server.sendHeader("Cache-Control", "max-age=86400");
@@ -2589,12 +2589,12 @@ void setupWeb() {
   server.on("/api/otapass", HTTP_POST, [] {
     if (!guard()) return;
     if (cfg.otaPass[0] && server.arg("old") != cfg.otaPass) {
-      server.send(403, "text/plain", "Senha atual incorreta");
+      server.send_P(403, PSTR("text/plain"), PSTR("Senha atual incorreta"));
       return;
     }
     const String &p = server.arg("new");
     if (p.length() >= sizeof(cfg.otaPass)) {
-      server.send(400, "text/plain", "Senha muito longa (max 23)");
+      server.send_P(400, PSTR("text/plain"), PSTR("Senha muito longa (max 23)"));
       return;
     }
     strlcpy(cfg.otaPass, p.c_str(), sizeof(cfg.otaPass));
