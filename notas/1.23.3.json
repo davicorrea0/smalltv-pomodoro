@@ -1,6 +1,6 @@
 {
   "pt": [
-    "Liga mais rápido: o Wi-Fi conecta direto no roteador da última vez, e a tela de início mostra as etapas (Wi-Fi, hora) com uma barra em pixel art, sem parecer travada",
+    "Liga mais rápido e sem tela preta: a tela de início aparece na hora, o Wi-Fi conecta direto no roteador da última vez e uma barra em pixel art mostra as etapas (Wi-Fi, hora)",
     "A hora aparece logo depois de reiniciar por atualização ou ajuste, e o relógio tenta outro servidor de hora se o primeiro demorar",
     "smalltv.local mais confiável: o Wi-Fi não cochila mais (perdia as perguntas da rede) e a resposta vai também direto para quem perguntou",
     "Uns 5 KB a mais de memória livre, o que ajuda os GIFs",
@@ -8,7 +8,7 @@
     "Diagnóstico mostra quanto tempo levou cada etapa do último início"
   ],
   "en": [
-    "Starts faster: Wi-Fi connects straight to the last router, and the start screen shows the steps (Wi-Fi, time) with a pixel-art progress bar instead of looking frozen",
+    "Starts faster and without a black screen: the start screen shows up right away, Wi-Fi connects straight to the last router, and a pixel-art bar shows the steps (Wi-Fi, time)",
     "The time shows up right after a restart from an update or setting change, and the clock tries another time server if the first one is slow",
     "More reliable smalltv.local: Wi-Fi no longer naps (it missed network queries) and the answer also goes straight to whoever asked",
     "About 5 KB more free memory, which helps GIFs",
@@ -16,7 +16,7 @@
     "Diagnostics show how long each step of the last start took"
   ],
   "es": [
-    "Arranca más rápido: el Wi-Fi se conecta directo al último router y la pantalla de inicio muestra los pasos (Wi-Fi, hora) con una barra en pixel art, sin parecer colgada",
+    "Arranca más rápido y sin pantalla negra: la pantalla de inicio aparece enseguida, el Wi-Fi se conecta directo al último router y una barra en pixel art muestra los pasos (Wi-Fi, hora)",
     "La hora aparece enseguida tras reiniciar por una actualización o un ajuste, y el reloj prueba otro servidor de hora si el primero tarda",
     "smalltv.local más confiable: el Wi-Fi ya no se duerme (perdía las consultas de la red) y la respuesta también va directo a quien preguntó",
     "Unos 5 KB más de memoria libre, lo que ayuda a los GIF",
