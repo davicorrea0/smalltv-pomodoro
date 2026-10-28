@@ -919,12 +919,49 @@ uint32_t vcomTestUntil = 0;  // teste na tela até este millis()
 uint8_t vcomTest = UI_VCOM_DEFAULT;     // valor em teste (aplicado, ainda não salvo)
 int8_t vcomDraw = 0;         // 2 = desenhar a estampa toda, 1 = só o valor
 // Ordem de cor, inversão e rotação variam entre unidades do SmallTV: tudo configurável no painel.
+// Rolagem vertical por hardware (VSCRDEF 0x33 / VSCSAD 0x37), usada por uiScroll* em ui.cpp.
+// A RAM do ST7789 tem 320 linhas e o vidro 240 mostra as 240 primeiras que o painel LÊ (linha lida n
+// mostra a linha de RAM n + VSCSAD). Onde ficam na RAM as linhas que a biblioteca escreve:
+//   normal (setRotation(2), MADCTL sem MY): endereço de linha = y, y = 0..239 -> RAM 0..239; a margem
+//     (80 linhas sem vidro) é o endereço 240..319.
+//   girado (setRotation(0), MADCTL MX|MY): endereço = y + 80, e o MY espelha a RAM (RAM = 319 - endereço),
+//     então y = 0..239 -> RAM 239..0 e a margem é o endereço 0..79 (RAM 319..240).
+// O MY só espelha o acesso de escrita; o VSCSAD continua em linhas lidas. Por isso, para o conteúdo subir
+// na vista da pessoa, o girado precisa de VSCSAD = rows - offset (uiScrollSad em ui.h). O chip rola a
+// área toda de uma vez: aqui TFA = BFA = 0 e VSA = rows (as faixas fixas não cabem, ver ui.h).
+// Em qualquer dos dois, y = 0..239 do desenho continua sendo o mesmo endereço durante a rolagem.
+static int16_t scrollDef = 0;  // VSA enviado por último (0 = ainda não)
+static void tftScroll(int16_t rows, int16_t offset) {
+  int16_t r = rows ? rows : 320;
+  if (r != scrollDef) {
+    uint8_t d[6] = {0, 0, (uint8_t)(r >> 8), (uint8_t)r, (uint8_t)((320 - r) >> 8), (uint8_t)(320 - r)};
+    tft.sendCommand(0x33, d, 6);
+    scrollDef = r;
+  }
+  uint16_t sad = uiScrollSad(cfg.flip, r, offset);
+  uint8_t a[2] = {(uint8_t)(sad >> 8), (uint8_t)sad};
+  tft.sendCommand(0x37, a, 2);
+}
+// Deixa preta a margem da RAM (80 linhas além do vidro). Ela nunca é desenhada depois disto: só aparece
+// durante uma rolagem, e o conteúdo antigo da RAM (lixo depois de ligar) apareceria no vão.
+static void tftClearMargin() {
+  uint16_t a0 = cfg.flip ? 0 : 240;  // endereços de linha da margem, sem o offset da biblioteca
+  uint8_t ca[4] = {0, 0, 0, 239}, ra[4] = {(uint8_t)(a0 >> 8), (uint8_t)a0, (uint8_t)((a0 + 79) >> 8), (uint8_t)(a0 + 79)};
+  tft.sendCommand(ST77XX_CASET, ca, 4);
+  tft.sendCommand(ST77XX_RASET, ra, 4);
+  tft.startWrite();
+  tft.writeCommand(ST77XX_RAMWR);
+  tft.writeColor(0, 240UL * 80);
+  tft.endWrite();
+}
 void applyPanel() {
+  uiScrollEnd();
   tft.setRotation(cfg.flip ? 0 : 2);  // Adafruit: 2 = sem espelhamento/offsets 0; 0 = 180° (offset 80 já tratado)
   uint8_t madctl = (cfg.flip ? (ST77XX_MADCTL_MX | ST77XX_MADCTL_MY) : 0) | (cfg.bgr ? 0x08 : 0);
   tft.sendCommand(ST77XX_MADCTL, &madctl, 1);
   tft.invertDisplay(cfg.invert);
   tft.fillScreen(0);
+  tftClearMargin();
   uiInvalidate();
 }
 
@@ -2926,7 +2963,7 @@ void rotLoop() {
       cfg.theme = THEME_PACK;
       strlcpy(cfg.facePkg, it.substring(2).c_str(), sizeof cfg.facePkg);
     } else continue;
-    uiInvalidate();
+    uiInvalidateSlide();  // mostrador novo entra rolando (ui.cpp)
     return;
   }
 }
@@ -3108,6 +3145,7 @@ void setup() {
   uiMillis = [] { return (uint32_t)millis(); };
   // linhas de pixels pelo caminho rápido do ST7789 (drawRGBBitmap não é virtual no Adafruit_GFX)
   uiBlit = tftBitmap;
+  uiScrollHw = tftScroll;
   applyPanel();
 
   // Monta o LittleFS do firmware original SEM formatar: se falhar, os arquivos ficam intactos.

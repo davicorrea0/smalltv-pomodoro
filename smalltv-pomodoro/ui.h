@@ -108,6 +108,35 @@ void uiClipEnd();
 // ser chamada várias vezes. Devolve false sem memória para a faixa (aí quem chamou desenha direto).
 bool uiOffscreen(int x, int y, int w, int h, void (*draw)(void *), void *ctx);
 void uiInvalidate();                         // redesenha tudo na próxima chamada
+// Igual a uiInvalidate(), mas, se um mostrador do firmware está na tela e o próximo também é um, a
+// troca é uma rolagem vertical por hardware (o antigo sobe e sai, o novo entra por baixo) em vez de
+// apagar e redesenhar na frente da pessoa. Sem uiScrollHw (simulador), vira uiInvalidate().
+void uiInvalidateSlide();
+
+// ---- rolagem vertical por hardware (ST7789: VSCRDEF 0x33 e VSCSAD 0x37) ----
+// A RAM do painel tem 320 linhas e o vidro mostra 240. Rolar é só mudar de onde o painel começa a
+// ler a RAM: 4 bytes no SPI, zero de CPU por quadro (rolar por software reenviaria 115 KB por quadro).
+// As 80 linhas de RAM que o vidro não mostra (a "margem") viram o vão por onde o conteúdo passa; o
+// firmware as deixa pretas ao configurar o painel (applyPanel). Rola-se a tela inteira: as faixas fixas
+// TFA/BFA do chip não servem, porque as linhas visíveis são sempre as 240 primeiras da leitura.
+//   rows   = linhas do anel de rolagem, 241..UI_PANEL_ROWS (320 usa a RAM toda)
+//   offset = quantas linhas o conteúdo subiu na tela (0 = parado), vale módulo rows
+// O conteúdo de y = 0..239 sobe e sai pelo topo; o que sai volta por baixo depois do vão, de modo que
+// as linhas de RAM de y = 0..239 já podem receber o desenho novo assim que saíram de vista.
+const int UI_PANEL_ROWS = 320;
+// Hook do firmware (rows = 0 desliga: padrão do chip, offset 0). O simulador modela o painel.
+extern void (*uiScrollHw)(int16_t rows, int16_t offset);
+bool uiScrollBegin(int rows);   // false: sem suporte ou rows inválido (nada muda)
+void uiScrollTo(int offset);
+void uiScrollEnd();             // sempre volta ao offset 0; inofensivo se nada está rolando
+bool uiScrollActive();
+// Valor do VSCSAD (linha de RAM em que a leitura começa) para um offset de tela. Com "girar 180°"
+// (MADCTL MY) a RAM fica espelhada em relação ao que a pessoa vê, então o sentido inverte:
+//   normal: linha lida n mostra a linha de RAM n + SAD, o conteúdo sobe com SAD = offset
+//   girado: SAD = (rows - offset) % rows
+inline uint16_t uiScrollSad(bool flip, int rows, int offset) {
+  return (uint16_t)(flip && offset ? rows - offset : offset);
+}
 void uiSetLang(uint8_t lang);                // textos da tela: 0 português, 1 inglês, 2 espanhol
 extern uint8_t uiLang;
 // tr("pt", "en", "es"): os três textos ficam na flash (PSTR) e o do idioma atual é copiado para um
