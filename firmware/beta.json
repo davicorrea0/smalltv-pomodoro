@@ -1,30 +1,32 @@
 {
-  "version": "1.19.8",
-  "date": "2026-10-24",
+  "version": "1.23.0",
+  "date": "2026-10-28",
   "file": "beta/smalltv-pomodoro.bin",
-  "size": 531984,
+  "size": 551088,
   "notes": {
     "pt": [
-      "Corrige o reinício em ciclo com Previsão em cartões e mostradores da galeria com fonte grande (issue #4)",
-      "Fuso automático: ao escolher a cidade, o relógio ajusta o fuso e o horário de verão",
-      "Diagnóstico no painel: motivo do último reinício, sinal do Wi-Fi e memória",
-      "Opção de receber versões de teste antes de todo mundo"
+      "Versão de teste",
+      "Brilho mais suave: PWM a 20 kHz (sem piscar nem chiado), curva de brilho que acompanha o olho e transição de 400 ms entre dia e noite",
+      "Troca automática de mostrador agora entra rolando, pela rolagem do próprio chip da tela",
+      "Opção de tela a 80 MHz (em Tela do aparelho) e tempo do último redesenho no diagnóstico, para comparar com os 40 MHz de sempre"
     ],
     "en": [
-      "Fixes the restart loop with Forecast cards and gallery faces with large fonts (issue #4)",
-      "Automatic time zone: picking the city sets the time zone and daylight saving",
-      "Diagnostics in the panel: last restart reason, Wi-Fi signal and memory",
-      "Option to get test versions before everyone else"
+      "Test version",
+      "Smoother brightness: 20 kHz PWM (no flicker or whine), a brightness curve that follows the eye, and a 400 ms fade between day and night",
+      "Automatic face rotation now slides in using the display chip's own hardware scrolling",
+      "Optional 80 MHz display bus (under Device screen) and last full redraw time in diagnostics, to compare with the usual 40 MHz"
     ],
     "es": [
-      "Corrige el reinicio en bucle con Pronóstico en tarjetas y esferas de la galería con fuente grande (issue #4)",
-      "Huso automático: al elegir la ciudad, el reloj ajusta el huso y el horario de verano",
-      "Diagnóstico en el panel: motivo del último reinicio, señal del Wi-Fi y memoria",
-      "Opción de recibir versiones de prueba antes que todos"
+      "Versión de prueba",
+      "Brillo más suave: PWM a 20 kHz (sin parpadeo ni zumbido), curva de brillo que sigue al ojo y transición de 400 ms entre día y noche",
+      "El cambio automático de esfera ahora entra deslizando, con el desplazamiento por hardware del chip de la pantalla",
+      "Opción de pantalla a 80 MHz (en Pantalla del aparato) y tiempo del último redibujado en el diagnóstico, para comparar con los 40 MHz de siempre"
     ]
   },
   "gz": "beta/smalltv-pomodoro.bin.gz",
-  "gzsize": 392662,
-  "panel": "panel-c74592d10ccae8f097b515dc.html.gz",
-  "psri": "sha256-x0WS0QzK6PCXtRXcq97RS4U/XJ7oSIpzxbRikAl3EyA="
+  "gzsize": 407098,
+  "panel": "panel-e9537dc8716ba2b9b47dc884.html.gz",
+  "psri": "sha256-6VN9yHFrorm0fciEOP4BI8PQpo47rI3L7/xWyJohVw8=",
+  "sig": "h7xfuzLZkLxMnQyETcdFTT9xZtXA0XgnX8OIDb7jwFNC29fp77gxppfu+fZiiOZZ1WLbw1yanq8Skcu598qJWBvuXtZ9ZllNm9k8MxqAVdki0jsVLv1V0C6lwkVrj261JLynDE6kgPLZ6dJItR5BEUR0VgE+wL1ozy9vWbQFBzD8od0BjgPNSZyMV1gtRBF7Wk3c8dytKihIz+VH9kWmAMr6aKGPlGj2GrehlqDYE2bYp+/tRqVNQCxsHRMZXjFPj7eMYnZYyrpU3BJtyjvC4KSbZstaT4MXxb42ue6YiDH5OnNHyBW7Z2NLxrjaoR2VX4/thnMJbNxhW+NiQKzRrw==",
+  "gzsig": "gUQkWlTQjNRRD2ju2k86uhG6nRynTLhyhTxoAMbXLyTx7LO3WBvD5hJOelFixDr2SZf+LrOc/sgswKm9xlGh4mMnyxU4mE++B2Sotnw81XxL6m0U5b4x/4Gbq90z7RMqjA3uz1BFEzI7hI37tYMKDEoxf3RKwkTprgfHv8eXidIVzw0A0CQFHc1F6XpLp9NQflIg1frw7/hj5K/NJdUQIY+l1p4CmbhRyM9ktqYA7QvEGC4IbfV7cA3jIHpzQIuI3+wHU0YhtOuH6ZBQyr8c6xMHsHs884/juwf2Ft3iaDTD9k8Ytj/CpNtajrQpYjm0tX7/yWB4qwmXAN5UKvmJ/w=="
 }
