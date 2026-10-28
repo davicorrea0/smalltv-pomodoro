@@ -115,6 +115,7 @@ extern uint8_t uiLang;
 // O ponteiro vale até mais 5 chamadas de tr(); quem guarda o texto deve copiar.
 const char *trP(PGM_P pt, PGM_P en, PGM_P es);
 #define tr(pt, en, es) trP(PSTR(pt), PSTR(en), PSTR(es))
+extern uint32_t uiEnters;                    // contador de trocas de tela inteira
 void uiRenderClock(const UiState &s);        // tela de relógio no tema escolhido
 void uiRenderPomodoro(const UiState &s);     // anel de progresso do Pomodoro
 void uiMessage(const char *title, const char *l1, const char *l2, const char *l3);

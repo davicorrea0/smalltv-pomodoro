@@ -137,6 +137,7 @@ struct Settings {
   uint8_t fahr;         // 1 = temperaturas em °F; lixo vira 0
   uint8_t rainAlert;    // 1 = avisa na tela quando vai chover na próxima hora; lixo vira 1
   uint8_t beta;         // 1 = o painel oferece também as versões de teste (firmware/beta.json); lixo vira 0
+  uint8_t spi80;        // 1 = SPI da tela a 80 MHz em vez de 40 MHz; campo novo no fim: lixo vira 0
 };
 const uint32_t SETTINGS_MAGIC = 0x504F4D34;     // "POM4"
 const uint32_t SETTINGS_MAGIC_V3 = 0x504F4D33;  // "POM3": mesmos campos, sem os do v4
@@ -144,7 +145,7 @@ Settings cfg;
 
 void defaultSettings() {
   cfg = Settings{SETTINGS_MAGIC, 25, 5, 15, 4, 80, 0, 0, "<-03>3", "", 0, -1,
-                 THEME_MATRIX, 0, 10, 0, 22, 7, 15, 1, 242, 242, 242, 0, 0, "", 0, 1, 0, 8, ACT_READ, "", 0, 0, 0, 1, "", UI_VCOM_DEFAULT, 0, 0, 1, 0};
+                 THEME_MATRIX, 0, 10, 0, 22, 7, 15, 1, 242, 242, 242, 0, 0, "", 0, 1, 0, 8, ACT_READ, "", 0, 0, 0, 1, "", UI_VCOM_DEFAULT, 0, 0, 1, 0, 0};
 }
 
 // ---------- recuperação: 3 inicializações curtas seguidas ----------
@@ -238,6 +239,7 @@ void loadSettings() {
   if (cfg.fahr > 1) cfg.fahr = 0;
   if (cfg.rainAlert > 1) cfg.rainAlert = 1;
   if (cfg.beta > 1) cfg.beta = 0;
+  if (cfg.spi80 > 1) cfg.spi80 = 0;
   if (!(fabsf(cfg.lat) <= 90 && fabsf(cfg.lon) <= 180)) cfg.lat = cfg.lon = 0;  // lixo ou NaN estouraria o String(float)
   // senha das redes do relógio: 8 letras/dígitos sem os que se confundem, sorteada pelo gerador do chip
   // na primeira vez (ou se a memória tiver lixo) e mostrada na tela quando a rede está no ar
@@ -877,6 +879,9 @@ const char *weatherText(int code);  // de ui.cpp (o mesmo texto que aparece na t
 // Ajuste anti-fantasma: a tensão comum (VCOM) ideal muda de painel para painel. Fora do ponto, sobra
 // corrente contínua no cristal líquido e uma imagem parada por horas fica marcada ("fantasma"). O painel
 // mostra uma estampa que tremula quando o VCOM está errado; a pessoa ajusta até ela parar e salva.
+// 40 MHz (padrão) ou 80 MHz. O SPI do ESP8266 roda do clock de 80 MHz do barramento (não do da CPU): pedir
+// >= 80 MHz liga o bit "sysclock" e dá 80 MHz; vale na próxima transação, então muda ao vivo.
+void applySpiSpeed() { tft.setSPISpeed(cfg.spi80 ? 80000000 : 40000000); }
 void applyVcom(uint8_t v) { tft.sendCommand(0xBB, &v, 1); }
 uint32_t vcomTestUntil = 0;  // teste na tela até este millis()
 uint8_t vcomTest = UI_VCOM_DEFAULT;     // valor em teste (aplicado, ainda não salvo)
@@ -951,7 +956,18 @@ UiState makeState() {
   return s;
 }
 
+// Tempo da última troca de tela inteira (o primeiro desenho depois de uiInvalidate ou de mudar de tela),
+// para comparar 40 e 80 MHz no relógio de verdade; aparece em diag.draw.
+uint16_t fullDrawMs = 0;
+struct DrawProbe {
+  uint32_t n0 = uiEnters, t0 = millis();
+  ~DrawProbe() {
+    if (uiEnters != n0) fullDrawMs = min<uint32_t>(millis() - t0, 65535);
+  }
+};
+
 void renderClock() {
+  DrawProbe probe;
   UiState s = makeState();
   if (s.timeOk && timeTrusted()) {  // virada do dia e histórico só com a hora confirmada
     checkDayRollover(s.now);
@@ -966,6 +982,7 @@ void renderClock() {
 bool pomoShown = false;
 uint16_t pomoDrawMs = 0;
 void renderPomodoro() {
+  DrawProbe probe;
   uint32_t t0 = millis();
   uint16_t seq = phaseSeq;  // a fase que este desenho mostra (o comando pode chegar durante o desenho)
   uiRenderPomodoro(makeState());
@@ -1574,6 +1591,8 @@ void diagJson(String &j) {
   j += ESP.getHeapFragmentation();
   j += F(",\"up\":");
   j += (uint32_t)((((uint64_t)diagWraps << 32) | millis()) / 1000);
+  j += F(",\"draw\":");  // ms do último desenho que trocou a tela inteira (0 = ainda nenhum)
+  j += fullDrawMs;
   j += '}';
 }
 
@@ -1694,6 +1713,8 @@ void sendState() {
   j += cfg.rainAlert;
   j += F(",\"beta\":");
   j += cfg.beta;
+  j += F(",\"spi\":");
+  j += cfg.spi80;
   j += F(",\"lat\":");
   appendFixed(j, cfg.lat, 4);
   j += F(",\"lon\":");
@@ -2310,6 +2331,9 @@ void setupWeb() {
     uint8_t won = argRange("won", cfg.weatherOn, 0, 1);
     uint8_t fahr = argRange("fahr", cfg.fahr, 0, 1), rain = argRange("rain", cfg.rainAlert, 0, 1);
     cfg.beta = argRange("beta", cfg.beta, 0, 1);
+    uint8_t spi = argRange("spi", cfg.spi80, 0, 1);
+    bool spiChanged = spi != cfg.spi80;
+    cfg.spi80 = spi;
     if (fahr != cfg.fahr || rain != cfg.rainAlert) uiInvalidate();  // números e aviso mudam na tela
     cfg.fahr = fahr;
     cfg.rainAlert = rain;
@@ -2345,6 +2369,7 @@ void setupWeb() {
     saveSettings();
     updateBrightness(true);
     if (panelChanged) applyPanel();
+    if (spiChanged) applySpiSpeed();
     uiInvalidate();     // redesenha com a cor/tema novos
     viewUntil = 0;      // reavalia relógio/álbum com o novo modo
     sendState();
@@ -3040,7 +3065,7 @@ void setup() {
   updateBrightness(true);
 
   tft.init(240, 240, SPI_MODE3);
-  tft.setSPISpeed(40000000);
+  applySpiSpeed();
   applyVcom(cfg.vcom);
   uiBegin(&tft);
   uiSetLang(cfg.lang);

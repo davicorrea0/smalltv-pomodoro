@@ -122,9 +122,11 @@ static void resetCaches() {
   lastWx = 0xFFFF;
 }
 
+uint32_t uiEnters = 0;  // quantas vezes a tela inteira foi trocada (main.cpp mede o tempo desse desenho)
 static bool enter(int8_t id) {
   if (screen == id) return false;
   screen = id;
+  uiEnters++;
   resetCaches();
   G->fillScreen(BG);
   return true;
