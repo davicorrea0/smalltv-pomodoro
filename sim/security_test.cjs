@@ -4,6 +4,12 @@ const source=fs.readFileSync(path.join(__dirname,'../smalltv-pomodoro/main.cpp')
 function fn(name){const a=source.indexOf(`void ${name}() {`),b=source.indexOf('\n}',a);if(a<0||b<0)throw Error(name);return source.slice(a,b+2);}
 for(const name of ['handleUpload','handlePackUpload','handlePanelUpload'])
  if(!fn(name).includes('uploadAuthed()'))throw Error(`${name} bypasses upload throttle`);
+{ // /api/crash (Limpar da última queda) é ação: POST com guard(), e a gravação só acontece em reinício anormal
+ const i=source.indexOf('server.on("/api/crash", HTTP_POST'),blk=source.slice(i,source.indexOf('});',i));
+ if(i<0||!blk.includes('if (!guard()) return;'))throw Error('/api/crash must be a guarded POST');
+ const cl=fn('crashLoad');
+ if(!cl.includes('REASON_EXCEPTION_RST')||!cl.includes('return;')||cl.indexOf('return;')>cl.indexOf('EEPROM.put'))throw Error('crashLoad must only write after an abnormal reset');
+}
 const recovery=fn('startRecovery');
 if(!recovery.includes('WiFi.mode(WIFI_AP);')||recovery.includes('WiFi.begin()'))throw Error('recovery must be AP-only');
 // eboot uses the staged file's last 4 bytes as the image size: trailing data (the 1.20.0 signature) erased the bootloader
@@ -41,6 +47,19 @@ for(const [name,hs] of [['setupWeb',['Origin','X-Firmware-Sig','Authorization','
  if(!verify(data,sig,k.publicKey)||sig.length!==256||sig.toString('base64').length!==344)throw Error('sign/verify');
  const bad=Buffer.from(data);bad[100]^=1;
  if(verify(bad,sig,k.publicKey)||verify(data,sig))throw Error('tampered file or foreign key accepted');
+}
+{ // scripts/conferir-gz.cjs: a .bin.gz is checked the way the eboot consumes it
+ const crypto=require('crypto'),zlib=require('zlib'),{conferir}=require('../scripts/conferir-gz.cjs');
+ const rnd=crypto.randomBytes(20000),bin=Buffer.concat([Buffer.from([0xe9,3,2,0]),rnd,Buffer.alloc(100),rnd]); // repeats 20 KB apart: needs a window > 8 KB
+ const gz=zlib.gzipSync(bin,{level:9,windowBits:13,memLevel:9}),bad=(b,g)=>conferir(b,g).length>0;
+ if(bad(bin,gz))throw Error('conferir-gz rejects a good .bin.gz: '+conferir(bin,gz));
+ if(!bad(bin,Buffer.concat([gz,crypto.randomBytes(260)])))throw Error('conferir-gz accepts the 1.20.0 signed .gz (260 bytes after the gzip)');
+ if(!bad(bin,Buffer.concat([gz,Buffer.alloc(4)])))throw Error('conferir-gz accepts trailing bytes');
+ if(!bad(bin,zlib.gzipSync(bin,{level:9,windowBits:15})))throw Error('conferir-gz accepts a 32 KB window');
+ const other=Buffer.from(bin);other[500]^=1;
+ if(!bad(other,gz))throw Error('conferir-gz accepts a .gz that differs from the .bin');
+ const nomagic=Buffer.from(bin);nomagic[0]=0;
+ if(!bad(nomagic,zlib.gzipSync(nomagic,{level:9,windowBits:13})))throw Error('conferir-gz accepts a .bin without magic 0xE9');
 }
 const out=process.argv[2];if(!out)throw Error('output.cpp required');
 const header=path.relative(path.dirname(path.resolve(out)),path.resolve(__dirname,'../smalltv-pomodoro/security.h')).replaceAll('\\','/');

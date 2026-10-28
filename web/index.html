@@ -511,7 +511,9 @@ function dur(x){const d=x/86400|0,h=x%86400/3600|0,m=x%3600/60|0;return d?d+' d 
 function diagShow(s){const d=s.diag,c=$('diag'),q=d.rssi>=-60?'bom':d.rssi>=-72?'médio':'fraco';c.innerHTML='';
  [[t('Ligado há'),dur(d.up)],[t('Último reinício'),t(RST[d.rst]||'?',d.exc,'0x'+d.epc)],[t('Sinal do Wi-Fi'),d.rssi?d.rssi+' dBm ('+t(q)+')':t('desconectado')],
   [t('Memória livre'),kb(s.heap)+' · '+t('menor desde que ligou')+' '+kb(d.minheap)+' · '+t('maior bloco')+' '+kb(s.blk)+' · '+t('fragmentação')+' '+d.frag+'%']]
-  .forEach(([a,b])=>{const r=el('div');r.append(el('b',null,a),el('span',null,b));c.appendChild(r)})}
+  .forEach(([a,b])=>{const r=el('div');r.append(el('b',null,a),el('span',null,b));c.appendChild(r)});
+ const k=s.crash;if(k){const r=el('div'),b=el('button','btn',t('Limpar'));b.style.cssText='padding:4px 12px;min-height:0;margin-left:8px';b.onclick=()=>post('/api/crash').then(x=>{if(!x.ok)throw 0;delete st.crash;diagShow(s);toast(t('Registro apagado'))}).catch(()=>toast(t('Falha: ')));
+  r.append(el('b',null,t('Última queda')),el('span',null,'#'+k.n+' · '+t(RST[k.r]||'?',k.x,'0x'+k.epc)+' · v'+k.ver+(k.up?' · '+t('após {0} ligado',dur(k.up)):'')+' '),b);c.appendChild(r)}}
 // data-neg: chave marcada = 0. "Inverter cores" é em relação ao normal (o painel IPS já liga com INVON)
 document.querySelectorAll('[data-k]').forEach(e=>{e.onchange=()=>{const v=e.type=='checkbox'?(e.checked!=e.hasAttribute('data-neg')?1:0):e.value;save({[e.dataset.k]:v}).then(()=>{toast(t('Salvo'));if(e.dataset.k=='beta')checkUpdate()})}});
 // ---------- estado ----------

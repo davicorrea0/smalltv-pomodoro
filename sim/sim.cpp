@@ -14,6 +14,7 @@
 #include "../smalltv-pomodoro/facepack.h"
 #include <dirent.h>
 #include <vector>
+#include <string>
 #include <set>
 
 class Frame : public Adafruit_GFX {
@@ -184,6 +185,7 @@ static int checkIncremental(const char *name, UiState s, bool pomo) {
       if (step == 90) s.running = !s.running;
       if (step == 100) { s.cycleDone++; }          // ciclo avança
     } else {
+      if (s.theme == THEME_PACK) s.ms += 100;  // sprites animados dos pacotes andam com o relógio em ms
       if (++s.now.tm_sec >= 60) { s.now.tm_sec = 0; if (++s.now.tm_min >= 60) { s.now.tm_min = 0; s.now.tm_hour = (s.now.tm_hour + 1) % 24; } }
       if (step == 50) { s.wx.t = 9.6f; s.wx.code = 63; s.wx.tmin = 7; s.wx.tmax = 12; s.wx.version++; }
       if (step == 80) s.today++;
@@ -253,6 +255,15 @@ static int testPackages(const UiState &pomo) {
     UiState st = base(14, 37, 24);
     st.theme = THEME_PACK;
     shot(name, st, false);
+    if (strstr(buf, "\"frames\"")) {  // sprite animado: alguns quadros da animação para conferir
+      for (int k = 1; k <= 3; k++) {
+        char fn[64];
+        UiState a = st;
+        a.ms = k * 170;
+        snprintf(fn, sizeof fn, "%s-q%d", name, k);
+        shot(fn, a, false);
+      }
+    }
     UiState t = base(14, 58, 50);
     t.theme = THEME_PACK;
     fails += checkIncremental(name, t, false) != 0;
@@ -265,6 +276,47 @@ static int testPackages(const UiState &pomo) {
     fails++;
   }
   (void)pomo;
+  return fails;
+}
+
+
+// Limites dos sprites animados: cada JSON inválido precisa ser recusado com mensagem; os válidos, aceitos
+static int testSpriteLimits() {
+  int fails = 0;
+  auto frames = [](int n, int w, int h) {
+    std::string r = "[";
+    for (int k = 0; k < n; k++) {
+      r += k ? ",[" : "[";
+      for (int y = 0; y < h; y++) r += (y ? ",\"" : "\"") + std::string(w, k & 1 ? 'a' : 'b') + "\"";
+      r += "]";
+    }
+    return r + "]";
+  };
+  auto pack = [&](const std::string &spr) {
+    return "{\"format\":1,\"sprites\":{" + spr + "},\"layers\":[{\"type\":\"rect\",\"w\":10,\"h\":10}]}";
+  };
+  auto sp = [&](const char *name, const std::string &fr, const char *extra = "") {
+    return std::string("\"") + name + "\":{\"pal\":{\"a\":\"#fff\",\"b\":\"#f00\"},\"frames\":" + fr + extra + "}";
+  };
+  struct { const char *nome; std::string json; bool ok; } T[] = {
+    {"8 quadros 32x32", pack(sp("s", frames(8, 32, 32))), true},
+    {"9 quadros", pack(sp("s", frames(9, 8, 8))), false},
+    {"fps 11", pack(sp("s", frames(2, 8, 8), ",\"fps\":11")), false},
+    {"fps 0", pack(sp("s", frames(2, 8, 8), ",\"fps\":0")), false},
+    {"fps 10", pack(sp("s", frames(2, 8, 8), ",\"fps\":10")), true},
+    {"largura diferente", pack(sp("s", "[[\"aa\",\"bb\"],[\"aaa\",\"bbb\"]]")), false},
+    {"altura diferente", pack(sp("s", "[[\"aa\",\"bb\"],[\"aa\"]]")), false},
+    {"33x33", pack(sp("s", frames(2, 33, 33))), false},
+    {"total > 6144 bytes", pack(sp("a", frames(8, 32, 32)) + "," + sp("b", frames(8, 32, 32))), false},
+    {"frames vazio", pack(sp("s", "[]")), false},
+  };
+  for (auto &t : T) {
+    char err[96] = "";
+    bool ok = facePackLoad((char *)t.json.c_str(), t.json.size(), err, sizeof err);
+    if (ok) facePackUnload();
+    if (ok != t.ok) { printf("sprite %-20s FALHOU (%s)\n", t.nome, ok ? "aceito" : err); fails++; }
+    else printf("sprite %-20s ok%s%s\n",t.nome, ok ? "" : ": ", ok ? "" : err);
+  }
   return fails;
 }
 
@@ -371,5 +423,6 @@ int main() {
   fails += checkIncremental("pomodoro", p, true) != 0;
   fails += checkTransitions(p);
   fails += testPackages(p);
+  fails += testSpriteLimits();
   return fails;
 }
