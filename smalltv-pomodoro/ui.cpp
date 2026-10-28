@@ -125,6 +125,7 @@ static void resetCaches() {
 static bool enter(int8_t id) {
   if (screen == id) return false;
   screen = id;
+  uiScrollEnd();
   resetCaches();
   G->fillScreen(BG);
   return true;
@@ -133,9 +134,19 @@ static bool enter(int8_t id) {
 void uiBegin(Adafruit_GFX *gfx) {
   G = gfx;
   G->setTextWrap(false);
+  uiScrollEnd();
   screen = -1;
 }
-void uiInvalidate() { screen = -1; }
+static bool slideOn = false;  // a próxima tela cheia (screen == -1) substitui um mostrador do firmware
+void uiInvalidate() {
+  screen = -1;
+  slideOn = false;
+}
+void uiInvalidateSlide() {
+  bool was = screen >= 0 && screen < THEME_COUNT;
+  screen = -1;
+  slideOn = was;
+}
 
 // ---------- dígitos em pixel art 5x7 (células sólidas) ----------
 static const uint8_t DM[11][7] = {
@@ -332,6 +343,28 @@ void (*uiFrameHook)() = nullptr;     // o firmware usa para ceder tempo ao Wi-Fi
 uint32_t (*uiMillis)() = nullptr;    // relógio em ms (firmware: millis); sem ele, passos fixos de 20 ms
 void (*uiBlit)(int16_t, int16_t, uint16_t *, int16_t, int16_t) = nullptr;
 
+// ---------- rolagem vertical por hardware (ver ui.h) ----------
+void (*uiScrollHw)(int16_t, int16_t) = nullptr;
+static int16_t scrollRows = 0;  // 0 = parada
+bool uiScrollBegin(int rows) {
+  if (!uiScrollHw || rows <= 240 || rows > UI_PANEL_ROWS) return false;
+  scrollRows = rows;
+  uiScrollHw(rows, 0);
+  return true;
+}
+void uiScrollTo(int offset) {
+  if (!scrollRows) return;
+  offset %= scrollRows;
+  if (offset < 0) offset += scrollRows;
+  uiScrollHw(scrollRows, offset);
+}
+void uiScrollEnd() {
+  if (!scrollRows) return;
+  scrollRows = 0;
+  uiScrollHw(0, 0);
+}
+bool uiScrollActive() { return scrollRows != 0; }
+
 // ---------- recorte (clip) ----------
 // Os pacotes de mostrador redesenham só a área que mudou: G passa a ser este embrulho, que
 // descarta o que cai fora do retângulo e repassa o resto para a tela de verdade.
@@ -440,6 +473,10 @@ void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h) {
 }
 
 bool uiOffscreen(int x, int y, int w, int h, void (*draw)(void *), void *ctx) {
+  if (offscreen) {  // já dentro de uma faixa (troca por rolagem): a cena já recorta para ela
+    draw(ctx);
+    return true;
+  }
   if (x < 0) { w += x; x = 0; }
   if (y < 0) { h += y; y = 0; }
   if (x + w > 240) w = 240 - x;
@@ -558,13 +595,64 @@ static const char *const FACE_DESC[THEME_COUNT] = {
 const char *uiFaceName(uint8_t t) { return t < THEME_COUNT ? FACE_NAME[t] : ""; }
 const char *uiFaceDesc(uint8_t t) { return t < THEME_COUNT ? FACE_DESC[t] : ""; }
 
+// ---------- troca de mostrador por rolagem de hardware ----------
+// Anel de 320 linhas: o mostrador antigo (linhas 0..239) sobe e sai pelo topo, passa o vão preto da
+// margem (80 linhas) e o novo entra por baixo, parando nas linhas 0..239, onde o offset volta a 0. Nada
+// é copiado no fim. O novo é desenhado em faixas de 16 linhas direto nas linhas de RAM que o antigo
+// já deixou, atrás da rolagem: a faixa n só é desenhada depois que o antigo saiu da tela (offset
+// >= 16*(n+1)) e tem que estar pronta antes de entrar (offset <= 80 + 16*n). Cada faixa roda o
+// mostrador inteiro (full) recortado nela: custa ~15 desenhos completos, mas só de CPU de desenho,
+// a rolagem em si é um comando por quadro.
+struct SlideCtx { const UiState *s; uint8_t t; };
+static void slideStrip(void *p) {
+  SlideCtx *c = (SlideCtx *)p;
+  resetCaches();  // cada faixa é um desenho completo do zero
+  G->fillScreen(BG);
+  FACE_FN[c->t](*c->s, true);
+}
+static uint32_t slideNow() {
+  static uint32_t fake;  // sem relógio (simulador): 20 ms por consulta
+  return uiMillis ? uiMillis() : (fake += 20);
+}
+static bool slideTo(const UiState &s, uint8_t t) {
+  const int R = UI_PANEL_ROWS, STRIP = 16, N = 240 / STRIP, GAP = R - 240;
+  const uint32_t MS = 700;
+  if (!uiScrollBegin(R)) return false;
+  SlideCtx c = {&s, t};
+  uint32_t t0 = slideNow();
+  int done = 0;  // faixas desenhadas
+  bool ok = true;
+  for (;;) {
+    uint32_t e = slideNow() - t0;
+    uint32_t x = (e > MS ? MS : e) * 1024 / MS, sm = x * x * (3072 - 2 * x) >> 20;  // suaviza início e fim
+    int want = R * sm / 1024, cap = done < N ? GAP + STRIP * done : R;
+    int L = want < cap ? want : cap;
+    uiScrollTo(L);  // L == R é offset 0 outra vez, já com o mostrador novo
+    if (L >= R) break;
+    if (done < N && L >= STRIP * (done + 1)) {
+      if (!uiOffscreen(0, STRIP * done, 240, STRIP, slideStrip, &c)) { ok = false; break; }  // sem memória
+      done++;
+    } else if (uiFrameHook) uiFrameHook();
+  }
+  uiScrollEnd();
+  return ok;  // false: quem chamou desenha o mostrador novo do jeito normal (tela cheia)
+}
+
 void uiRenderClock(const UiState &s) {
   if (s.theme == THEME_PACK) {  // mostrador instalado como pacote (facepack.cpp)
+    slideOn = false;
     bool full = enter(SCR_PACK);
     facePackRender(s, full);
     return;
   }
   uint8_t t = s.theme < THEME_COUNT ? s.theme : 0;
+  if (slideOn) {
+    slideOn = false;
+    if (screen == -1 && slideTo(s, t)) {
+      screen = t;
+      return;
+    }
+  }
   bool full = enter(t);
   FACE_FN[t](s, full);
 }
@@ -651,6 +739,7 @@ void uiRenderPomodoro(const UiState &s) {
 
 // ---------- telas avulsas ----------
 void uiMessage(const char *title, const char *l1, const char *l2, const char *l3) {
+  uiScrollEnd();
   screen = SCR_MSG;
   G->fillScreen(BG);
   mascot(96, 26, 3, FACE_HAPPY);
@@ -661,6 +750,7 @@ void uiMessage(const char *title, const char *l1, const char *l2, const char *l3
 }
 
 void uiColorTest() {
+  uiScrollEnd();
   screen = SCR_COLOR;
   G->fillScreen(BG);
   textC(120, 8, 1, TEXT, tr("TESTE DE CORES", "COLOR TEST", "PRUEBA DE COLOR"));
@@ -681,6 +771,7 @@ void uiColorTest() {
 void uiVcomTest(uint8_t vcom, bool full) {
   static const uint16_t GRAY = uiRgb(128, 128, 128);
   if (full) {
+    uiScrollEnd();
     screen = SCR_VCOM;
     G->fillScreen(BG);
     textC(120, 6, 1, TEXT, tr("ANTI-FANTASMA", "ANTI-GHOSTING", "ANTIFANTASMA"));
@@ -703,6 +794,7 @@ void uiVcomTest(uint8_t vcom, bool full) {
 }
 
 void uiError(const char *msg) {
+  uiScrollEnd();
   screen = SCR_ERROR;
   G->fillScreen(BG);
   textC(120, 112, 2, MUTED, msg);
