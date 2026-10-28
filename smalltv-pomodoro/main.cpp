@@ -1110,11 +1110,33 @@ void fsMount() {
   if (fsMark.magic == FS_MAGIC) return;
   message("SmallTV Pomodoro", tr("Reorganizando a memoria", "Reorganizing storage", "Reorganizando la memoria"), "...");
   if (fsOk) LittleFS.end();
+  // Antes de formatar, guarda o histórico, o rodízio e os avisos, que valem mais que o espaço que ocupam: no primeiro
+  // início o LittleFS antigo (4M3M, 0x100000-0x3FA000) ainda está intacto, porque a atualização só gravou abaixo de
+  // 0x100000. Assim quem atualiza sem o backup do painel (ex.: direto da 1.23.1) não perde a sequência de dias.
+  struct Keep { const char *path; std::unique_ptr<uint8_t[]> data; size_t len; } keep[] = {
+      {"/stats.bin", nullptr, 0}, {"/rotation.txt", nullptr, 0}, {"/hooks.txt", nullptr, 0}};
+  {
+    FS old(FSImplPtr(new littlefs_impl::LittleFSImpl(0x100000, 0x3FA000 - 0x100000, 256, 8192, 2)));
+    if (old.begin()) {
+      for (Keep &k : keep) {
+        File f = old.open(k.path, "r");
+        if (!f || !f.size() || f.size() > 2048) continue;
+        k.data.reset(new (std::nothrow) uint8_t[f.size()]);
+        if (k.data) k.len = f.read(k.data.get(), f.size());
+      }
+      old.end();
+    }
+  }
   fsOk = LittleFS.format() && LittleFS.begin();
   if (!fsOk) return;  // sem marca: tenta de novo no próximo início
   LittleFS.mkdir("/image");
   LittleFS.mkdir("/gif");
   LittleFS.mkdir("/faces");
+  for (Keep &k : keep) {
+    if (!k.len) continue;
+    File f = LittleFS.open(k.path, "w");
+    if (f) f.write(k.data.get(), k.len);
+  }
   fsMark = {FS_MAGIC, 1};
   EEPROM.put(FS_OFF, fsMark);
   EEPROM.commit();

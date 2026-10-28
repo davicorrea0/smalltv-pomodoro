@@ -28,7 +28,7 @@ Salvaguarda: o `compilar.sh` (e portanto o `scripts/publicar.sh`, que o chama) *
 - **Primeiro início em 4M2M** (`fsMount` em `main.cpp`): sem a marca `FS2A` na EEPROM (offset 433), o que existe em `0x200000` é um pedaço do sistema de arquivos antigo (ou do firmware original). O firmware formata uma vez, recria `/image`, `/gif` e `/faces`, grava a marca e liga o aviso "reorganizado" (`fs.mig` em `/api/state`). Nos demais inícios o LittleFS é montado **sem formatar**; se a marca existe e a montagem falha, não formata (o painel mostra o botão *Formatar memória de arquivos*).
 - O formato só vale no layout 4M2M (detectado pelo símbolo `_FS_start` do linker): a mesma fonte compilada em 4M3M nunca formata.
 - *Apagar tudo* (`/rec/wipe`) regrava a marca depois de zerar a EEPROM, para o próximo início não formatar de novo nem oferecer um backup que não existe.
-- Foi o que se perdeu: fotos e GIFs, histórico (`/stats.bin`), avisos de fim de fase (`/hooks.txt`), rodízio (`/rotation.txt`), mostradores baixados e o painel em `/www` (o carregador baixa de novo sozinho). Ficam: ajustes, senhas, Wi-Fi, rede.
+- Se perde: fotos e GIFs, mostradores baixados e o painel em `/www` (o carregador baixa de novo sozinho). Ficam: ajustes, senhas, Wi-Fi e rede (EEPROM) e, copiados do LittleFS antigo antes de formatar, o histórico (`/stats.bin`), o rodízio (`/rotation.txt`) e os avisos de fim de fase (`/hooks.txt`). No primeiro início o LittleFS antigo (0x100000-0x3FA000) ainda está intacto: a atualização pela rede só grava abaixo de 0x100000.
 
 ## Fotos, GIFs e backup no painel
 

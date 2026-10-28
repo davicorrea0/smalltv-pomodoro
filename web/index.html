@@ -125,7 +125,7 @@ nav button.on svg{stroke:var(--ac)}
 <main>
 <div class="card" id="upd"><b id="updt"></b><ul id="updn"></ul><div class="row"><button class="btn" onclick="skipUpdate()">Depois</button><button class="btn p" id="updgo" onclick="doUpdate()">Atualizar agora</button></div></div>
 
-<div class="card" id="mig"><b>A memória de arquivos foi reorganizada</b><p>Esta atualização mudou o espaço do programa. As fotos, os GIFs, o histórico e os mostradores baixados foram apagados; os ajustes e a rede ficaram. Restaure o backup que o painel salvou antes de atualizar.</p><div class="row"><button class="btn" onclick="migDone()">Dispensar</button><button class="btn p" onclick="$('rbk').click()">Restaurar backup</button></div></div>
+<div class="card" id="mig"><b>A memória de arquivos foi reorganizada</b><p>Esta atualização mudou o espaço do programa. As fotos, os GIFs e os mostradores baixados foram apagados; os ajustes, a rede, o histórico, o rodízio e os avisos ficaram. Restaure o backup que o painel salvou antes de atualizar.</p><div class="row"><button class="btn" onclick="migDone()">Dispensar</button><button class="btn p" onclick="$('rbk').click()">Restaurar backup</button></div></div>
 
 <!-- ============ RELÓGIO ============ -->
 <section class="tab" id="t0">
@@ -463,7 +463,7 @@ function skipUpdate(){try{localStorage.updSkip=UPD.version}catch(e){}$('upd').cl
 // u.layout "4m2m": a versão reorganiza a memória de arquivos (o programa ganha espaço, o LittleFS muda de lugar e é formatado no primeiro início).
 // Relógios que ainda não informam fs.l2 estão no layout antigo: salva o backup completo ANTES e só então atualiza.
 async function doUpdate(){const u=UPD;if(!u||updating)return;const mig=u.layout=='4m2m'&&!(st&&st.fs&&st.fs.l2);
- if(!confirm(mig?t('A versão {0} reorganiza a memória de arquivos do relógio: as fotos, os GIFs, o histórico e os mostradores baixados serão apagados (os ajustes e o Wi-Fi ficam). Antes de atualizar, o painel salva um backup completo no seu aparelho; depois, use Restaurar backup. Continuar?',u.version):t('Atualizar o relógio para a versão {0}? Ele reinicia sozinho no fim.',u.version)))return;
+ if(!confirm(mig?t('A versão {0} reorganiza a memória de arquivos do relógio: as fotos, os GIFs e os mostradores baixados serão apagados (os ajustes, o Wi-Fi, o histórico, o rodízio e os avisos ficam). Antes de atualizar, o painel salva um backup completo no seu aparelho; depois, use Restaurar backup. Continuar?',u.version):t('Atualizar o relógio para a versão {0}? Ele reinicia sozinho no fim.',u.version)))return;
  if(mig){$('updgo').disabled=true;const ok=await backup();$('updgo').disabled=false;if(!ok||!confirm(t('O backup foi salvo? Confira o arquivo smalltv-backup-*.json nos downloads. Atualizar agora?')))return}
  const gz=!!u.gz,sig=gz?u.gzsig:u.sig,h={};  // com senha, o navegador já manda o login do painel
  if(sig)h['X-Firmware-Sig']=sig;  // 1.20.1+: sem a assinatura do arquivo o relógio recusa a troca
