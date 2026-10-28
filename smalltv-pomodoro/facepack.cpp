@@ -36,6 +36,8 @@ struct Layer {
   int16_t bx, by, bw, bh;  // caixa da última vez que foi desenhada
   uint32_t sig;            // 0 = invisível
   uint8_t tr;              // texto com uma versão por idioma (pt, en, es em sequência no pool)
+  uint8_t gl, gs;          // brilho: 1 = tem, e o alcance em px (1-3)
+  uint16_t gc, gb, gp;     // brilho: cor, cor da superfície sob o halo (0xFFFF = fundo do pacote) e período do pulso em ms (0 = fixo)
 };
 struct Box { int16_t x, y, w, h; };
 
@@ -279,6 +281,14 @@ bool facePackLoad(char *json, size_t len, char *err, size_t errLen) {
     if (!c2) c2 = l["stroke"] | (const char *)nullptr;
     if (!c2) c2 = l["bg"] | (const char *)nullptr;
     L.c2 = parseColor(c2, C_NONE);
+    if (L.type == L_TEXT && l["glow"].is<const char *>()) {  // halo que pulsa atrás do texto
+      int gs = l["spread"] | 2, gp = l["pulse"] | 0;
+      L.gl = 1;
+      L.gs = gs < 1 ? 1 : gs > 3 ? 3 : gs;
+      L.gc = parseColor(l["glow"], 0);
+      L.gb = l["base"].is<const char *>() ? parseColor(l["base"], 0) : 0xFFFF;
+      L.gp = gp <= 0 ? 0 : gp < 400 ? 400 : gp > 10000 ? 10000 : gp;
+    }
     if (L.type == L_TEXT && l["text"].is<JsonObjectConst>()) {  // um texto por idioma, em sequência no pool
       JsonObjectConst tx = l["text"];
       const char *pt = tx["pt"] | "";
@@ -430,7 +440,7 @@ static uint16_t col(int32_t c, const UiState &s) { return c == C_ACCENT ? s.acce
 
 // ---------- texto nas 7 fontes ----------
 // Percorre o texto; desenha se draw = true. Devolve a largura.
-static int runText(const Layer &L, const char *str, int x, int y, bool draw, uint16_t fg, int32_t c2) {
+static int runText(const Layer &L, const char *str, int x, int y, bool draw, uint16_t fg, int32_t c2, int grow = 0) {
   const int sz = L.size, x0 = x;
   for (const unsigned char *p = (const unsigned char *)str; *p; p++) {
     unsigned char ch = *p;
@@ -466,7 +476,7 @@ static int runText(const Layer &L, const char *str, int x, int y, bool draw, uin
       }
       case F_GEO: {
         const float s10 = sz / 10.0f;
-        const int sw = L.w > 0 ? L.w : (sz / 10 > 2 ? sz / 10 : 2);
+        const int sw = (L.w > 0 ? L.w : (sz / 10 > 2 ? sz / 10 : 2)) + grow;
         if (ch >= '0' && ch <= '9') {
           if (draw) geoDigit(x, y, ch - '0', s10, sw, fg);
           x += (int)(7.5f * s10);
@@ -542,7 +552,7 @@ static Box measure(const Layer &L, const UiState &s, const char *txt) {
     case L_TEXT: {
       int w = runText(L, txt, 0, 0, false, 0, C_NONE), h = fontHeight(L);
       int x = L.align == A_CENTER ? L.x - w / 2 : L.align == A_RIGHT ? L.x - w : L.x;
-      int pad = L.font == F_GEO ? (L.w > 0 ? L.w : L.size / 10 + 2) : 2;
+      int pad = (L.font == F_GEO ? (L.w > 0 ? L.w : L.size / 10 + 2) : 2) + (L.gl ? L.gs : 0);
       return {(int16_t)(x - pad), (int16_t)(L.y - pad), (int16_t)(w + 2 * pad), (int16_t)(h + 2 * pad)};
     }
     case L_SPRITE: return {L.x, L.y, (int16_t)(spr[L.str] * L.size), (int16_t)(spr[L.str + 1] * L.size)};
@@ -560,6 +570,20 @@ static Box measure(const Layer &L, const UiState &s, const char *txt) {
   return {0, 0, 0, 0};
 }
 
+// intensidade do brilho (0-7) no instante s.ms: onda suave só com inteiros
+static uint8_t glowLevel(const Layer &L, const UiState &s) {
+  if (!L.gp) return 7;
+  int t = (uint32_t)s.ms % L.gp * 64 / L.gp, x = t < 32 ? t : 63 - t;
+  return x * x * (93 - 2 * x) * 7 / 29791;
+}
+
+// mistura a e b em RGB565 (k de 0 a 256 = quanto de b)
+static uint16_t mix565(uint16_t a, uint16_t b, int k) {
+  int r = ((a >> 11) * (256 - k) + (b >> 11) * k) >> 8, g = (((a >> 5) & 63) * (256 - k) + ((b >> 5) & 63) * k) >> 8;
+  int bl = ((a & 31) * (256 - k) + (b & 31) * k) >> 8;
+  return r << 11 | g << 5 | bl;
+}
+
 // quadro do sprite no instante s.ms (1 quadro = parado)
 static uint8_t sprFrame(const Layer &L, const UiState &s) {
   uint8_t nf = spr[L.str + 3] & 15;
@@ -570,7 +594,12 @@ static uint32_t signature(const Layer &L, const UiState &s, char *txt, size_t n)
   uint32_t h = 2166136261u;
   txt[0] = 0;
   switch (L.type) {
-    case L_TEXT: resolve(layerText(L), s, txt, n); h = fnv(h, txt, strlen(txt)); break;
+    case L_TEXT: {
+      resolve(layerText(L), s, txt, n);
+      h = fnv(h, txt, strlen(txt));
+      if (L.gl) { uint8_t g = glowLevel(L, s); h = fnv(h, &g, 1); }  // o pulso redesenha só a área do texto
+      break;
+    }
     case L_MASCOT: { uint8_t m = L.var == 8 ? autoMood(s) : L.var; h = fnv(h, &m, 1); break; }
     case L_PLANT: { const UiSprite *p = plantSprite(s.streak); h = fnv(h, &p, sizeof p); break; }
     case L_WEATHER: { int v = s.weatherOn && s.wx.ok ? s.wx.code * 2 + s.wx.day + 1 : 0; h = fnv(h, &v, sizeof v); break; }
@@ -633,6 +662,17 @@ static void drawLayer(const Layer &L, const UiState &s, const char *txt) {
     case L_TEXT: {
       int w = runText(L, txt, 0, 0, false, 0, C_NONE);
       int x = L.align == A_CENTER ? L.x - w / 2 : L.align == A_RIGHT ? L.x - w : L.x;
+      if (L.gl) {  // anéis de fora para dentro, cada um mais forte que o anterior
+        static const int8_t D[8][2] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, 1}, {1, -1}, {-1, -1}};
+        int a = 96 + glowLevel(L, s) * 20;
+        uint16_t gb = L.gb == 0xFFFF ? bgColor : L.gb;
+        for (int r = L.gs; r >= 1; r--) {
+          uint16_t gc = mix565(gb, L.gc, a * (L.gs - r + 1) / (L.gs + 1) / 2);
+          if (L.font == F_GEO) runText(L, txt, x, L.y, true, gc, C_NONE, 2 * r);  // traço mais grosso: uma passada por anel
+          else
+            for (int k = 0; k < 8; k++) runText(L, txt, x + D[k][0] * r, L.y + D[k][1] * r, true, gc, C_NONE);
+        }
+      }
       runText(L, txt, x, L.y, true, c1, L.c2 == C_ACCENT ? s.accent : L.c2);
       break;
     }
