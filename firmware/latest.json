@@ -1,26 +1,23 @@
 {
-  "version": "1.22.0",
+  "version": "1.22.1",
   "date": "2026-10-28",
   "file": "smalltv-pomodoro.bin",
-  "size": 544592,
+  "size": 546976,
   "notes": {
     "pt": [
-      "Mostradores instaláveis: texto com brilho que pulsa (campos glow, pulse, spread e base); o Nixie ganhou luz âmbar nos números",
-      "Mais pacotes animados na galeria"
+      "Mostradores instaláveis grandes (como Koi e Janela) voltam a instalar: o relógio lê o pacote em partes, sem estourar a memória"
     ],
     "en": [
-      "Installable faces: text with a pulsing glow (glow, pulse, spread and base fields); Nixie now has an amber light on its digits",
-      "More animated faces in the gallery"
+      "Large installable faces (such as Koi and Window) install again: the clock reads the pack in parts instead of running out of memory"
     ],
     "es": [
-      "Esferas instalables: texto con brillo que pulsa (campos glow, pulse, spread y base); Nixie ahora tiene luz ámbar en los números",
-      "Más esferas animadas en la galería"
+      "Las esferas instalables grandes (como Koi y Ventana) vuelven a instalarse: el reloj lee el paquete por partes y no se queda sin memoria"
     ]
   },
   "gz": "smalltv-pomodoro.bin.gz",
-  "gzsize": 402655,
+  "gzsize": 403924,
   "panel": "panel-32c7a8fe008f8860d2708d25.html.gz",
   "psri": "sha256-Mseo/gCPiGDScI0lyWEPdm/gmIJcBeavc8Kv8SUOCTk=",
-  "sig": "iaKD6obyw3sIhNz/Lw2qpSGmxfyMc+dBmfTepLxZ6ZKQG5el9wT6JXYhsgIJ/LLL8FqxiimTqsppNE4SmiD0sK+WTIUFBzzsiyGsKENXmoiOkPkP9d0jAdk2WrGibYxQmpQA5Ej3UWFWAoA2jRdEq+LgJsz5hciXKlAtBbBSoLMX1x+H7wkFxqzFi05kcJk4xFVRKzyIO7mr3MNKOQVE4E3hzgB2s68mdHYZu47rYjCc8kS3jcbZg/mZfr6TDCYmxFqXnjMX3AbqDEpTiAF7d9DGZA6r8bu8+cwXSa9/iv3rDAVJPrCXl+XxlSHG9J+JfuUa6Lqy78UJQyan0iP26A==",
-  "gzsig": "Ptu6jZRf0YCujptNnqNaAt/K18tzWC9OIJ/xf4nBofjTL3u69cOVajF6ZLgYVkSW0s4ZIsZ1qYfer6JwQ6AT4eJKhwnqjy9RfFwj8t1ze+Yq1tNLWE4dOJGQz8M8OvIh+rDQlQFW67zELFeyRTy5vmx3CppOKKEF95+M+t/Qoolth+mcdsSIsp3j1xUHwwk24dNOZF68vEfy7j7JGyBkCl2Puus7ohBCsCBD+/JgS5iWz6CaTVnCWM4MdwVS6esByfyDhnDi3j+or4c9VIr6KchOfDXyFmNGzkoQxbOap7uLHpnIMTPf3fVwbiBigqfEfMVMsqB/eCgifrZvTPtsIw=="
+  "sig": "Xa8KkZhPmCT7F8ydbpXSs3ELGUbwwtjtbiE9n54NmFRT0HZwLyHmMIqMJn59tUtcjFgQVV3zi3QqFwfCsDipaZtUubMKES9An67eKd7LNUfHqmkDfO0f2AbXe5ZlCqpm4aSoRIyVP6+Rk4SVHBAvJ9HX1ByHDLn1xa+eZ23w5NrS5Q4+SNFgfD1rRmoBBddhF4igN9EEJ1nalc0pWKXEUYuke/N+yLSk71kAYma3yV11UH5IwzMvFDbDzob4qfeg5Px1UHC0cTW6Caq/dURmvCAe8B0AUKDlQBl/5GcE4Q+VXUlDkko1g8mYyvLzi+91A9mbvTJyLxaD7d8wmlR0Ag==",
+  "gzsig": "d0xiWfpzGvN763Pcn6b9JoaElPA6onbI66TBw7h4TVZqXUOANgdxzYWssZn1FEnlhIwFy6i3uW5eaPaLMkTKuewvMgFtsdxDJ5pEcjXBT+nnLuhrMR1hQ3lQmXrsryg7plqlZ9P8CbE8458bTbbKk3uiNRDriLXa6SomL8aB2s9gjZsiYM1014PGQ8/5FnNbikimf2nMPQcu5sBkWXm+yqoPYp/S6ajG/CLK3nnJtKwsFYlz6rCevWr3EBYW9qjZzTpdag60jVESRp05vjD/e1DQIqua+sECYvlJ8EVntFRDIGbTYdWt5lxEEYlUuOVEOq5TX9kdQslxfJXY31hIQA=="
 }
