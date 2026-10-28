@@ -177,8 +177,14 @@ const int CRASH_OFF = BOOT_OFF + sizeof(BootCount);
 struct FsMark { uint32_t magic; uint8_t pend; };
 const uint32_t FS_MAGIC = 0x46533241;  // "FS2A"
 const int FS_OFF = CRASH_OFF + sizeof(CrashRec);
-const int EE_SIZE = FS_OFF + sizeof(FsMark);
 FsMark fsMark;
+// Último roteador: canal e BSSID, para o próximo início conectar sem varrer todos os canais (ver connectStored).
+// Só é gravado quando muda (trocar de rede ou o roteador trocar de canal): ligar não gasta flash.
+struct WifiHint { uint32_t magic; uint32_t ssid; uint8_t bssid[6]; uint8_t chan, pad; };
+const uint32_t WIFI_MAGIC = 0x57494648;  // "WIFH"
+const int WIFIH_OFF = FS_OFF + sizeof(FsMark);
+const int EE_SIZE = WIFIH_OFF + sizeof(WifiHint);
+static_assert(sizeof(WifiHint) == 16, "registro do Wi-Fi mudou de tamanho");
 static_assert(sizeof(CrashRec) == 28, "registro da queda mudou de tamanho");
 static_assert(sizeof(FW_VERSION) <= sizeof(CrashRec::ver), "a versao nao cabe no registro da queda");
 const uint32_t CRASH_RTC_TAG = 0x55505453;  // "UPTS"
@@ -213,8 +219,10 @@ void setBootCount(uint8_t n) {
 }
 
 // reinício pedido (Wi-Fi, atualização...): não conta como inicialização curta
+void rtcTimeSave();
 void safeRestart() {
   if (bootCount) setBootCount(0);
+  rtcTimeSave();  // a hora atravessa o reinício (memória RTC): o mostrador já volta com ela
   ESP.restart();
 }
 
@@ -297,8 +305,58 @@ bool localNow(struct tm &t) {
   return true;
 }
 
-void applyTimezone() {
-  configTime(cfg.tz, "pool.ntp.org", "time.google.com", "a.st1.ntp.br");
+// Tempos do último início, em ms desde que ligou (0 = ainda não aconteceu); aparecem em diag.boot
+uint32_t bootScreenMs = 0, bootWifiMs = 0, bootTimeMs = 0, bootNtpMs = 0;
+uint8_t bootTimeSrc = 0;   // de onde veio a primeira hora: 1 SNTP, 2 memória RTC (reinício por software), 3 cabeçalho do clima
+uint8_t bootWifiPath = 0;  // 0 rede salva (varredura completa), 1 canal e BSSID guardados, 2 o SDK já tinha conectado, 3 o rápido falhou
+uint32_t ntpAskAt = 0;  // quando o SNTP foi (re)configurado; 0 = ainda não
+uint8_t ntpTries = 0;
+bool syncHintOn = false;  // o mostrador está com o indicador "sincronizando" por cima (ver renderClock)
+bool timeSoft = false;     // hora de reserva (RTC ou cabeçalho HTTP) ainda sem SNTP: só mostra, nunca confirma
+void bootNote(uint8_t src) {
+  if (!bootTimeMs) {
+    bootTimeMs = millis() | 1;
+    bootTimeSrc = src;
+  }
+}
+
+void softTime(int64_t sec, uint8_t src) {
+  timeval tv = {(time_t)sec, 0};
+  settimeofday(&tv, nullptr);  // não é o SNTP: o aviso do timeGuardBegin ignora
+  timeSoft = true;
+  bootNote(src);
+}
+
+// A hora passa pelo reinício por software na memória RTC (blocos 0-1 são da queda, ver custom_crash_callback).
+// Volta como hora de reserva: aparece na hora, mas só o SNTP junto do clima a confirma.
+const uint32_t RTC_CLOCK_BLOCK = 8;
+void rtcTimeSave() {
+  if (!timeTrusted()) return;
+  RtcClock c = rtcClockMake((uint32_t)time(nullptr), system_get_rtc_time());
+  ESP.rtcUserMemoryWrite(RTC_CLOCK_BLOCK, (uint32_t *)&c, sizeof c);
+}
+
+void rtcTimeRestore() {
+  RtcClock c;
+  if (!ESP.rtcUserMemoryRead(RTC_CLOCK_BLOCK, (uint32_t *)&c, sizeof c)) return;
+  int64_t t = rtcClockRestore(c, system_get_rtc_time(), system_rtc_clock_cali_proc());
+  if (t <= 0) return;
+  setenv("TZ", cfg.tz, 1);
+  tzset();
+  softTime(t, 2);
+}
+
+// O NTP.br responde mais rápido no Brasil; no resto do mundo o pool escolhe um servidor perto. rot gira a
+// ordem: se o primeiro não respondeu, o lwIP só tenta o seguinte depois de ~15 s (ver sntpWatch).
+void applyTimezone(uint8_t rot = 0) {
+  const char *s[3] = {"pool.ntp.org", "time.google.com", "a.st1.ntp.br"};
+  const char *z = cfg.tz;  // fusos do Brasil e vizinhos: "<-03>3", "<-04>4"...
+  if (z[0] == '<' && z[1] == '-' && z[2] == '0' && z[3] >= '2' && z[3] <= '5' && z[4] == '>') {
+    s[0] = "a.st1.ntp.br";
+    s[1] = "pool.ntp.org";
+    s[2] = "time.google.com";
+  }
+  configTime(z, s[rot % 3], s[(rot + 1) % 3], s[(rot + 2) % 3]);
 }
 
 // ---------- brilho (com horário noturno) ----------
@@ -515,8 +573,14 @@ bool mdnsTaken(const char *name) {
 }
 
 // Ao conectar: escolhe o nome curto livre e se anuncia.
+bool mdnsUp = false;  // Wi-Fi conectado na última volta do mdnsLoop (reconectou: entra de novo no grupo)
+
 void mdnsStart() {
+  // Sem a economia de energia do Wi-Fi: cochilando entre os beacons, o ESP8266 perde pacotes multicast, e o
+  // .local some "às vezes". O relógio vive na tomada; o custo é ~15 mA.
+  WiFi.setSleepMode(WIFI_NONE_SLEEP);
   lanName[0] = 0;
+  mdnsUp = true;
   if (!mdnsJoin()) return;
   for (int i = 1; i <= 9; i++) {
     char name[sizeof lanName];
@@ -531,8 +595,12 @@ void mdnsStart() {
 }
 
 void mdnsLoop() {
-  if (WiFi.status() != WL_CONNECTED) return;
-  if (WiFi.localIP() != mdnsIp) {  // o IP mudou: entra de novo no grupo e se anuncia com o mesmo nome
+  if (WiFi.status() != WL_CONNECTED) {
+    mdnsUp = false;
+    return;
+  }
+  if (!mdnsUp || WiFi.localIP() != mdnsIp) {  // reconectou ou o IP mudou: entra de novo no grupo e se anuncia
+    mdnsUp = true;
     if (mdnsJoin()) mdnsAnnounce();
   }
   int len = mdnsUdp.parsePacket();
@@ -542,8 +610,12 @@ void mdnsLoop() {
   if (n <= 0) return;
   bool legacy = mdnsUdp.remotePort() != 5353, qu = false;
   uint16_t id = (uint16_t)(b[0] << 8 | b[1]);
-  if (lanName[0] && mdnsAsksFor(b, n, lanName, &qu)) mdnsSend(lanName, id, legacy, legacy || qu);
-  else if (mdnsAsksFor(b, n, netName, &qu)) mdnsSend(netName, id, legacy, legacy || qu);
+  const char *name = lanName[0] && mdnsAsksFor(b, n, lanName, &qu) ? lanName : mdnsAsksFor(b, n, netName, &qu) ? netName : nullptr;
+  if (!name) return;
+  mdnsSend(name, id, legacy, legacy || qu);
+  // Pergunta comum (resposta por multicast): manda também uma cópia direta para quem perguntou. Há roteadores que
+  // não repassam multicast entre aparelhos do Wi-Fi; Windows, macOS e Android aceitam a resposta direta.
+  if (!legacy && !qu) mdnsSend(name, id, false, true);
 }
 bool alexaUp = false;     // ouvindo a descoberta
 uint8_t alexaBri = 255;   // último brilho pedido (1-255)
@@ -764,7 +836,10 @@ static void appendFixed(String &out, float value, uint8_t digits) {
   for (uint32_t div = scale / 10; div; div /= 10) out += (char)('0' + frac / div % 10);
 }
 
+uint32_t httpDateEpoch = 0;  // cabeçalho Date da última resposta (0 = não veio)
+
 int httpGet(WiFiClient &c, const String &url, uint16_t timeoutMs) {
+  httpDateEpoch = 0;
   if (!safeHttpUrl(url.c_str(), url.length())) return -1;
   int end = 7;
   while (end < (int)url.length() && url[end] != '/' && url[end] != '?') end++;
@@ -797,6 +872,10 @@ int httpGet(WiFiClient &c, const String &url, uint16_t timeoutMs) {
     total += line.length();
     if (total > 8192) return -2;
     if (line.length() <= 1) return code;
+    if (!strncasecmp_P(line.c_str(), PSTR("date:"), 5)) {
+      int64_t d = httpDateToEpoch(line.c_str() + 5);
+      if (d > 0) httpDateEpoch = (uint32_t)d;
+    }
   }
   return -2;
 }
@@ -815,6 +894,7 @@ bool fetchWeather() {
            "&timezone=auto&forecast_days=");
   url += UI_DAYS;
   if (httpGet(client, url, 5000) != 200) return false;
+  if (!timeValid() && httpDateEpoch) softTime(httpDateEpoch, 3);  // reserva só para mostrar até o SNTP chegar
   JsonDocument filter;
   filter["minutely_15"]["precipitation"] = true;  // 4 quartos de hora a partir do atual: a próxima hora
   filter["minutely_15"]["precipitation_probability"] = true;
@@ -870,7 +950,8 @@ bool fetchWeather() {
   sunRise = minutes(doc["daily"]["sunrise"][0] | (const char *)nullptr);
   sunSet = minutes(doc["daily"]["sunset"][0] | (const char *)nullptr);
   int64_t local = isoToEpoch(doc["current"]["time"] | (const char *)nullptr);
-  if (local > 0) {  // confere a hora (veio por TCP): confirma a atual ou a que o SNTP trouxe e foi desfeita
+  // Com hora de reserva (RTC ou cabeçalho HTTP) o clima só confirmaria contra a mesma fonte: espera o SNTP.
+  if (local > 0 && !timeSoft) {  // confere a hora (veio por TCP): confirma a atual ou a que o SNTP trouxe e foi desfeita
     timeval tv;
     gettimeofday(&tv, nullptr);
     int64_t want = timeGuard.onWeather(local - doc["utc_offset_seconds"].as<int32_t>(), tv.tv_sec, millis());
@@ -903,6 +984,9 @@ bool weatherConfirms() { return cfg.weatherOn && cfg.city[0] && wxFails < 3; }
 void timeGuardBegin() {
   settimeofday_cb([](bool fromSntp) {
     if (!fromSntp) return;  // a própria correção abaixo (e a do clima) também chamam este aviso
+    timeSoft = false;
+    bootNote(1);
+    if (!bootNtpMs) bootNtpMs = millis() | 1;
     timeval tv;
     gettimeofday(&tv, nullptr);
     int64_t want = timeGuard.onSntp(tv.tv_sec, millis(), !weatherConfirms());
@@ -1047,6 +1131,16 @@ struct DrawProbe {
 void renderClock() {
   DrawProbe probe;
   UiState s = makeState();
+  if (!s.timeOk) {  // sem hora ainda: nunca parece travado
+    syncHintOn = true;
+    uiRenderClock(s);
+    uiSyncHint(s.ms);
+    return;
+  }
+  if (syncHintOn) {  // a hora chegou: apaga o indicador redesenhando o mostrador
+    syncHintOn = false;
+    uiInvalidate();
+  }
   if (s.timeOk && timeTrusted()) {  // virada do dia e histórico só com a hora confirmada
     checkDayRollover(s.now);
     statsFlush(s.now);
@@ -1078,6 +1172,15 @@ void renderAlert() {
 }
 
 void message(const char *a, const char *b = "", const char *c = "", const char *d = "") { uiMessage(a, b, c, d); }
+
+// Barra da tela de início: done = etapas concluídas (0 Wi-Fi, 1 hora, 2 pronto); anima a cada ~60 ms
+void bootAnim(uint8_t done) {
+  static uint32_t last = 0;
+  uint32_t now = millis();
+  if (now - last < 60) return;
+  last = now;
+  uiBootProgress(now, done);
+}
 
 uint32_t colorTestUntil = 0;
 
@@ -1721,7 +1824,19 @@ void diagJson(String &j) {
   j += (uint32_t)((((uint64_t)diagWraps << 32) | millis()) / 1000);
   j += F(",\"draw\":");  // ms do último desenho que trocou a tela inteira (0 = ainda nenhum)
   j += fullDrawMs;
-  j += '}';
+  j += F(",\"boot\":{\"scr\":");  // ms desde que ligou até cada etapa do último início (0 = ainda não)
+  j += bootScreenMs;
+  j += F(",\"wifi\":");
+  j += bootWifiMs;
+  j += F(",\"wf\":");
+  j += bootWifiPath;
+  j += F(",\"time\":");
+  j += bootTimeMs;
+  j += F(",\"src\":");
+  j += bootTimeSrc;
+  j += F(",\"ntp\":");
+  j += bootNtpMs;
+  j += F("}}");
 }
 
 // "crash" só existe depois de uma queda: n = quantas, r = motivo (como diag.rst), x/epc/va = causa e endereços
@@ -1748,7 +1863,7 @@ void sendState() {
     fsInfoAt = millis() | 1;
   }
   String j;
-  j.reserve(1150 + rotList.length());  // estado, ajustes e diagnóstico: uma alocação só
+  j.reserve(1230 + rotList.length());  // estado, ajustes e diagnóstico: uma alocação só
   j += F("{\"phase\":\"");
   j += PHASE_KEY[phase];
   j += F("\",\"running\":");
@@ -3112,17 +3227,19 @@ volatile bool wifiDowngrade = false;
 static int authRank(uint8_t m) { return m == AUTH_OPEN ? 0 : m == AUTH_WEP ? 1 : 2; }  // WPA, WPA2 e misto: 2
 
 // Rede salva por outro firmware (o original) pode não exigir WPA: passa a exigir, como faz o begin() do núcleo
-void wifiHarden() {
+// devolve true se precisou mudar a rede salva
+bool wifiHarden() {
   struct station_config conf;
-  if (!wifi_station_get_config_default(&conf) || !conf.password[0]) return;  // rede aberta salva: nada a exigir
+  if (!wifi_station_get_config_default(&conf) || !conf.password[0]) return false;  // rede aberta salva: nada a exigir
   bool ok = conf.threshold.authmode >= AUTH_WPA_PSK;  // NONOS 2.2: só se conecta a redes com este modo ou melhor
 #if (NONOSDK >= (0x30000))
   ok = ok && conf.open_and_wep_mode_disable;
   conf.open_and_wep_mode_disable = 1;
 #endif
-  if (ok) return;
+  if (ok) return false;
   conf.threshold.authmode = AUTH_WPA_PSK;
   wifi_station_set_config(&conf);
+  return true;
 }
 
 void wifiGuardBegin() {
@@ -3131,21 +3248,93 @@ void wifiGuardBegin() {
   });
 }
 
+// Conexão com canal e BSSID fixos (ver connectStored): se cair e não voltar logo (o roteador mudou de canal ou, numa
+// rede mesh, o ponto de acesso é outro), volta à rede salva sem fixar nada.
+bool wifiPinned = false;
+uint32_t wifiLostAt = 0;
+
+void wifiUnpin() {
+  String ssid = WiFi.SSID(), psk = WiFi.psk();
+  WiFi.persistent(false);
+  WiFi.begin(ssid.c_str(), psk.c_str());
+  WiFi.persistent(true);
+  wifiPinned = false;
+}
+
 void wifiGuardLoop() {
+  if (wifiPinned) {
+    if (WiFi.status() == WL_CONNECTED) wifiLostAt = 0;
+    else if (!wifiLostAt) wifiLostAt = millis() | 1;
+    else if (millis() - wifiLostAt > 15000) wifiUnpin();
+  }
   if (!wifiDowngrade) return;
   wifiDowngrade = false;
   wifiDowngrades++;
   WiFi.reconnect();
 }
 
+static uint32_t ssidHash(const String &s) {  // FNV-1a
+  uint32_t h = 2166136261u;
+  for (char c : s) h = (h ^ (uint8_t)c) * 16777619u;
+  return h;
+}
+
+// Espera conectar animando a barra da tela de início (ver bootAnim)
+static bool waitWifi(uint32_t ms) {
+  uint32_t t0 = millis();
+  while (WiFi.status() != WL_CONNECTED && millis() - t0 < ms) {
+    bootAnim(0);
+    delay(30);
+  }
+  return WiFi.status() == WL_CONNECTED;
+}
+
+// Rede salva no SDK. Com o canal e o BSSID do último roteador (EEPROM, ver wifiHintSave) o SDK não varre os 13
+// canais: conecta direto. Só na RAM (persistent desligado): o BSSID fixo não vai para a flash, que segue com a rede
+// de sempre. Se não conectar em poucos segundos, volta à varredura completa.
 bool connectStored(uint32_t timeoutMs) {
+  uint32_t t0 = millis();
   WiFi.mode(WIFI_STA);
   WiFi.hostname(netName);
-  wifiHarden();
-  WiFi.begin();
-  uint32_t t0 = millis();
-  while (WiFi.status() != WL_CONNECTED && millis() - t0 < timeoutMs) delay(100);
-  return WiFi.status() == WL_CONNECTED;
+  bool hardened = wifiHarden();
+  if (!hardened && WiFi.status() == WL_CONNECTED) {  // o SDK conectou sozinho enquanto a tela iniciava
+    bootWifiPath = 2;
+    return true;
+  }
+  WifiHint h;
+  EEPROM.get(WIFIH_OFF, h);
+  String ssid = WiFi.SSID(), psk = WiFi.psk();
+  if (!ssid.length() || h.magic != WIFI_MAGIC || h.ssid != ssidHash(ssid) || h.chan < 1 || h.chan > 13) {
+    WiFi.begin();
+    return waitWifi(timeoutMs);
+  }
+  WiFi.persistent(false);
+  WiFi.begin(ssid.c_str(), psk.c_str(), h.chan, h.bssid);
+  bool ok = waitWifi(min<uint32_t>(4000, timeoutMs));
+  if (ok) {
+    bootWifiPath = 1;
+    wifiPinned = true;
+  } else {
+    bootWifiPath = 3;
+    WiFi.begin(ssid.c_str(), psk.c_str());
+    uint32_t used = millis() - t0;
+    ok = waitWifi(used < timeoutMs ? timeoutMs - used : 0);
+  }
+  WiFi.persistent(true);
+  return ok;
+}
+
+// Guarda canal e BSSID do roteador atual; só grava a flash se mudou (outra rede, outro canal, outro roteador)
+void wifiHintSave() {
+  String ssid = WiFi.SSID();
+  int32_t ch = WiFi.channel();
+  if (!ssid.length() || ch < 1 || ch > 13) return;
+  WifiHint h = {WIFI_MAGIC, ssidHash(ssid), {}, (uint8_t)ch, 0}, old;
+  memcpy(h.bssid, WiFi.BSSID(), 6);
+  EEPROM.get(WIFIH_OFF, old);
+  if (!memcmp(&old, &h, sizeof h)) return;
+  EEPROM.put(WIFIH_OFF, h);
+  EEPROM.commit();
 }
 
 void htmlEscapeAppend(String &o, const String &s) {
@@ -3215,6 +3404,17 @@ void startPortal() {
 }
 
 // ---------- setup / loop ----------
+// Depois de conectar, a tela de início fica uns segundos com o endereço do painel; o loop segue normal (painel,
+// SNTP, clima) em vez de travar num delay. Ela sai antes se alguém usar o relógio.
+uint32_t bootHoldUntil = 0;
+bool bootTitleTime = false;  // o título já diz "Conectado" (a hora chegou)
+void bootConnectedScreen() {
+  String addr = String(lanName[0] ? lanName : netName) + ".local";
+  bootTitleTime = timeValid();
+  message(bootTitleTime ? tr("Conectado", "Connected", "Conectado") : tr("Acertando a hora", "Setting the time", "Ajustando la hora"),
+          addr.c_str(), WiFi.localIP().toString().c_str());
+}
+
 void setup() {
   snprintf(netName, sizeof netName, HOSTNAME "-%04x", (unsigned)(ESP.getChipId() & 0xFFFF));
   pinMode(PIN_BL, OUTPUT);
@@ -3225,6 +3425,7 @@ void setup() {
   EEPROM.get(BOOT_OFF, bc);
   uint8_t boots = bc.magic == BOOT_MAGIC ? bc.n : 0;
   crashLoad();
+  rtcTimeRestore();  // reinício por software: a hora de antes já vale (sem confirmar) enquanto o Wi-Fi conecta
   recoveryMode = boots + 1 >= 3;
   setBootCount(recoveryMode ? 0 : boots + 1);  // a recuperação vale uma vez; o próximo reinício é normal
   updateBrightness(true);
@@ -3261,6 +3462,7 @@ void setup() {
   rebuildAlbum();
 
   message("SmallTV Pomodoro", tr("Conectando Wi-Fi", "Connecting Wi-Fi", "Conectando Wi-Fi"), "v" FW_VERSION);
+  bootScreenMs = millis() | 1;
 
   // Usa a rede salva no ESP8266 (inclusive a que o firmware original já tinha configurado).
   wifiGuardBegin();
@@ -3269,13 +3471,15 @@ void setup() {
     startPortal();
     return;
   }
-  applyTimezone();
+  bootWifiMs = millis() | 1;
+  wifiHintSave();
+  applyTimezone();  // o SNTP já pergunta a hora enquanto o resto sobe
+  ntpAskAt = millis();
   setupWeb();
   alexaBegin();
   mdnsStart();
-  String addr = String(lanName[0] ? lanName : netName) + ".local";
-  message(tr("Conectado", "Connected", "Conectado"), addr.c_str(), WiFi.localIP().toString().c_str());
-  delay(3000);  // tempo de ler o endereço do painel
+  bootConnectedScreen();
+  bootHoldUntil = (millis() + 3000) | 1;  // o endereço fica na tela por 3 s, mas o resto já roda (ver loop)
 }
 
 uint32_t lastRender = 0, lastBriCheck = 0;
@@ -3313,8 +3517,25 @@ void loop() {
     lastBriCheck = now;
     updateBrightness();
     timeGuard.tick(time(nullptr), now);
+    rtcTimeSave();
   }
   briFade();
+  // O SNTP não respondeu: pergunta de novo (com outro servidor na frente) em vez de esperar o lwIP, que leva ~15 s
+  if (ntpAskAt && !bootNtpMs && ntpTries < 4 && now - ntpAskAt > 6000 && WiFi.status() == WL_CONNECTED) {
+    ntpAskAt = now;
+    applyTimezone(++ntpTries);
+  }
+
+  if (bootHoldUntil) {
+    if ((int32_t)(now - bootHoldUntil) < 0 && phase == IDLE && !previewActive() && !vcomTestUntil && !colorTestRequested) {
+      if (timeValid() && !bootTitleTime) bootConnectedScreen();
+      bootAnim(timeValid() ? 2 : 1);
+      return;
+    }
+    bootHoldUntil = 0;
+    uiInvalidate();
+    viewUntil = 0;
+  }
 
   if (vcomTestUntil) {
     if ((int32_t)(now - vcomTestUntil) < 0) {

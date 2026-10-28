@@ -526,8 +526,9 @@ function tzFix(){const z=st&&st.wx&&st.wx.tzn;if(!z)return;tzLoad().then(m=>{if(
 // ---------- diagnóstico ----------
 const RST=['ligado na tomada','travou (watchdog de hardware)','travou (erro {0} em {1})','travou (watchdog)','reiniciado pelo próprio relógio (atualização, ajuste ou comando)','saiu do modo de economia','reiniciado por fora'];
 function dur(x){const d=x/86400|0,h=x%86400/3600|0,m=x%3600/60|0;return d?d+' d '+h+' h':h?h+' h '+m+' min':m+' min'}
+function bootTxt(b){if(!b)return'—';const f=x=>x?(x/1000).toFixed(1)+' s':'—';return t('tela')+' '+f(b.scr)+' · Wi-Fi '+f(b.wifi)+(b.wf==1?' ('+t('rápido')+')':'')+' · '+t('hora')+' '+f(b.time)+' · NTP '+f(b.ntp)}
 function diagShow(s){const d=s.diag,c=$('diag'),q=d.rssi>=-60?'bom':d.rssi>=-72?'médio':'fraco';c.innerHTML='';
- [[t('Ligado há'),dur(d.up)],[t('Último reinício'),t(RST[d.rst]||'?',d.exc,'0x'+d.epc)],[t('Última troca de tela'),d.draw?d.draw+' ms':'—'],[t('Sinal do Wi-Fi'),d.rssi?d.rssi+' dBm ('+t(q)+')':t('desconectado')],
+ [[t('Ligado há'),dur(d.up)],[t('Último reinício'),t(RST[d.rst]||'?',d.exc,'0x'+d.epc)],[t('Última troca de tela'),d.draw?d.draw+' ms':'—'],[t('Último início'),bootTxt(d.boot)],[t('Sinal do Wi-Fi'),d.rssi?d.rssi+' dBm ('+t(q)+')':t('desconectado')],
   [t('Memória livre'),kb(s.heap)+' · '+t('menor desde que ligou')+' '+kb(d.minheap)+' · '+t('maior bloco')+' '+kb(s.blk)+' · '+t('fragmentação')+' '+d.frag+'%']]
   .forEach(([a,b])=>{const r=el('div');r.append(el('b',null,a),el('span',null,b));c.appendChild(r)});
  const k=s.crash;if(k){const r=el('div'),b=el('button','btn',t('Limpar'));b.style.cssText='padding:4px 12px;min-height:0;margin-left:8px';b.onclick=()=>post('/api/crash').then(x=>{if(!x.ok)throw 0;delete st.crash;diagShow(s);toast(t('Registro apagado'))}).catch(()=>toast(t('Falha: ')));

@@ -759,6 +759,33 @@ void uiMessage(const char *title, const char *l1, const char *l2, const char *l3
   textC(120, 164, 1, MUTED, l3);
 }
 
+// Tela de início: duas etapas (Wi-Fi, hora). done = quantas já terminaram: bolinhas cheias e, enquanto falta
+// alguma, uma barra que vai e volta (não há como saber quanto falta); pronto, a barra enche. Desenha só a
+// faixa de baixo, sem refazer a tela.
+void uiBootProgress(uint32_t ms, uint8_t done) {
+  if (screen != SCR_MSG) return;
+  const int bx = 40, bw = 160, by = 206, sw = 48;
+  for (int i = 0; i < 2; i++) {
+    G->fillCircle(112 + i * 16, 192, 4, BG);
+    if (i < done) G->fillCircle(112 + i * 16, 192, 4, WORK);
+    else G->drawCircle(112 + i * 16, 192, 4, MUTED);
+  }
+  if (done >= 2) {
+    G->fillRect(bx, by, bw, 6, WORK);
+    return;
+  }
+  uint32_t p = ms % 1400;
+  int x = bx + (int)((p < 700 ? p : 1400 - p) * (bw - sw) / 700);
+  G->fillRect(bx, by, bw, 6, CARD2);
+  G->fillRect(x, by, sw, 6, WORK);
+}
+
+// Enquanto o relógio não tem hora: quatro pontinhos no alto, um aceso que vai e volta, por cima do mostrador
+void uiSyncHint(uint32_t ms) {
+  int p = ms / 200 % 6, on = p < 4 ? p : 6 - p;
+  for (int i = 0; i < 4; i++) G->fillCircle(108 + i * 8, 5, 2, i == on ? WORK : MUTED);
+}
+
 void uiColorTest() {
   uiScrollEnd();
   screen = SCR_COLOR;
