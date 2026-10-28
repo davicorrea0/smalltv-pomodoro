@@ -1,0 +1,20 @@
+{
+  "pt": [
+    "Versão de teste",
+    "Tirada a opção de tela a 80 MHz da 1.23.0: o chip da tela não aguenta e a imagem virava lixo; quem ligou volta sozinho aos 40 MHz",
+    "Mudar o brilho ou o horário noturno no painel não apaga e redesenha mais a tela (piscava a cada movimento do controle)",
+    "Continuam da 1.23.0: brilho suave (PWM a 20 kHz, curva que acompanha o olho, transição de 400 ms) e troca automática de mostrador rolando"
+  ],
+  "en": [
+    "Test version",
+    "Removed the 80 MHz display option from 1.23.0: the display chip can't keep up and the image turned to garbage; clocks that had it on go back to 40 MHz by themselves",
+    "Changing brightness or night hours in the panel no longer clears and redraws the screen (it flickered with every slider move)",
+    "Still from 1.23.0: smoother brightness (20 kHz PWM, a curve that follows the eye, 400 ms fade) and automatic face rotation that slides in"
+  ],
+  "es": [
+    "Versión de prueba",
+    "Se quitó la opción de pantalla a 80 MHz de la 1.23.0: el chip de la pantalla no aguanta y la imagen se volvía basura; los relojes que la tenían vuelven solos a 40 MHz",
+    "Cambiar el brillo o el horario nocturno en el panel ya no borra y redibuja la pantalla (parpadeaba con cada movimiento del control)",
+    "Siguen de la 1.23.0: brillo más suave (PWM a 20 kHz, curva que sigue al ojo, transición de 400 ms) y cambio automático de esfera deslizando"
+  ]
+}

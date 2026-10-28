@@ -42,7 +42,7 @@ extern "C" uint32_t _FS_start;
 
 void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);  // ui.cpp: recorta para a área suja; fora da tela, cai na faixa
 
-#define FW_VERSION "1.23.0"
+#define FW_VERSION "1.23.1"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
@@ -137,7 +137,7 @@ struct Settings {
   uint8_t fahr;         // 1 = temperaturas em °F; lixo vira 0
   uint8_t rainAlert;    // 1 = avisa na tela quando vai chover na próxima hora; lixo vira 1
   uint8_t beta;         // 1 = o painel oferece também as versões de teste (firmware/beta.json); lixo vira 0
-  uint8_t spi80;        // 1 = SPI da tela a 80 MHz em vez de 40 MHz; campo novo no fim: lixo vira 0
+  uint8_t spi80;        // reservado: era a opção de 80 MHz da 1.23.0 (o ST7789 não aguenta e a imagem vira lixo); sempre 0
 };
 const uint32_t SETTINGS_MAGIC = 0x504F4D34;     // "POM4"
 const uint32_t SETTINGS_MAGIC_V3 = 0x504F4D33;  // "POM3": mesmos campos, sem os do v4
@@ -239,7 +239,7 @@ void loadSettings() {
   if (cfg.fahr > 1) cfg.fahr = 0;
   if (cfg.rainAlert > 1) cfg.rainAlert = 1;
   if (cfg.beta > 1) cfg.beta = 0;
-  if (cfg.spi80 > 1) cfg.spi80 = 0;
+  cfg.spi80 = 0;  // quem ligou na 1.23.0 volta aos 40 MHz
   if (!(fabsf(cfg.lat) <= 90 && fabsf(cfg.lon) <= 180)) cfg.lat = cfg.lon = 0;  // lixo ou NaN estouraria o String(float)
   // senha das redes do relógio: 8 letras/dígitos sem os que se confundem, sorteada pelo gerador do chip
   // na primeira vez (ou se a memória tiver lixo) e mostrada na tela quando a rede está no ar
@@ -911,9 +911,6 @@ const char *weatherText(int code);  // de ui.cpp (o mesmo texto que aparece na t
 // Ajuste anti-fantasma: a tensão comum (VCOM) ideal muda de painel para painel. Fora do ponto, sobra
 // corrente contínua no cristal líquido e uma imagem parada por horas fica marcada ("fantasma"). O painel
 // mostra uma estampa que tremula quando o VCOM está errado; a pessoa ajusta até ela parar e salva.
-// 40 MHz (padrão) ou 80 MHz. O SPI do ESP8266 roda do clock de 80 MHz do barramento (não do da CPU): pedir
-// >= 80 MHz liga o bit "sysclock" e dá 80 MHz; vale na próxima transação, então muda ao vivo.
-void applySpiSpeed() { tft.setSPISpeed(cfg.spi80 ? 80000000 : 40000000); }
 void applyVcom(uint8_t v) { tft.sendCommand(0xBB, &v, 1); }
 uint32_t vcomTestUntil = 0;  // teste na tela até este millis()
 uint8_t vcomTest = UI_VCOM_DEFAULT;     // valor em teste (aplicado, ainda não salvo)
@@ -1782,8 +1779,6 @@ void sendState() {
   j += cfg.rainAlert;
   j += F(",\"beta\":");
   j += cfg.beta;
-  j += F(",\"spi\":");
-  j += cfg.spi80;
   j += F(",\"lat\":");
   appendFixed(j, cfg.lat, 4);
   j += F(",\"lon\":");
@@ -2400,9 +2395,6 @@ void setupWeb() {
     uint8_t won = argRange("won", cfg.weatherOn, 0, 1);
     uint8_t fahr = argRange("fahr", cfg.fahr, 0, 1), rain = argRange("rain", cfg.rainAlert, 0, 1);
     cfg.beta = argRange("beta", cfg.beta, 0, 1);
-    uint8_t spi = argRange("spi", cfg.spi80, 0, 1);
-    bool spiChanged = spi != cfg.spi80;
-    cfg.spi80 = spi;
     if (fahr != cfg.fahr || rain != cfg.rainAlert) uiInvalidate();  // números e aviso mudam na tela
     cfg.fahr = fahr;
     cfg.rainAlert = rain;
@@ -2438,9 +2430,19 @@ void setupWeb() {
     saveSettings();
     updateBrightness(true);
     if (panelChanged) applyPanel();
-    if (spiChanged) applySpiSpeed();
-    uiInvalidate();     // redesenha com a cor/tema novos
-    viewUntil = 0;      // reavalia relógio/álbum com o novo modo
+    // Brilho, horário noturno e opções que não aparecem na tela: sem apagar e redesenhar tudo, que piscaria
+    // a cada movimento do controle (junto com a rampa do brilho)
+    static const char *const QUIET[] = {"bri", "non", "nstart", "nend", "nbri", "nsun", "beta", "alexa", "rotmin"};
+    bool quiet = true;
+    for (int i = 0; quiet && i < server.args(); i++) {
+      bool q = false;
+      for (const char *k : QUIET) q |= server.argName(i) == k;
+      quiet = q || server.argName(i) == "plain";
+    }
+    if (!quiet) {
+      uiInvalidate();  // redesenha com a cor/tema novos
+      viewUntil = 0;   // reavalia relógio/álbum com o novo modo
+    }
     sendState();
   });
   server.on("/api/files", HTTP_GET, sendFiles);
@@ -3136,7 +3138,7 @@ void setup() {
   updateBrightness(true);
 
   tft.init(240, 240, SPI_MODE3);
-  applySpiSpeed();
+  tft.setSPISpeed(40000000);  // 80 MHz passa do limite do ST7789: a imagem vira lixo
   applyVcom(cfg.vcom);
   uiBegin(&tft);
   uiSetLang(cfg.lang);
