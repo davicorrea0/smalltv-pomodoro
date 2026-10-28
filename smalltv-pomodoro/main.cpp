@@ -137,7 +137,7 @@ struct Settings {
   uint8_t fahr;         // 1 = temperaturas em °F; lixo vira 0
   uint8_t rainAlert;    // 1 = avisa na tela quando vai chover na próxima hora; lixo vira 1
   uint8_t beta;         // 1 = o painel oferece também as versões de teste (firmware/beta.json); lixo vira 0
-  uint8_t spi80;        // reservado: era a opção de 80 MHz da 1.23.0 (o ST7789 não aguenta e a imagem vira lixo); sempre 0
+  uint8_t spi80;        // reservado: era a opção de 80 MHz de um teste (o ST7789 não aguenta e a imagem vira lixo); sempre 0
 };
 const uint32_t SETTINGS_MAGIC = 0x504F4D34;     // "POM4"
 const uint32_t SETTINGS_MAGIC_V3 = 0x504F4D33;  // "POM3": mesmos campos, sem os do v4
@@ -239,7 +239,7 @@ void loadSettings() {
   if (cfg.fahr > 1) cfg.fahr = 0;
   if (cfg.rainAlert > 1) cfg.rainAlert = 1;
   if (cfg.beta > 1) cfg.beta = 0;
-  cfg.spi80 = 0;  // quem ligou na 1.23.0 volta aos 40 MHz
+  cfg.spi80 = 0;  // quem ligou no teste volta aos 40 MHz
   if (!(fabsf(cfg.lat) <= 90 && fabsf(cfg.lon) <= 180)) cfg.lat = cfg.lon = 0;  // lixo ou NaN estouraria o String(float)
   // senha das redes do relógio: 8 letras/dígitos sem os que se confundem, sorteada pelo gerador do chip
   // na primeira vez (ou se a memória tiver lixo) e mostrada na tela quando a rede está no ar
