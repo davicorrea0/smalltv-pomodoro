@@ -118,9 +118,7 @@ if [ $PUB = 0 ]; then
 fi
 
 say "enviando o site"
-git -C "$W" commit -q -m "Publica firmware $VER ($KIND)
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+git -C "$W" commit -q -m "Publica firmware $VER ($KIND)"
 git -C "$W" push -q origin HEAD:gh-pages
 
 say "release $TAG"
