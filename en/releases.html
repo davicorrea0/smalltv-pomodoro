@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Releases — SmallTV Pomodoro</title>
+<meta name="description" content="Every SmallTV Pomodoro firmware release, with what changed in each one and the files to download.">
+<meta property="og:title" content="Releases — SmallTV Pomodoro">
+<meta property="og:image" content="https://davicorrea0.github.io/smalltv-pomodoro/img/mostradores.png">
+<meta name="theme-color" content="#0b0d10">
+<link rel="alternate" hreflang="pt-BR" href="https://davicorrea0.github.io/smalltv-pomodoro/versoes.html">
+<link rel="alternate" hreflang="en" href="https://davicorrea0.github.io/smalltv-pomodoro/en/releases.html">
+<link rel="icon" href="../img/tomate.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Silkscreen&display=swap">
+<link rel="stylesheet" href="../style.css?v=15">
+</head>
+<body data-notes="en">
+<!-- gerado por scripts/releases-page.cjs (repositório principal); não edite à mão -->
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="./"><img class="px" src="../img/tomate.svg" alt=""><span>SmallTV Pomodoro</span></a>
+    <nav class="nav">
+      <a href="./">Home</a>
+      <a href="gallery.html">Gallery</a>
+      <a href="releases.html" aria-current="page">Releases</a>
+      <a href="game.html">Game</a>
+      <a class="opt" href="https://github.com/davicorrea0/smalltv-pomodoro"><span class="gh" aria-hidden="true"></span>GitHub</a>
+    </nav>
+    <a class="lang" href="../versoes.html" hreflang="pt-BR"><img class="px" src="../img/icons/globo.svg" alt="">PT</a>
+  </div>
+</header>
+
+<main>
+  <div class="page-head">
+    <div class="wrap">
+      <div class="eyebrow">Firmware</div>
+      <h1>Releases <span class="count">51 releases</span></h1>
+      <p>Every firmware release, newest first, with what changed in each one and its files. The easiest way to update is the <strong>Update now</strong> button in the clock's panel; the files here are for installing through <code>/update</code> or for checking.</p>
+      <div class="note warn"><strong>Do not use <a href="#v1.15.1">v1.15.1</a> or <a href="#v1.20.0">v1.20.0</a>.</strong> 1.15.1 made screen ghosting worse and 1.20.0 could leave the clock unable to start. If yours no longer starts, follow the <a href="https://github.com/davicorrea0/smalltv-pomodoro/blob/main/docs/RECUPERACAO.md">recovery guide</a> (in Portuguese).</div>
+      <div class="tabs" role="group" aria-label="Notes in">
+        <button type="button" data-set="pt" aria-pressed="false">Português</button>
+        <button type="button" data-set="en" aria-pressed="true">English</button>
+        <button type="button" data-set="es" aria-pressed="false">Español</button>
+      </div>
+    </div>
+  </div>
+
+  <section class="first releases">
+    <div class="wrap">
+      <p class="section-lead">Through <code>/update</code>, send the <code>.bin.gz</code> without unpacking it; from 1.20.1 on, send the <code>.bin.gz.sig</code> (the signature) with it. The uncompressed <code>.bin</code> is for flashing over a USB-TTL cable. <code>SHA256SUMS.txt</code> checks the files.</p>
+  <article class="rel" id="v1.21.0">
+    <div class="rel-head"><h2>1.21.0</h2><span class="tag pkg">latest</span><time datetime="2026-10-28">Oct 27, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Mostradores instaláveis agora podem ter animação: sprites com vários quadros (exemplo: tomate pulando)</li><li>O painel mostra a última queda do relógio (exceção ou watchdog), com botão para limpar</li><li>Publicação confere o .bin.gz como o gerenciador de boot o lê, e há guia de recuperação pelo USB-TTL</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>Installable faces can now be animated: sprites with several frames (example: jumping tomato)</li><li>The panel shows the clock's last crash (exception or watchdog), with a button to clear it</li><li>Releases check the .bin.gz the way the bootloader reads it, plus a USB-TTL recovery guide</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Las esferas instalables ahora pueden tener animación: sprites con varios cuadros (ejemplo: tomate saltando)</li><li>El panel muestra la última caída del reloj (excepción o watchdog), con un botón para borrarla</li><li>La publicación verifica el .bin.gz como lo lee el gestor de arranque, y hay guía de recuperación por USB-TTL</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.21.0/smalltv-pomodoro-v1.21.0.bin.gz"><img class="px" src="../img/icons/download.svg" alt="">.bin.gz <span class="sz">393 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.21.0/smalltv-pomodoro-v1.21.0.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">531 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.21.0/smalltv-pomodoro-v1.21.0.bin.gz.sig" title="signature">.bin.gz.sig</a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.21.0/smalltv-pomodoro-v1.21.0.bin.sig" title="signature">.bin.sig</a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.21.0/SHA256SUMS.txt">SHA256SUMS</a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.21.0"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.20.1">
+    <div class="rel-head"><h2>1.20.1</h2><time datetime="2026-10-27">Oct 27, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Atualizações assinadas: pela rede o relógio só troca para um firmware assinado por este projeto</li><li>A assinatura vai à parte do arquivo e é conferida antes da troca; sem ela, o firmware atual continua</li><li>Endereço fixo na rede: http://smalltv.local (aparece na tela ao ligar), sem decorar o IP</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>Signed updates: over the network the clock only switches to firmware signed by this project</li><li>The signature travels apart from the file and is checked before the swap; without it, the current firmware keeps running</li><li>Fixed network address: http://smalltv.local (shown on screen at startup), no need to remember the IP</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Actualizaciones firmadas: por la red el reloj solo cambia a un firmware firmado por este proyecto</li><li>La firma va aparte del archivo y se verifica antes del cambio; sin ella, sigue el firmware actual</li><li>Dirección fija en la red: http://smalltv.local (aparece en pantalla al encender), sin memorizar la IP</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.20.1/smalltv-pomodoro-v1.20.1.bin.gz"><img class="px" src="../img/icons/download.svg" alt="">.bin.gz <span class="sz">392 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.20.1/smalltv-pomodoro-v1.20.1.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">529 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.20.1/smalltv-pomodoro-v1.20.1.bin.gz.sig" title="signature">.bin.gz.sig</a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.20.1/smalltv-pomodoro-v1.20.1.bin.sig" title="signature">.bin.sig</a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.20.1/SHA256SUMS.txt">SHA256SUMS</a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.20.1"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel avoid" id="v1.20.0">
+    <div class="rel-head"><h2>1.20.0</h2><span class="tag bad">withdrawn</span><time datetime="2026-10-26">Oct 26, 2026</time></div>
+    <div class="notes"><div class="note warn" lang="pt" data-l="pt">Não use. Publicada e retirada no mesmo dia: o .bin.gz desta versão apagava o gerenciador de boot e o relógio não ligava mais. Instale a 1.19.9 ou mais nova; para um relógio que já não liga, veja o guia de recuperação.</div><div class="note warn" lang="en" data-l="en">Do not use. Published and pulled the same day: this version's .bin.gz erased the bootloader and the clock no longer started. Install 1.19.9 or newer; for a clock that no longer starts, see the recovery guide.</div><div class="note warn" lang="es" data-l="es">No la uses. Publicada y retirada el mismo día: el .bin.gz de esta versión borraba el gestor de arranque y el reloj ya no encendía. Instala la 1.19.9 o más nueva; si el reloj ya no enciende, mira la guía de recuperación.</div></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Atualizações assinadas (refeitas na 1.20.1); retirada do ar, os arquivos não estão mais disponíveis</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>Signed updates (redone in 1.20.1); taken down, its files are no longer available</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Actualizaciones firmadas (rehechas en la 1.20.1); retirada, sus archivos ya no están disponibles</li></ul>
+    </div>
+    
+  </article>
+  <article class="rel" id="v1.19.9">
+    <div class="rel-head"><h2>1.19.9</h2><time datetime="2026-10-27">Oct 27, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Proteção na atualização comprimida: um .bin.gz com dados depois do gzip é recusado antes da troca</li><li>Era o que fazia a 1.20.0 de teste apagar o gerenciador de boot e o relógio não ligar mais</li><li>Instale esta versão antes de qualquer atualização futura</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>Compressed update guard: a .bin.gz with data after the gzip stream is refused before the swap</li><li>This is what made the 1.20.0 test build erase the bootloader so the clock no longer started</li><li>Install this version before any future update</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Protección en la actualización comprimida: un .bin.gz con datos después del gzip se rechaza antes del cambio</li><li>Era lo que hacía que la 1.20.0 de prueba borrara el gestor de arranque y el reloj no encendiera</li><li>Instala esta versión antes de cualquier actualización futura</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.19.9/smalltv-pomodoro-v1.19.9.bin.gz"><img class="px" src="../img/icons/download.svg" alt="">.bin.gz <span class="sz">384 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.19.9/smalltv-pomodoro-v1.19.9.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">520 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.19.9/SHA256SUMS.txt">SHA256SUMS</a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.19.9"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.19.8">
+    <div class="rel-head"><h2>1.19.8</h2><time datetime="2026-10-24">Oct 24, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Corrige o reinício em ciclo com Previsão em cartões e mostradores da galeria com fonte grande (issue #4)</li><li>Fuso automático: ao escolher a cidade, o relógio ajusta o fuso e o horário de verão</li><li>Diagnóstico no painel: motivo do último reinício, sinal do Wi-Fi e memória</li><li>Opção de receber versões de teste antes de todo mundo</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>Fixes the restart loop with Forecast cards and gallery faces with large fonts (issue #4)</li><li>Automatic time zone: picking the city sets the time zone and daylight saving</li><li>Diagnostics in the panel: last restart reason, Wi-Fi signal and memory</li><li>Option to get test versions before everyone else</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Corrige el reinicio en bucle con Pronóstico en tarjetas y esferas de la galería con fuente grande (issue #4)</li><li>Huso automático: al elegir la ciudad, el reloj ajusta el huso y el horario de verano</li><li>Diagnóstico en el panel: motivo del último reinicio, señal del Wi-Fi y memoria</li><li>Opción de recibir versiones de prueba antes que todos</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.19.8/smalltv-pomodoro-v1.19.8.bin.gz"><img class="px" src="../img/icons/download.svg" alt="">.bin.gz <span class="sz">383 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.19.8/smalltv-pomodoro-v1.19.8.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">520 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.19.8/SHA256SUMS.txt">SHA256SUMS</a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.19.8"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.19.7">
+    <div class="rel-head"><h2>1.19.7</h2><time datetime="2026-10-23">Oct 23, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Biblioteca gráfica Adafruit GFX atualizada para a 1.13.0</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>Adafruit GFX graphics library updated to 1.13.0</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Biblioteca gráfica Adafruit GFX actualizada a la 1.13.0</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.19.7/smalltv-pomodoro-v1.19.7.bin.gz"><img class="px" src="../img/icons/download.svg" alt="">.bin.gz <span class="sz">383 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.19.7/smalltv-pomodoro-v1.19.7.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">518 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.19.7/SHA256SUMS.txt">SHA256SUMS</a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.19.7"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.19.6">
+    <div class="rel-head"><h2>1.19.6</h2><time datetime="2026-10-23">Oct 23, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Espera progressiva para senhas erradas, sem travar a tela</li><li>Uploads só gravam depois da autenticação completa</li><li>Recuperação só pela rede própria do relógio</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>Progressive delay for wrong passwords, without freezing the screen</li><li>Uploads only write after full authentication</li><li>Recovery only over the clock's own network</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Espera progresiva para contraseñas incorrectas, sin trabar la pantalla</li><li>Las subidas solo graban tras la autenticación completa</li><li>Recuperación solo por la red propia del reloj</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.19.6/smalltv-pomodoro-v1.19.6.bin.gz"><img class="px" src="../img/icons/download.svg" alt="">.bin.gz <span class="sz">383 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.19.6/smalltv-pomodoro-v1.19.6.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">518 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.19.6/SHA256SUMS.txt">SHA256SUMS</a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.19.6"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.19.5">
+    <div class="rel-head"><h2>1.19.5</h2><time datetime="2026-10-23">Oct 23, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Veja o que ocupa a memória de arquivos e apague o que sobrou do firmware original</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>See what fills the file storage and delete leftovers from the stock firmware</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Mira qué ocupa la memoria de archivos y borra lo que quedó del firmware original</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.19.5/smalltv-pomodoro-v1.19.5.bin.gz"><img class="px" src="../img/icons/download.svg" alt="">.bin.gz <span class="sz">383 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.19.5/smalltv-pomodoro-v1.19.5.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">519 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.19.5/SHA256SUMS.txt">SHA256SUMS</a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.19.5"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.19.4">
+    <div class="rel-head"><h2>1.19.4</h2><time datetime="2026-10-23">Oct 23, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>A tela do Pomodoro não aparece mais por cima da Previsão LCD</li><li>Painel e relógio começam a contagem juntos</li><li>Hora protegida contra NTP falso</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>The Pomodoro screen no longer shows over Forecast LCD</li><li>Panel and clock start the countdown together</li><li>Time protected against fake NTP</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>La pantalla del Pomodoro ya no aparece sobre la Previsión LCD</li><li>Panel y reloj empiezan la cuenta juntos</li><li>Hora protegida contra NTP falso</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.19.4/smalltv-pomodoro-v1.19.4.bin.gz"><img class="px" src="../img/icons/download.svg" alt="">.bin.gz <span class="sz">382 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.19.4/smalltv-pomodoro-v1.19.4.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">517 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.19.4/SHA256SUMS.txt">SHA256SUMS</a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.19.4"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.19.0">
+    <div class="rel-head"><h2>1.19.0</h2><time datetime="2026-10-23">Oct 23, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Aviso de chuva na próxima hora, com o tomate de guarda-chuva</li><li>Temperatura em °F</li><li>Firmware 11 KB menor: o painel passa para a memória de arquivos</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>Rain alert for the next hour, with the tomato holding an umbrella</li><li>Temperature in °F</li><li>Firmware 11 KB smaller: the panel moves to file storage</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Aviso de lluvia en la próxima hora, con el tomate con paraguas</li><li>Temperatura en °F</li><li>Firmware 11 KB más pequeño: el panel pasa a la memoria de archivos</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.19.0/smalltv-pomodoro-v1.19.0.bin.gz"><img class="px" src="../img/icons/download.svg" alt="">.bin.gz <span class="sz">380 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.19.0/smalltv-pomodoro-v1.19.0.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">514 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.19.0/SHA256SUMS.txt">SHA256SUMS</a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.19.0"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.19.0-rc1">
+    <div class="rel-head"><h2>1.19.0-rc1</h2><span class="tag">test</span><time datetime="2026-10-23">Oct 23, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Versão de teste da 1.19.0</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>Test release of 1.19.0</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Versión de prueba de la 1.19.0</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.19.0-rc1/smalltv-pomodoro-v1.19.0-rc1.bin.gz"><img class="px" src="../img/icons/download.svg" alt="">.bin.gz <span class="sz">380 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.19.0-rc1/SHA256SUMS.txt">SHA256SUMS</a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.19.0-rc1"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.18.2">
+    <div class="rel-head"><h2>1.18.2</h2><time datetime="2026-10-23">Oct 22, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Proteção do Wi-Fi contra o rebaixamento para uma rede sem criptografia (CVE-2020-12638)</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>Wi-Fi protection against downgrade to an unencrypted network (CVE-2020-12638)</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Protección del Wi-Fi contra la degradación a una red sin cifrado (CVE-2020-12638)</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.18.2/smalltv-pomodoro-1.18.2.bin.gz"><img class="px" src="../img/icons/download.svg" alt="">.bin.gz <span class="sz">390 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.18.2/smalltv-pomodoro-1.18.2.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">521 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.18.2/SHA256SUMS.txt">SHA256SUMS</a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.18.2"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.18.1">
+    <div class="rel-head"><h2>1.18.1</h2><time datetime="2026-10-23">Oct 22, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Correção de segurança: GIFs malformados no álbum não travam nem corrompem o relógio</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>Security fix: malformed GIFs in the album no longer crash or corrupt the clock</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Corrección de seguridad: los GIF malformados del álbum ya no traban ni corrompen el reloj</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.18.1/smalltv-pomodoro-1.18.1.bin.gz"><img class="px" src="../img/icons/download.svg" alt="">.bin.gz <span class="sz">390 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.18.1/smalltv-pomodoro-1.18.1.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">520 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.18.1/SHA256SUMS.txt">SHA256SUMS</a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.18.1"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.18.0">
+    <div class="rel-head"><h2>1.18.0</h2><time datetime="2026-10-22">Oct 22, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Mostrador Previsão LCD, com dígitos DSEG7</li><li>Previsão em cartões redesenhado em Outfit e pixel art</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>Forecast LCD face, with DSEG7 digits</li><li>Forecast cards redrawn with Outfit and pixel art</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Esfera Previsión LCD, con dígitos DSEG7</li><li>Previsión en tarjetas rediseñada con Outfit y pixel art</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.18.0/smalltv-pomodoro-v1.18.0.bin.gz"><img class="px" src="../img/icons/download.svg" alt="">.bin.gz <span class="sz">389 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.18.0/smalltv-pomodoro-v1.18.0.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">519 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.18.0"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.17.0">
+    <div class="rel-head"><h2>1.17.0</h2><time datetime="2026-10-22">Oct 22, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Mostrador Previsão em cartões: hoje e os próximos 3 dias</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>Forecast cards face: today and the next 3 days</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Esfera Previsión en tarjetas: hoy y los próximos 3 días</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.17.0/smalltv-pomodoro-v1.17.0.bin.gz"><img class="px" src="../img/icons/download.svg" alt="">.bin.gz <span class="sz">379 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.17.0/smalltv-pomodoro-v1.17.0.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">504 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.17.0"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.16.1">
+    <div class="rel-head"><h2>1.16.1</h2><time datetime="2026-10-22">Oct 22, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Tensão da tela padrão em 0,850 V, que tirou a imagem fantasma</li><li>GIFs não travam mais com o painel aberto</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>Default screen voltage of 0.850 V, which removed ghosting</li><li>GIFs no longer stall while the panel is open</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Tensión de pantalla por defecto en 0,850 V, que quitó la imagen fantasma</li><li>Los GIF ya no se traban con el panel abierto</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.16.1/smalltv-pomodoro-v1.16.1.bin.gz"><img class="px" src="../img/icons/download.svg" alt="">.bin.gz <span class="sz">378 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.16.1/smalltv-pomodoro-v1.16.1.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">503 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.16.1"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.16.0">
+    <div class="rel-head"><h2>1.16.0</h2><time datetime="2026-10-22">Oct 22, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Ajuste anti-fantasma: controle da tensão da tela (VCOM) com estampas de teste</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>Anti-ghosting tuning: screen voltage (VCOM) control with test patterns</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Ajuste antifantasma: control de la tensión de pantalla (VCOM) con patrones de prueba</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.16.0/smalltv-pomodoro-v1.16.0.bin.gz"><img class="px" src="../img/icons/download.svg" alt="">.bin.gz <span class="sz">378 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.16.0/smalltv-pomodoro-v1.16.0.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">502 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.16.0"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.15.2">
+    <div class="rel-head"><h2>1.15.2</h2><time datetime="2026-10-22">Oct 22, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Volta a configuração de tela da 1.15.0, mantendo tudo dela</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>Restores the 1.15.0 screen settings, keeping everything else from it</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Vuelve a la configuración de pantalla de la 1.15.0, manteniendo todo lo demás</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.15.2/smalltv-pomodoro-v1.15.2.bin.gz"><img class="px" src="../img/icons/download.svg" alt="">.bin.gz <span class="sz">377 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.15.2/smalltv-pomodoro-v1.15.2.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">501 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.15.2"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel avoid" id="v1.15.1">
+    <div class="rel-head"><h2>1.15.1</h2><span class="tag bad">do not use</span><time datetime="2026-10-22">Oct 22, 2026</time></div>
+    <div class="notes"><div class="note warn" lang="pt" data-l="pt">Não use: as tensões da tela desta versão aumentavam a imagem fantasma. Instale a 1.15.2 ou mais nova.</div><div class="note warn" lang="en" data-l="en">Do not use: this version's screen voltages made ghosting worse. Install 1.15.2 or newer.</div><div class="note warn" lang="es" data-l="es">No la uses: las tensiones de pantalla de esta versión aumentaban la imagen fantasma. Instala la 1.15.2 o más nueva.</div></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Teste de tensões da tela contra imagem fantasma (retirada)</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>Screen voltage test against ghosting (withdrawn)</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Prueba de tensiones de pantalla contra la imagen fantasma (retirada)</li></ul>
+    </div>
+    <div class="btns"><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.15.1"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.15.0">
+    <div class="rel-head"><h2>1.15.0</h2><time datetime="2026-10-22">Oct 22, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Mostrador Previsão (hoje e os próximos 4 dias)</li><li>7,7 KB a mais de memória livre e firmware 11 KB menor</li><li>Clima e Flip sem piscar</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>Forecast face (today and the next 4 days)</li><li>7.7 KB more free memory and firmware 11 KB smaller</li><li>Weather and Flip without flicker</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Esfera Previsión (hoy y los próximos 4 días)</li><li>7,7 KB más de memoria libre y firmware 11 KB más pequeño</li><li>Clima y Flip sin parpadeo</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.15.0/smalltv-pomodoro-v1.15.0.bin.gz"><img class="px" src="../img/icons/download.svg" alt="">.bin.gz <span class="sz">377 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.15.0/smalltv-pomodoro-v1.15.0.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">501 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.15.0"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.14.1">
+    <div class="rel-head"><h2>1.14.1</h2><time datetime="2026-10-22">Oct 22, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Senha opcional no painel inteiro e nas redes de configuração e recuperação</li><li>Código baixado do site travado por impressão digital</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>Optional password for the whole panel and for the setup and recovery networks</li><li>Code downloaded from the site pinned by fingerprint</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Contraseña opcional en todo el panel y en las redes de configuración y recuperación</li><li>Código descargado del sitio fijado por huella digital</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.14.1/smalltv-pomodoro-v1.14.1.bin.gz"><img class="px" src="../img/icons/download.svg" alt="">.bin.gz <span class="sz">379 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.14.1/smalltv-pomodoro-v1.14.1.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">512 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.14.1"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.14.0">
+    <div class="rel-head"><h2>1.14.0</h2><time datetime="2026-10-22">Oct 22, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Atualização comprimida (.bin.gz) conferida por inteiro antes da troca, com espaço para o firmware crescer</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>Compressed updates (.bin.gz) fully checked before switching, with room for the firmware to grow</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Actualización comprimida (.bin.gz) verificada por completo antes del cambio, con espacio para que el firmware crezca</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.14.0/smalltv-pomodoro-v1.14.0.bin.gz"><img class="px" src="../img/icons/download.svg" alt="">.bin.gz <span class="sz">378 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.14.0/smalltv-pomodoro-v1.14.0.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">510 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.14.0"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.13.1">
+    <div class="rel-head"><h2>1.13.1</h2><time datetime="2026-10-22">Oct 22, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Segurança: sites abertos no navegador não mandam mais comandos ao relógio (CSRF e DNS rebinding)</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>Security: websites open in the browser can no longer command the clock (CSRF and DNS rebinding)</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Seguridad: los sitios abiertos en el navegador ya no envían órdenes al reloj (CSRF y DNS rebinding)</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.13.1/smalltv-pomodoro-v1.13.1.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">507 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.13.1"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.13.0">
+    <div class="rel-head"><h2>1.13.0</h2><time datetime="2026-10-22">Oct 22, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>A Alexa pode avisar quando o foco ou a pausa terminam</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>Alexa can announce when a focus or break ends</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Alexa puede avisar cuando termina el foco o la pausa</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.13.0/smalltv-pomodoro-v1.13.0.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">506 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.13.0"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.12.0">
+    <div class="rel-head"><h2>1.12.0</h2><time datetime="2026-10-22">Oct 22, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Mais controles pela Alexa: começar, pausar, encerrar, foco de N minutos e pausas</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>More Alexa controls: start, pause, stop, N-minute focus and breaks</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Más controles por Alexa: iniciar, pausar, terminar, foco de N minutos y pausas</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.12.0/smalltv-pomodoro-v1.12.0.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">506 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.12.0"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.11.2">
+    <div class="rel-head"><h2>1.11.2</h2><time datetime="2026-10-22">Oct 22, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>O painel mostra a conexão com a Alexa: último contato, Echo e último comando</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>The panel shows the Alexa link: last contact, Echo and last command</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>El panel muestra la conexión con Alexa: último contacto, Echo y último comando</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.11.2/smalltv-pomodoro-v1.11.2.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">505 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.11.2"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.11.1">
+    <div class="rel-head"><h2>1.11.1</h2><time datetime="2026-10-22">Oct 22, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Controle pela Alexa</li><li>Firmware 6,6 KB menor, com folga para as próximas atualizações</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>Alexa control</li><li>Firmware 6.6 KB smaller, with room for future updates</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Control por Alexa</li><li>Firmware 6,6 KB más pequeño, con margen para las próximas actualizaciones</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.11.1/smalltv-pomodoro-v1.11.1.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">504 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.11.1"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel avoid" id="v1.11.0">
+    <div class="rel-head"><h2>1.11.0</h2><span class="tag bad">do not use</span><time datetime="2026-10-22">Oct 21, 2026</time></div>
+    <div class="notes"><div class="note warn" lang="pt" data-l="pt">Não instale: grande demais, deixaria a próxima atualização pelo Wi-Fi sem espaço. Use a 1.11.1.</div><div class="note warn" lang="en" data-l="en">Do not install: too large, it would leave no room for the next Wi-Fi update. Use 1.11.1.</div><div class="note warn" lang="es" data-l="es">No la instales: demasiado grande, dejaría sin espacio la próxima actualización por Wi-Fi. Usa la 1.11.1.</div></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Controle pela Alexa (versão de teste)</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>Alexa control (test release)</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Control por Alexa (versión de prueba)</li></ul>
+    </div>
+    <div class="btns"><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.11.0"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.10.0">
+    <div class="rel-head"><h2>1.10.0</h2><time datetime="2026-10-21">Oct 21, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Brilho noturno que segue o sol e rodízio de mostradores</li><li>Mostradores da galeria com texto em português, inglês e espanhol</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>Night brightness that follows the sun, and face rotation</li><li>Gallery faces with text in Portuguese, English and Spanish</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Brillo nocturno que sigue al sol y rotación de esferas</li><li>Esferas de la galería con texto en portugués, inglés y español</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.10.0/smalltv-pomodoro-v1.10.0.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">507 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.10.0"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.9.2">
+    <div class="rel-head"><h2>1.9.2</h2><time datetime="2026-10-21">Oct 21, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Ponteiros sem piscar: os mostradores desenham fora da tela e mostram a imagem pronta</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>Flicker-free hands: faces draw off screen and show the finished image</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Agujas sin parpadeo: las esferas dibujan fuera de pantalla y muestran la imagen lista</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.9.2/smalltv-pomodoro-v1.9.2.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">503 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.9.2"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.9.1">
+    <div class="rel-head"><h2>1.9.1</h2><time datetime="2026-10-21">Oct 21, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>O selo &quot;em uso&quot; segue o idioma do painel</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>The &quot;in use&quot; tag follows the panel language</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>La etiqueta &quot;en uso&quot; sigue el idioma del panel</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.9.1/smalltv-pomodoro-v1.9.1.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">502 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.9.1"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.9.0">
+    <div class="rel-head"><h2>1.9.0</h2><time datetime="2026-10-21">Oct 21, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Modo de recuperação (ligar e desligar 3 vezes)</li><li>Atualização que confere o arquivo antes da troca, backup e restauração no painel</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>Recovery mode (power-cycle 3 times)</li><li>Updates checked before switching, backup and restore in the panel</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Modo de recuperación (encender y apagar 3 veces)</li><li>Actualización verificada antes del cambio, copia de seguridad y restauración en el panel</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.9.0/smalltv-pomodoro-v1.9.0.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">502 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.9.0"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.8.1">
+    <div class="rel-head"><h2>1.8.1</h2><time datetime="2026-10-21">Oct 21, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Conquistas e cartão de compartilhar redesenhados em pixel art</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>Achievements and share card redrawn in pixel art</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Logros y tarjeta para compartir rediseñados en pixel art</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.8.1/smalltv-pomodoro-v1.8.1.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">515 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.8.1"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.8.0">
+    <div class="rel-head"><h2>1.8.0</h2><time datetime="2026-10-21">Oct 21, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Sequência de dias com planta que cresce até o tomate dourado, horta e conquistas</li><li>Cartão do dia para compartilhar e aviso de versão nova com atualização em um toque</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>Day streak with a plant that grows into a golden tomato, garden and achievements</li><li>Shareable day card and new-version notice with one-tap update</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Racha de días con una planta que crece hasta el tomate dorado, huerta y logros</li><li>Tarjeta del día para compartir y aviso de versión nueva con actualización en un toque</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.8.0/smalltv-pomodoro-v1.8.0.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">513 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.8.0"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.7.0">
+    <div class="rel-head"><h2>1.7.0</h2><time datetime="2026-10-21">Oct 21, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Português, inglês e espanhol no painel e na tela, incluindo o mostrador Palavras</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>Portuguese, English and Spanish in the panel and on screen, including the Words face</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Portugués, inglés y español en el panel y en la pantalla, incluida la esfera Palabras</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.7.0/smalltv-pomodoro-v1.7.0.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">522 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.7.0"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.6.8">
+    <div class="rel-head"><h2>1.6.8</h2><time datetime="2026-10-21">Oct 21, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>A galeria avisa quando um mostrador precisa de firmware mais novo</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>The gallery warns when a face needs newer firmware</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>La galería avisa cuando una esfera necesita un firmware más nuevo</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.6.8/smalltv-pomodoro-v1.6.8.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">513 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.6.8"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.6.7">
+    <div class="rel-head"><h2>1.6.7</h2><time datetime="2026-10-21">Oct 21, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Painel com layout próprio para computador (barra lateral e colunas)</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>Desktop layout for the panel (sidebar and columns)</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Panel con diseño propio para computadora (barra lateral y columnas)</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.6.7/smalltv-pomodoro-v1.6.7.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">513 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.6.7"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.6.6">
+    <div class="rel-head"><h2>1.6.6</h2><time datetime="2026-10-21">Oct 21, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Camadas novas de pacote: anéis de progresso e marcações analógicas</li><li>10 mostradores novos na galeria</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>New package layers: progress rings and analog ticks</li><li>10 new faces in the gallery</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Capas nuevas de paquete: anillos de progreso y marcas analógicas</li><li>10 esferas nuevas en la galería</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.6.6/smalltv-pomodoro-v1.6.6.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">513 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.6.6"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.6.5">
+    <div class="rel-head"><h2>1.6.5</h2><time datetime="2026-10-21">Oct 21, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Neon centralizado e fontes novas para pacotes: Outfit e Righteous</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>Centered Neon face and new package fonts: Outfit and Righteous</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Neón centrado y fuentes nuevas para paquetes: Outfit y Righteous</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.6.5/smalltv-pomodoro-v1.6.5.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">511 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.6.5"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.6.4">
+    <div class="rel-head"><h2>1.6.4</h2><time datetime="2026-10-21">Oct 21, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Prévias da galeria carregam em fila (não faltam mais no celular)</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>Gallery previews load in a queue (no more missing ones on phones)</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Las vistas previas cargan en cola (ya no faltan en el móvil)</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.6.4/smalltv-pomodoro-v1.6.4.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">505 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.6.4"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.6.3">
+    <div class="rel-head"><h2>1.6.3</h2><time datetime="2026-10-21">Oct 21, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Mostradores baixados sempre aparecem com prévia no painel</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>Downloaded faces always show a preview in the panel</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Las esferas descargadas siempre aparecen con vista previa en el panel</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.6.3/smalltv-pomodoro-v1.6.3.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">504 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.6.3"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.6.2">
+    <div class="rel-head"><h2>1.6.2</h2><time datetime="2026-10-21">Oct 21, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Galeria do painel igual à do site, instalação com um toque</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>Panel gallery matches the website, one-tap install</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Galería del panel igual a la del sitio, instalación con un toque</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.6.2/smalltv-pomodoro-v1.6.2.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">504 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.6.2"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.6.1">
+    <div class="rel-head"><h2>1.6.1</h2><time datetime="2026-10-21">Oct 20, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Instalar um mostrador já o coloca em uso</li><li>Painel não fica preso no cache depois de atualizar</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>Installing a face switches to it right away</li><li>The panel no longer sticks in the cache after an update</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Instalar una esfera ya la pone en uso</li><li>El panel ya no queda en caché después de actualizar</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.6.1/smalltv-pomodoro-v1.6.1.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">504 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.6.1"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.6.0">
+    <div class="rel-head"><h2>1.6.0</h2><time datetime="2026-10-21">Oct 20, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Mostradores instaláveis: arquivos .json de poucos KB, sem regravar o firmware</li><li>Galeria online no painel e 3 mostradores de exemplo</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>Installable faces: small .json files, no reflashing needed</li><li>Online gallery in the panel and 3 sample faces</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Esferas instalables: archivos .json de pocos KB, sin regrabar el firmware</li><li>Galería en línea en el panel y 3 esferas de ejemplo</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.6.0/smalltv-pomodoro-v1.6.0.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">504 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.6.0"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.5.0">
+    <div class="rel-head"><h2>1.5.0</h2><time datetime="2026-10-20">Oct 20, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Firmware 25 KB menor (painel comprimido e rede mais leve)</li><li>Cada mostrador vira um arquivo próprio, com guia para criar novos</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>Firmware 25 KB smaller (compressed panel, lighter network stack)</li><li>Each face is its own file, with a guide to create new ones</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Firmware 25 KB más pequeño (panel comprimido y red más ligera)</li><li>Cada esfera es un archivo propio, con guía para crear nuevas</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.5.0/smalltv-pomodoro-v1.5.0.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">479 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.5.0"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.4.2">
+    <div class="rel-head"><h2>1.4.2</h2><time datetime="2026-10-20">Oct 20, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Virada do Flip mais natural, com aceleração e quique</li><li>Biblioteca de sprites em pixel art e escolha da atividade do foco</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>More natural Flip animation, with acceleration and bounce</li><li>Pixel art sprite library and a choice of focus activity</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Giro del Flip más natural, con aceleración y rebote</li><li>Biblioteca de sprites en pixel art y elección de la actividad del foco</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.4.2/smalltv-pomodoro-v1.4.2.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">504 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.4.2"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.4.1">
+    <div class="rel-head"><h2>1.4.1</h2><time datetime="2026-10-20">Oct 20, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Flip com a fonte Bebas Neue e virada de plaquinhas em perspectiva</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>Flip face with Bebas Neue and a perspective flap animation</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Flip con la fuente Bebas Neue y giro de paletas en perspectiva</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.4.1/smalltv-pomodoro-v1.4.1.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">499 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.4.1"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.4.0">
+    <div class="rel-head"><h2>1.4.0</h2><time datetime="2026-10-20">Oct 20, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Painel novo em abas (Relógio, Foco, Fotos, Ajustes)</li><li>Galeria de mostradores com prévia e teste de 15 s no relógio</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>New tabbed panel (Clock, Focus, Photos, Settings)</li><li>Face gallery with previews and a 15 s try-out on the clock</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Panel nuevo con pestañas (Reloj, Foco, Fotos, Ajustes)</li><li>Galería de esferas con vista previa y prueba de 15 s en el reloj</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.4.0/smalltv-pomodoro-v1.4.0.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">494 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.4.0"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.3.4">
+    <div class="rel-head"><h2>1.3.4</h2><time datetime="2026-10-20">Oct 20, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>LCD retrô com o desenho da fonte DSEG7, como um relógio LCD de verdade</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>Retro LCD drawn with the DSEG7 font, like a real LCD clock</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>LCD retro con el diseño de la fuente DSEG7, como un reloj LCD de verdad</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.3.4/smalltv-pomodoro-v1.3.4.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">472 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.3.4"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.3.3">
+    <div class="rel-head"><h2>1.3.3</h2><time datetime="2026-10-20">Oct 20, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Dígitos do LCD retrô retos e mais grossos, legíveis de longe</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>Retro LCD digits upright and bolder, readable from across the room</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Dígitos del LCD retro rectos y más gruesos, legibles de lejos</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.3.3/smalltv-pomodoro-v1.3.3.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">471 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.3.3"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+  <article class="rel" id="v1.3.2">
+    <div class="rel-head"><h2>1.3.2</h2><time datetime="2026-10-20">Oct 20, 2026</time></div>
+    <div class="notes">
+      <ul class="list" lang="pt" data-l="pt"><li>Primeira versão pública: 8 mostradores (Matriz, Tomate, Analógico, Clima, Neon, Flip, LCD retrô e Palavras)</li><li>Pomodoro com anel de progresso e o mascote tomate</li><li>Clima sem chave de API, álbum de fotos e GIFs, brilho noturno e atualização pelo /update</li></ul>
+      <ul class="list" lang="en" data-l="en"><li>First public release: 8 faces (Matrix, Tomato, Analog, Weather, Neon, Flip, Retro LCD and Words)</li><li>Pomodoro with a progress ring and the tomato mascot</li><li>Weather without an API key, photo and GIF album, night brightness and updates via /update</li></ul>
+      <ul class="list" lang="es" data-l="es"><li>Primera versión pública: 8 esferas (Matriz, Tomate, Analógico, Clima, Neón, Flip, LCD retro y Palabras)</li><li>Pomodoro con anillo de progreso y la mascota tomate</li><li>Clima sin clave de API, álbum de fotos y GIF, brillo nocturno y actualización por /update</li></ul>
+    </div>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.3.2/smalltv-pomodoro-v1.3.2.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">471 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.3.2"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-bottom">
+      <img class="px" src="../img/tomate.svg" alt="">
+      <span>SmallTV Pomodoro · feito por Davi Mattos</span>
+      <div class="links">
+        <a href="./">Home</a>
+        <a href="https://github.com/davicorrea0/smalltv-pomodoro"><span class="gh" aria-hidden="true"></span>GitHub</a>
+        <a href="../versoes.html" hreflang="pt-BR">Português</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+// idioma das notas: o da página, ou o último escolhido
+(function () {
+  var b = document.body, btns = document.querySelectorAll("[data-set]");
+  function set(l) {
+    b.setAttribute("data-notes", l);
+    for (var i = 0; i < btns.length; i++) btns[i].setAttribute("aria-pressed", btns[i].getAttribute("data-set") === l);
+  }
+  try { var s = localStorage.getItem("notas-idioma"); if (s) set(s); } catch (e) {}
+  for (var i = 0; i < btns.length; i++) btns[i].addEventListener("click", function () {
+    var l = this.getAttribute("data-set");
+    set(l);
+    try { localStorage.setItem("notas-idioma", l); } catch (e) {}
+  });
+})();
+</script>
+</body>
+</html>
