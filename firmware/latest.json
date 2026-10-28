@@ -1,29 +1,26 @@
 {
-  "version": "1.21.0",
+  "version": "1.22.0",
   "date": "2026-10-28",
   "file": "smalltv-pomodoro.bin",
-  "size": 543680,
+  "size": 544592,
   "notes": {
     "pt": [
-      "Mostradores instaláveis agora podem ter animação: sprites com vários quadros (exemplo: tomate pulando)",
-      "O painel mostra a última queda do relógio (exceção ou watchdog), com botão para limpar",
-      "Publicação confere o .bin.gz como o gerenciador de boot o lê, e há guia de recuperação pelo USB-TTL"
+      "Mostradores instaláveis: texto com brilho que pulsa (campos glow, pulse, spread e base); o Nixie ganhou luz âmbar nos números",
+      "Mais pacotes animados na galeria"
     ],
     "en": [
-      "Installable faces can now be animated: sprites with several frames (example: jumping tomato)",
-      "The panel shows the clock's last crash (exception or watchdog), with a button to clear it",
-      "Releases check the .bin.gz the way the bootloader reads it, plus a USB-TTL recovery guide"
+      "Installable faces: text with a pulsing glow (glow, pulse, spread and base fields); Nixie now has an amber light on its digits",
+      "More animated faces in the gallery"
     ],
     "es": [
-      "Las esferas instalables ahora pueden tener animación: sprites con varios cuadros (ejemplo: tomate saltando)",
-      "El panel muestra la última caída del reloj (excepción o watchdog), con un botón para borrarla",
-      "La publicación verifica el .bin.gz como lo lee el gestor de arranque, y hay guía de recuperación por USB-TTL"
+      "Esferas instalables: texto con brillo que pulsa (campos glow, pulse, spread y base); Nixie ahora tiene luz ámbar en los números",
+      "Más esferas animadas en la galería"
     ]
   },
   "gz": "smalltv-pomodoro.bin.gz",
-  "gzsize": 402081,
+  "gzsize": 402655,
   "panel": "panel-32c7a8fe008f8860d2708d25.html.gz",
   "psri": "sha256-Mseo/gCPiGDScI0lyWEPdm/gmIJcBeavc8Kv8SUOCTk=",
-  "sig": "A7lPSzMHoUkadDRfZf7Q/wIhy5f4f8IvZpIOYWjay5kMBp88PQjbBqZbB5x/kK2CVtypuvBJA8UFfm1ibPxf6PBiqOW/90U3jInxIo70/r9UP5yluTKUdt1P8+DQyCxU0h8bJ6Y/N6UGpQLarujMhRsFDiQezHQib6sLut2McLfW5mtbrvGmr22XjR40vEWhV7pqrWqaXele437kfJVqABRu49fZfkd1OVBmhru+JUBrZyZ4ERs59o78Kfs+J6QsYuOsedV2Kye7k8gbuTiEkEUY8Vod1KA90VkdtvwgNy10GcP01pN1T7iEVm2XBxJ2eN4wBbxrR+bybs5nN+7S3Q==",
-  "gzsig": "LF8t9uaWRj2S05MWNILe7OC9+5iBPKWi3lGmPkjyG3gfDUkUmkGduRIvmuNWzBxeVxMxEBtNW7b9aXagcV4rnwx4RW7GHuD8mul/EfgQ+vvdapYFNQ+M6iOQMxPO14/qGuHiwUQaaQ+vvyChGIiTbAh3z6RKKUTteVf0JQswIULbFSxtVEztaRGEJ7glwUAd6fPPcBcRLJpDiopB6VbDyiwe/rvE5Zcug1n3FBUSKspumL/iAfucce3hb93v6QD0aEdRu1YsPFSDN/KWlmdPUBSde1KEDD6DGofex7zOzO3ynfIs/vMCnSCMO26ucJAxxBSV5TzTCcqLoL1ztvPCyQ=="
+  "sig": "iaKD6obyw3sIhNz/Lw2qpSGmxfyMc+dBmfTepLxZ6ZKQG5el9wT6JXYhsgIJ/LLL8FqxiimTqsppNE4SmiD0sK+WTIUFBzzsiyGsKENXmoiOkPkP9d0jAdk2WrGibYxQmpQA5Ej3UWFWAoA2jRdEq+LgJsz5hciXKlAtBbBSoLMX1x+H7wkFxqzFi05kcJk4xFVRKzyIO7mr3MNKOQVE4E3hzgB2s68mdHYZu47rYjCc8kS3jcbZg/mZfr6TDCYmxFqXnjMX3AbqDEpTiAF7d9DGZA6r8bu8+cwXSa9/iv3rDAVJPrCXl+XxlSHG9J+JfuUa6Lqy78UJQyan0iP26A==",
+  "gzsig": "Ptu6jZRf0YCujptNnqNaAt/K18tzWC9OIJ/xf4nBofjTL3u69cOVajF6ZLgYVkSW0s4ZIsZ1qYfer6JwQ6AT4eJKhwnqjy9RfFwj8t1ze+Yq1tNLWE4dOJGQz8M8OvIh+rDQlQFW67zELFeyRTy5vmx3CppOKKEF95+M+t/Qoolth+mcdsSIsp3j1xUHwwk24dNOZF68vEfy7j7JGyBkCl2Puus7ohBCsCBD+/JgS5iWz6CaTVnCWM4MdwVS6esByfyDhnDi3j+or4c9VIr6KchOfDXyFmNGzkoQxbOap7uLHpnIMTPf3fVwbiBigqfEfMVMsqB/eCgifrZvTPtsIw=="
 }
