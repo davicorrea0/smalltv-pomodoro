@@ -18,9 +18,11 @@
         "k": "#0f380f",
         "p": "#306230"
       },
-      "fps": 3,
+      "fps": 4,
       "frames": [
         [
+          "................",
+          "................",
           "......gGGg......",
           "....gGGGGGGg....",
           "...rRRgGGgRRr...",
@@ -39,6 +41,8 @@
           "................"
         ],
         [
+          "................",
+          "................",
           "......gGGg......",
           "....gGGGGGGg....",
           "...rRRgGGgRRr...",
@@ -57,6 +61,7 @@
           "................"
         ],
         [
+          "................",
           "......gGGg......",
           "....gGGGGGGg....",
           "...rRRgGGgRRr...",
@@ -72,6 +77,7 @@
           ".rRRRRRkkRRRRRr.",
           "..rrRRRRRRRRrr..",
           "....rrrrrrrr....",
+          "................",
           "................"
         ],
         [
@@ -90,9 +96,33 @@
           ".rRRRRRkkRRRRRr.",
           "..rrRRRRRRRRrr..",
           "....rrrrrrrr....",
+          "................",
+          "................",
           "................"
         ],
         [
+          "................",
+          "......gGGg......",
+          "....gGGGGGGg....",
+          "...rRRgGGgRRr...",
+          "..rRRRRggRRRRr..",
+          ".rRhhRRRRRRRRRr.",
+          ".rRhRRRRRRRRRRr.",
+          "rRRRRRRRRRRRRRRr",
+          "rRRRRRRRRRRRRRRr",
+          "rRRRRkRRRRkRRRRr",
+          "rRRRRkRRRRkRRRRr",
+          "rRRpRRRRRRRRpRRr",
+          ".rRRRRkRRkRRRRr.",
+          ".rRRRRRkkRRRRRr.",
+          "..rrRRRRRRRRrr..",
+          "....rrrrrrrr....",
+          "................",
+          "................"
+        ],
+        [
+          "................",
+          "................",
           "......gGGg......",
           "....gGGGGGGg....",
           "...rRRgGGgRRr...",
@@ -111,6 +141,8 @@
           "................"
         ],
         [
+          "................",
+          "................",
           "......gGGg......",
           "....gGGGGGGg....",
           "...rRRgGGgRRr...",
@@ -120,7 +152,27 @@
           "rRRRRRRRRRRRRRRr",
           "rRRRRRRRRRRRRRRr",
           "rRRRRRRRRRRRRRRr",
-          "rRRRRkRRRRkRRRRr",
+          "rRRRkkRRRRkkRRRr",
+          "rRRpRRRRRRRRpRRr",
+          ".rRRRRkRRkRRRRr.",
+          ".rRRRRRkkRRRRRr.",
+          "..rrRRRRRRRRrr..",
+          "....rrrrrrrr....",
+          "................"
+        ],
+        [
+          "................",
+          "................",
+          "......gGGg......",
+          "....gGGGGGGg....",
+          "...rRRgGGgRRr...",
+          "..rRRRRggRRRRr..",
+          ".rRhhRRRRRRRRRr.",
+          ".rRhRRRRRRRRRRr.",
+          "rRRRRRRRRRRRRRRr",
+          "rRRRRRRRRRRRRRRr",
+          "rRRRRRRRRRRRRRRr",
+          "rRRRkkRRRRkkRRRr",
           "rRRpRRRRRRRRpRRr",
           ".rRRRRkRRkRRRRr.",
           ".rRRRRRkkRRRRRr.",
@@ -252,7 +304,7 @@
     {
       "type": "sprite",
       "x": 72,
-      "y": 112,
+      "y": 104,
       "size": 4,
       "sprite": "tomate",
       "when": "day"
