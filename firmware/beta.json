@@ -1,11 +1,11 @@
 {
-  "version": "1.23.4",
+  "version": "1.23.5",
   "date": "2026-10-28",
   "file": "beta/smalltv-pomodoro.bin",
   "size": 557216,
   "notes": {
     "pt": [
-      "Corrige: a 1.23.2 e a 1.23.3 não instalavam atualizações (o relógio reiniciava e voltava para a versão antiga). Se o seu está numa delas, instale esta pelo modo de recuperação (desligue e ligue 3 vezes seguidas, menos de 30 s cada)",
+      "Mesma da 1.23.4: confirma que a atualização pelo painel voltou a funcionar",
       "Liga mais rápido e sem tela preta: a tela de início aparece na hora, o Wi-Fi conecta direto no roteador da última vez e uma barra em pixel art mostra as etapas (Wi-Fi, hora)",
       "A hora aparece logo depois de reiniciar por atualização ou ajuste, e o relógio tenta outro servidor de hora se o primeiro demorar",
       "smalltv.local mais confiável: o Wi-Fi não cochila mais (perdia as perguntas da rede) e a resposta vai também direto para quem perguntou",
@@ -14,7 +14,7 @@
       "Diagnóstico mostra quanto tempo levou cada etapa do último início"
     ],
     "en": [
-      "Fix: 1.23.2 and 1.23.3 could not install updates (the clock restarted back into the old version). If yours is on one of them, install this one through recovery mode (unplug and plug it back in 3 times in a row, less than 30 s each)",
+      "Same as 1.23.4: confirms that updating from the panel works again",
       "Starts faster and without a black screen: the start screen shows up right away, Wi-Fi connects straight to the last router, and a pixel-art bar shows the steps (Wi-Fi, time)",
       "The time shows up right after a restart from an update or setting change, and the clock tries another time server if the first one is slow",
       "More reliable smalltv.local: Wi-Fi no longer naps (it missed network queries) and the answer also goes straight to whoever asked",
@@ -23,7 +23,7 @@
       "Diagnostics show how long each step of the last start took"
     ],
     "es": [
-      "Corrige: la 1.23.2 y la 1.23.3 no instalaban actualizaciones (el reloj se reiniciaba y volvía a la versión anterior). Si el tuyo está en una de ellas, instala esta desde el modo de recuperación (desconéctalo y conéctalo 3 veces seguidas, menos de 30 s cada vez)",
+      "Igual a la 1.23.4: confirma que la actualización desde el panel vuelve a funcionar",
       "Arranca más rápido y sin pantalla negra: la pantalla de inicio aparece enseguida, el Wi-Fi se conecta directo al último router y una barra en pixel art muestra los pasos (Wi-Fi, hora)",
       "La hora aparece enseguida tras reiniciar por una actualización o un ajuste, y el reloj prueba otro servidor de hora si el primero tarda",
       "smalltv.local más confiable: el Wi-Fi ya no se duerme (perdía las consultas de la red) y la respuesta también va directo a quien preguntó",
@@ -36,6 +36,6 @@
   "gzsize": 412234,
   "panel": "panel-187aacc309266c9356c1fa6a.html.gz",
   "psri": "sha256-GHqswwkmbJNWwfpqX/Q0FxFAcJfkS+bDuHfhJZs0pf8=",
-  "sig": "pX0UPG7G4Dy6g+4WCSmdOua5GMNBoKna/zrUqo6sucwyIGWscSHf17oGKr2ObqrpAbBSNARLQM0IkaCalnB1TcMKhp9ckDcT3kfujokjUHaKlNSNn5Mlm0OJP6/5btIK+OLBM3mmuAsCVcqdOHsT/WTOmD2nVEHqxA9Ym36Kf80mEGI07TmjasFmxRrLcvmpTb6lj12SLr0NwiC9AYoawxCQglz+zUcpVHQAZx6CUD989dIT6EQTYrxYRdz7Nkpnqly2g2ddTe7VCI1eDZdQZqTatKoJu2NNremhZHbSd0LTQ+LU9wVbWGOlWzaqeWruZvofzkG55DsefNiOBkjrsw==",
-  "gzsig": "qN/MiYO787C4b0tnX9UXRukNGIvQUkdLWyaSLl2EvPyvOX8rW5T+aSRgpXLa6O5QO9/VlLKekDuAMXXTRQwJkfmsosJghW6YSnNe7NoU/jdoS5iO4iosrhJWEr1ts6i7llTtaXRY7TKDd01w2gMqxPpqXJTDLKTQ4yb46eppeJe4FucaS/zHJFZyl5p8J+G8UsID1+nJwvPorlA/D1QRntosS/TWy1sJWrIXxR29p6Ip41bOxyGHRG20aI6qdw3N8XZaY0L0iix8UtjeY36BENAQb+LT5ZrYMKEIfsqGu9wNjVIzN6vQTgvJf+ODaDqL7gv20PlE8BXXD3pcVmgZOg=="
+  "sig": "JGAEenvlGr8hXGneV3DVXOwFE1bhQoIIkKNlESLqCA1ZMFF1gH0VVxYDPo+ctoymOHzrYBPN9x3slIfhCeVtoCWX3eNfdyFkOS1SsWBCLguMT4v8IBPrQmHvke8ACtHkfZSTHYVcZx5OX5FCYJ5jbFsa0YgbhkoSuxxbQ+UVdwhp9LV1shbVf3PXado4IgMYv7frwZqgbXJG3M9psP+B6e5RY8L26RFo/gEe98sVCBFecMUH4PGqMGUZlsFy0eiVOCv6YF9JJGOHWn23VBdj6ZqT5iiTbiPYdtMGSQ3uJ4GDTKohZugWJpPo1Bzg9CxyBI7Jo8tRWBAvhkEznWjrMw==",
+  "gzsig": "G46S60oPqKxje6S6n7yQwjb2PcRjhxaXJCdeR+b026t8Ud2AqIH1g8DVB1pN+Jjtwm69q+9jxDXpf+AFvkQwgLrG5vjhF2Sq1asK7cXNpXskVClLGzUVsXTJ9SqLaLcWVmXYEemv0BTXg9glYoy9v99jgeAfZCDjs7chvJqjcDZvVi/ySdWlAmc97xmWyUCgIB/27w9oXLbqdAXizhLfJadhGpo8sywJrH5JGbs/uTyfITfh7n4X9LdyskvnoEHwsQPJW1+X1B84QQggFxaw654EFfekpCHqAyVQDGyGHAfwOd32NsIzWTtpOfl5Nqy2GVhlcQbeMkKTuDzFqOpD8w=="
 }
