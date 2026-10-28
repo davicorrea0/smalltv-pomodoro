@@ -268,6 +268,13 @@ static size_t mdnsAnswer(uint8_t *o, size_t cap, const char *name, const uint8_t
   return i;
 }
 
+// dias desde 1970 de uma data do calendário (y/m/d, m = 1..12)
+static int64_t civilDays(int y, int m, int d) {
+  y -= m <= 2;  // "days from civil"
+  int era = y / 400, yoe = y - era * 400, doy = (153 * (m + (m > 2 ? -3 : 9)) + 2) / 5 + d - 1;
+  return (int64_t)era * 146097 + yoe * 365 + yoe / 4 - yoe / 100 + doy - 719468;
+}
+
 // "2026-10-23T00:30" -> segundos desde 1970 (como se fosse UTC; quem chama tira o fuso). -1 se inválido.
 static int64_t isoToEpoch(const char *s) {
   if (!s || strlen(s) < 16 || s[4] != '-' || s[7] != '-' || s[10] != 'T' || s[13] != ':') return -1;
@@ -282,10 +289,58 @@ static int64_t isoToEpoch(const char *s) {
   }
   int y = v[0], m = v[1], d = v[2];
   if (m < 1 || m > 12 || d < 1 || d > 31 || v[3] > 23 || v[4] > 59) return -1;
-  y -= m <= 2;  // "days from civil"
-  int era = y / 400, yoe = y - era * 400, doy = (153 * (m + (m > 2 ? -3 : 9)) + 2) / 5 + d - 1;
-  int64_t days = (int64_t)era * 146097 + yoe * 365 + yoe / 4 - yoe / 100 + doy - 719468;
-  return days * 86400 + v[3] * 3600 + v[4] * 60;
+  return civilDays(y, m, d) * 86400 + v[3] * 3600 + v[4] * 60;
+}
+
+// Cabeçalho "Date: Tue, 28 Oct 2026 12:00:00 GMT" (o que vem depois de "Date:") -> segundos desde 1970 (UTC).
+// -1 se inválido. Só serve para MOSTRAR a hora até o SNTP chegar: vem por HTTP puro e nunca confirma nada.
+static int64_t httpDateToEpoch(const char *s) {
+  static const char MON[] = "JanFebMarAprMayJunJulAugSepOctNovDec";
+  if (!s) return -1;
+  while (*s == ' ') s++;
+  const char *c = strchr(s, ',');
+  if (c && c - s <= 3) s = c + 1;  // dia da semana
+  while (*s == ' ') s++;
+  int d = 0, y = 0, hh, mm, ss, i = 0;
+  for (; i < 2 && s[i] >= '0' && s[i] <= '9'; i++) d = d * 10 + (s[i] - '0');
+  if (!i || s[i] != ' ') return -1;
+  s += i + 1;
+  int m = 0;
+  for (int k = 0; k < 12 && !m; k++) if (!strncmp(s, MON + k * 3, 3)) m = k + 1;
+  if (!m || s[3] != ' ') return -1;
+  s += 4;
+  for (i = 0; i < 4; i++) {
+    if (s[i] < '0' || s[i] > '9') return -1;
+    y = y * 10 + (s[i] - '0');
+  }
+  if (s[4] != ' ' || s[7] != ':' || s[10] != ':') return -1;
+  int *f[3] = {&hh, &mm, &ss};
+  for (int k = 0; k < 3; k++) {
+    const char *p = s + 5 + k * 3;
+    if (p[0] < '0' || p[0] > '9' || p[1] < '0' || p[1] > '9') return -1;
+    *f[k] = (p[0] - '0') * 10 + (p[1] - '0');
+  }
+  if (d < 1 || d > 31 || y < 2000 || hh > 23 || mm > 59 || ss > 60) return -1;
+  return civilDays(y, m, d) * 86400 + hh * 3600 + mm * 60 + ss;
+}
+
+// Hora guardada na memória RTC para sobreviver a um reinício por software (atualização, ajuste, queda): sec é a
+// hora no instante em que ticks (system_get_rtc_time) foi lido. A RTC conta sozinha durante o reinício; cal é o
+// período do tick em µs (system_rtc_clock_cali_proc, formato Q12). Na volta, a hora é sec + o tempo que passou.
+struct RtcClock { uint32_t magic, sec, ticks, chk; };
+static const uint32_t RTC_CLOCK_MAGIC = 0x434C4B31;  // "CLK1"
+static uint32_t rtcClockChk(const RtcClock &r) { return r.magic ^ (r.sec * 2654435761u) ^ (r.ticks * 40503u) ^ 0x5A5AC3C3u; }
+static RtcClock rtcClockMake(uint32_t sec, uint32_t ticks) {
+  RtcClock r = {RTC_CLOCK_MAGIC, sec, ticks, 0};
+  r.chk = rtcClockChk(r);
+  return r;
+}
+// A hora agora, ou -1 se o registro não vale (memória de uma ligação anterior, corrompida, ou parado há mais de 10 min)
+static int64_t rtcClockRestore(const RtcClock &r, uint32_t nowTicks, uint32_t cal) {
+  if (r.magic != RTC_CLOCK_MAGIC || r.chk != rtcClockChk(r) || r.sec < 1700000000u || !cal) return -1;
+  uint64_t us = ((uint64_t)(uint32_t)(nowTicks - r.ticks) * cal) >> 12;
+  if (us > 600000000ull) return -1;
+  return (int64_t)r.sec + (int64_t)(us / 1000000ull);
 }
 
 // Hora protegida. O SNTP do núcleo aceita qualquer resposta (SNTP_CHECK_RESPONSE 0 no lwIP pré-compilado):
