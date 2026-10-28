@@ -81,8 +81,8 @@ nav button.on svg{stroke:var(--ac)}
 #toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--card2);border:1px solid var(--line);padding:10px 16px;border-radius:12px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:9;white-space:nowrap}
 #toast.v{opacity:1}
 /* aviso de versão nova */
-#upd{display:none;border-color:#2f4a7a;background:linear-gradient(135deg,#17233b,#18181b)}#upd.v{display:block}
-#upd b{font-size:16px}#upd ul{margin:8px 0 12px;padding-left:20px;color:#c9d6f0}#upd .row{margin-top:4px}
+#upd,#mig{display:none;border-color:#2f4a7a;background:linear-gradient(135deg,#17233b,#18181b)}#upd.v,#mig.v{display:block}
+#upd b,#mig b{font-size:16px}#upd ul{margin:8px 0 12px;padding-left:20px;color:#c9d6f0}#upd .row{margin-top:4px}
 /* sequência, horta e conquistas */
 .stats div{min-width:0}.stats b.fire::before{content:'';display:inline-block;width:14px;height:19px;margin-right:4px;vertical-align:-1px;background:var(--fire) center/contain no-repeat;image-rendering:pixelated}
 #goalbar{display:none;align-items:center;gap:12px;border-color:#5a2a22;background:linear-gradient(135deg,#3a1712,#18181b)}#goalbar.v{display:flex}
@@ -124,6 +124,8 @@ nav button.on svg{stroke:var(--ac)}
 <header><b>SmallTV</b><span><span id="alx" title="Alexa">Alexa</span><i id="net"></i><span id="clock">--:--</span></span></header>
 <main>
 <div class="card" id="upd"><b id="updt"></b><ul id="updn"></ul><div class="row"><button class="btn" onclick="skipUpdate()">Depois</button><button class="btn p" id="updgo" onclick="doUpdate()">Atualizar agora</button></div></div>
+
+<div class="card" id="mig"><b>A memória de arquivos foi reorganizada</b><p>Esta atualização mudou o espaço do programa. As fotos, os GIFs e os mostradores baixados foram apagados; os ajustes, a rede, o histórico, o rodízio e os avisos ficaram. Restaure o backup que o painel salvou antes de atualizar.</p><div class="row"><button class="btn" onclick="migDone()">Dispensar</button><button class="btn p" onclick="$('rbk').click()">Restaurar backup</button></div></div>
 
 <!-- ============ RELÓGIO ============ -->
 <section class="tab" id="t0">
@@ -458,7 +460,11 @@ function checkUpdate(){const get=f=>fetch(SITE+'firmware/'+f,{cache:'no-store'})
 function showUpdate(){const u=UPD;if(!u)return;$('updt').textContent=t(u.beta?'Versão de teste {0} disponível':'Nova versão {0} disponível',u.version);const n=$('updn');n.innerHTML='';
  ((u.notes||{})[LANGS[LG]]||(u.notes||{}).pt||[]).forEach(x=>n.appendChild(el('li',null,x)));$('upd').classList.add('v')}
 function skipUpdate(){try{localStorage.updSkip=UPD.version}catch(e){}$('upd').classList.remove('v')}
-async function doUpdate(){const u=UPD;if(!u||updating||!confirm(t('Atualizar o relógio para a versão {0}? Ele reinicia sozinho no fim.',u.version)))return;
+// u.layout "4m2m": a versão reorganiza a memória de arquivos (o programa ganha espaço, o LittleFS muda de lugar e é formatado no primeiro início).
+// Relógios que ainda não informam fs.l2 estão no layout antigo: salva o backup completo ANTES e só então atualiza.
+async function doUpdate(){const u=UPD;if(!u||updating)return;const mig=u.layout=='4m2m'&&!(st&&st.fs&&st.fs.l2);
+ if(!confirm(mig?t('A versão {0} reorganiza a memória de arquivos do relógio: as fotos, os GIFs e os mostradores baixados serão apagados (os ajustes, o Wi-Fi, o histórico, o rodízio e os avisos ficam). Antes de atualizar, o painel salva um backup completo no seu aparelho; depois, use Restaurar backup. Continuar?',u.version):t('Atualizar o relógio para a versão {0}? Ele reinicia sozinho no fim.',u.version)))return;
+ if(mig){$('updgo').disabled=true;const ok=await backup();$('updgo').disabled=false;if(!ok||!confirm(t('O backup foi salvo? Confira o arquivo smalltv-backup-*.json nos downloads. Atualizar agora?')))return}
  const gz=!!u.gz,sig=gz?u.gzsig:u.sig,h={};  // com senha, o navegador já manda o login do painel
  if(sig)h['X-Firmware-Sig']=sig;  // 1.20.1+: sem a assinatura do arquivo o relógio recusa a troca
  updating=true;$('updgo').disabled=true;
@@ -475,10 +481,17 @@ async function doUpdate(){const u=UPD;if(!u||updating||!confirm(t('Atualizar o r
 // ---------- backup: ajustes, histórico e mostradores baixados num .json ----------
 // Sem senhas nem Wi-Fi. A restauração passa pelos mesmos caminhos validados do painel (/api/settings,
 // /api/statsimport) e reinstala da galeria os mostradores que faltarem.
-async function backup(){const s=await (await fetch('/api/state')).json(),h=await (await fetch('/api/stats')).json(),c={...s.cfg};delete c.lock;
- const b={app:'smalltv-pomodoro',format:1,ver:s.ver,date:new Date().toISOString().slice(0,10),cfg:c,stats:h,faces:FACES.filter(f=>f.pkg).map(f=>f.pkg)};
+const b64=buf=>{const u=new Uint8Array(buf);let o='';for(let i=0;i<u.length;i+=0x8000)o+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(o)};
+const unb64=d=>{const o=atob(d),u=new Uint8Array(o.length);for(let i=0;i<o.length;i++)u[i]=o.charCodeAt(i);return u};
+// Inclui também as fotos e GIFs (base64) e os links dos avisos: é o que a migração de layout da memória apaga. Devolve true se salvou.
+async function backup(){try{const s=await (await fetch('/api/state')).json(),h=await (await fetch('/api/stats')).json(),c={...s.cfg};delete c.lock;
+ const hk=await fetch('/api/hooks').then(r=>r.ok?r.json():null).catch(()=>null),fl=(await (await fetch('/api/files')).json()).files,media=[];
+ for(let i=0;i<fl.length;i++){toast(t('Salvando {0} de {1}...',i+1,fl.length));const r=await fetch('/fs?f='+encodeURIComponent(fl[i].n));if(!r.ok)throw fl[i].n;media.push({n:fl[i].n,d:b64(await r.arrayBuffer())})}
+ const b={app:'smalltv-pomodoro',format:2,ver:s.ver,date:new Date().toISOString().slice(0,10),cfg:c,stats:h,faces:FACES.filter(f=>f.pkg).map(f=>f.pkg),hooks:hk,media};
  const blob=new Blob([JSON.stringify(b)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='smalltv-backup-'+b.date+'.json';a.click();
- setTimeout(()=>URL.revokeObjectURL(a.href),5000);toast(t('Backup salvo: ajustes, histórico e mostradores'))}
+ setTimeout(()=>URL.revokeObjectURL(a.href),60000);toast(t('Backup salvo: ajustes, histórico, mostradores, avisos, fotos e GIFs'));return true}
+ catch(x){toast(t('Falha no backup: ')+t(String(x)));return false}}
+function migDone(){$('mig').classList.remove('v');post('/api/migdone')}
 $('rbk').onchange=async e=>{const file=e.target.files[0];e.target.value='';if(!file)return;
  let b;try{b=JSON.parse(await file.text())}catch(x){}if(!b||b.app!='smalltv-pomodoro'||!b.cfg)return toast(t('Este arquivo não é um backup do SmallTV Pomodoro'));
  if(!confirm(t('Restaurar o backup de {0}? Os ajustes e o histórico atuais serão substituídos.',b.date)))return;
@@ -493,7 +506,12 @@ $('rbk').onchange=async e=>{const file=e.target.files[0];e.target.value='';if(!f
   if(!c.city||!c.lat||!c.lon){delete c.lat;delete c.lon;delete c.city}
   await save(c);
   if(b.stats&&b.stats.days){const r=await post('/api/statsimport',new URLSearchParams({day:b.stats.day,best:b.stats.best,total:b.stats.total,days:b.stats.days.join(',')}));if(!r.ok)throw await r.text();await loadStats()}
-  await loadFaces();filled=false;toast(lost?t('Backup restaurado; {0} mostrador(es) não estão na galeria e precisam ser instalados de novo pelo arquivo',lost):t('Backup restaurado'))}
+  if(b.hooks&&(b.hooks.w||b.hooks.b))await post('/api/hooks',new URLSearchParams({w:b.hooks.w||'',b:b.hooks.b||''}));
+  let nf=0;if(b.media&&b.media.length){const have=new Set((await (await fetch('/api/files')).json()).files.map(x=>x.n.split('/').pop()));
+   for(let i=0;i<b.media.length;i++){const m=b.media[i],nm=m.n.split('/').pop();if(have.has(nm))continue;toast(t('Enviando {0}...',nm));
+    const fd=new FormData();fd.append('f',new Blob([unb64(m.d)]),nm);const r=await fetch('/api/upload',{method:'POST',body:fd});if(!r.ok)nf++}}
+  if(st&&st.fs&&st.fs.mig)migDone();
+  await loadFaces();files();filled=false;toast(nf?t('Backup restaurado; {0} foto(s)/GIF(s) não couberam e ficaram de fora',nf):lost?t('Backup restaurado; {0} mostrador(es) não estão na galeria e precisam ser instalados de novo pelo arquivo',lost):t('Backup restaurado'))}
  catch(x){toast(t('Falha ao restaurar: ')+t(String(x)))}};
 // ---------- avisos de fim de fase (endereços chamados pelo relógio) ----------
 function hooksLoad(){fetch('/api/hooks').then(r=>r.json()).then(h=>{$('hkw').value=h.w;$('hkb').value=h.b}).catch(()=>{})}
@@ -569,7 +587,7 @@ function load(s){if(s.cfg.lang!=null&&s.cfg.lang!=LG)setLang(s.cfg.lang);if(last
  if(s.wx.ok){const dg=c=>Math.round(s.cfg.fahr?c*9/5+32:c)+'°';$('wt').textContent=dg(s.wx.t);$('wd').textContent=(s.cfg.city?s.cfg.city+' · ':'')+(s.wx.rin?(s.wx.rin<15?t('Chuva logo'):t('Chuva em {0} min',s.wx.rin)):s.wx.desc);$('wm').textContent=t('Mín')+' '+dg(s.wx.min)+' · '+t('Máx')+' '+dg(s.wx.max)+' · '+t('Umidade')+' '+s.wx.h+'%'}
  // fotos
  $('fsinfo').textContent=s.fs.ok?t('{0} usados de {1}',kb(s.fs.used),kb(s.fs.total)):t('Memória de arquivos indisponível');
- $('fsbar').style.width=(s.fs.total?s.fs.used/s.fs.total*100:0)+'%';$('fmt').hidden=!!s.fs.ok;
+ $('fsbar').style.width=(s.fs.total?s.fs.used/s.fs.total*100:0)+'%';$('fmt').hidden=!!s.fs.ok;$('mig').classList.toggle('v',!!s.fs.mig);
  document.querySelectorAll('#grid div').forEach(e=>e.classList.toggle('on',e.dataset.n==s.showing));
  if(!filled){filled=true;document.querySelectorAll('[data-k]').forEach(e=>{const v=s.cfg[e.dataset.k];if(v===undefined)return;if(e.type=='checkbox')e.checked=!!v!=e.hasAttribute('data-neg');else e.value=v})}
  draw()}
