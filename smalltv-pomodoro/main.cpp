@@ -159,6 +159,39 @@ const uint32_t BOOT_MAGIC = 0x424F4F54;  // "BOOT"
 uint8_t bootCount = 0;
 bool recoveryMode = false;
 
+// Última queda (exceção ou watchdog), para o painel dizer por que o relógio reiniciou. Fica na EEPROM
+// depois do contador e só é gravada quando o reinício foi anormal: início normal não gasta flash.
+// "up" (segundos ligado antes da queda) vem da memória RTC, que o callback abaixo preenche ao travar.
+struct CrashRec { uint32_t magic; uint8_t n, reason, exc, pad; uint32_t epc, vaddr, up; char ver[8]; };
+const uint32_t CRASH_MAGIC = 0x43524153;  // "CRAS"
+const int CRASH_OFF = BOOT_OFF + sizeof(BootCount);
+const int EE_SIZE = CRASH_OFF + sizeof(CrashRec);
+static_assert(sizeof(CrashRec) == 28, "registro da queda mudou de tamanho");
+static_assert(sizeof(FW_VERSION) <= sizeof(CrashRec::ver), "a versao nao cabe no registro da queda");
+const uint32_t CRASH_RTC_TAG = 0x55505453;  // "UPTS"
+CrashRec crashRec;  // magic != CRASH_MAGIC: nenhuma queda guardada
+
+// roda no travamento (o core chama no lugar do aviso extra): guarda há quanto tempo estava ligado
+extern "C" void custom_crash_callback(struct rst_info *, uint32_t, uint32_t) {
+  uint32_t v[2] = {CRASH_RTC_TAG, millis() / 1000};
+  ESP.rtcUserMemoryWrite(0, v, sizeof v);
+}
+
+void crashLoad() {
+  EEPROM.get(CRASH_OFF, crashRec);
+  if (crashRec.magic != CRASH_MAGIC) crashRec.magic = 0;
+  const rst_info *r = ESP.getResetInfoPtr();
+  if (!r || !(r->reason == REASON_WDT_RST || r->reason == REASON_EXCEPTION_RST || r->reason == REASON_SOFT_WDT_RST)) return;
+  uint32_t v[2] = {0, 0};
+  ESP.rtcUserMemoryRead(0, v, sizeof v);
+  uint8_t n = crashRec.magic ? crashRec.n : 0;
+  crashRec = {CRASH_MAGIC, (uint8_t)(n < 255 ? n + 1 : n), (uint8_t)r->reason, (uint8_t)r->exccause, 0,
+              r->epc1, r->excvaddr, v[0] == CRASH_RTC_TAG ? v[1] : 0, {}};
+  strlcpy(crashRec.ver, FW_VERSION, sizeof crashRec.ver);
+  EEPROM.put(CRASH_OFF, crashRec);
+  EEPROM.commit();
+}
+
 void setBootCount(uint8_t n) {
   BootCount b = {BOOT_MAGIC, n};
   EEPROM.put(BOOT_OFF, b);
@@ -173,7 +206,7 @@ void safeRestart() {
 }
 
 void loadSettings() {
-  EEPROM.begin(BOOT_OFF + sizeof(BootCount));
+  EEPROM.begin(EE_SIZE);
   EEPROM.get(0, cfg);
   if (cfg.magic == SETTINGS_MAGIC_V3) {
     // v3 -> v4: mantém tudo, completa os campos novos e remapeia os temas
@@ -1553,6 +1586,15 @@ void diagJson(String &j) {
   j += '}';
 }
 
+// "crash" só existe depois de uma queda: n = quantas, r = motivo (como diag.rst), x/epc/va = causa e endereços
+void crashJson(String &j) {
+  if (!crashRec.magic) return;
+  char b[112];
+  snprintf(b, sizeof b, ",\"crash\":{\"n\":%u,\"r\":%u,\"x\":%u,\"epc\":\"%08x\",\"va\":\"%08x\",\"up\":%u,\"ver\":\"%.7s\"}",
+           crashRec.n, crashRec.reason, crashRec.exc, (unsigned)crashRec.epc, (unsigned)crashRec.vaddr, (unsigned)crashRec.up, crashRec.ver);
+  j += b;
+}
+
 void sendState() {
   if (!readOk()) return;
   struct tm t;
@@ -1720,6 +1762,7 @@ void sendState() {
   j += F(",\"pshown\":");
   j += shownSeq;
   diagJson(j);
+  crashJson(j);
   j += F(",\"ver\":\"" FW_VERSION "\"}");
   server.sendHeader("Cache-Control", "no-store");  // cidade, rede e ajustes: o navegador não guarda
   server.send(200, "application/json", j);
@@ -2049,6 +2092,13 @@ void setupWeb() {
   }, handlePanelUpload);
   server.on("/api/state", HTTP_GET, sendState);
   server.on("/api/stats", HTTP_GET, sendStats);
+  server.on("/api/crash", HTTP_POST, [] {  // "Limpar" do painel
+    if (!guard()) return;
+    crashRec.magic = 0;
+    EEPROM.put(CRASH_OFF, crashRec);
+    EEPROM.commit();
+    server.send(200, "text/plain", "ok");
+  });
   // avisos de fim de fase: GET lê, POST (w, b) grava, POST test=w|b chama o endereço e devolve o código
   server.on("/api/hooks", HTTP_GET, [] {
     if (!guard()) return;  // os links levam o código da conta do serviço
@@ -2774,7 +2824,7 @@ void startRecovery() {
     server.send(200, "text/plain", "ok");
     delay(300);
     if (fsOk) LittleFS.format();
-    for (int i = 0; i < BOOT_OFF + (int)sizeof(BootCount); i++) EEPROM.write(i, 0);
+    for (int i = 0; i < EE_SIZE; i++) EEPROM.write(i, 0);
     EEPROM.commit();
     WiFi.persistent(true);
     WiFi.disconnect(true);
@@ -2993,6 +3043,7 @@ void setup() {
   BootCount bc;
   EEPROM.get(BOOT_OFF, bc);
   uint8_t boots = bc.magic == BOOT_MAGIC ? bc.n : 0;
+  crashLoad();
   recoveryMode = boots + 1 >= 3;
   setBootCount(recoveryMode ? 0 : boots + 1);  // a recuperação vale uma vez; o próximo reinício é normal
   updateBrightness(true);
