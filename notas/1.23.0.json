@@ -1,0 +1,20 @@
+{
+  "pt": [
+    "Versão de teste",
+    "Brilho mais suave: PWM a 20 kHz (sem piscar nem chiado), curva de brilho que acompanha o olho e transição de 400 ms entre dia e noite",
+    "Troca automática de mostrador agora entra rolando, pela rolagem do próprio chip da tela",
+    "Opção de tela a 80 MHz (em Tela do aparelho) e tempo do último redesenho no diagnóstico, para comparar com os 40 MHz de sempre"
+  ],
+  "en": [
+    "Test version",
+    "Smoother brightness: 20 kHz PWM (no flicker or whine), a brightness curve that follows the eye, and a 400 ms fade between day and night",
+    "Automatic face rotation now slides in using the display chip's own hardware scrolling",
+    "Optional 80 MHz display bus (under Device screen) and last full redraw time in diagnostics, to compare with the usual 40 MHz"
+  ],
+  "es": [
+    "Versión de prueba",
+    "Brillo más suave: PWM a 20 kHz (sin parpadeo ni zumbido), curva de brillo que sigue al ojo y transición de 400 ms entre día y noche",
+    "El cambio automático de esfera ahora entra deslizando, con el desplazamiento por hardware del chip de la pantalla",
+    "Opción de pantalla a 80 MHz (en Pantalla del aparato) y tiempo del último redibujado en el diagnóstico, para comparar con los 40 MHz de siempre"
+  ]
+}

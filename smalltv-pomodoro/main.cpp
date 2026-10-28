@@ -42,7 +42,7 @@ extern "C" uint32_t _FS_start;
 
 void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);  // ui.cpp: recorta para a área suja; fora da tela, cai na faixa
 
-#define FW_VERSION "1.22.1"
+#define FW_VERSION "1.23.1"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
@@ -137,6 +137,7 @@ struct Settings {
   uint8_t fahr;         // 1 = temperaturas em °F; lixo vira 0
   uint8_t rainAlert;    // 1 = avisa na tela quando vai chover na próxima hora; lixo vira 1
   uint8_t beta;         // 1 = o painel oferece também as versões de teste (firmware/beta.json); lixo vira 0
+  uint8_t spi80;        // reservado: era a opção de 80 MHz da 1.23.0 (o ST7789 não aguenta e a imagem vira lixo); sempre 0
 };
 const uint32_t SETTINGS_MAGIC = 0x504F4D34;     // "POM4"
 const uint32_t SETTINGS_MAGIC_V3 = 0x504F4D33;  // "POM3": mesmos campos, sem os do v4
@@ -144,7 +145,7 @@ Settings cfg;
 
 void defaultSettings() {
   cfg = Settings{SETTINGS_MAGIC, 25, 5, 15, 4, 80, 0, 0, "<-03>3", "", 0, -1,
-                 THEME_MATRIX, 0, 10, 0, 22, 7, 15, 1, 242, 242, 242, 0, 0, "", 0, 1, 0, 8, ACT_READ, "", 0, 0, 0, 1, "", UI_VCOM_DEFAULT, 0, 0, 1, 0};
+                 THEME_MATRIX, 0, 10, 0, 22, 7, 15, 1, 242, 242, 242, 0, 0, "", 0, 1, 0, 8, ACT_READ, "", 0, 0, 0, 1, "", UI_VCOM_DEFAULT, 0, 0, 1, 0, 0};
 }
 
 // ---------- recuperação: 3 inicializações curtas seguidas ----------
@@ -238,6 +239,7 @@ void loadSettings() {
   if (cfg.fahr > 1) cfg.fahr = 0;
   if (cfg.rainAlert > 1) cfg.rainAlert = 1;
   if (cfg.beta > 1) cfg.beta = 0;
+  cfg.spi80 = 0;  // quem ligou na 1.23.0 volta aos 40 MHz
   if (!(fabsf(cfg.lat) <= 90 && fabsf(cfg.lon) <= 180)) cfg.lat = cfg.lon = 0;  // lixo ou NaN estouraria o String(float)
   // senha das redes do relógio: 8 letras/dígitos sem os que se confundem, sorteada pelo gerador do chip
   // na primeira vez (ou se a memória tiver lixo) e mostrada na tela quando a rede está no ar
@@ -288,9 +290,32 @@ void applyTimezone() {
 }
 
 // ---------- brilho (com horário noturno) ----------
+// PWM a 20 kHz (fora da faixa audível e de piscar) com 1023 degraus; pino invertido (0 = aceso no máximo).
+// Curva gama 2.2 (perceptual) sobre o 0-100 do cfg; 1 % já sai com ~1 % de duty, para não apagar.
+const uint16_t BL_RANGE = 1023;
+const uint32_t BL_HZ = 20000;
+const uint16_t BL_MIN = 10;      // duty mínimo para qualquer brilho > 0
+const uint16_t BL_FADE_MS = 400;  // rampa entre dois níveis (dia/noite, slider)
 int curBri = -1;
+uint16_t blFrom = 0, blTo = 0, blNow = 0;
+uint32_t blT0 = 0;
+bool blBoot = true;  // primeira escrita (boot): sem rampa
+
+uint16_t briDuty(int b) {
+  if (b <= 0) return 0;
+  return BL_MIN + (uint16_t)((BL_RANGE - BL_MIN) * powf(b / 100.0f, 2.2f) + 0.5f);
+}
 
 int16_t sunRise = -1, sunSet = -1;  // minutos do dia (hora local), da última busca do clima
+
+// Chamada a cada volta do loop: anda da posição atual até o alvo em BL_FADE_MS e só mexe no PWM quando muda
+void briFade() {
+  uint32_t el = millis() - blT0;
+  uint16_t lvl = el >= BL_FADE_MS ? blTo : blFrom + (int32_t)(blTo - blFrom) * (int32_t)el / (int32_t)BL_FADE_MS;
+  if (lvl == blNow) return;
+  blNow = lvl;
+  analogWrite(PIN_BL, BL_RANGE - lvl);
+}
 
 void updateBrightness(bool force = false) {
   int b = cfg.brightness;
@@ -304,8 +329,17 @@ void updateBrightness(bool force = false) {
   }
   if (b == curBri && !force) return;
   curBri = b;
-  analogWriteRange(255);
-  analogWrite(PIN_BL, 255 - map(b, 0, 100, 0, 255));
+  blFrom = blNow;
+  blTo = briDuty(b);
+  blT0 = millis();
+  if (blBoot) {  // boot: acende direto no nível pedido
+    blBoot = false;
+    blFrom = blTo;
+    blNow = blTo;
+    analogWrite(PIN_BL, BL_RANGE - blTo);
+    return;
+  }
+  briFade();
 }
 
 // ---------- Pomodoro ----------
@@ -882,12 +916,49 @@ uint32_t vcomTestUntil = 0;  // teste na tela até este millis()
 uint8_t vcomTest = UI_VCOM_DEFAULT;     // valor em teste (aplicado, ainda não salvo)
 int8_t vcomDraw = 0;         // 2 = desenhar a estampa toda, 1 = só o valor
 // Ordem de cor, inversão e rotação variam entre unidades do SmallTV: tudo configurável no painel.
+// Rolagem vertical por hardware (VSCRDEF 0x33 / VSCSAD 0x37), usada por uiScroll* em ui.cpp.
+// A RAM do ST7789 tem 320 linhas e o vidro 240 mostra as 240 primeiras que o painel LÊ (linha lida n
+// mostra a linha de RAM n + VSCSAD). Onde ficam na RAM as linhas que a biblioteca escreve:
+//   normal (setRotation(2), MADCTL sem MY): endereço de linha = y, y = 0..239 -> RAM 0..239; a margem
+//     (80 linhas sem vidro) é o endereço 240..319.
+//   girado (setRotation(0), MADCTL MX|MY): endereço = y + 80, e o MY espelha a RAM (RAM = 319 - endereço),
+//     então y = 0..239 -> RAM 239..0 e a margem é o endereço 0..79 (RAM 319..240).
+// O MY só espelha o acesso de escrita; o VSCSAD continua em linhas lidas. Por isso, para o conteúdo subir
+// na vista da pessoa, o girado precisa de VSCSAD = rows - offset (uiScrollSad em ui.h). O chip rola a
+// área toda de uma vez: aqui TFA = BFA = 0 e VSA = rows (as faixas fixas não cabem, ver ui.h).
+// Em qualquer dos dois, y = 0..239 do desenho continua sendo o mesmo endereço durante a rolagem.
+static int16_t scrollDef = 0;  // VSA enviado por último (0 = ainda não)
+static void tftScroll(int16_t rows, int16_t offset) {
+  int16_t r = rows ? rows : 320;
+  if (r != scrollDef) {
+    uint8_t d[6] = {0, 0, (uint8_t)(r >> 8), (uint8_t)r, (uint8_t)((320 - r) >> 8), (uint8_t)(320 - r)};
+    tft.sendCommand(0x33, d, 6);
+    scrollDef = r;
+  }
+  uint16_t sad = uiScrollSad(cfg.flip, r, offset);
+  uint8_t a[2] = {(uint8_t)(sad >> 8), (uint8_t)sad};
+  tft.sendCommand(0x37, a, 2);
+}
+// Deixa preta a margem da RAM (80 linhas além do vidro). Ela nunca é desenhada depois disto: só aparece
+// durante uma rolagem, e o conteúdo antigo da RAM (lixo depois de ligar) apareceria no vão.
+static void tftClearMargin() {
+  uint16_t a0 = cfg.flip ? 0 : 240;  // endereços de linha da margem, sem o offset da biblioteca
+  uint8_t ca[4] = {0, 0, 0, 239}, ra[4] = {(uint8_t)(a0 >> 8), (uint8_t)a0, (uint8_t)((a0 + 79) >> 8), (uint8_t)(a0 + 79)};
+  tft.sendCommand(ST77XX_CASET, ca, 4);
+  tft.sendCommand(ST77XX_RASET, ra, 4);
+  tft.startWrite();
+  tft.writeCommand(ST77XX_RAMWR);
+  tft.writeColor(0, 240UL * 80);
+  tft.endWrite();
+}
 void applyPanel() {
+  uiScrollEnd();
   tft.setRotation(cfg.flip ? 0 : 2);  // Adafruit: 2 = sem espelhamento/offsets 0; 0 = 180° (offset 80 já tratado)
   uint8_t madctl = (cfg.flip ? (ST77XX_MADCTL_MX | ST77XX_MADCTL_MY) : 0) | (cfg.bgr ? 0x08 : 0);
   tft.sendCommand(ST77XX_MADCTL, &madctl, 1);
   tft.invertDisplay(cfg.invert);
   tft.fillScreen(0);
+  tftClearMargin();
   uiInvalidate();
 }
 
@@ -951,7 +1022,18 @@ UiState makeState() {
   return s;
 }
 
+// Tempo da última troca de tela inteira (o primeiro desenho depois de uiInvalidate ou de mudar de tela),
+// para comparar 40 e 80 MHz no relógio de verdade; aparece em diag.draw.
+uint16_t fullDrawMs = 0;
+struct DrawProbe {
+  uint32_t n0 = uiEnters, t0 = millis();
+  ~DrawProbe() {
+    if (uiEnters != n0) fullDrawMs = min<uint32_t>(millis() - t0, 65535);
+  }
+};
+
 void renderClock() {
+  DrawProbe probe;
   UiState s = makeState();
   if (s.timeOk && timeTrusted()) {  // virada do dia e histórico só com a hora confirmada
     checkDayRollover(s.now);
@@ -966,6 +1048,7 @@ void renderClock() {
 bool pomoShown = false;
 uint16_t pomoDrawMs = 0;
 void renderPomodoro() {
+  DrawProbe probe;
   uint32_t t0 = millis();
   uint16_t seq = phaseSeq;  // a fase que este desenho mostra (o comando pode chegar durante o desenho)
   uiRenderPomodoro(makeState());
@@ -1574,6 +1657,8 @@ void diagJson(String &j) {
   j += ESP.getHeapFragmentation();
   j += F(",\"up\":");
   j += (uint32_t)((((uint64_t)diagWraps << 32) | millis()) / 1000);
+  j += F(",\"draw\":");  // ms do último desenho que trocou a tela inteira (0 = ainda nenhum)
+  j += fullDrawMs;
   j += '}';
 }
 
@@ -2345,8 +2430,19 @@ void setupWeb() {
     saveSettings();
     updateBrightness(true);
     if (panelChanged) applyPanel();
-    uiInvalidate();     // redesenha com a cor/tema novos
-    viewUntil = 0;      // reavalia relógio/álbum com o novo modo
+    // Brilho, horário noturno e opções que não aparecem na tela: sem apagar e redesenhar tudo, que piscaria
+    // a cada movimento do controle (junto com a rampa do brilho)
+    static const char *const QUIET[] = {"bri", "non", "nstart", "nend", "nbri", "nsun", "beta", "alexa", "rotmin"};
+    bool quiet = true;
+    for (int i = 0; quiet && i < server.args(); i++) {
+      bool q = false;
+      for (const char *k : QUIET) q |= server.argName(i) == k;
+      quiet = q || server.argName(i) == "plain";
+    }
+    if (!quiet) {
+      uiInvalidate();  // redesenha com a cor/tema novos
+      viewUntil = 0;   // reavalia relógio/álbum com o novo modo
+    }
     sendState();
   });
   server.on("/api/files", HTTP_GET, sendFiles);
@@ -2869,7 +2965,7 @@ void rotLoop() {
       cfg.theme = THEME_PACK;
       strlcpy(cfg.facePkg, it.substring(2).c_str(), sizeof cfg.facePkg);
     } else continue;
-    uiInvalidate();
+    uiInvalidateSlide();  // mostrador novo entra rolando (ui.cpp)
     return;
   }
 }
@@ -3030,6 +3126,8 @@ void startPortal() {
 void setup() {
   snprintf(netName, sizeof netName, HOSTNAME "-%04x", (unsigned)(ESP.getChipId() & 0xFFFF));
   pinMode(PIN_BL, OUTPUT);
+  analogWriteRange(BL_RANGE);
+  analogWriteFreq(BL_HZ);
   loadSettings();
   BootCount bc;
   EEPROM.get(BOOT_OFF, bc);
@@ -3040,7 +3138,7 @@ void setup() {
   updateBrightness(true);
 
   tft.init(240, 240, SPI_MODE3);
-  tft.setSPISpeed(40000000);
+  tft.setSPISpeed(40000000);  // 80 MHz passa do limite do ST7789: a imagem vira lixo
   applyVcom(cfg.vcom);
   uiBegin(&tft);
   uiSetLang(cfg.lang);
@@ -3049,6 +3147,7 @@ void setup() {
   uiMillis = [] { return (uint32_t)millis(); };
   // linhas de pixels pelo caminho rápido do ST7789 (drawRGBBitmap não é virtual no Adafruit_GFX)
   uiBlit = tftBitmap;
+  uiScrollHw = tftScroll;
   applyPanel();
 
   // Monta o LittleFS do firmware original SEM formatar: se falhar, os arquivos ficam intactos.
@@ -3127,6 +3226,7 @@ void loop() {
     updateBrightness();
     timeGuard.tick(time(nullptr), now);
   }
+  briFade();
 
   if (vcomTestUntil) {
     if ((int32_t)(now - vcomTestUntil) < 0) {

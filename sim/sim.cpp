@@ -12,6 +12,7 @@
 #include "../smalltv-pomodoro/ui_kit.h"
 #include "../smalltv-pomodoro/assets.h"
 #include "../smalltv-pomodoro/facepack.h"
+#include <chrono>
 #include <dirent.h>
 #include <vector>
 #include <string>
@@ -134,6 +135,109 @@ static void shot(const char *name, const UiState &s, bool pomo) {
   else uiRenderClock(s);
   save(*f, name);
   delete f;
+}
+
+// ---- painel ST7789 modelado: RAM de 320 linhas + rolagem por hardware ----
+// Modela o que main.cpp (tftScroll/tftClearMargin) assume do chip, nas duas orientações: endereço de linha =
+// y (+80 girado), o MY espelha a RAM (319 - endereço) e a linha lida n mostra a linha de RAM n + VSCSAD.
+// O VSCSAD vem de uiScrollSad (o mesmo do firmware). A cada comando de rolagem confere a vista inteira.
+struct Panel : public Adafruit_GFX {
+  uint16_t ram[320 * 240];  // por endereço de linha
+  bool flip = false;
+  int sad = 0;
+  long blitBytes = 0, cmds = 0, bad = 0, badAt = -1;
+  const Frame *A = nullptr, *B = nullptr;
+  bool mid = false, finished = false;
+  Panel() : Adafruit_GFX(240, 240) {}
+  void put(int x, int y, uint16_t c) {  // y como a biblioteca recebe (0..239); o offset de linha é dela
+    int a = y + (flip ? 80 : 0);
+    if (x >= 0 && x < 240 && y >= 0 && y < 240) ram[a * 240 + x] = c;
+  }
+  void drawPixel(int16_t x, int16_t y, uint16_t c) override { put(x, y, c); }
+  uint16_t view(int x, int v) const {
+    int n = flip ? 239 - v : v, ring = (n + sad) % 320, a = flip ? 319 - ring : ring;
+    return ram[a * 240 + x];
+  }
+  // margem = endereços fora das 240 linhas da biblioteca; preta uma vez, como tftClearMargin
+  void clearMargin() { for (int a = flip ? 0 : 240; a < (flip ? 80 : 320); a++) for (int x = 0; x < 240; x++) ram[a * 240 + x] = 0; }
+  // vista esperada com o conteúdo L linhas acima: antigo, vão preto, novo
+  void check(int L, bool wantB) {
+    long d = 0;
+    for (int v = 0; v < 240; v++)
+      for (int x = 0; x < 240; x++) {
+        int y = v + L;
+        uint16_t e = wantB ? B->px[v * 240 + x] : y < 240 ? A->px[y * 240 + x] : y < 320 ? 0 : B->px[(y - 320) * 240 + x];
+        d += view(x, v) != e;
+      }
+    if (d) { bad += d; if (badAt < 0) badAt = L; }
+  }
+};
+static Panel *PN;
+static void simBlit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h) {  // = tftBitmap
+  for (int r = 0; r < h; r++)
+    for (int i = 0; i < w; i++) PN->put(x + i, y + r, px[r * w + i]);
+  PN->blitBytes += (long)w * h * 2;
+}
+static void simScroll(int16_t rows, int16_t off) {
+  int r = rows ? rows : 320;
+  PN->sad = uiScrollSad(PN->flip, r, off);
+  PN->cmds++;
+  if (!rows) { PN->check(0, PN->finished = true); return; }
+  if (off) PN->mid = true;
+  PN->check(off, PN->mid && !off);  // offset 0 depois de ter rolado = já voltou ao início, com o novo
+}
+
+// Troca animada por rolagem de hardware: cada mostrador -> o seguinte, nas duas orientações. Em todo
+// comando de rolagem, a vista tem que ser antigo / vão preto / novo; no fim, offset 0 e exatamente a
+// tela que um desenho completo do mostrador novo daria. Mede o custo em relação a um desenho completo.
+static int checkSlide() {
+  int fails = 0;
+  long cmds = 0, bytes = 0;
+  double tSlide = 0, tFull = 0;
+  Panel *p = new Panel();
+  Frame *a = new Frame(), *b = new Frame();
+  PN = p;
+  for (int flip = 0; flip < 2; flip++)
+    for (int t = 0; t < THEME_COUNT; t++) {
+      int u = (t + 1) % THEME_COUNT;
+      UiState sa = base(14, 58, 50), sb = base(14, 58, 50);
+      sa.theme = t;
+      sb.theme = u;
+      uiScrollHw = nullptr;
+      uiBlit = nullptr;
+      uiBegin(a); uiRenderClock(sa);
+      auto t0 = std::chrono::steady_clock::now();
+      uiBegin(b); uiRenderClock(sb);
+      tFull += std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
+      for (auto &px : p->ram) px = 0xA5A5;  // lixo, como a RAM do painel ao ligar
+      p->flip = flip; p->sad = 0; p->blitBytes = p->cmds = p->bad = 0; p->badAt = -1; p->mid = p->finished = false;
+      p->A = a; p->B = b;
+      p->clearMargin();
+      uiScrollHw = simScroll;
+      uiBlit = simBlit;
+      uiBegin(p);
+      uiRenderClock(sa);
+      bool okA = true;
+      for (int v = 0; v < 240; v++) for (int x = 0; x < 240; x++) okA &= p->view(x, v) == a->px[v * 240 + x];
+      uiInvalidateSlide();
+      t0 = std::chrono::steady_clock::now();
+      uiRenderClock(sb);
+      tSlide += std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
+      p->check(0, true);
+      uiRenderClock(sb);  // quadro incremental depois da troca: nada muda
+      p->check(0, true);
+      cmds += p->cmds; bytes += p->blitBytes;
+      if (!okA || p->bad || !p->finished || p->sad || uiScrollActive() || p->cmds < 20) {
+        printf("rolagem %s%s -> %s: %ld pixels errados (1o em offset %ld), %ld comandos, antes ok=%d, fim=%d, sad=%d, ativa=%d\n", flip ? "girado " : "", uiFaceName(t), uiFaceName(u), p->bad, p->badAt, p->cmds, okA, p->finished, p->sad, uiScrollActive());
+        fails++;
+      }
+    }
+  uiScrollHw = nullptr;
+  uiBlit = nullptr;
+  int n = 2 * THEME_COUNT;
+  if (!fails) printf("troca por rolagem de hardware: ok (%d trocas, as duas orientações); em media %ld comandos de rolagem e %ld KB no SPI por troca; CPU de desenho %ld,%ld vezes um desenho completo\n", n, cmds / n, bytes / n / 1024, (long)(tSlide / tFull * 10) / 10, (long)(tSlide / tFull * 10) % 10);
+  delete p; delete a; delete b;
+  return fails;
 }
 
 // Troca de tela: cada mostrador -> Pomodoro e Pomodoro -> cada mostrador tem que dar o mesmo que desenhar
@@ -422,6 +526,7 @@ int main() {
   }
   fails += checkIncremental("pomodoro", p, true) != 0;
   fails += checkTransitions(p);
+  fails += checkSlide();
   fails += testPackages(p);
   fails += testSpriteLimits();
   return fails;
