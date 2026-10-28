@@ -1,29 +1,29 @@
 {
-  "version": "1.20.1",
-  "date": "2026-10-27",
+  "version": "1.21.0",
+  "date": "2026-10-28",
   "file": "smalltv-pomodoro.bin",
-  "size": 541824,
+  "size": 543680,
   "notes": {
     "pt": [
-      "Atualizações assinadas: pela rede o relógio só troca para um firmware assinado por este projeto",
-      "A assinatura vai à parte do arquivo e é conferida antes da troca; sem ela, o firmware atual continua",
-      "Endereço fixo na rede: http://smalltv.local (aparece na tela ao ligar), sem decorar o IP"
+      "Mostradores instaláveis agora podem ter animação: sprites com vários quadros (exemplo: tomate pulando)",
+      "O painel mostra a última queda do relógio (exceção ou watchdog), com botão para limpar",
+      "Publicação confere o .bin.gz como o gerenciador de boot o lê, e há guia de recuperação pelo USB-TTL"
     ],
     "en": [
-      "Signed updates: over the network the clock only switches to firmware signed by this project",
-      "The signature travels apart from the file and is checked before the swap; without it, the current firmware keeps running",
-      "Fixed network address: http://smalltv.local (shown on screen at startup), no need to remember the IP"
+      "Installable faces can now be animated: sprites with several frames (example: jumping tomato)",
+      "The panel shows the clock's last crash (exception or watchdog), with a button to clear it",
+      "Releases check the .bin.gz the way the bootloader reads it, plus a USB-TTL recovery guide"
     ],
     "es": [
-      "Actualizaciones firmadas: por la red el reloj solo cambia a un firmware firmado por este proyecto",
-      "La firma va aparte del archivo y se verifica antes del cambio; sin ella, sigue el firmware actual",
-      "Dirección fija en la red: http://smalltv.local (aparece en pantalla al encender), sin memorizar la IP"
+      "Las esferas instalables ahora pueden tener animación: sprites con varios cuadros (ejemplo: tomate saltando)",
+      "El panel muestra la última caída del reloj (excepción o watchdog), con un botón para borrarla",
+      "La publicación verifica el .bin.gz como lo lee el gestor de arranque, y hay guía de recuperación por USB-TTL"
     ]
   },
   "gz": "smalltv-pomodoro.bin.gz",
-  "gzsize": 400905,
-  "panel": "panel-2967fe84c7c8d5bafcb6b5f0.html.gz",
-  "psri": "sha256-KWf+hMfI1br8trXwW9zwXIDD32JMM4XKwC6Fal/ryTA=",
-  "sig": "P98lQ+gYp118gyk8rA4f1hUlOkUEo7FugbceYLg/N7qYtjTGIXgw2f9fiB4fOjOxYprwxfNvr5YQeIsO8QGU/VT9Pag8I90vBNQYBj9Qt2Uhu9eT12Uw3C7xKZvTtejaD06hFAjMhRWsVM7bqxbnYB8PhiepYDfdP/JQy/GN9rgMpmSKxN1t9vx+BISpx0PLGnrMkJ0IpU2gQE15h3K/nZ7bAPF5Fcj8YCjmbfkZ96E4Or7gKpMd+EXY/9eJUrnOzDlzj5/iKNbOp0LnrZfKeHoCtKJq7Z9JNbKIVqaUtaeyrm0VY/Ybe2FFvnBGR5tObS6OhUUmhyu5JnDAmmGiaw==",
-  "gzsig": "Kzea0oYp/Tm8jVdVmVoLMjZXYH4hc0Ph/TMSl/FRHkK0EzE4mcbLnFMq8NIoZhz3hUxYE12s8F8OOQI1PWhtgAO7cKLFpRBnE2NSiyASaJhTjuyYJhknBRoXdGd8MKpWUHaYDGauNtlVk2limVKyJB+sQ9sh3HBxbWP+KcMb4s9xrcrbdaSeE3TmrfJDdUvaY32zcS7s/7rexFPZlvJJrEeJA+Oo8F0K8jHs6qVTOktCfWm9xef8eHe/TXTF8GsqoLqK0iDHQ08xmMFllNSpKu7J7exlDyHreU3XaVXnlmHzHuAocIEKPjF5MYhhYrsQeIQkpxfuDDrWq7zgjjsRUQ=="
+  "gzsize": 402081,
+  "panel": "panel-32c7a8fe008f8860d2708d25.html.gz",
+  "psri": "sha256-Mseo/gCPiGDScI0lyWEPdm/gmIJcBeavc8Kv8SUOCTk=",
+  "sig": "A7lPSzMHoUkadDRfZf7Q/wIhy5f4f8IvZpIOYWjay5kMBp88PQjbBqZbB5x/kK2CVtypuvBJA8UFfm1ibPxf6PBiqOW/90U3jInxIo70/r9UP5yluTKUdt1P8+DQyCxU0h8bJ6Y/N6UGpQLarujMhRsFDiQezHQib6sLut2McLfW5mtbrvGmr22XjR40vEWhV7pqrWqaXele437kfJVqABRu49fZfkd1OVBmhru+JUBrZyZ4ERs59o78Kfs+J6QsYuOsedV2Kye7k8gbuTiEkEUY8Vod1KA90VkdtvwgNy10GcP01pN1T7iEVm2XBxJ2eN4wBbxrR+bybs5nN+7S3Q==",
+  "gzsig": "LF8t9uaWRj2S05MWNILe7OC9+5iBPKWi3lGmPkjyG3gfDUkUmkGduRIvmuNWzBxeVxMxEBtNW7b9aXagcV4rnwx4RW7GHuD8mul/EfgQ+vvdapYFNQ+M6iOQMxPO14/qGuHiwUQaaQ+vvyChGIiTbAh3z6RKKUTteVf0JQswIULbFSxtVEztaRGEJ7glwUAd6fPPcBcRLJpDiopB6VbDyiwe/rvE5Zcug1n3FBUSKspumL/iAfucce3hb93v6QD0aEdRu1YsPFSDN/KWlmdPUBSde1KEDD6DGofex7zOzO3ynfIs/vMCnSCMO26ucJAxxBSV5TzTCcqLoL1ztvPCyQ=="
 }
