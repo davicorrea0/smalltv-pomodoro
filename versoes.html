@@ -37,7 +37,7 @@
   <div class="page-head">
     <div class="wrap">
       <div class="eyebrow">Firmware</div>
-      <h1>Versões <span class="count">54 versões</span></h1>
+      <h1>Versões <span class="count">55 versões</span></h1>
       <p>Todas as versões do firmware, da mais nova para a mais antiga, com o que mudou em cada uma e os arquivos. Para atualizar, o mais fácil é o botão <strong>Atualizar agora</strong> no painel do relógio; os arquivos daqui são para instalar pelo <code>/update</code> ou conferir.</p>
       <div class="note warn"><strong>Não use a <a href="#v1.15.1">v1.15.1</a> nem a <a href="#v1.20.0">v1.20.0</a>.</strong> A 1.15.1 aumentava a imagem fantasma da tela e a 1.20.0 podia deixar o relógio sem ligar. Se o seu já não liga, siga o <a href="https://github.com/davicorrea0/smalltv-pomodoro/blob/main/docs/RECUPERACAO.md">guia de recuperação</a>.</div>
     </div>
@@ -46,6 +46,11 @@
   <section class="first releases">
     <div class="wrap">
       <p class="section-lead">Pelo <code>/update</code>, envie o <code>.bin.gz</code> sem descompactar; a partir da 1.20.1 envie junto o <code>.bin.gz.sig</code> (a assinatura). O <code>.bin</code> sem compressão serve para gravar pelo cabo USB-TTL. <code>SHA256SUMS.txt</code> confere os arquivos.</p>
+  <article class="rel" id="v1.23.1">
+    <div class="rel-head"><h2>1.23.1</h2><span class="tag">teste</span><time datetime="2026-10-28">28 de out. de 2026</time></div>
+    <ul class="list"><li>Versão de teste</li><li>Tirada a opção de tela a 80 MHz da 1.23.0: o chip da tela não aguenta e a imagem virava lixo; quem ligou volta sozinho aos 40 MHz</li><li>Mudar o brilho ou o horário noturno no painel não apaga e redesenha mais a tela (piscava a cada movimento do controle)</li><li>Continuam da 1.23.0: brilho suave (PWM a 20 kHz, curva que acompanha o olho, transição de 400 ms) e troca automática de mostrador rolando</li></ul>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.23.1/smalltv-pomodoro-v1.23.1.bin.gz"><img class="px" src="img/icons/download.svg" alt="">.bin.gz <span class="sz">398 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.23.1/smalltv-pomodoro-v1.23.1.bin"><img class="px" src="img/icons/download.svg" alt="">.bin <span class="sz">538 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.23.1/smalltv-pomodoro-v1.23.1.bin.gz.sig" title="assinatura">.bin.gz.sig</a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.23.1/smalltv-pomodoro-v1.23.1.bin.sig" title="assinatura">.bin.sig</a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.23.1/SHA256SUMS.txt">SHA256SUMS</a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.23.1"><span class="gh" aria-hidden="true"></span>Ver no GitHub</a></div>
+  </article>
   <article class="rel" id="v1.23.0">
     <div class="rel-head"><h2>1.23.0</h2><span class="tag">teste</span><time datetime="2026-10-28">28 de out. de 2026</time></div>
     <ul class="list"><li>Versão de teste</li><li>Brilho mais suave: PWM a 20 kHz (sem piscar nem chiado), curva de brilho que acompanha o olho e transição de 400 ms entre dia e noite</li><li>Troca automática de mostrador agora entra rolando, pela rolagem do próprio chip da tela</li><li>Opção de tela a 80 MHz (em Tela do aparelho) e tempo do último redesenho no diagnóstico, para comparar com os 40 MHz de sempre</li></ul>
