@@ -3442,6 +3442,11 @@ void setup() {
   uiBlit = tftBitmap;
   uiScrollHw = tftScroll;
   applyPanel();
+  // A tela de início aparece já: montar a memória de arquivos, o histórico, o mostrador e a lista de fotos leva
+  // alguns segundos, e com a tela preta parecia travado.
+  message("SmallTV Pomodoro", tr("Iniciando", "Starting", "Iniciando"), "v" FW_VERSION);
+  bootScreenMs = millis() | 1;
+  uiBootProgress(millis(), 0);
 
   fsMount();
   statsLoad();
@@ -3461,8 +3466,7 @@ void setup() {
   if (cfg.theme == THEME_PACK) restoreActivePack();  // pacote ausente/inválido: volta ao Matriz
   rebuildAlbum();
 
-  message("SmallTV Pomodoro", tr("Conectando Wi-Fi", "Connecting Wi-Fi", "Conectando Wi-Fi"), "v" FW_VERSION);
-  bootScreenMs = millis() | 1;
+  uiMessageLine(tr("Conectando Wi-Fi", "Connecting Wi-Fi", "Conectando Wi-Fi"));
 
   // Usa a rede salva no ESP8266 (inclusive a que o firmware original já tinha configurado).
   wifiGuardBegin();

@@ -761,6 +761,13 @@ void uiMessage(const char *title, const char *l1, const char *l2, const char *l3
   textC(120, 172, 1, MUTED, l3);
 }
 
+// Troca só a linha de destaque da mensagem na tela (ex.: "Iniciando" -> "Conectando Wi-Fi"), sem redesenhar o resto
+void uiMessageLine(const char *l1) {
+  if (screen != SCR_MSG) return;
+  G->fillRect(0, 124, 240, 20, BG);
+  textC(120, 126, 2, WORK, l1);
+}
+
 // Tela de início: barra em pixel art (moldura de cantos recortados e 16 blocos de 8x8). Enquanto falta alguma
 // etapa (Wi-Fi, hora), 4 blocos acesos vão e voltam aos saltos, de bloco em bloco (não há como saber quanto
 // falta); done >= 2: todos acendem. Só redesenha quando a posição muda, sem refazer a tela.
