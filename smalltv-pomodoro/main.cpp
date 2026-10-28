@@ -572,8 +572,14 @@ bool mdnsTaken(const char *name) {
 }
 
 // Ao conectar: escolhe o nome curto livre e se anuncia.
+bool mdnsUp = false;  // Wi-Fi conectado na última volta do mdnsLoop (reconectou: entra de novo no grupo)
+
 void mdnsStart() {
+  // Sem a economia de energia do Wi-Fi: cochilando entre os beacons, o ESP8266 perde pacotes multicast, e o
+  // .local some "às vezes". O relógio vive na tomada; o custo é ~15 mA.
+  WiFi.setSleepMode(WIFI_NONE_SLEEP);
   lanName[0] = 0;
+  mdnsUp = true;
   if (!mdnsJoin()) return;
   for (int i = 1; i <= 9; i++) {
     char name[sizeof lanName];
@@ -588,8 +594,12 @@ void mdnsStart() {
 }
 
 void mdnsLoop() {
-  if (WiFi.status() != WL_CONNECTED) return;
-  if (WiFi.localIP() != mdnsIp) {  // o IP mudou: entra de novo no grupo e se anuncia com o mesmo nome
+  if (WiFi.status() != WL_CONNECTED) {
+    mdnsUp = false;
+    return;
+  }
+  if (!mdnsUp || WiFi.localIP() != mdnsIp) {  // reconectou ou o IP mudou: entra de novo no grupo e se anuncia
+    mdnsUp = true;
     if (mdnsJoin()) mdnsAnnounce();
   }
   int len = mdnsUdp.parsePacket();
@@ -599,8 +609,12 @@ void mdnsLoop() {
   if (n <= 0) return;
   bool legacy = mdnsUdp.remotePort() != 5353, qu = false;
   uint16_t id = (uint16_t)(b[0] << 8 | b[1]);
-  if (lanName[0] && mdnsAsksFor(b, n, lanName, &qu)) mdnsSend(lanName, id, legacy, legacy || qu);
-  else if (mdnsAsksFor(b, n, netName, &qu)) mdnsSend(netName, id, legacy, legacy || qu);
+  const char *name = lanName[0] && mdnsAsksFor(b, n, lanName, &qu) ? lanName : mdnsAsksFor(b, n, netName, &qu) ? netName : nullptr;
+  if (!name) return;
+  mdnsSend(name, id, legacy, legacy || qu);
+  // Pergunta comum (resposta por multicast): manda também uma cópia direta para quem perguntou. Há roteadores que
+  // não repassam multicast entre aparelhos do Wi-Fi; Windows, macOS e Android aceitam a resposta direta.
+  if (!legacy && !qu) mdnsSend(name, id, false, true);
 }
 bool alexaUp = false;     // ouvindo a descoberta
 uint8_t alexaBri = 255;   // último brilho pedido (1-255)
