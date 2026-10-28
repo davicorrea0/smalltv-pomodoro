@@ -563,7 +563,7 @@ static Box measure(const Layer &L, const UiState &s, const char *txt) {
 // quadro do sprite no instante s.ms (1 quadro = parado)
 static uint8_t sprFrame(const Layer &L, const UiState &s) {
   uint8_t nf = spr[L.str + 3] & 15;
-  return nf > 1 ? (s.ms * (spr[L.str + 3] >> 4) / 1000) % nf : 0;
+  return nf > 1 ? (uint64_t)s.ms * (spr[L.str + 3] >> 4) / 1000 % nf : 0;  // 64 bits: ms x fps estouraria em ~5 dias
 }
 
 static uint32_t signature(const Layer &L, const UiState &s, char *txt, size_t n) {
