@@ -42,7 +42,7 @@ extern "C" uint32_t _FS_start;
 
 void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);  // ui.cpp: recorta para a área suja; fora da tela, cai na faixa
 
-#define FW_VERSION "1.22.0"
+#define FW_VERSION "1.22.1"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
@@ -1459,18 +1459,9 @@ bool loadPackFile(const String &path, String &msg) {
     msg = "pacote vazio ou maior que 16 KB";
     return false;
   }
-  char *buf = (char *)malloc(n + 1);
-  if (!buf) {
-    f.close();
-    msg = "sem memoria";
-    return false;
-  }
-  f.readBytes(buf, n);
-  f.close();
-  buf[n] = 0;
   char err[96];
-  bool ok = facePackLoad(buf, n, err, sizeof err);
-  free(buf);
+  bool ok = facePackLoadFile(f, err, sizeof err);  // em passadas: o JSON não cabe inteiro na RAM
+  f.close();
   if (!ok) msg = err;
   uiInvalidate();
   return ok;

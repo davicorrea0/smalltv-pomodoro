@@ -8,6 +8,11 @@ static const uint8_t THEME_PACK = 200;  // cfg.theme quando o mostrador ativo é
 // Carrega um pacote a partir do JSON em memória (o buffer pode ser alterado durante a leitura).
 // Em caso de erro devolve false e uma mensagem em err.
 bool facePackLoad(char *json, size_t len, char *err, size_t errLen);
+#ifdef ESP8266
+#include <FS.h>
+// Idem, lendo o arquivo em passadas (sem carregá-lo inteiro na memória). A posição do arquivo é redefinida.
+bool facePackLoadFile(File &f, char *err, size_t errLen);
+#endif
 void facePackUnload();
 bool facePackLoaded();
 const char *facePackId();

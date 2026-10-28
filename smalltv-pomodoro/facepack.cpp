@@ -112,13 +112,37 @@ static void safeId(const char *s, char *out, size_t n) {
   out[o] = 0;
 }
 
-bool facePackLoad(char *json, size_t len, char *err, size_t errLen) {
+// Fonte do JSON em memória (o simulador): o mesmo leitor que o ArduinoJson usa com arquivos
+struct MemIn {
+  const char *p;
+  size_t n, i;
+  int read() { return i < n ? (uint8_t)p[i++] : -1; }
+  size_t readBytes(char *b, size_t m) {
+    size_t k = n - i < m ? n - i : m;
+    memcpy(b, p + i, k);
+    i += k;
+    return k;
+  }
+};
+
+// Lê o pacote em passadas com filtro, direto da fonte (arquivo ou memória), em vez de montar a árvore do
+// arquivo inteiro: com ~31 KB de heap livre, um JSON acima de ~10 KB dava "NoMemory". Passada 1: camadas e
+// metadados (mais só o "fps" de cada sprite); depois uma passada por sprite. O pico de memória passa a
+// depender do maior sprite, não do tamanho do pacote. `rewind` volta a fonte ao início.
+template <class In, class Rew>
+static bool loadFrom(In &in, Rew rewind, char *err, size_t errLen) {
   facePackUnload();
   JsonDocument doc;
-  DeserializationError e = deserializeJson(doc, json, len);
-  if (e) {
-    snprintf(err, errLen, "JSON invalido: %s", e.c_str());
-    return false;
+  {
+    JsonDocument filter;
+    for (const char *k : {"format", "layers", "bg", "name", "desc", "author", "id"}) filter[k] = true;
+    filter["sprites"]["*"]["fps"] = true;
+    rewind();
+    DeserializationError e = deserializeJson(doc, in, DeserializationOption::Filter(filter));
+    if (e) {
+      snprintf(err, errLen, "JSON invalido: %s", e.c_str());
+      return false;
+    }
   }
   if ((doc["format"] | 0) != 1) {
     snprintf(err, errLen, "formato desconhecido (use \"format\": 1)");
@@ -137,58 +161,83 @@ bool facePackLoad(char *json, size_t len, char *err, size_t errLen) {
     if (l["text"].is<JsonObjectConst>())  // {"pt": ..., "en": ..., "es": ...}
       for (const char *k : {"pt", "en", "es"}) pcap += strlen(l["text"][k] | (l["text"]["pt"] | "")) + 1;
   }
-  JsonObjectConst sprites = doc["sprites"];
-  size_t scap = 0;
+  char sprName[MAX_SPRITES][24];
+  uint16_t sprOff[MAX_SPRITES];
   uint8_t ns = 0;
-  for (JsonPairConst kv : sprites) {
-    JsonArrayConst fr = kv.value()["frames"], px = fr.isNull() ? kv.value()["px"] : fr[0];
-    size_t w = px.size() ? strlen(px[0] | "") : 0, h = px.size(), nf = fr.isNull() ? 1 : fr.size();
-    int fps = kv.value()["fps"] | 4;
-    if (!w || w > 32 || h > 32 || ++ns > MAX_SPRITES) {
+  for (JsonPairConst kv : doc["sprites"].as<JsonObjectConst>()) {
+    if (ns >= MAX_SPRITES || strlen(kv.key().c_str()) >= sizeof sprName[0]) {
       snprintf(err, errLen, "sprite \"%s\": ate 32x32 e no maximo %d sprites", kv.key().c_str(), MAX_SPRITES);
       return false;
     }
-    if (nf < 1 || nf > MAX_FRAMES || fps < 1 || fps > 10) {
-      snprintf(err, errLen, "sprite \"%s\": de 1 a %d quadros e \"fps\" de 1 a 10", kv.key().c_str(), MAX_FRAMES);
-      return false;
-    }
-    for (size_t k = 1; k < nf; k++)
-      if (fr[k].size() != h || strlen(fr[k][0] | "") != w) {
-        snprintf(err, errLen, "sprite \"%s\": todos os quadros precisam ter o mesmo tamanho", kv.key().c_str());
-        return false;
-      }
-    scap += 4 + 15 * 2 + nf * ((w * h + 1) / 2);
-    if (scap > MAX_SPR_BYTES) {
-      snprintf(err, errLen, "sprites grandes demais: %d bytes no total (maximo %d)", (int)scap, MAX_SPR_BYTES);
-      return false;
-    }
+    strcpy(sprName[ns++], kv.key().c_str());
   }
   lay = (Layer *)calloc(layers.size(), sizeof(Layer));
   pool = (char *)malloc(pcap);
-  spr = scap ? (uint8_t *)malloc(scap) : nullptr;
-  if (!lay || !pool || (scap && !spr)) {
+  if (!lay || !pool) {
     facePackUnload();
     snprintf(err, errLen, "sem memoria para o pacote");
     return false;
   }
   poolCap = pcap;
-  sprCap = scap;
   pool[0] = 0;
   poolUsed = 1;  // posição 0 = texto vazio
 
-  // sprites: [w][h][n][paleta n x RGB565][pixels 4 bits; 0 = transparente]
-  const char *sprName[MAX_SPRITES];
-  uint16_t sprOff[MAX_SPRITES];
-  ns = 0;
-  for (JsonPairConst kv : sprites) {
-    JsonObjectConst palObj = kv.value()["pal"];
-    JsonArrayConst fr = kv.value()["frames"], px0 = fr.isNull() ? kv.value()["px"] : fr[0];
-    uint8_t w = strlen(px0[0] | ""), h = px0.size(), n = 0, nf = fr.isNull() ? 1 : fr.size();
+  // sprites, um por vez: [w][h][n][paleta n x RGB565][pixels 4 bits; 0 = transparente]
+  for (uint8_t si = 0; si < ns; si++) {
+    JsonDocument sd;
+    {
+      JsonDocument filter;
+      filter["sprites"][sprName[si]] = true;
+      rewind();
+      DeserializationError e = deserializeJson(sd, in, DeserializationOption::Filter(filter));
+      if (e) {
+        facePackUnload();
+        snprintf(err, errLen, "JSON invalido: %s", e.c_str());
+        return false;
+      }
+    }
+    JsonObjectConst sp = sd["sprites"][sprName[si]];
+    JsonObjectConst palObj = sp["pal"];
+    JsonArrayConst fr = sp["frames"], px0 = fr.isNull() ? sp["px"] : fr[0];
+    size_t w0 = px0.size() ? strlen(px0[0] | "") : 0, h0 = px0.size(), nf0 = fr.isNull() ? 1 : fr.size();
+    int fps = sp["fps"] | 4;
+    if (!w0 || w0 > 32 || h0 > 32) {
+      facePackUnload();
+      snprintf(err, errLen, "sprite \"%s\": ate 32x32 e no maximo %d sprites", sprName[si], MAX_SPRITES);
+      return false;
+    }
+    if (nf0 < 1 || nf0 > MAX_FRAMES || fps < 1 || fps > 10) {
+      facePackUnload();
+      snprintf(err, errLen, "sprite \"%s\": de 1 a %d quadros e \"fps\" de 1 a 10", sprName[si], MAX_FRAMES);
+      return false;
+    }
+    for (size_t k = 1; k < nf0; k++)
+      if (fr[k].size() != h0 || strlen(fr[k][0] | "") != w0) {
+        facePackUnload();
+        snprintf(err, errLen, "sprite \"%s\": todos os quadros precisam ter o mesmo tamanho", sprName[si]);
+        return false;
+      }
+    size_t add = 4 + 15 * 2 + nf0 * ((w0 * h0 + 1) / 2);
+    if (sprCap + add > MAX_SPR_BYTES) {
+      size_t tot = sprCap + add;
+      facePackUnload();
+      snprintf(err, errLen, "sprites grandes demais: %d bytes no total (maximo %d)", (int)tot, MAX_SPR_BYTES);
+      return false;
+    }
+    uint8_t *ns_ = (uint8_t *)realloc(spr, sprCap + add);
+    if (!ns_) {
+      facePackUnload();
+      snprintf(err, errLen, "sem memoria para o pacote");
+      return false;
+    }
+    spr = ns_;
+    sprCap += add;
+    uint8_t w = w0, h = h0, n = 0, nf = nf0;
     char keys[16];
     uint16_t colors[15];
     for (JsonPairConst c : palObj) {
       if (n == 15 || strlen(c.key().c_str()) != 1) {
-        snprintf(err, errLen, "sprite \"%s\": paleta com ate 15 cores de 1 caractere", kv.key().c_str());
+        snprintf(err, errLen, "sprite \"%s\": paleta com ate 15 cores de 1 caractere", sprName[si]);
         facePackUnload();
         return false;
       }
@@ -197,12 +246,11 @@ bool facePackLoad(char *json, size_t len, char *err, size_t errLen) {
       colors[n++] = col < 0 ? 0 : col;
     }
     uint8_t *p = spr + sprUsed;
-    sprName[ns] = kv.key().c_str();
-    sprOff[ns++] = sprUsed;
+    sprOff[si] = sprUsed;
     p[0] = w;
     p[1] = h;
     p[2] = n;
-    p[3] = (kv.value()["fps"] | 4) << 4 | nf;  // fps (1-10) e quadros (1-8), um quadro depois do outro
+    p[3] = fps << 4 | nf;  // fps (1-10) e quadros (1-8), um quadro depois do outro
     for (uint8_t i = 0; i < n; i++) {
       p[4 + i * 2] = colors[i] >> 8;
       p[5 + i * 2] = colors[i] & 255;
@@ -211,7 +259,7 @@ bool facePackLoad(char *json, size_t len, char *err, size_t errLen) {
     uint8_t *pix = p + 4 + n * 2;
     memset(pix, 0, fsz * nf);
     for (uint8_t k = 0; k < nf; k++) {
-      JsonArrayConst px = fr.isNull() ? kv.value()["px"] : fr[k];
+      JsonArrayConst px = fr.isNull() ? sp["px"] : fr[k];
       for (uint8_t r = 0; r < h; r++) {
         const char *row = px[r] | "";
         for (uint8_t c = 0; c < w && row[c]; c++) {
@@ -326,6 +374,17 @@ bool facePackLoad(char *json, size_t len, char *err, size_t errLen) {
   if (!pkId[0]) strcpy(pkId, "pacote");
   return true;
 }
+
+bool facePackLoad(char *json, size_t len, char *err, size_t errLen) {
+  MemIn in = {json, len, 0};
+  return loadFrom(in, [&] { in.i = 0; }, err, errLen);
+}
+
+#ifdef ESP8266
+bool facePackLoadFile(File &f, char *err, size_t errLen) {
+  return loadFrom(f, [&] { f.seek(0); }, err, errLen);
+}
+#endif
 
 // texto da camada no idioma da tela
 static const char *layerText(const Layer &L) {
