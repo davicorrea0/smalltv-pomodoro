@@ -1,23 +1,32 @@
 {
-  "version": "1.22.1",
+  "version": "1.23.1",
   "date": "2026-10-28",
   "file": "smalltv-pomodoro.bin",
-  "size": 546976,
+  "size": 551152,
   "notes": {
     "pt": [
-      "Mostradores instaláveis grandes (como Koi e Janela) voltam a instalar: o relógio lê o pacote em partes, sem estourar a memória"
+      "Brilho mais suave: PWM a 20 kHz (sem piscar nem chiado), curva de brilho que acompanha o olho e transição de 400 ms entre dia e noite",
+      "Mudar o brilho ou o horário noturno no painel não apaga e redesenha mais a tela",
+      "Troca automática de mostrador agora entra rolando, pela rolagem do próprio chip da tela",
+      "Diagnóstico mostra quanto tempo levou a última troca de tela inteira"
     ],
     "en": [
-      "Large installable faces (such as Koi and Window) install again: the clock reads the pack in parts instead of running out of memory"
+      "Smoother brightness: 20 kHz PWM (no flicker or whine), a brightness curve that follows the eye, and a 400 ms fade between day and night",
+      "Changing brightness or night hours in the panel no longer clears and redraws the screen",
+      "Automatic face rotation now slides in using the display chip's own hardware scrolling",
+      "Diagnostics show how long the last full-screen redraw took"
     ],
     "es": [
-      "Las esferas instalables grandes (como Koi y Ventana) vuelven a instalarse: el reloj lee el paquete por partes y no se queda sin memoria"
+      "Brillo más suave: PWM a 20 kHz (sin parpadeo ni zumbido), curva de brillo que sigue al ojo y transición de 400 ms entre día y noche",
+      "Cambiar el brillo o el horario nocturno en el panel ya no borra y redibuja la pantalla",
+      "El cambio automático de esfera ahora entra deslizando, con el desplazamiento por hardware del chip de la pantalla",
+      "El diagnóstico muestra cuánto tardó el último redibujado de pantalla completa"
     ]
   },
   "gz": "smalltv-pomodoro.bin.gz",
-  "gzsize": 403924,
-  "panel": "panel-32c7a8fe008f8860d2708d25.html.gz",
-  "psri": "sha256-Mseo/gCPiGDScI0lyWEPdm/gmIJcBeavc8Kv8SUOCTk=",
-  "sig": "Xa8KkZhPmCT7F8ydbpXSs3ELGUbwwtjtbiE9n54NmFRT0HZwLyHmMIqMJn59tUtcjFgQVV3zi3QqFwfCsDipaZtUubMKES9An67eKd7LNUfHqmkDfO0f2AbXe5ZlCqpm4aSoRIyVP6+Rk4SVHBAvJ9HX1ByHDLn1xa+eZ23w5NrS5Q4+SNFgfD1rRmoBBddhF4igN9EEJ1nalc0pWKXEUYuke/N+yLSk71kAYma3yV11UH5IwzMvFDbDzob4qfeg5Px1UHC0cTW6Caq/dURmvCAe8B0AUKDlQBl/5GcE4Q+VXUlDkko1g8mYyvLzi+91A9mbvTJyLxaD7d8wmlR0Ag==",
-  "gzsig": "d0xiWfpzGvN763Pcn6b9JoaElPA6onbI66TBw7h4TVZqXUOANgdxzYWssZn1FEnlhIwFy6i3uW5eaPaLMkTKuewvMgFtsdxDJ5pEcjXBT+nnLuhrMR1hQ3lQmXrsryg7plqlZ9P8CbE8458bTbbKk3uiNRDriLXa6SomL8aB2s9gjZsiYM1014PGQ8/5FnNbikimf2nMPQcu5sBkWXm+yqoPYp/S6ajG/CLK3nnJtKwsFYlz6rCevWr3EBYW9qjZzTpdag60jVESRp05vjD/e1DQIqua+sECYvlJ8EVntFRDIGbTYdWt5lxEEYlUuOVEOq5TX9kdQslxfJXY31hIQA=="
+  "gzsize": 407249,
+  "panel": "panel-8bb9f1bf789529b7e42b0923.html.gz",
+  "psri": "sha256-i7nxv3iVKbfkKwkjr69UNBJlFb91SrlySdkRZnYcC+Q=",
+  "sig": "sRpHz7IrrXJX6PnnO9QwrPFk/zJ0uKPHjTmnKpJTII49Ncd4uvI3jrbKfMkf6Unt2gGtsF1HhlFl9OA6m74ilFqTZroQ6BrORv5oQqLntedB2xrjJib3hLFdg+7bwwPn654iqYm55D38DH8oVulW0Qm4qIIXvsMZr2YkACmHuMDC2DfeKLDiC26T5a+PgKYOnaRsqCi/GIMrBxxaMi0jmrFXwobMJYO1x3HXl65GlbKag00BlEjgI3F0M5sOoedKvLeCpS4bM1yagfiH+TYZNtjq0ObycWFrHlVuVVsMn2uXcCEsQKU1KnuMpd3OoW9p15tHqm+eyact7x187Ka4SQ==",
+  "gzsig": "pfp/ccjYUuoldKzLdkcJMY8JOJB0+ZmC3GqLT6ppjPXe4R0HXmD4+i0zPx4u9DcQ3/SEHhd6dH9XI/JWlFpY0t+Faxswvo1EdcPeUSF1Rj90gZrs0/NnDgLCDkM+I5GHwxLqKuZ0E3y2a0w/FiJ2EuPPC5L0mMVKxgKmiXkNv86h1qObIsoiSMy81UlHBsO5lBpjhL5AILQCAMsI6prtygXzDUZldPM+9Hz6/sWT1VKNC0nl1wUsMudpXhkh0MLHTNxI3rLGC4NSwH0ZI+MwbSnZKn35Y+nhhP8IV5gwtdrah9SpH3RM/DStJuGAz0WxWTIQVU65aoufF152IJ74eg=="
 }
