@@ -1,32 +1,32 @@
 {
-  "version": "1.23.0",
+  "version": "1.23.1",
   "date": "2026-10-28",
   "file": "beta/smalltv-pomodoro.bin",
-  "size": 551088,
+  "size": 551152,
   "notes": {
     "pt": [
       "Versão de teste",
-      "Brilho mais suave: PWM a 20 kHz (sem piscar nem chiado), curva de brilho que acompanha o olho e transição de 400 ms entre dia e noite",
-      "Troca automática de mostrador agora entra rolando, pela rolagem do próprio chip da tela",
-      "Opção de tela a 80 MHz (em Tela do aparelho) e tempo do último redesenho no diagnóstico, para comparar com os 40 MHz de sempre"
+      "Tirada a opção de tela a 80 MHz da 1.23.0: o chip da tela não aguenta e a imagem virava lixo; quem ligou volta sozinho aos 40 MHz",
+      "Mudar o brilho ou o horário noturno no painel não apaga e redesenha mais a tela (piscava a cada movimento do controle)",
+      "Continuam da 1.23.0: brilho suave (PWM a 20 kHz, curva que acompanha o olho, transição de 400 ms) e troca automática de mostrador rolando"
     ],
     "en": [
       "Test version",
-      "Smoother brightness: 20 kHz PWM (no flicker or whine), a brightness curve that follows the eye, and a 400 ms fade between day and night",
-      "Automatic face rotation now slides in using the display chip's own hardware scrolling",
-      "Optional 80 MHz display bus (under Device screen) and last full redraw time in diagnostics, to compare with the usual 40 MHz"
+      "Removed the 80 MHz display option from 1.23.0: the display chip can't keep up and the image turned to garbage; clocks that had it on go back to 40 MHz by themselves",
+      "Changing brightness or night hours in the panel no longer clears and redraws the screen (it flickered with every slider move)",
+      "Still from 1.23.0: smoother brightness (20 kHz PWM, a curve that follows the eye, 400 ms fade) and automatic face rotation that slides in"
     ],
     "es": [
       "Versión de prueba",
-      "Brillo más suave: PWM a 20 kHz (sin parpadeo ni zumbido), curva de brillo que sigue al ojo y transición de 400 ms entre día y noche",
-      "El cambio automático de esfera ahora entra deslizando, con el desplazamiento por hardware del chip de la pantalla",
-      "Opción de pantalla a 80 MHz (en Pantalla del aparato) y tiempo del último redibujado en el diagnóstico, para comparar con los 40 MHz de siempre"
+      "Se quitó la opción de pantalla a 80 MHz de la 1.23.0: el chip de la pantalla no aguanta y la imagen se volvía basura; los relojes que la tenían vuelven solos a 40 MHz",
+      "Cambiar el brillo o el horario nocturno en el panel ya no borra y redibuja la pantalla (parpadeaba con cada movimiento del control)",
+      "Siguen de la 1.23.0: brillo más suave (PWM a 20 kHz, curva que sigue al ojo, transición de 400 ms) y cambio automático de esfera deslizando"
     ]
   },
   "gz": "beta/smalltv-pomodoro.bin.gz",
-  "gzsize": 407098,
-  "panel": "panel-e9537dc8716ba2b9b47dc884.html.gz",
-  "psri": "sha256-6VN9yHFrorm0fciEOP4BI8PQpo47rI3L7/xWyJohVw8=",
-  "sig": "h7xfuzLZkLxMnQyETcdFTT9xZtXA0XgnX8OIDb7jwFNC29fp77gxppfu+fZiiOZZ1WLbw1yanq8Skcu598qJWBvuXtZ9ZllNm9k8MxqAVdki0jsVLv1V0C6lwkVrj261JLynDE6kgPLZ6dJItR5BEUR0VgE+wL1ozy9vWbQFBzD8od0BjgPNSZyMV1gtRBF7Wk3c8dytKihIz+VH9kWmAMr6aKGPlGj2GrehlqDYE2bYp+/tRqVNQCxsHRMZXjFPj7eMYnZYyrpU3BJtyjvC4KSbZstaT4MXxb42ue6YiDH5OnNHyBW7Z2NLxrjaoR2VX4/thnMJbNxhW+NiQKzRrw==",
-  "gzsig": "gUQkWlTQjNRRD2ju2k86uhG6nRynTLhyhTxoAMbXLyTx7LO3WBvD5hJOelFixDr2SZf+LrOc/sgswKm9xlGh4mMnyxU4mE++B2Sotnw81XxL6m0U5b4x/4Gbq90z7RMqjA3uz1BFEzI7hI37tYMKDEoxf3RKwkTprgfHv8eXidIVzw0A0CQFHc1F6XpLp9NQflIg1frw7/hj5K/NJdUQIY+l1p4CmbhRyM9ktqYA7QvEGC4IbfV7cA3jIHpzQIuI3+wHU0YhtOuH6ZBQyr8c6xMHsHs884/juwf2Ft3iaDTD9k8Ytj/CpNtajrQpYjm0tX7/yWB4qwmXAN5UKvmJ/w=="
+  "gzsize": 407249,
+  "panel": "panel-8bb9f1bf789529b7e42b0923.html.gz",
+  "psri": "sha256-i7nxv3iVKbfkKwkjr69UNBJlFb91SrlySdkRZnYcC+Q=",
+  "sig": "sRpHz7IrrXJX6PnnO9QwrPFk/zJ0uKPHjTmnKpJTII49Ncd4uvI3jrbKfMkf6Unt2gGtsF1HhlFl9OA6m74ilFqTZroQ6BrORv5oQqLntedB2xrjJib3hLFdg+7bwwPn654iqYm55D38DH8oVulW0Qm4qIIXvsMZr2YkACmHuMDC2DfeKLDiC26T5a+PgKYOnaRsqCi/GIMrBxxaMi0jmrFXwobMJYO1x3HXl65GlbKag00BlEjgI3F0M5sOoedKvLeCpS4bM1yagfiH+TYZNtjq0ObycWFrHlVuVVsMn2uXcCEsQKU1KnuMpd3OoW9p15tHqm+eyact7x187Ka4SQ==",
+  "gzsig": "pfp/ccjYUuoldKzLdkcJMY8JOJB0+ZmC3GqLT6ppjPXe4R0HXmD4+i0zPx4u9DcQ3/SEHhd6dH9XI/JWlFpY0t+Faxswvo1EdcPeUSF1Rj90gZrs0/NnDgLCDkM+I5GHwxLqKuZ0E3y2a0w/FiJ2EuPPC5L0mMVKxgKmiXkNv86h1qObIsoiSMy81UlHBsO5lBpjhL5AILQCAMsI6prtygXzDUZldPM+9Hz6/sWT1VKNC0nl1wUsMudpXhkh0MLHTNxI3rLGC4NSwH0ZI+MwbSnZKn35Y+nhhP8IV5gwtdrah9SpH3RM/DStJuGAz0WxWTIQVU65aoufF152IJ74eg=="
 }
