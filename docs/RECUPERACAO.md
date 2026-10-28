@@ -1,4 +1,4 @@
-> 🇧🇷 **Resumo em português:** se o relógio não liga nem entra no modo de recuperação (tela apagada, sem Wi-Fi), dá para regravar o firmware pelo USB-TTL com o `esptool`, sem apagar fotos nem configurações: ligue GND, TXD0→RX, RXD0→TX e GPIO0→GND (só na hora de ligar), faça uma cópia com `read_flash 0x0 0x400000` e grave com `write_flash 0x0 smalltv-pomodoro-vX.Y.Z.bin`. `erase_flash` só em último caso (apaga tudo). Sem adaptador USB-TTL há alternativas (placa NodeMCU/ESP32, Raspberry Pi, Arduino Uno) na seção 6. Detalhes abaixo, em inglês.
+> 🇧🇷 **Resumo em português:** se o relógio não liga nem entra no modo de recuperação (tela apagada, sem Wi-Fi), dá para regravar o firmware pelo USB-TTL com o `esptool`, sem apagar fotos nem configurações (relógios já no layout 4M2M; veja a observação abaixo): ligue GND, TXD0→RX, RXD0→TX e GPIO0→GND (só na hora de ligar), faça uma cópia com `read_flash 0x0 0x400000` e grave com `write_flash 0x0 smalltv-pomodoro-vX.Y.Z.bin`. `erase_flash` só em último caso (apaga tudo). Sem adaptador USB-TTL há alternativas (placa NodeMCU/ESP32, Raspberry Pi, Arduino Uno) na seção 6. Detalhes abaixo, em inglês.
 
 # Recovering a bricked SmallTV Ultra over USB-TTL
 
@@ -6,7 +6,9 @@ Use this when the clock shows nothing, never joins Wi-Fi and the [3-power-cycle 
 
 **What happened in the one known case (v1.20.0):** the ESP8266 bootloader (eboot) reads the **last 4 bytes of the staged `.bin.gz`** as the image size. The 1.20.0 test build appended a 260-byte signature after the gzip, so that number became 256; eboot copied 256 bytes over sector 0 (itself) and erased the bootloader. Since 1.19.9 the clock refuses such files before the swap, `scripts/publicar.sh` checks every `.bin.gz` the way eboot reads it (`scripts/conferir-gz.cjs`), and signatures travel in separate `.sig` files (1.20.1).
 
-Reflashing with `write_flash 0x0 <firmware>.bin` rewrites only the program area at the start of the 4 MB flash. The LittleFS storage (photos, settings, history, face packs) lives from 1 MB on and **is kept**.
+Reflashing with `write_flash 0x0 <firmware>.bin` rewrites only the program area at the start of the 4 MB flash. The LittleFS storage (photos, history, face packs) lives from 2 MB on (`0x200000`, layout 4M2M) and **is kept**; settings and Wi-Fi are in EEPROM and the SDK area (`0x3FB000` and up), which are also untouched.
+
+**Layouts:** versions up to 1.23.x use the older 4M3M layout (storage from `0x100000`). Reflashing such a `.bin` on a clock that is already in 4M2M makes the old firmware read and write the storage at the wrong place (it overwrites the new storage; the 4M2M firmware then finds no valid storage and shows the *Format storage* button), so reflash with a 4M2M version. Going the other way, flashing a 4M2M `.bin` on a clock still in 4M3M formats the storage at the first boot (photos, GIFs, history and downloaded faces are lost; settings are kept): see [MIGRACAO-4M2M.md](MIGRACAO-4M2M.md). The same goes for the original GeekMagic firmware: it expects its storage at `0x100000`, so coming back from 4M2M to it leaves your photos behind (it may format or reuse that area).
 
 ## 1. What you need
 

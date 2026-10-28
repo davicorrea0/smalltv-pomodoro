@@ -62,4 +62,4 @@ Mutation testing is finite and does not prove the absence of every vulnerability
 
 The firmware has not been flashed or measured on the physical clock in this session. After installing
 1.18.1, confirm the version, play an existing valid GIF, upload another valid animation and check that
-a truncated GIF is rejected. The update retains the 4M3M layout and does not intentionally format LittleFS.
+a truncated GIF is rejected. That update kept the 4M3M layout and did not intentionally format LittleFS (later versions use 4M2M; see MIGRACAO-4M2M.md).

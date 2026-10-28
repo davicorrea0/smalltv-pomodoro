@@ -4,8 +4,12 @@
 // Hardware (fonte: devices.esphome.io/devices/geekmagic-ultra):
 //   Tela ST7789 240x240, SPI hardware CLK=GPIO14 MOSI=GPIO13, sem CS (SPI modo 3)
 //   DC=GPIO0  RST=GPIO2  Backlight=GPIO5 (PWM invertido)
-// Flash: layout 4M3M, igual ao firmware original (LittleFS em 0x100000-0x3FA000, constantes
-// encontradas no binário V9.0.50 no offset 0x14d00). Assim as fotos e GIFs já gravados são lidos.
+// Flash: layout 4M2M (programa até ~1 MB; LittleFS em 0x200000-0x3FA000). Até a 1.23 o layout era 4M3M, igual
+// ao firmware original (LittleFS em 0x100000-0x3FA000, constantes do binário V9.0.50, offset 0x14d00), que
+// deixava só ~1 MB para o programa e a cópia da atualização. EEPROM (0x3FB000), RF cal e dados do SDK ficam
+// nos mesmos endereços nos dois layouts, então os ajustes sobrevivem; o LittleFS é que muda de lugar: no
+// primeiro início em 4M2M ele é formatado (ver fsMount). A mesma fonte ainda compila em 4M3M (LAYOUT=4M3M
+// em compilar.sh), para uma versão de transição que só leva o painel novo.
 
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
@@ -166,11 +170,18 @@ bool recoveryMode = false;
 struct CrashRec { uint32_t magic; uint8_t n, reason, exc, pad; uint32_t epc, vaddr, up; char ver[8]; };
 const uint32_t CRASH_MAGIC = 0x43524153;  // "CRAS"
 const int CRASH_OFF = BOOT_OFF + sizeof(BootCount);
+// Marca da memória de arquivos no layout 4M2M: "FS2M" = o LittleFS deste endereço já foi formatado por nós.
+// Sem ela (primeiro início depois de vir do 4M3M ou do firmware original) o conteúdo ali é lixo do layout
+// antigo e fsMount formata; `pend` fica 1 até o painel confirmar que o backup foi restaurado.
+struct FsMark { uint32_t magic; uint8_t pend; };
+const uint32_t FS_MAGIC = 0x46533241;  // "FS2A"
+const int FS_OFF = CRASH_OFF + sizeof(CrashRec);
+FsMark fsMark;
 // Último roteador: canal e BSSID, para o próximo início conectar sem varrer todos os canais (ver connectStored).
 // Só é gravado quando muda (trocar de rede ou o roteador trocar de canal): ligar não gasta flash.
 struct WifiHint { uint32_t magic; uint32_t ssid; uint8_t bssid[6]; uint8_t chan, pad; };
 const uint32_t WIFI_MAGIC = 0x57494648;  // "WIFH"
-const int WIFIH_OFF = CRASH_OFF + sizeof(CrashRec);
+const int WIFIH_OFF = FS_OFF + sizeof(FsMark);
 const int EE_SIZE = WIFIH_OFF + sizeof(WifiHint);
 static_assert(sizeof(WifiHint) == 16, "registro do Wi-Fi mudou de tamanho");
 static_assert(sizeof(CrashRec) == 28, "registro da queda mudou de tamanho");
@@ -1169,6 +1180,56 @@ void rotLoop();
 
 // ---------- álbum: fotos (JPG) e GIFs no LittleFS ----------
 bool fsOk = false;
+
+// O símbolo _FS_start vem do script do linker do layout escolhido (eagle.flash.4m2m.ld: 0x40400000).
+bool fsLayout2() { return (uint32_t)&_FS_start == 0x40400000; }
+
+// Monta o LittleFS SEM formatar à toa: se falhar, os arquivos ficam intactos. A exceção é a migração do
+// layout 4M3M (LittleFS em 0x100000) para o 4M2M (0x200000): no primeiro início aqui, sem a marca na
+// EEPROM, o que há em 0x200000 é um pedaço do sistema de arquivos antigo (ou da memória do firmware
+// original), então formata uma vez, recria as pastas e marca `pend` para o painel oferecer a restauração
+// do backup. Se a marca existe e a montagem falha, NÃO formata (pode ser outra coisa): o painel mostra o botão Formatar.
+void fsMount() {
+  LittleFSConfig fcfg;
+  fcfg.setAutoFormat(false);
+  LittleFS.setConfig(fcfg);
+  fsOk = LittleFS.begin();
+  if (!fsLayout2()) return;
+  EEPROM.get(FS_OFF, fsMark);
+  if (fsMark.magic == FS_MAGIC) return;
+  message("SmallTV Pomodoro", tr("Reorganizando a memoria", "Reorganizing storage", "Reorganizando la memoria"), "...");
+  if (fsOk) LittleFS.end();
+  // Antes de formatar, guarda o histórico, o rodízio e os avisos, que valem mais que o espaço que ocupam: no primeiro
+  // início o LittleFS antigo (4M3M, 0x100000-0x3FA000) ainda está intacto, porque a atualização só gravou abaixo de
+  // 0x100000. Assim quem atualiza sem o backup do painel (ex.: direto da 1.23.1) não perde a sequência de dias.
+  struct Keep { const char *path; std::unique_ptr<uint8_t[]> data; size_t len; } keep[] = {
+      {"/stats.bin", nullptr, 0}, {"/rotation.txt", nullptr, 0}, {"/hooks.txt", nullptr, 0}};
+  {
+    FS old(FSImplPtr(new littlefs_impl::LittleFSImpl(0x100000, 0x3FA000 - 0x100000, 256, 8192, 2)));
+    if (old.begin()) {
+      for (Keep &k : keep) {
+        File f = old.open(k.path, "r");
+        if (!f || !f.size() || f.size() > 2048) continue;
+        k.data.reset(new (std::nothrow) uint8_t[f.size()]);
+        if (k.data) k.len = f.read(k.data.get(), f.size());
+      }
+      old.end();
+    }
+  }
+  fsOk = LittleFS.format() && LittleFS.begin();
+  if (!fsOk) return;  // sem marca: tenta de novo no próximo início
+  LittleFS.mkdir("/image");
+  LittleFS.mkdir("/gif");
+  LittleFS.mkdir("/faces");
+  for (Keep &k : keep) {
+    if (!k.len) continue;
+    File f = LittleFS.open(k.path, "w");
+    if (f) f.write(k.data.get(), k.len);
+  }
+  fsMark = {FS_MAGIC, 1};
+  EEPROM.put(FS_OFF, fsMark);
+  EEPROM.commit();
+}
 void sendStats();
 void setupUpdate();
 
@@ -1834,6 +1895,10 @@ void sendState() {
   j += weatherText(wx.code);
   j += F("\"},\"fs\":{\"ok\":");
   j += fsOk ? 1 : 0;
+  j += F(",\"l2\":");  // 1 = layout 4M2M (o painel só oferece a migração a quem ainda está no 4M3M)
+  j += fsLayout2() ? 1 : 0;
+  j += F(",\"mig\":");  // 1 = a memória foi reorganizada e o backup ainda não foi restaurado
+  j += fsMark.magic == FS_MAGIC && fsMark.pend ? 1 : 0;
   j += F(",\"used\":");
   j += (uint32_t)fi.usedBytes;
   j += F(",\"total\":");
@@ -2660,6 +2725,15 @@ void setupWeb() {
     viewUntil = millis() + cfg.albumDelay * 1000UL;
     server.send(200, "text/plain", "ok");
   });
+  server.on("/api/migdone", HTTP_POST, [] {  // o painel restaurou (ou dispensou) o backup da migração
+    if (!guard()) return;
+    if (fsMark.magic == FS_MAGIC && fsMark.pend) {
+      fsMark.pend = 0;
+      EEPROM.put(FS_OFF, fsMark);
+      EEPROM.commit();
+    }
+    server.send(200, "text/plain", "ok");
+  });
   server.on("/api/format", HTTP_POST, [] {
     if (!guard()) return;
     stopAlbum();
@@ -3013,6 +3087,10 @@ void startRecovery() {
     delay(300);
     if (fsOk) LittleFS.format();
     for (int i = 0; i < EE_SIZE; i++) EEPROM.write(i, 0);
+    if (fsLayout2()) {  // memória já formatada: sem a marca o próximo início formataria de novo e ofereceria um backup que não existe
+      fsMark = {FS_MAGIC, 0};
+      EEPROM.put(FS_OFF, fsMark);
+    }
     EEPROM.commit();
     WiFi.persistent(true);
     WiFi.disconnect(true);
@@ -3337,11 +3415,7 @@ void setup() {
   uiScrollHw = tftScroll;
   applyPanel();
 
-  // Monta o LittleFS do firmware original SEM formatar: se falhar, os arquivos ficam intactos.
-  LittleFSConfig fcfg;
-  fcfg.setAutoFormat(false);
-  LittleFS.setConfig(fcfg);
-  fsOk = LittleFS.begin();
+  fsMount();
   statsLoad();
   if (fsOk) {
     File rf = LittleFS.open("/rotation.txt", "r");
