@@ -28,6 +28,8 @@
     }
   }
 
+  // pacotes com sprites animados têm um GIF ("anim") além da prévia parada
+  var still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   var shelf = document.getElementById("shelf");
   if (shelf && window.fetch) {
     fetch(root + "catalog/index.json", { cache: "no-cache" })
@@ -42,7 +44,7 @@
           var img = new Image(240, 240);
           img.className = "px";
           img.loading = "lazy";
-          img.src = root + "catalog/" + f.preview;
+          img.src = root + "catalog/" + (f.anim && !still ? f.anim : f.preview);
           img.alt = (en && f.name_en) || f.name;
           a.title = img.alt;
           a.appendChild(img);

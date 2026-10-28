@@ -10,6 +10,7 @@
       "desc_en": "A pixel-art tomato that jumps and blinks next to the time.",
       "file": "tomate-pulando.json",
       "preview": "tomate-pulando.png",
+      "anim": "tomate-pulando.gif",
       "size": 4522,
       "fw": "1.21.0",
       "tags": [
@@ -41,6 +42,7 @@
       "desc_en": "A pond from above; a lotus blooms at your goal.",
       "file": "koi.json",
       "preview": "koi.png",
+      "anim": "koi.gif",
       "size": 3139,
       "fw": "1.21.0",
       "tags": [
@@ -56,6 +58,7 @@
       "desc_en": "A city window with rain following actual weather.",
       "file": "janela.json",
       "preview": "janela.png",
+      "anim": "janela.gif",
       "size": 4643,
       "fw": "1.21.0",
       "tags": [
@@ -197,6 +200,7 @@
       "desc_en": "A pixel platform level; the flag lights at your daily goal.",
       "file": "arcade.json",
       "preview": "arcade.png",
+      "anim": "arcade.gif",
       "size": 3752,
       "fw": "1.21.0",
       "tags": [
@@ -244,6 +248,7 @@
       "desc_en": "A pixel art aquarium; hit your daily goal and the golden fish shows up",
       "file": "aquario.json",
       "preview": "aquario.png",
+      "anim": "aquario.gif",
       "size": 11680,
       "fw": "1.21.0",
       "tags": [
@@ -305,6 +310,7 @@
       "desc_en": "The four greens of classic handhelds, with a repainted tomato",
       "file": "8bit-verde.json",
       "preview": "8bit-verde.png",
+      "anim": "8bit-verde.gif",
       "size": 7068,
       "fw": "1.21.0",
       "tags": [
@@ -580,6 +586,7 @@
       "desc_en": "An orange cat asleep on a cushion, breathing slowly while the Zzz float up",
       "file": "gato-soneca.json",
       "preview": "gato-soneca.png",
+      "anim": "gato-soneca.gif",
       "size": 4413,
       "fw": "1.21.0",
       "tags": [
@@ -595,6 +602,7 @@
       "desc_en": "A crackling campfire under a starry sky, with sparks drifting up",
       "file": "fogueira.json",
       "preview": "fogueira.png",
+      "anim": "fogueira.gif",
       "size": 7019,
       "fw": "1.21.0",
       "tags": [
@@ -610,6 +618,7 @@
       "desc_en": "Snow falling on a cabin with the fire lit, among pine trees",
       "file": "inverno.json",
       "preview": "inverno.png",
+      "anim": "inverno.gif",
       "size": 10134,
       "fw": "1.21.0",
       "tags": [
@@ -625,6 +634,7 @@
       "desc_en": "The tomato unwinding next to a steaming cup of coffee",
       "file": "pausa-cafe.json",
       "preview": "pausa-cafe.png",
+      "anim": "pausa-cafe.gif",
       "size": 3399,
       "fw": "1.21.0",
       "tags": [

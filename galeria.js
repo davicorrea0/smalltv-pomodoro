@@ -1,17 +1,19 @@
 // Galeria: os pacotes do catálogo catalog/index.json (mostradores novos, instaláveis) e os
 // mostradores embutidos (faces.js). No catálogo, "preview" e "file" são relativos ao
 // próprio index.json (ou URLs completas); "name_en"/"desc_en" são usados na página em inglês,
-// "fw" é a versão mínima do firmware e "tags" os estilos do filtro.
+// "fw" é a versão mínima do firmware e "tags" os estilos do filtro. "anim" é um GIF da
+// animação (gravado pelo simulador), mostrado no lugar da prévia parada quando há sprites animados.
 (function () {
   var en = window.SITE_LANG === "en", root = window.SITE_ROOT || "";
+  var still = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   var S = en ? {
-    zoom: "Enlarge ", preview: "Preview of ", by: "by ", builtin: "Built-in",
+    zoom: "Enlarge ", preview: "Preview of ", by: "by ", builtin: "Built-in", anim: "animated",
     inFw: " · comes with the firmware", dl: "Download .json", soonT: "Coming soon",
     fw: function (v) { return "Requires firmware v" + v + " or newer"; },
     none: "No faces in this style here.",
     soonP: "The first face packs are being prepared. Once published they show up here with a preview and a download button."
   } : {
-    zoom: "Ampliar ", preview: "Prévia do mostrador ", by: "por ", builtin: "Embutido",
+    zoom: "Ampliar ", preview: "Prévia do mostrador ", by: "por ", builtin: "Embutido", anim: "animado",
     inFw: " · já vem no firmware", dl: "Baixar .json", soonT: "Em breve",
     fw: function (v) { return "Precisa do firmware v" + v + " ou mais novo"; },
     none: "Nenhum mostrador deste estilo aqui.",
@@ -39,7 +41,7 @@
     img.className = "px";
     img.loading = "lazy";
     img.alt = S.preview + f.name;
-    img.src = f.preview;
+    img.src = f.anim || f.preview;
     prev.appendChild(img);
     prev.addEventListener("click", function () { zoom(f); });
     c.appendChild(prev);
@@ -55,6 +57,7 @@
       t.title = S.fw(f.fw);
       title.appendChild(t);
     }
+    if (f.animated) title.appendChild(el("span", "tag anim", S.anim));
     body.appendChild(title);
     if (f.desc) body.appendChild(el("p", "desc", f.desc));
 
@@ -133,7 +136,7 @@
   var dlg = document.getElementById("zoom");
   function zoom(f) {
     var img = document.getElementById("zoom-img");
-    img.src = f.preview;
+    img.src = f.anim || f.preview;
     img.alt = S.preview + f.name;
     document.getElementById("zoom-name").textContent = f.name;
     document.getElementById("zoom-desc").textContent = (f.desc || "") + (f.author ? " · " + S.by + f.author : "") +
@@ -183,6 +186,8 @@
           fw: f.fw,
           tags: f.tags,
           preview: f.preview ? new URL(f.preview, base).href : root + "img/tomate.svg",
+          animated: !!f.anim,
+          anim: f.anim && !still ? new URL(f.anim, base).href : null,
           file: new URL(f.file, base).href
         };
       });
