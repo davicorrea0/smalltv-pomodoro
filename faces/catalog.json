@@ -8,7 +8,7 @@
       "desc": "Os quatro tons de verde dos portáteis antigos, com o tomate repintado",
       "file": "8bit-verde.json",
       "preview": "8bit-verde.png",
-      "size": 4496
+      "size": 7068
     },
     {
       "id": "aquario",
@@ -17,7 +17,7 @@
       "desc": "Um aquário em pixel art; bata a meta do dia e aparece o peixe dourado",
       "file": "aquario.json",
       "preview": "aquario.png",
-      "size": 5825
+      "size": 11680
     },
     {
       "id": "aurora",
@@ -269,7 +269,7 @@
       "desc": "Uma fase em pixel art; a bandeira acende na meta diária.",
       "file": "arcade.json",
       "preview": "arcade.png",
-      "size": 3110
+      "size": 3752
     },
     {
       "id": "nixie",
@@ -287,7 +287,7 @@
       "desc": "Um lago visto de cima; a flor aparece na meta.",
       "file": "koi.json",
       "preview": "koi.png",
-      "size": 2207
+      "size": 3139
     },
     {
       "id": "janela",
@@ -296,7 +296,7 @@
       "desc": "Cidade na janela, com chuva conforme o clima real.",
       "file": "janela.json",
       "preview": "janela.png",
-      "size": 2487
+      "size": 4643
     },
     {
       "id": "metro",
@@ -333,6 +333,42 @@
       "file": "tomate-pulando.json",
       "preview": "tomate-pulando.png",
       "size": 4522
+    },
+    {
+      "id": "gato-soneca",
+      "name": "Soneca",
+      "author": "davicorrea0",
+      "desc": "Um gato laranja dormindo na almofada, respirando devagar, com os Zzz subindo",
+      "file": "gato-soneca.json",
+      "preview": "gato-soneca.png",
+      "size": 4413
+    },
+    {
+      "id": "fogueira",
+      "name": "Fogueira",
+      "author": "davicorrea0",
+      "desc": "Uma fogueira acesa sob o céu estrelado, com fagulhas subindo",
+      "file": "fogueira.json",
+      "preview": "fogueira.png",
+      "size": 7019
+    },
+    {
+      "id": "inverno",
+      "name": "Inverno",
+      "author": "davicorrea0",
+      "desc": "Neve caindo sobre uma cabana com a lareira acesa, entre pinheiros",
+      "file": "inverno.json",
+      "preview": "inverno.png",
+      "size": 10134
+    },
+    {
+      "id": "pausa-cafe",
+      "name": "Pausa pro Café",
+      "author": "davicorrea0",
+      "desc": "O tomate relaxando ao lado de uma xícara fumegante",
+      "file": "pausa-cafe.json",
+      "preview": "pausa-cafe.png",
+      "size": 3399
     }
   ]
 }

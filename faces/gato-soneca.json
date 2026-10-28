@@ -1,0 +1,141 @@
+{
+  "format": 1,
+  "id": "gato-soneca",
+  "name": "Soneca",
+  "name_en": "Catnap",
+  "author": "davicorrea0",
+  "desc": "Um gato laranja dormindo na almofada, respirando devagar, com os Zzz subindo",
+  "desc_en": "An orange cat asleep on a cushion, breathing slowly while the Zzz float up",
+  "bg": "#2a2236",
+  "sprites": {
+    "gato": {
+      "fps": 1,
+      "pal": {"o":"#3b2418","c":"#f0a35e","C":"#c46f35","l":"#fbe3c0","k":"#3b2418","p":"#e98580","e":"#e98580"},
+      "frames": [
+      [
+        "..........................",
+        "..........................",
+        "...o......o...............",
+        "..oco....oco..............",
+        "..oceooooecoooooooooo.....",
+        "...occcccccCCcccCCcccoo...",
+        "..occccccccCCcccCCcccCco..",
+        "..occccccccCCcccCCcccCcco.",
+        ".occkckckckcccccccccccccco",
+        "..occkccckccccccccccccccco",
+        "..oclllpllccccccccccccccco",
+        "...ollllllcccccccccccccco.",
+        "....ooooocccccccccccccoo..",
+        "....olllcCccCccCccCcco....",
+        ".....oooooooooooooooo....."
+      ],
+      [
+        "..........................",
+        "..........................",
+        "...o......o...............",
+        "..oco....ocoooooooooo.....",
+        "..oceooooecCCcccCCcccoo...",
+        "...occcccccCCcccCCcccCco..",
+        "..occccccccCCcccCCcccCcco.",
+        "..occccccccCCcccCCcccCccco",
+        ".occkckckckcccccccccccccco",
+        "..occkccckccccccccccccccco",
+        "..oclllpllcccccccccccccco.",
+        "...ollllllccccccccccccco..",
+        "....oooooocccccccccccoo...",
+        "....olllcCccCccCccCcco....",
+        ".....oooooooooooooooo....."
+      ]
+      ]
+    },
+    "zzz": {
+      "fps": 2,
+      "pal": {"w":"#d9cdf2"},
+      "frames": [
+      [
+        "...............",
+        "...............",
+        "...............",
+        "...............",
+        "...............",
+        "...............",
+        "...............",
+        "...............",
+        "...............",
+        "...............",
+        "...............",
+        "...............",
+        "...............",
+        "...............",
+        "...............",
+        "..............."
+      ],
+      [
+        "...............",
+        "...............",
+        "...............",
+        "...............",
+        "...............",
+        "...............",
+        "...............",
+        "...............",
+        "...............",
+        "...............",
+        "...............",
+        "...............",
+        "wwww...........",
+        "..w............",
+        ".w.............",
+        "wwww..........."
+      ],
+      [
+        "...............",
+        "...............",
+        "...............",
+        "...............",
+        "...............",
+        "...............",
+        ".....wwww......",
+        ".......w.......",
+        "......w........",
+        ".....wwww......",
+        "...............",
+        "...............",
+        "wwww...........",
+        "..w............",
+        ".w.............",
+        "wwww..........."
+      ],
+      [
+        "..........wwwww",
+        ".............w.",
+        "............w..",
+        "...........w...",
+        "..........wwwww",
+        "...............",
+        ".....wwww......",
+        ".......w.......",
+        "......w........",
+        ".....wwww......",
+        "...............",
+        "...............",
+        "wwww...........",
+        "..w............",
+        ".w.............",
+        "wwww..........."
+      ]
+      ]
+    }
+  },
+  "layers": [
+    {"type":"text","x":120,"y":20,"font":"outfit","size":52,"align":"center","color":"#f4e9d8","text":"{HH}:{MM}"},
+    {"type":"text","x":120,"y":82,"font":"pixel","size":1,"align":"center","color":"#a99bc4","text":"{WD} {DD} {MON}"},
+    {"type":"rect","x":0,"y":182,"w":240,"h":58,"color":"#3a2f4a"},
+    {"type":"rect","x":0,"y":182,"w":240,"h":3,"color":"#4b3e5e"},
+    {"type":"rect","x":40,"y":168,"w":160,"h":26,"r":12,"color":"#b8485a"},
+    {"type":"rect","x":50,"y":168,"w":140,"h":6,"r":3,"color":"#d0687a"},
+    {"type":"sprite","x":55,"y":104,"size":5,"sprite":"gato"},
+    {"type":"sprite","x":168,"y":72,"size":3,"sprite":"zzz"},
+    {"type":"text","x":120,"y":212,"font":"pixel","size":2,"align":"center","color":"#f4e9d8","text":{"pt":"{FOCOS}/{META} focos","en":"{FOCOS}/{META} done","es":"{FOCOS}/{META} focos"}}
+  ]
+}
