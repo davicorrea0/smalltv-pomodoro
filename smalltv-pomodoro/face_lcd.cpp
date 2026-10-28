@@ -9,7 +9,7 @@ static const uint16_t LCD_BG = uiRgb(166, 180, 140), LCD_ON = uiRgb(18, 24, 16),
 
 // DSEG7 Classic Bold (keshikan, SIL Open Font License 1.1) — os 7 segmentos do "8",
 // em unidades da fonte: x 0..618, y 0..1000 (de cima para baixo). Ordem a b c d e f g.
-static const int16_t DSEG_PT[][2] = {
+static const int16_t DSEG_PT[][2] PROGMEM = {
   {138, 124}, {45, 31}, {76, 0}, {542, 0}, {573, 31}, {480, 124},  // a
   {494, 138}, {587, 45}, {618, 76}, {618, 490}, {560, 490}, {556, 486}, {494, 425},  // b
   {494, 576}, {556, 515}, {560, 511}, {618, 511}, {618, 924}, {587, 955}, {494, 862},  // c
@@ -18,8 +18,8 @@ static const int16_t DSEG_PT[][2] = {
   {124, 424}, {62, 485}, {58, 490}, {0, 490}, {0, 76}, {31, 45}, {124, 138},  // f
   {138, 438}, {478, 438}, {541, 501}, {480, 562}, {138, 562}, {76, 500},  // g
 };
-static const uint8_t DSEG_START[8] = {0, 6, 13, 20, 26, 33, 40, 46};
-static const uint8_t DSEG_MASK[11] = {0x3f, 0x06, 0x5b, 0x4f, 0x66, 0x6d, 0x7d, 0x27, 0x7f, 0x6f, 0x40};  // 10 = "-" (só o g)
+static const uint8_t DSEG_START[8] PROGMEM = {0, 6, 13, 20, 26, 33, 40, 46};
+static const uint8_t DSEG_MASK[11] PROGMEM = {0x3f, 0x06, 0x5b, 0x4f, 0x66, 0x6d, 0x7d, 0x27, 0x7f, 0x6f, 0x40};  // 10 = "-" (só o g)
 
 // Preenche um polígono convexo (um segmento) linha a linha, amostrando no centro do pixel:
 // assim as folgas finas entre segmentos vizinhos ficam limpas em qualquer tamanho.
@@ -51,12 +51,12 @@ void dsegDigit(int x, int y, int h, int d, uint16_t on, uint16_t off) {
   const float k = h / 1000.0f;
   float px[8], py[8];
   for (int sgm = 0; sgm < 7; sgm++) {
-    int n = DSEG_START[sgm + 1] - DSEG_START[sgm];
+    int st = pgm_read_byte(&DSEG_START[sgm]), n = pgm_read_byte(&DSEG_START[sgm + 1]) - st;
     for (int i = 0; i < n; i++) {
-      px[i] = x + DSEG_PT[DSEG_START[sgm] + i][0] * k;
-      py[i] = y + DSEG_PT[DSEG_START[sgm] + i][1] * k;
+      px[i] = x + (int16_t)pgm_read_word(&DSEG_PT[st + i][0]) * k;
+      py[i] = y + (int16_t)pgm_read_word(&DSEG_PT[st + i][1]) * k;
     }
-    bool lit = d >= 0 && d <= 10 && (DSEG_MASK[d] >> sgm & 1);
+    bool lit = d >= 0 && d <= 10 && (pgm_read_byte(&DSEG_MASK[d]) >> sgm & 1);
     if (lit || off != on) fillConvex(px, py, n, lit ? on : off);  // off == on: só os acesos
   }
 }

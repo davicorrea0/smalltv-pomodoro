@@ -144,6 +144,9 @@ extern uint8_t uiLang;
 // O ponteiro vale até mais 5 chamadas de tr(); quem guarda o texto deve copiar.
 const char *trP(PGM_P pt, PGM_P en, PGM_P es);
 #define tr(pt, en, es) trP(PSTR(pt), PSTR(en), PSTR(es))
+// Uma linha de 240 pixels alinhada a 4 bytes, compartilhada: a cópia alinhada que o SPI exige (tftPixels), o
+// desenho do GIF e a linha do Flip. Nunca há dois usos ao mesmo tempo (um buffer só em vez de três: ~700 bytes).
+uint16_t *uiRowBuf();
 extern uint32_t uiEnters;                    // contador de trocas de tela inteira
 void uiRenderClock(const UiState &s);        // tela de relógio no tema escolhido
 void uiRenderPomodoro(const UiState &s);     // anel de progresso do Pomodoro

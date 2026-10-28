@@ -57,16 +57,17 @@ Adafruit_ST7789 tft(-1, PIN_DC, PIN_RST);
 // memória de 4 em 4 bytes: com a linha num endereço que não é múltiplo de 4 (texto da fonte vetorial,
 // recortes, faixas de largura ímpar) o ESP8266 dá exceção de alinhamento e reinicia (issue #4).
 // Toda linha passa por aqui: desalinhada, vai por uma cópia alinhada.
+// A cópia alinhada usa uiRowBuf(), o mesmo buffer do gifDraw e do Flip (nunca em uso ao mesmo tempo): quem já
+// o entrega alinhado nem é copiado. Um buffer só em vez de três (RAM fixa).
 static void tftPixels(uint16_t *px, int n) {
-  static uint32_t al[120];  // 240 pixels
   if (!((uintptr_t)px & 3)) {
     tft.writePixels(px, n);
     return;
   }
   while (n > 0) {
     int k = n < 240 ? n : 240;
-    memcpy(al, px, k * 2);
-    tft.writePixels((uint16_t *)al, k);
+    memmove(uiRowBuf(), px, k * 2);  // px pode estar dentro do próprio buffer (linha do Flip recortada)
+    tft.writePixels(uiRowBuf(), k);
     px += k;
     n -= k;
   }
@@ -1413,7 +1414,7 @@ static bool validGif(const String &path) {
 }
 
 void gifDraw(GIFDRAW *p) {
-  static uint16_t buf[240];
+  uint16_t *buf = uiRowBuf();  // alinhado: tftPixels não copia
   int y = p->iY + p->y + gifOffY;
   if (y < 0 || y >= 240) return;
   int x0 = p->iX + gifOffX;
@@ -2728,18 +2729,27 @@ extern "C" uint32_t thunk_br_rsa_i15_pkcs1_vrfy(const unsigned char *x, size_t x
                                                 size_t hlen, const br_rsa_public_key *pk, unsigned char *out);
 make_stack_thunk(br_rsa_i15_pkcs1_vrfy);
 static br_sha256_context otaHash;
-static uint8_t otaSig[256];
+// A assinatura (256 bytes) só existe durante o envio: alocada aqui e liberada no fim (ou ao abortar), em vez de
+// ocupar a RAM fixa o tempo todo.
+static uint8_t *otaSig = nullptr;
 static bool otaSigGiven;
+static void otaSigFree() {
+  free(otaSig);
+  otaSig = nullptr;
+  otaSigGiven = false;
+}
 
 static void otaSigBegin() {
   br_sha256_init(&otaHash);
-  otaSigGiven = false;
+  otaSigFree();
   const String &b64 = server.header("X-Firmware-Sig");
   if (b64.length() < 340 || b64.length() > 348) return;  // 256 bytes = 344 caracteres
   char buf[264];
   base64_decodestate st;
   base64_init_decodestate(&st);
   if (base64_decode_block(b64.c_str(), b64.length(), buf, &st) != 256) return;
+  otaSig = (uint8_t *)malloc(256);
+  if (!otaSig) return;
   memcpy(otaSig, buf, 256);
   otaSigGiven = true;
 }
@@ -2760,7 +2770,7 @@ static bool otaSigOk() {
   br_rsa_public_key key = {n, sizeof n, e, sizeof e};
   br_sha256_out(&otaHash, want);
   stack_thunk_add_ref();
-  bool ok = thunk_br_rsa_i15_pkcs1_vrfy(otaSig, sizeof otaSig, BR_HASH_OID_SHA256, sizeof got, &key, got) &&
+  bool ok = thunk_br_rsa_i15_pkcs1_vrfy(otaSig, 256, BR_HASH_OID_SHA256, sizeof got, &key, got) &&
             !memcmp(got, want, sizeof got);
   stack_thunk_del_ref();
   if (!ok) ota.err = F("assinatura invalida");
@@ -2842,6 +2852,7 @@ void setupUpdate() {
         Update.end();
         ota.err = F("envio interrompido");
       }
+      if (up.status == UPLOAD_FILE_END || up.status == UPLOAD_FILE_ABORTED) otaSigFree();
       yield();
     });
 }
