@@ -1,0 +1,20 @@
+{
+  "pt": [
+    "Versão de teste",
+    "Memória reorganizada: o firmware passa a ter até ~1 MB (antes ~600 KB), espaço para recursos maiores; a memória de arquivos fica com 2 MB",
+    "Na primeira vez a memória de arquivos é recriada: fotos, GIFs e mostradores baixados são apagados. Ajustes, Wi-Fi, histórico, rodízio e avisos ficam. O painel salva um backup completo antes de atualizar; depois use Restaurar backup",
+    "Para voltar a uma 1.23 depois desta, é preciso formatar a memória de arquivos de novo"
+  ],
+  "en": [
+    "Test version",
+    "Storage reorganized: the firmware can now be up to ~1 MB (was ~600 KB), room for bigger features; the file storage becomes 2 MB",
+    "The first time, the file storage is recreated: photos, GIFs and downloaded faces are erased. Settings, Wi-Fi, history, rotation and notifications stay. The panel saves a full backup before updating; afterwards use Restore backup",
+    "Going back to a 1.23 after this one needs the file storage formatted again"
+  ],
+  "es": [
+    "Versión de prueba",
+    "Memoria reorganizada: el firmware puede tener hasta ~1 MB (antes ~600 KB), espacio para funciones más grandes; la memoria de archivos queda en 2 MB",
+    "La primera vez se recrea la memoria de archivos: se borran las fotos, los GIF y las esferas descargadas. Los ajustes, el Wi-Fi, el historial, la rotación y los avisos se mantienen. El panel guarda una copia completa antes de actualizar; después usa Restaurar copia",
+    "Para volver a una 1.23 después de esta hay que formatear de nuevo la memoria de archivos"
+  ]
+}
