@@ -5,7 +5,6 @@
   "size": 557216,
   "notes": {
     "pt": [
-      "Mesma da 1.23.4: confirma que a atualização pelo painel voltou a funcionar",
       "Liga mais rápido e sem tela preta: a tela de início aparece na hora, o Wi-Fi conecta direto no roteador da última vez e uma barra em pixel art mostra as etapas (Wi-Fi, hora)",
       "A hora aparece logo depois de reiniciar por atualização ou ajuste, e o relógio tenta outro servidor de hora se o primeiro demorar",
       "smalltv.local mais confiável: o Wi-Fi não cochila mais (perdia as perguntas da rede) e a resposta vai também direto para quem perguntou",
@@ -14,7 +13,6 @@
       "Diagnóstico mostra quanto tempo levou cada etapa do último início"
     ],
     "en": [
-      "Same as 1.23.4: confirms that updating from the panel works again",
       "Starts faster and without a black screen: the start screen shows up right away, Wi-Fi connects straight to the last router, and a pixel-art bar shows the steps (Wi-Fi, time)",
       "The time shows up right after a restart from an update or setting change, and the clock tries another time server if the first one is slow",
       "More reliable smalltv.local: Wi-Fi no longer naps (it missed network queries) and the answer also goes straight to whoever asked",
@@ -23,7 +21,6 @@
       "Diagnostics show how long each step of the last start took"
     ],
     "es": [
-      "Igual a la 1.23.4: confirma que la actualización desde el panel vuelve a funcionar",
       "Arranca más rápido y sin pantalla negra: la pantalla de inicio aparece enseguida, el Wi-Fi se conecta directo al último router y una barra en pixel art muestra los pasos (Wi-Fi, hora)",
       "La hora aparece enseguida tras reiniciar por una actualización o un ajuste, y el reloj prueba otro servidor de hora si el primero tarda",
       "smalltv.local más confiable: el Wi-Fi ya no se duerme (perdía las consultas de la red) y la respuesta también va directo a quien preguntó",
