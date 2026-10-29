@@ -24,5 +24,6 @@ $CXX -O1 -std=c++17 -DARDUINO=100 -DARDUINOJSON_ENABLE_ARDUINO_STRING=0 -DARDUIN
 node png.js > /dev/null
 node faces.js
 node catalog.js
+node painel_test.cjs
 node ../web/build.js
 exit $r

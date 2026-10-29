@@ -15,6 +15,9 @@ fs.writeFileSync(out, `#include <cstdint>
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <type_traits>
+#define F(s) (s)
+#define PSTR(s) (s)
 using std::min;
 static std::map<std::string, std::vector<uint8_t>> disk;
 struct File {
@@ -41,10 +44,32 @@ bool statsWritePending = false;
 uint16_t statsPendingDay = 0;
 uint8_t statsPendingCount = 0;
 bool fsWriterBusy() { return writerBusy; }
+// String e servidor mínimos para sendStats e handleStatsImport (backup do painel)
+struct String : std::string {
+  using std::string::string;
+  String(const std::string &s) : std::string(s) {}
+  size_t length() const { return size(); }
+  int indexOf(char c, int from = 0) const { size_t i = find(c, from); return i == npos ? -1 : (int)i; }
+  String substring(int a, int b) const { return substr(a, b - a); }
+  long toInt() const { return atol(c_str()); }
+  String &operator+=(char c) { push_back(c); return *this; }
+  String &operator+=(const char *c) { append(c); return *this; }
+  template <class T, class = typename std::enable_if<std::is_integral<T>::value && !std::is_same<T, char>::value>::type>
+  String &operator+=(T v) { append(std::to_string(v)); return *this; }
+};
+static std::map<std::string, String> args;
+static int sentCode = 0; static std::string sentBody;
+struct { bool hasArg(const char *n) { return args.count(n); } const String &arg(const char *n) { return args[n]; }
+  void send(int c, const char *, const std::string &b) { sentCode = c; sentBody = b; }
+  void send_P(int c, const char *, const char *b) { sentCode = c; sentBody = b; } } server;
+bool guard() { return true; }
+bool readOk() { return true; }
 ${fn('bool statsRead(')}
 ${fn('void statsCompute(')}
 ${fn('void statsWrite(')}
 ${fn('void statsFlush() {')}
+${fn('void sendStats() {')}
+${fn('void handleStatsImport() {')}
 ${fn('void statsLoad(')}
 static void boot() { stats = {0, 0, 0, 0}; statsLoad(); }
 static int dayCount(uint16_t day) { uint8_t d[STATS_DAYS]; if (!statsRead(d)) return -1; return d[STATS_DAYS - 1 - (stats.lastDay - day)]; }
@@ -91,6 +116,40 @@ int main() {
   assert(!statsWritePending && disk["/stats.bin"] != before);
   boot();
   assert(stats.total == 8 && dayCount(D + 1) == 6);
+  // backup do painel: exporta como /api/stats (371 dias) e restaura pelo handler real
+  {
+    disk.clear(); boot(); cfg.dailyGoal = 2;
+    for (int i = 0; i < 400; i++) { statsWrite(D + i, (i * 7) % 6); stats.total += (i * 7) % 6; }
+    uint8_t want[STATS_DAYS]; assert(statsRead(want));
+    sendStats(); assert(sentCode == 200);
+    std::string js = sentBody;
+    size_t a = js.find("\\"days\\":[") + 8, b = js.find(']', a);
+    std::string days = js.substr(a, b - a);
+    assert(std::count(days.begin(), days.end(), ',') == STATS_DAYS - 1);   // exatamente STATS_DAYS dias
+    uint32_t total = stats.total; uint16_t last = stats.lastDay, best = stats.best;
+    auto restore = [&](const std::string &dd, uint16_t day) {
+      args.clear(); args["days"] = dd; args["day"] = std::to_string(day); args["best"] = std::to_string(best); args["total"] = std::to_string(total);
+      disk.clear(); stats = {0, 0, 0, 0}; handleStatsImport(); };
+    restore(days, last);
+    assert(sentCode == 200 && sentBody == "ok");
+    boot();
+    assert(stats.lastDay == last && stats.total == total && stats.best >= best);
+    uint8_t got[STATS_DAYS]; assert(statsRead(got));
+    for (int i = 0; i < STATS_DAYS; i++) assert(got[i] == want[i]);
+    // mais dias do que o anel guarda: ficam os STATS_DAYS mais recentes (o mais antigo é descartado)
+    restore("9," + days, last); assert(sentCode == 200); boot();
+    assert(statsRead(got)); for (int i = 0; i < STATS_DAYS; i++) assert(got[i] == want[i]);
+    restore(days + ",9", last + 1); assert(sentCode == 200); boot();
+    assert(statsRead(got)); for (int i = 0; i < STATS_DAYS - 1; i++) assert(got[i] == want[i + 1]); assert(got[STATS_DAYS - 1] == 9);
+    // poucos dias (backup de versão antiga) e valores fora da faixa
+    restore("3,-4,999", last); assert(sentCode == 200); boot();
+    assert(statsRead(got) && got[STATS_DAYS - 1] == 255 && got[STATS_DAYS - 2] == 0 && got[STATS_DAYS - 3] == 3);
+    // pedido sem os campos ou vazio é recusado e não toca no histórico
+    std::vector<uint8_t> keep = disk["/stats.bin"];
+    args.clear(); args["day"] = "1"; handleStatsImport(); assert(sentCode == 400 && disk["/stats.bin"] == keep);
+    restore("", last); assert(sentCode == 400);
+  }
+  puts("stats: backup de 371 dias exportado por /api/stats volta inteiro pelo /api/statsimport");
   puts("stats: histórico sobrevive a reinícios, anel e formatação; escrita espera o upload terminar");
 }
 `);
