@@ -37,7 +37,7 @@
   <div class="page-head">
     <div class="wrap">
       <div class="eyebrow">Firmware</div>
-      <h1>Versões <span class="count">58 versões</span></h1>
+      <h1>Versões <span class="count">59 versões</span></h1>
       <p>Todas as versões do firmware, da mais nova para a mais antiga, com o que mudou em cada uma e os arquivos. Para atualizar, o mais fácil é o botão <strong>Atualizar agora</strong> no painel do relógio; os arquivos daqui são para instalar pelo <code>/update</code> ou conferir.</p>
       <div class="note warn"><strong>Não use a <a href="#v1.15.1">v1.15.1</a> nem a <a href="#v1.20.0">v1.20.0</a>.</strong> A 1.15.1 aumentava a imagem fantasma da tela e a 1.20.0 podia deixar o relógio sem ligar. Se o seu já não liga, siga o <a href="https://github.com/davicorrea0/smalltv-pomodoro/blob/main/docs/RECUPERACAO.md">guia de recuperação</a>.</div>
     </div>
@@ -46,6 +46,12 @@
   <section class="first releases">
     <div class="wrap">
       <p class="section-lead">Pelo <code>/update</code>, envie o <code>.bin.gz</code> sem descompactar; a partir da 1.20.1 envie junto o <code>.bin.gz.sig</code> (a assinatura). O <code>.bin</code> sem compressão serve para gravar pelo cabo USB-TTL. <code>SHA256SUMS.txt</code> confere os arquivos.</p>
+  <article class="rel avoid" id="v1.24.0">
+    <div class="rel-head"><h2>1.24.0</h2><span class="tag bad">não use</span><time datetime="2026-10-29">29 de out. de 2026</time></div>
+    <div class="note warn">⚠️ ATENÇÃO: VERSÃO DE TESTE QUE PODE QUEBRAR O APARELHO. Ela reorganiza a memória e ainda não foi testada num relógio. Só instale se souber usar o modo de recuperação e, de preferência, tiver um cabo USB-TTL para regravar. Faça o backup antes</div>
+    <ul class="list"><li>⚠️ ATENÇÃO: VERSÃO DE TESTE QUE PODE QUEBRAR O APARELHO. Ela reorganiza a memória e ainda não foi testada num relógio. Só instale se souber usar o modo de recuperação e, de preferência, tiver um cabo USB-TTL para regravar. Faça o backup antes</li><li>Memória reorganizada: o firmware passa a ter até ~1 MB (antes ~600 KB), espaço para recursos maiores; a memória de arquivos fica com 2 MB</li><li>Na primeira vez a memória de arquivos é recriada: fotos, GIFs e mostradores baixados são apagados. Ajustes, Wi-Fi, histórico, rodízio e avisos ficam. O painel salva um backup completo antes de atualizar; depois use Restaurar backup</li><li>Para voltar a uma 1.23 depois desta, é preciso formatar a memória de arquivos de novo</li></ul>
+    <div class="btns"><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.24.0"><span class="gh" aria-hidden="true"></span>Ver no GitHub</a></div>
+  </article>
   <article class="rel" id="v1.23.5">
     <div class="rel-head"><h2>1.23.5</h2><span class="tag pkg">mais recente</span><time datetime="2026-10-29">29 de out. de 2026</time></div>
     <ul class="list"><li>Liga mais rápido e sem tela preta: a tela de início aparece na hora, o Wi-Fi conecta direto no roteador da última vez e uma barra em pixel art mostra as etapas (Wi-Fi, hora)</li><li>A hora aparece logo depois de reiniciar por atualização ou ajuste, e o relógio tenta outro servidor de hora se o primeiro demorar</li><li>smalltv.local mais confiável: o Wi-Fi não cochila mais (perdia as perguntas da rede) e a resposta vai também direto para quem perguntou</li><li>Uns 5 KB a mais de memória livre, o que ajuda os GIFs</li><li>O backup do painel agora leva também as fotos e os GIFs (preparação para a 1.24, que reorganiza a memória de arquivos)</li><li>Diagnóstico mostra quanto tempo levou cada etapa do último início</li></ul>
