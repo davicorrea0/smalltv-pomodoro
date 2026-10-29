@@ -250,5 +250,19 @@
     "pt": ["Atualizações assinadas (refeitas na 1.20.1); retirada do ar, os arquivos não estão mais disponíveis"],
     "en": ["Signed updates (redone in 1.20.1); taken down, its files are no longer available"],
     "es": ["Actualizaciones firmadas (rehechas en la 1.20.1); retirada, sus archivos ya no están disponibles"]
+  },
+  "1.23.2": {
+    "aviso": {
+      "pt": "Não use: esta versão de teste não conseguia instalar atualizações (o relógio reiniciava na versão antiga). Se o seu está nela, instale a 1.23.5 ou mais nova pelo modo de recuperação.",
+      "en": "Do not use: this test version could not install updates (the clock restarted into the old version). If yours is on it, install 1.23.5 or newer through recovery mode.",
+      "es": "No la uses: esta versión de prueba no podía instalar actualizaciones (el reloj se reiniciaba en la versión anterior). Si el tuyo la tiene, instala la 1.23.5 o más nueva desde el modo de recuperación."
+    }
+  },
+  "1.23.3": {
+    "aviso": {
+      "pt": "Não use: esta versão de teste não conseguia instalar atualizações (o relógio reiniciava na versão antiga). Se o seu está nela, instale a 1.23.5 ou mais nova pelo modo de recuperação.",
+      "en": "Do not use: this test version could not install updates (the clock restarted into the old version). If yours is on it, install 1.23.5 or newer through recovery mode.",
+      "es": "No la uses: esta versión de prueba no podía instalar actualizaciones (el reloj se reiniciaba en la versión anterior). Si el tuyo la tiene, instala la 1.23.5 o más nueva desde el modo de recuperación."
+    }
   }
 }
