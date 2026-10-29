@@ -14,8 +14,8 @@ enum UiTheme : uint8_t {
 #undef X
   THEME_COUNT
 };
-const char *uiFaceName(uint8_t t);  // nome no painel
-const char *uiFaceDesc(uint8_t t);  // descrição curta
+PGM_P uiFaceName(uint8_t t);  // nome no painel (na flash: copie com strncpy_P)
+PGM_P uiFaceDesc(uint8_t t);  // descrição curta (na flash, idem)
 enum UiPhase : uint8_t { PH_IDLE = 0, PH_WORK, PH_SHORT, PH_LONG };
 // O que a pessoa faz durante o foco: muda o desenho ao lado do tomate e o título da tela.
 enum UiActivity : uint8_t { ACT_READ = 0, ACT_STUDY, ACT_CODE, ACT_TASKS, ACT_DRAW, ACT_COUNT };
@@ -144,10 +144,16 @@ extern uint8_t uiLang;
 // O ponteiro vale até mais 5 chamadas de tr(); quem guarda o texto deve copiar.
 const char *trP(PGM_P pt, PGM_P en, PGM_P es);
 #define tr(pt, en, es) trP(PSTR(pt), PSTR(en), PSTR(es))
+// Uma linha de 240 pixels alinhada a 4 bytes, compartilhada: a cópia alinhada que o SPI exige (tftPixels), o
+// desenho do GIF e a linha do Flip. Nunca há dois usos ao mesmo tempo (um buffer só em vez de três: ~700 bytes).
+uint16_t *uiRowBuf();
 extern uint32_t uiEnters;                    // contador de trocas de tela inteira
 void uiRenderClock(const UiState &s);        // tela de relógio no tema escolhido
 void uiRenderPomodoro(const UiState &s);     // anel de progresso do Pomodoro
 void uiMessage(const char *title, const char *l1, const char *l2, const char *l3);
+void uiMessageLine(const char *l1);              // troca só a linha de destaque da mensagem na tela
+void uiBootProgress(uint32_t ms, uint8_t done);  // barra e etapas da tela de início (só com uiMessage na tela)
+void uiSyncHint(uint32_t ms);                    // "sincronizando" por cima do mostrador, enquanto não há hora
 void uiColorTest();                          // barras R/G/B/branco para ajustar o painel
 // VCOM padrão: 0x1E = 0,850 V (com 0,900 V, o valor de reset do chip, o SmallTV Ultra ficava com imagem fantasma)
 static const uint8_t UI_VCOM_DEFAULT = 0x1E;

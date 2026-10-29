@@ -18,12 +18,12 @@ enum : uint8_t { F_PIXEL, F_DM, F_GEO, F_DSEG, F_BEBAS, F_OUTFIT, F_RIGHTEOUS, F
 enum : uint8_t { A_LEFT, A_CENTER, A_RIGHT };
 enum : uint8_t { W_ALWAYS, W_DAY, W_NIGHT, W_RAIN, W_DRY, W_WX, W_NOWX, W_GOAL, W_NOGOAL, W_STREAK, W_WHENS };
 enum : uint8_t { V_SEC, V_MIN, V_HOUR, V_FOCOS, V_HUM, V_VARS };
-static const char *const TYPES[L_TYPES] = {"rect", "circle", "line", "text", "sprite", "mascot", "weather", "bar", "hand", "image", "arc", "ticks", "plant"};
-static const char *const FONTS[F_FONTS] = {"pixel", "dm", "geo", "dseg", "bebas", "outfit", "righteous"};
-static const char *const ALIGNS[3] = {"left", "center", "right"};
-static const char *const WHENS[W_WHENS] = {"always", "day", "night", "rain", "dry", "weather", "noweather", "goal", "nogoal", "streak"};
-static const char *const VARS[V_VARS] = {"sec", "min", "hour", "focos", "hum"};
-static const char *const MOODS[9] = {"feliz", "dormindo", "focado", "relax", "comemorando", "guarda-chuva", "cachecol", "oculos", "auto"};
+static const char TYPES[] PROGMEM = "rect\0circle\0line\0text\0sprite\0mascot\0weather\0bar\0hand\0image\0arc\0ticks\0plant";
+static const char FONTS[] PROGMEM = "pixel\0dm\0geo\0dseg\0bebas\0outfit\0righteous";
+static const char ALIGNS[] PROGMEM = "left\0center\0right";
+static const char WHENS[] PROGMEM = "always\0day\0night\0rain\0dry\0weather\0noweather\0goal\0nogoal\0streak";
+static const char VARS[] PROGMEM = "sec\0min\0hour\0focos\0hum";
+static const char MOODS[] PROGMEM = "feliz\0dormindo\0focado\0relax\0comemorando\0guarda-chuva\0cachecol\0oculos\0auto";
 static const int32_t C_NONE = -1, C_ACCENT = -2;
 static const uint8_t MAX_LAYERS = 48, MAX_SPRITES = 12, MAX_FRAMES = 8;
 static const uint16_t MAX_SPR_BYTES = 6144;
@@ -69,10 +69,11 @@ void facePackUnload() {
 }
 
 // ---------- leitura ----------
-static uint8_t pick(const char *s, const char *const *list, uint8_t n, uint8_t def) {
+// `list`: nomes na flash, separados por \0 (ver TYPES, FONTS...)
+static uint8_t pick(const char *s, PGM_P list, uint8_t n, uint8_t def) {
   if (!s) return def;
-  for (uint8_t i = 0; i < n; i++)
-    if (!strcmp(s, list[i])) return i;
+  for (uint8_t i = 0; i < n; i++, list += strlen_P(list) + 1)
+    if (!strcmp_P(s, list)) return i;
   return 255;
 }
 
@@ -82,12 +83,11 @@ static int32_t parseColor(const char *s, int32_t def) {
     long c = strtol(s + 1, nullptr, 16);
     return uiRgb(c >> 16, (c >> 8) & 255, c & 255);
   }
-  struct Named { const char *n; int32_t c; };
-  static const Named NAMES[] = {{"accent", C_ACCENT}, {"none", C_NONE}, {"bg", BG}, {"card", CARD}, {"card2", CARD2},
-                                {"text", TEXT}, {"muted", MUTED}, {"dim", DIM}, {"work", WORK}, {"short", SHORT},
-                                {"long", LONG}, {"sun", SUN}, {"cloud", CLOUD}, {"rain", RAIN}};
-  for (const Named &n : NAMES)
-    if (!strcmp(n.n, s)) return n.c;
+  static const char NAMES[] PROGMEM = "accent\0none\0bg\0card\0card2\0text\0muted\0dim\0work\0short\0long\0sun\0cloud\0rain";
+  static const int32_t COLORS[] PROGMEM = {C_ACCENT, C_NONE, BG, CARD, CARD2, TEXT, MUTED, DIM, WORK, SHORT, LONG, SUN, CLOUD, RAIN};
+  PGM_P n = NAMES;
+  for (uint8_t i = 0; i < sizeof COLORS / sizeof COLORS[0]; i++, n += strlen_P(n) + 1)
+    if (!strcmp_P(s, n)) return (int32_t)pgm_read_dword(&COLORS[i]);
   return def;
 }
 
@@ -140,17 +140,17 @@ static bool loadFrom(In &in, Rew rewind, char *err, size_t errLen) {
     rewind();
     DeserializationError e = deserializeJson(doc, in, DeserializationOption::Filter(filter));
     if (e) {
-      snprintf(err, errLen, "JSON invalido: %s", e.c_str());
+      snprintf_P(err, errLen, PSTR("JSON invalido: %s"), e.c_str());
       return false;
     }
   }
   if ((doc["format"] | 0) != 1) {
-    snprintf(err, errLen, "formato desconhecido (use \"format\": 1)");
+    snprintf_P(err, errLen, PSTR("formato desconhecido (use \"format\": 1)"));
     return false;
   }
   JsonArrayConst layers = doc["layers"];
   if (layers.isNull() || layers.size() == 0 || layers.size() > MAX_LAYERS) {
-    snprintf(err, errLen, "\"layers\" precisa ter de 1 a %d camadas", MAX_LAYERS);
+    snprintf_P(err, errLen, PSTR("\"layers\" precisa ter de 1 a %d camadas"), MAX_LAYERS);
     return false;
   }
   // tamanhos para alocar de uma vez
@@ -166,7 +166,7 @@ static bool loadFrom(In &in, Rew rewind, char *err, size_t errLen) {
   uint8_t ns = 0;
   for (JsonPairConst kv : doc["sprites"].as<JsonObjectConst>()) {
     if (ns >= MAX_SPRITES || strlen(kv.key().c_str()) >= sizeof sprName[0]) {
-      snprintf(err, errLen, "sprite \"%s\": ate 32x32 e no maximo %d sprites", kv.key().c_str(), MAX_SPRITES);
+      snprintf_P(err, errLen, PSTR("sprite \"%s\": ate 32x32 e no maximo %d sprites"), kv.key().c_str(), MAX_SPRITES);
       return false;
     }
     strcpy(sprName[ns++], kv.key().c_str());
@@ -175,7 +175,7 @@ static bool loadFrom(In &in, Rew rewind, char *err, size_t errLen) {
   pool = (char *)malloc(pcap);
   if (!lay || !pool) {
     facePackUnload();
-    snprintf(err, errLen, "sem memoria para o pacote");
+    snprintf_P(err, errLen, PSTR("sem memoria para o pacote"));
     return false;
   }
   poolCap = pcap;
@@ -192,7 +192,7 @@ static bool loadFrom(In &in, Rew rewind, char *err, size_t errLen) {
       DeserializationError e = deserializeJson(sd, in, DeserializationOption::Filter(filter));
       if (e) {
         facePackUnload();
-        snprintf(err, errLen, "JSON invalido: %s", e.c_str());
+        snprintf_P(err, errLen, PSTR("JSON invalido: %s"), e.c_str());
         return false;
       }
     }
@@ -203,31 +203,31 @@ static bool loadFrom(In &in, Rew rewind, char *err, size_t errLen) {
     int fps = sp["fps"] | 4;
     if (!w0 || w0 > 32 || h0 > 32) {
       facePackUnload();
-      snprintf(err, errLen, "sprite \"%s\": ate 32x32 e no maximo %d sprites", sprName[si], MAX_SPRITES);
+      snprintf_P(err, errLen, PSTR("sprite \"%s\": ate 32x32 e no maximo %d sprites"), sprName[si], MAX_SPRITES);
       return false;
     }
     if (nf0 < 1 || nf0 > MAX_FRAMES || fps < 1 || fps > 10) {
       facePackUnload();
-      snprintf(err, errLen, "sprite \"%s\": de 1 a %d quadros e \"fps\" de 1 a 10", sprName[si], MAX_FRAMES);
+      snprintf_P(err, errLen, PSTR("sprite \"%s\": de 1 a %d quadros e \"fps\" de 1 a 10"), sprName[si], MAX_FRAMES);
       return false;
     }
     for (size_t k = 1; k < nf0; k++)
       if (fr[k].size() != h0 || strlen(fr[k][0] | "") != w0) {
         facePackUnload();
-        snprintf(err, errLen, "sprite \"%s\": todos os quadros precisam ter o mesmo tamanho", sprName[si]);
+        snprintf_P(err, errLen, PSTR("sprite \"%s\": todos os quadros precisam ter o mesmo tamanho"), sprName[si]);
         return false;
       }
     size_t add = 4 + 15 * 2 + nf0 * ((w0 * h0 + 1) / 2);
     if (sprCap + add > MAX_SPR_BYTES) {
       size_t tot = sprCap + add;
       facePackUnload();
-      snprintf(err, errLen, "sprites grandes demais: %d bytes no total (maximo %d)", (int)tot, MAX_SPR_BYTES);
+      snprintf_P(err, errLen, PSTR("sprites grandes demais: %d bytes no total (maximo %d)"), (int)tot, MAX_SPR_BYTES);
       return false;
     }
     uint8_t *ns_ = (uint8_t *)realloc(spr, sprCap + add);
     if (!ns_) {
       facePackUnload();
-      snprintf(err, errLen, "sem memoria para o pacote");
+      snprintf_P(err, errLen, PSTR("sem memoria para o pacote"));
       return false;
     }
     spr = ns_;
@@ -237,7 +237,7 @@ static bool loadFrom(In &in, Rew rewind, char *err, size_t errLen) {
     uint16_t colors[15];
     for (JsonPairConst c : palObj) {
       if (n == 15 || strlen(c.key().c_str()) != 1) {
-        snprintf(err, errLen, "sprite \"%s\": paleta com ate 15 cores de 1 caractere", sprName[si]);
+        snprintf_P(err, errLen, PSTR("sprite \"%s\": paleta com ate 15 cores de 1 caractere"), sprName[si]);
         facePackUnload();
         return false;
       }
@@ -279,7 +279,7 @@ static bool loadFrom(In &in, Rew rewind, char *err, size_t errLen) {
     Layer &L = lay[nLay];
     L.type = pick(l["type"] | (const char *)nullptr, TYPES, L_TYPES, 255);
     if (L.type == 255) {
-      snprintf(err, errLen, "camada %d: tipo desconhecido", nLay + 1);
+      snprintf_P(err, errLen, PSTR("camada %d: tipo desconhecido"), nLay + 1);
       facePackUnload();
       return false;
     }
@@ -307,7 +307,7 @@ static bool loadFrom(In &in, Rew rewind, char *err, size_t errLen) {
     bool stroke = L.type == L_LINE || L.type == L_HAND || L.type == L_TICKS || L.type == L_ARC;
     if (abs(L.x) > 960 || abs(L.y) > 960 || abs(L.w) > 960 || abs(L.h) > 960 || L.r < 0 || L.r > 360 ||
         (L.type == L_TICKS && (L.mx < 1 || L.mx > 120 || abs(L.w) > 240)) || (stroke && L.size > 64)) {
-      snprintf(err, errLen, "camada %d: tamanho ou posicao fora do limite", nLay + 1);
+      snprintf_P(err, errLen, PSTR("camada %d: tamanho ou posicao fora do limite"), nLay + 1);
       facePackUnload();
       return false;
     }
@@ -317,7 +317,7 @@ static bool loadFrom(In &in, Rew rewind, char *err, size_t errLen) {
     L.var = L.type == L_MASCOT ? pick(l["mood"] | (const char *)nullptr, MOODS, 9, 8)
                                : pick(l["value"] | (const char *)nullptr, VARS, V_VARS, V_SEC);
     if (L.font == 255 || L.align == 255 || L.when == 255 || L.var == 255) {
-      snprintf(err, errLen, "camada %d: font/align/when/value/mood invalido", nLay + 1);
+      snprintf_P(err, errLen, PSTR("camada %d: font/align/when/value/mood invalido"), nLay + 1);
       facePackUnload();
       return false;
     }
@@ -346,7 +346,7 @@ static bool loadFrom(In &in, Rew rewind, char *err, size_t errLen) {
     } else if (L.type == L_TEXT) L.str = addStr(l["text"] | "");
     else if (L.type == L_IMAGE) L.str = addStr(l["file"] | "");
     if ((L.type == L_TEXT || L.type == L_IMAGE) && L.str == 0xFFFF) {  // não coube no pool: nunca ler pool + 0xFFFF
-      snprintf(err, errLen, "camada %d: texto grande demais", nLay + 1);
+      snprintf_P(err, errLen, PSTR("camada %d: texto grande demais"), nLay + 1);
       facePackUnload();
       return false;
     }
@@ -356,7 +356,7 @@ static bool loadFrom(In &in, Rew rewind, char *err, size_t errLen) {
       for (uint8_t i = 0; i < ns; i++)
         if (!strcmp(sprName[i], sn)) L.str = sprOff[i];
       if (L.str == 0xFFFF) {
-        snprintf(err, errLen, "camada %d: sprite \"%s\" nao existe", nLay + 1, sn);
+        snprintf_P(err, errLen, PSTR("camada %d: sprite \"%s\" nao existe"), nLay + 1, sn);
         facePackUnload();
         return false;
       }
@@ -399,29 +399,29 @@ static void variable(const char *k, const UiState &s, char *v, size_t n) {
   v[0] = 0;
   bool t = s.timeOk, wx = s.weatherOn && s.wx.ok;
   const struct tm &m = s.now;
-  if (!strcmp(k, "HH")) t ? snprintf(v, n, "%02d", displayHour(s)) : snprintf(v, n, "--");
-  else if (!strcmp(k, "H")) t ? snprintf(v, n, "%d", displayHour(s)) : snprintf(v, n, "-");
-  else if (!strcmp(k, "MM")) t ? snprintf(v, n, "%02d", m.tm_min) : snprintf(v, n, "--");
-  else if (!strcmp(k, "SS")) t ? snprintf(v, n, "%02d", m.tm_sec) : snprintf(v, n, "--");
-  else if (!strcmp(k, "WD")) snprintf(v, n, "%s", t ? WD[m.tm_wday] : "");
-  else if (!strcmp(k, "DD")) t ? snprintf(v, n, "%02d", m.tm_mday) : snprintf(v, n, "--");
-  else if (!strcmp(k, "MON")) snprintf(v, n, "%s", t ? MO[m.tm_mon] : "");
-  else if (!strcmp(k, "MO")) t ? snprintf(v, n, "%02d", m.tm_mon + 1) : snprintf(v, n, "--");
-  else if (!strcmp(k, "YYYY")) t ? snprintf(v, n, "%d", m.tm_year + 1900) : snprintf(v, n, "----");
-  else if (!strcmp(k, "AMPM")) snprintf(v, n, "%s", t && m.tm_hour >= 12 ? "PM" : "AM");
-  else if (!strcmp(k, "TEMP")) wx ? snprintf(v, n, "%d", (int)lroundf(s.wx.t)) : snprintf(v, n, "--");
-  else if (!strcmp(k, "TMIN")) wx ? snprintf(v, n, "%d", (int)lroundf(s.wx.tmin)) : snprintf(v, n, "--");
-  else if (!strcmp(k, "TMAX")) wx ? snprintf(v, n, "%d", (int)lroundf(s.wx.tmax)) : snprintf(v, n, "--");
-  else if (!strcmp(k, "HUM")) wx ? snprintf(v, n, "%d", s.wx.hum) : snprintf(v, n, "--");
-  else if (!strcmp(k, "UNIT")) snprintf(v, n, "%s", s.fahr ? "F" : "C");
-  else if (!strcmp(k, "RAIN")) snprintf(v, n, "%s", wx ? rainSoonText(s.wx.rainIn) : "");
-  else if (!strcmp(k, "WX")) snprintf(v, n, "%s", wx ? weatherText(s.wx.code) : "");
-  else if (!strcmp(k, "CITY")) snprintf(v, n, "%s", s.city ? s.city : "");
-  else if (!strcmp(k, "FOCOS")) snprintf(v, n, "%u", s.today);
-  else if (!strcmp(k, "META")) snprintf(v, n, "%u", s.dailyGoal);
-  else if (!strcmp(k, "STREAK")) snprintf(v, n, "%u", s.streak);
-  else if (!strcmp(k, "BEST")) snprintf(v, n, "%u", s.best);
-  else if (!strcmp(k, "IP")) snprintf(v, n, "%s", s.ip ? s.ip : "");
+  if (!strcmp_P(k, PSTR("HH"))) t ? snprintf_P(v, n, PSTR("%02d"), displayHour(s)) : snprintf_P(v, n, PSTR("--"));
+  else if (!strcmp_P(k, PSTR("H"))) t ? snprintf_P(v, n, PSTR("%d"), displayHour(s)) : snprintf_P(v, n, PSTR("-"));
+  else if (!strcmp_P(k, PSTR("MM"))) t ? snprintf_P(v, n, PSTR("%02d"), m.tm_min) : snprintf_P(v, n, PSTR("--"));
+  else if (!strcmp_P(k, PSTR("SS"))) t ? snprintf_P(v, n, PSTR("%02d"), m.tm_sec) : snprintf_P(v, n, PSTR("--"));
+  else if (!strcmp_P(k, PSTR("WD"))) snprintf_P(v, n, PSTR("%s"), t ? WD[m.tm_wday] : "");
+  else if (!strcmp_P(k, PSTR("DD"))) t ? snprintf_P(v, n, PSTR("%02d"), m.tm_mday) : snprintf_P(v, n, PSTR("--"));
+  else if (!strcmp_P(k, PSTR("MON"))) snprintf_P(v, n, PSTR("%s"), t ? MO[m.tm_mon] : "");
+  else if (!strcmp_P(k, PSTR("MO"))) t ? snprintf_P(v, n, PSTR("%02d"), m.tm_mon + 1) : snprintf_P(v, n, PSTR("--"));
+  else if (!strcmp_P(k, PSTR("YYYY"))) t ? snprintf_P(v, n, PSTR("%d"), m.tm_year + 1900) : snprintf_P(v, n, PSTR("----"));
+  else if (!strcmp_P(k, PSTR("AMPM"))) snprintf_P(v, n, PSTR("%s"), t && m.tm_hour >= 12 ? "PM" : "AM");
+  else if (!strcmp_P(k, PSTR("TEMP"))) wx ? snprintf_P(v, n, PSTR("%d"), (int)lroundf(s.wx.t)) : snprintf_P(v, n, PSTR("--"));
+  else if (!strcmp_P(k, PSTR("TMIN"))) wx ? snprintf_P(v, n, PSTR("%d"), (int)lroundf(s.wx.tmin)) : snprintf_P(v, n, PSTR("--"));
+  else if (!strcmp_P(k, PSTR("TMAX"))) wx ? snprintf_P(v, n, PSTR("%d"), (int)lroundf(s.wx.tmax)) : snprintf_P(v, n, PSTR("--"));
+  else if (!strcmp_P(k, PSTR("HUM"))) wx ? snprintf_P(v, n, PSTR("%d"), s.wx.hum) : snprintf_P(v, n, PSTR("--"));
+  else if (!strcmp_P(k, PSTR("UNIT"))) snprintf_P(v, n, PSTR("%s"), s.fahr ? "F" : "C");
+  else if (!strcmp_P(k, PSTR("RAIN"))) snprintf_P(v, n, PSTR("%s"), wx ? rainSoonText(s.wx.rainIn) : "");
+  else if (!strcmp_P(k, PSTR("WX"))) snprintf_P(v, n, PSTR("%s"), wx ? weatherText(s.wx.code) : "");
+  else if (!strcmp_P(k, PSTR("CITY"))) snprintf_P(v, n, PSTR("%s"), s.city ? s.city : "");
+  else if (!strcmp_P(k, PSTR("FOCOS"))) snprintf_P(v, n, PSTR("%u"), s.today);
+  else if (!strcmp_P(k, PSTR("META"))) snprintf_P(v, n, PSTR("%u"), s.dailyGoal);
+  else if (!strcmp_P(k, PSTR("STREAK"))) snprintf_P(v, n, PSTR("%u"), s.streak);
+  else if (!strcmp_P(k, PSTR("BEST"))) snprintf_P(v, n, PSTR("%u"), s.best);
+  else if (!strcmp_P(k, PSTR("IP"))) snprintf_P(v, n, PSTR("%s"), s.ip ? s.ip : "");
 }
 
 static void resolve(const char *tpl, const UiState &s, char *out, size_t n) {

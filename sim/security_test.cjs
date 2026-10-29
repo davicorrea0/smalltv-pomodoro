@@ -69,6 +69,8 @@ fs.writeFileSync(out,`#include "${header}"
 #include <cstdio>
 #include <cctype>
 #include <limits>
+#define F(s) (s)
+#define PSTR(s) (s)
 struct String:std::string {
  using std::string::string;using std::string::operator=;
  String(const std::string&s):std::string(s){}
@@ -171,6 +173,22 @@ int main(){
  // hora do clima
  assert(isoToEpoch("1970-01-01T00:00")==0);assert(isoToEpoch("2026-10-23T00:30")==1792715400LL);
  assert(isoToEpoch("2026-13-01T00:00")==-1&&isoToEpoch("2026-10-23")==-1&&isoToEpoch(nullptr)==-1&&isoToEpoch("2026-10-23T0a:30")==-1);
+ // cabeçalho Date do HTTP: só para mostrar a hora
+ assert(httpDateToEpoch(" Wed, 28 Oct 2026 12:00:00 GMT\\r")==1793188800LL);assert(httpDateToEpoch("Thu, 01 Jan 1970 00:00:00 GMT")==-1);
+ assert(httpDateToEpoch("Sat, 01 Jan 2000 00:00:00 GMT")==946684800LL&&httpDateToEpoch("Sun, 06 Nov 1994 08:49:37 GMT")==-1);assert(httpDateToEpoch("28 Oct 2026 12:00:00 GMT")==1793188800LL);
+ assert(httpDateToEpoch("Wed, 28 Foo 2026 12:00:00 GMT")==-1&&httpDateToEpoch("Wed, 28 Oct 2026 25:00:00 GMT")==-1&&httpDateToEpoch("")==-1&&httpDateToEpoch(nullptr)==-1);
+ assert(httpDateToEpoch("Wed, 28 Oct 2026 12:00 GMT")==-1&&httpDateToEpoch("Wed, 32 Oct 2026 12:00:00 GMT")==-1);
+ {const int64_t T=1792715400LL;  // hora na memória RTC entre reinícios: soma o tempo que passou; lixo ou velho demais, não
+  const uint32_t q12=(uint32_t)(5.75*4096);                              // ~5,75 µs por tick
+  uint32_t tk=1000000;RtcClock c=rtcClockMake((uint32_t)T,tk);
+  assert(rtcClockRestore(c,tk,q12)==T);
+  assert(rtcClockRestore(c,tk+(uint32_t)(3100000.0/5.75),q12)==T+3);       // ~3,1 s depois
+  assert(rtcClockRestore(c,tk-5,q12)==-1);                                 // contador voltou (ligou de novo): inválido
+  assert(rtcClockRestore(c,tk+(uint32_t)(601e6/5.75),q12)==-1);            // parado há mais de 10 min
+  RtcClock bad=c;bad.sec++;assert(rtcClockRestore(bad,tk,q12)==-1);       // corrompido
+  RtcClock zero={0,0,0,0};assert(rtcClockRestore(zero,0,q12)==-1&&rtcClockRestore(c,tk,0)==-1);
+  RtcClock old=rtcClockMake(1000,tk);assert(rtcClockRestore(old,tk,q12)==-1);
+ }
  {const int64_t T=1792715400LL;  // TimeGuard: hora confirmada pelo clima; salto do SNTP desfeito até confirmar
   TimeGuard g;uint32_t ms=1000;
   assert(g.onSntp(T,ms,false)==T&&!g.ok(T,ms));                       // logo ao ligar: mostra, não grava

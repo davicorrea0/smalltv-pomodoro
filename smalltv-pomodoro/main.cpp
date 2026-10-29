@@ -4,8 +4,12 @@
 // Hardware (fonte: devices.esphome.io/devices/geekmagic-ultra):
 //   Tela ST7789 240x240, SPI hardware CLK=GPIO14 MOSI=GPIO13, sem CS (SPI modo 3)
 //   DC=GPIO0  RST=GPIO2  Backlight=GPIO5 (PWM invertido)
-// Flash: layout 4M3M, igual ao firmware original (LittleFS em 0x100000-0x3FA000, constantes
-// encontradas no binário V9.0.50 no offset 0x14d00). Assim as fotos e GIFs já gravados são lidos.
+// Flash: layout 4M2M (programa até ~1 MB; LittleFS em 0x200000-0x3FA000). Até a 1.23 o layout era 4M3M, igual
+// ao firmware original (LittleFS em 0x100000-0x3FA000, constantes do binário V9.0.50, offset 0x14d00), que
+// deixava só ~1 MB para o programa e a cópia da atualização. EEPROM (0x3FB000), RF cal e dados do SDK ficam
+// nos mesmos endereços nos dois layouts, então os ajustes sobrevivem; o LittleFS é que muda de lugar: no
+// primeiro início em 4M2M ele é formatado (ver fsMount). A mesma fonte ainda compila em 4M3M (LAYOUT=4M3M
+// em compilar.sh), para uma versão de transição que só leva o painel novo.
 
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
@@ -42,7 +46,7 @@ extern "C" uint32_t _FS_start;
 
 void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);  // ui.cpp: recorta para a área suja; fora da tela, cai na faixa
 
-#define FW_VERSION "1.23.1"
+#define FW_VERSION "1.23.5"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
@@ -57,16 +61,17 @@ Adafruit_ST7789 tft(-1, PIN_DC, PIN_RST);
 // memória de 4 em 4 bytes: com a linha num endereço que não é múltiplo de 4 (texto da fonte vetorial,
 // recortes, faixas de largura ímpar) o ESP8266 dá exceção de alinhamento e reinicia (issue #4).
 // Toda linha passa por aqui: desalinhada, vai por uma cópia alinhada.
+// A cópia alinhada usa uiRowBuf(), o mesmo buffer do gifDraw e do Flip (nunca em uso ao mesmo tempo): quem já
+// o entrega alinhado nem é copiado. Um buffer só em vez de três (RAM fixa).
 static void tftPixels(uint16_t *px, int n) {
-  static uint32_t al[120];  // 240 pixels
   if (!((uintptr_t)px & 3)) {
     tft.writePixels(px, n);
     return;
   }
   while (n > 0) {
     int k = n < 240 ? n : 240;
-    memcpy(al, px, k * 2);
-    tft.writePixels((uint16_t *)al, k);
+    memmove(uiRowBuf(), px, k * 2);  // px pode estar dentro do próprio buffer (linha do Flip recortada)
+    tft.writePixels(uiRowBuf(), k);
     px += k;
     n -= k;
   }
@@ -166,16 +171,33 @@ bool recoveryMode = false;
 struct CrashRec { uint32_t magic; uint8_t n, reason, exc, pad; uint32_t epc, vaddr, up; char ver[8]; };
 const uint32_t CRASH_MAGIC = 0x43524153;  // "CRAS"
 const int CRASH_OFF = BOOT_OFF + sizeof(BootCount);
-const int EE_SIZE = CRASH_OFF + sizeof(CrashRec);
+// Marca da memória de arquivos no layout 4M2M: "FS2M" = o LittleFS deste endereço já foi formatado por nós.
+// Sem ela (primeiro início depois de vir do 4M3M ou do firmware original) o conteúdo ali é lixo do layout
+// antigo e fsMount formata; `pend` fica 1 até o painel confirmar que o backup foi restaurado.
+struct FsMark { uint32_t magic; uint8_t pend; };
+const uint32_t FS_MAGIC = 0x46533241;  // "FS2A"
+const int FS_OFF = CRASH_OFF + sizeof(CrashRec);
+FsMark fsMark;
+// Último roteador: canal e BSSID, para o próximo início conectar sem varrer todos os canais (ver connectStored).
+// Só é gravado quando muda (trocar de rede ou o roteador trocar de canal): ligar não gasta flash.
+struct WifiHint { uint32_t magic; uint32_t ssid; uint8_t bssid[6]; uint8_t chan, pad; };
+const uint32_t WIFI_MAGIC = 0x57494648;  // "WIFH"
+const int WIFIH_OFF = FS_OFF + sizeof(FsMark);
+const int EE_SIZE = WIFIH_OFF + sizeof(WifiHint);
+static_assert(sizeof(WifiHint) == 16, "registro do Wi-Fi mudou de tamanho");
 static_assert(sizeof(CrashRec) == 28, "registro da queda mudou de tamanho");
 static_assert(sizeof(FW_VERSION) <= sizeof(CrashRec::ver), "a versao nao cabe no registro da queda");
 const uint32_t CRASH_RTC_TAG = 0x55505453;  // "UPTS"
+// Memória RTC de usuário: os blocos 0-31 (128 bytes) são do comando que a atualização deixa para o eboot
+// (Updater, eboot_command em 0x60001200). Escrever ali entre o fim da atualização e o reinício corrompe o
+// comando, e o eboot liga a versão antiga (foi o que a 1.23.2 fazia ao guardar a hora). Nossos dados: do 32 em diante.
+const uint32_t RTC_CRASH_BLOCK = 32;  // 2 blocos: marca e segundos ligado
 CrashRec crashRec;  // magic != CRASH_MAGIC: nenhuma queda guardada
 
 // roda no travamento (o core chama no lugar do aviso extra): guarda há quanto tempo estava ligado
 extern "C" void custom_crash_callback(struct rst_info *, uint32_t, uint32_t) {
   uint32_t v[2] = {CRASH_RTC_TAG, millis() / 1000};
-  ESP.rtcUserMemoryWrite(0, v, sizeof v);
+  ESP.rtcUserMemoryWrite(RTC_CRASH_BLOCK, v, sizeof v);
 }
 
 void crashLoad() {
@@ -184,7 +206,7 @@ void crashLoad() {
   const rst_info *r = ESP.getResetInfoPtr();
   if (!r || !(r->reason == REASON_WDT_RST || r->reason == REASON_EXCEPTION_RST || r->reason == REASON_SOFT_WDT_RST)) return;
   uint32_t v[2] = {0, 0};
-  ESP.rtcUserMemoryRead(0, v, sizeof v);
+  ESP.rtcUserMemoryRead(RTC_CRASH_BLOCK, v, sizeof v);
   uint8_t n = crashRec.magic ? crashRec.n : 0;
   crashRec = {CRASH_MAGIC, (uint8_t)(n < 255 ? n + 1 : n), (uint8_t)r->reason, (uint8_t)r->exccause, 0,
               r->epc1, r->excvaddr, v[0] == CRASH_RTC_TAG ? v[1] : 0, {}};
@@ -201,8 +223,10 @@ void setBootCount(uint8_t n) {
 }
 
 // reinício pedido (Wi-Fi, atualização...): não conta como inicialização curta
+void rtcTimeSave();
 void safeRestart() {
   if (bootCount) setBootCount(0);
+  rtcTimeSave();  // a hora atravessa o reinício (memória RTC): o mostrador já volta com ela
   ESP.restart();
 }
 
@@ -285,8 +309,60 @@ bool localNow(struct tm &t) {
   return true;
 }
 
-void applyTimezone() {
-  configTime(cfg.tz, "pool.ntp.org", "time.google.com", "a.st1.ntp.br");
+// Tempos do último início, em ms desde que ligou (0 = ainda não aconteceu); aparecem em diag.boot
+uint32_t bootScreenMs = 0, bootWifiMs = 0, bootTimeMs = 0, bootNtpMs = 0;
+uint8_t bootTimeSrc = 0;   // de onde veio a primeira hora: 1 SNTP, 2 memória RTC (reinício por software), 3 cabeçalho do clima
+uint8_t bootWifiPath = 0;  // 0 rede salva (varredura completa), 1 canal e BSSID guardados, 2 o SDK já tinha conectado, 3 o rápido falhou
+uint32_t ntpAskAt = 0;  // quando o SNTP foi (re)configurado; 0 = ainda não
+uint8_t ntpTries = 0;
+bool syncHintOn = false;  // o mostrador está com o indicador "sincronizando" por cima (ver renderClock)
+bool timeSoft = false;     // hora de reserva (RTC ou cabeçalho HTTP) ainda sem SNTP: só mostra, nunca confirma
+void bootNote(uint8_t src) {
+  if (!bootTimeMs) {
+    bootTimeMs = millis() | 1;
+    bootTimeSrc = src;
+  }
+}
+
+void softTime(int64_t sec, uint8_t src) {
+  timeval tv = {(time_t)sec, 0};
+  settimeofday(&tv, nullptr);  // não é o SNTP: o aviso do timeGuardBegin ignora
+  timeSoft = true;
+  bootNote(src);
+}
+
+// A hora passa pelo reinício por software na memória RTC (fora dos blocos 0-31 do eboot e dos 32-33 da queda).
+// Volta como hora de reserva: aparece na hora, mas só o SNTP junto do clima a confirma.
+const uint32_t RTC_CLOCK_BLOCK = 40;
+void rtcTimeSave() {
+  if (!timeTrusted()) return;
+  eboot_command cmd;
+  if (eboot_command_read(&cmd) == 0) return;  // atualização à espera do eboot: não mexe na memória RTC agora
+  RtcClock c = rtcClockMake((uint32_t)time(nullptr), system_get_rtc_time());
+  ESP.rtcUserMemoryWrite(RTC_CLOCK_BLOCK, (uint32_t *)&c, sizeof c);
+}
+
+void rtcTimeRestore() {
+  RtcClock c;
+  if (!ESP.rtcUserMemoryRead(RTC_CLOCK_BLOCK, (uint32_t *)&c, sizeof c)) return;
+  int64_t t = rtcClockRestore(c, system_get_rtc_time(), system_rtc_clock_cali_proc());
+  if (t <= 0) return;
+  setenv("TZ", cfg.tz, 1);
+  tzset();
+  softTime(t, 2);
+}
+
+// O NTP.br responde mais rápido no Brasil; no resto do mundo o pool escolhe um servidor perto. rot gira a
+// ordem: se o primeiro não respondeu, o lwIP só tenta o seguinte depois de ~15 s (ver sntpWatch).
+void applyTimezone(uint8_t rot = 0) {
+  const char *s[3] = {"pool.ntp.org", "time.google.com", "a.st1.ntp.br"};
+  const char *z = cfg.tz;  // fusos do Brasil e vizinhos: "<-03>3", "<-04>4"...
+  if (z[0] == '<' && z[1] == '-' && z[2] == '0' && z[3] >= '2' && z[3] <= '5' && z[4] == '>') {
+    s[0] = "a.st1.ntp.br";
+    s[1] = "pool.ntp.org";
+    s[2] = "time.google.com";
+  }
+  configTime(z, s[rot % 3], s[(rot + 1) % 3], s[(rot + 2) % 3]);
 }
 
 // ---------- brilho (com horário noturno) ----------
@@ -503,8 +579,14 @@ bool mdnsTaken(const char *name) {
 }
 
 // Ao conectar: escolhe o nome curto livre e se anuncia.
+bool mdnsUp = false;  // Wi-Fi conectado na última volta do mdnsLoop (reconectou: entra de novo no grupo)
+
 void mdnsStart() {
+  // Sem a economia de energia do Wi-Fi: cochilando entre os beacons, o ESP8266 perde pacotes multicast, e o
+  // .local some "às vezes". O relógio vive na tomada; o custo é ~15 mA.
+  WiFi.setSleepMode(WIFI_NONE_SLEEP);
   lanName[0] = 0;
+  mdnsUp = true;
   if (!mdnsJoin()) return;
   for (int i = 1; i <= 9; i++) {
     char name[sizeof lanName];
@@ -519,8 +601,12 @@ void mdnsStart() {
 }
 
 void mdnsLoop() {
-  if (WiFi.status() != WL_CONNECTED) return;
-  if (WiFi.localIP() != mdnsIp) {  // o IP mudou: entra de novo no grupo e se anuncia com o mesmo nome
+  if (WiFi.status() != WL_CONNECTED) {
+    mdnsUp = false;
+    return;
+  }
+  if (!mdnsUp || WiFi.localIP() != mdnsIp) {  // reconectou ou o IP mudou: entra de novo no grupo e se anuncia
+    mdnsUp = true;
     if (mdnsJoin()) mdnsAnnounce();
   }
   int len = mdnsUdp.parsePacket();
@@ -530,8 +616,12 @@ void mdnsLoop() {
   if (n <= 0) return;
   bool legacy = mdnsUdp.remotePort() != 5353, qu = false;
   uint16_t id = (uint16_t)(b[0] << 8 | b[1]);
-  if (lanName[0] && mdnsAsksFor(b, n, lanName, &qu)) mdnsSend(lanName, id, legacy, legacy || qu);
-  else if (mdnsAsksFor(b, n, netName, &qu)) mdnsSend(netName, id, legacy, legacy || qu);
+  const char *name = lanName[0] && mdnsAsksFor(b, n, lanName, &qu) ? lanName : mdnsAsksFor(b, n, netName, &qu) ? netName : nullptr;
+  if (!name) return;
+  mdnsSend(name, id, legacy, legacy || qu);
+  // Pergunta comum (resposta por multicast): manda também uma cópia direta para quem perguntou. Há roteadores que
+  // não repassam multicast entre aparelhos do Wi-Fi; Windows, macOS e Android aceitam a resposta direta.
+  if (!legacy && !qu) mdnsSend(name, id, false, true);
 }
 bool alexaUp = false;     // ouvindo a descoberta
 uint8_t alexaBri = 255;   // último brilho pedido (1-255)
@@ -752,7 +842,10 @@ static void appendFixed(String &out, float value, uint8_t digits) {
   for (uint32_t div = scale / 10; div; div /= 10) out += (char)('0' + frac / div % 10);
 }
 
+uint32_t httpDateEpoch = 0;  // cabeçalho Date da última resposta (0 = não veio)
+
 int httpGet(WiFiClient &c, const String &url, uint16_t timeoutMs) {
+  httpDateEpoch = 0;
   if (!safeHttpUrl(url.c_str(), url.length())) return -1;
   int end = 7;
   while (end < (int)url.length() && url[end] != '/' && url[end] != '?') end++;
@@ -785,6 +878,10 @@ int httpGet(WiFiClient &c, const String &url, uint16_t timeoutMs) {
     total += line.length();
     if (total > 8192) return -2;
     if (line.length() <= 1) return code;
+    if (!strncasecmp_P(line.c_str(), PSTR("date:"), 5)) {
+      int64_t d = httpDateToEpoch(line.c_str() + 5);
+      if (d > 0) httpDateEpoch = (uint32_t)d;
+    }
   }
   return -2;
 }
@@ -803,6 +900,7 @@ bool fetchWeather() {
            "&timezone=auto&forecast_days=");
   url += UI_DAYS;
   if (httpGet(client, url, 5000) != 200) return false;
+  if (!timeValid() && httpDateEpoch) softTime(httpDateEpoch, 3);  // reserva só para mostrar até o SNTP chegar
   JsonDocument filter;
   filter["minutely_15"]["precipitation"] = true;  // 4 quartos de hora a partir do atual: a próxima hora
   filter["minutely_15"]["precipitation_probability"] = true;
@@ -858,7 +956,8 @@ bool fetchWeather() {
   sunRise = minutes(doc["daily"]["sunrise"][0] | (const char *)nullptr);
   sunSet = minutes(doc["daily"]["sunset"][0] | (const char *)nullptr);
   int64_t local = isoToEpoch(doc["current"]["time"] | (const char *)nullptr);
-  if (local > 0) {  // confere a hora (veio por TCP): confirma a atual ou a que o SNTP trouxe e foi desfeita
+  // Com hora de reserva (RTC ou cabeçalho HTTP) o clima só confirmaria contra a mesma fonte: espera o SNTP.
+  if (local > 0 && !timeSoft) {  // confere a hora (veio por TCP): confirma a atual ou a que o SNTP trouxe e foi desfeita
     timeval tv;
     gettimeofday(&tv, nullptr);
     int64_t want = timeGuard.onWeather(local - doc["utc_offset_seconds"].as<int32_t>(), tv.tv_sec, millis());
@@ -891,6 +990,9 @@ bool weatherConfirms() { return cfg.weatherOn && cfg.city[0] && wxFails < 3; }
 void timeGuardBegin() {
   settimeofday_cb([](bool fromSntp) {
     if (!fromSntp) return;  // a própria correção abaixo (e a do clima) também chamam este aviso
+    timeSoft = false;
+    bootNote(1);
+    if (!bootNtpMs) bootNtpMs = millis() | 1;
     timeval tv;
     gettimeofday(&tv, nullptr);
     int64_t want = timeGuard.onSntp(tv.tv_sec, millis(), !weatherConfirms());
@@ -1035,6 +1137,16 @@ struct DrawProbe {
 void renderClock() {
   DrawProbe probe;
   UiState s = makeState();
+  if (!s.timeOk) {  // sem hora ainda: nunca parece travado
+    syncHintOn = true;
+    uiRenderClock(s);
+    uiSyncHint(s.ms);
+    return;
+  }
+  if (syncHintOn) {  // a hora chegou: apaga o indicador redesenhando o mostrador
+    syncHintOn = false;
+    uiInvalidate();
+  }
   if (s.timeOk && timeTrusted()) {  // virada do dia e histórico só com a hora confirmada
     checkDayRollover(s.now);
     statsFlush(s.now);
@@ -1067,6 +1179,15 @@ void renderAlert() {
 
 void message(const char *a, const char *b = "", const char *c = "", const char *d = "") { uiMessage(a, b, c, d); }
 
+// Barra da tela de início: done = etapas concluídas (0 Wi-Fi, 1 hora, 2 pronto); anima a cada ~60 ms
+void bootAnim(uint8_t done) {
+  static uint32_t last = 0;
+  uint32_t now = millis();
+  if (now - last < 60) return;
+  last = now;
+  uiBootProgress(now, done);
+}
+
 uint32_t colorTestUntil = 0;
 
 // ---------- rodízio de mostradores ----------
@@ -1080,6 +1201,56 @@ void rotLoop();
 
 // ---------- álbum: fotos (JPG) e GIFs no LittleFS ----------
 bool fsOk = false;
+
+// O símbolo _FS_start vem do script do linker do layout escolhido (eagle.flash.4m2m.ld: 0x40400000).
+bool fsLayout2() { return (uint32_t)&_FS_start == 0x40400000; }
+
+// Monta o LittleFS SEM formatar à toa: se falhar, os arquivos ficam intactos. A exceção é a migração do
+// layout 4M3M (LittleFS em 0x100000) para o 4M2M (0x200000): no primeiro início aqui, sem a marca na
+// EEPROM, o que há em 0x200000 é um pedaço do sistema de arquivos antigo (ou da memória do firmware
+// original), então formata uma vez, recria as pastas e marca `pend` para o painel oferecer a restauração
+// do backup. Se a marca existe e a montagem falha, NÃO formata (pode ser outra coisa): o painel mostra o botão Formatar.
+void fsMount() {
+  LittleFSConfig fcfg;
+  fcfg.setAutoFormat(false);
+  LittleFS.setConfig(fcfg);
+  fsOk = LittleFS.begin();
+  if (!fsLayout2()) return;
+  EEPROM.get(FS_OFF, fsMark);
+  if (fsMark.magic == FS_MAGIC) return;
+  message("SmallTV Pomodoro", tr("Reorganizando a memoria", "Reorganizing storage", "Reorganizando la memoria"), "...");
+  if (fsOk) LittleFS.end();
+  // Antes de formatar, guarda o histórico, o rodízio e os avisos, que valem mais que o espaço que ocupam: no primeiro
+  // início o LittleFS antigo (4M3M, 0x100000-0x3FA000) ainda está intacto, porque a atualização só gravou abaixo de
+  // 0x100000. Assim quem atualiza sem o backup do painel (ex.: direto da 1.23.1) não perde a sequência de dias.
+  struct Keep { const char *path; std::unique_ptr<uint8_t[]> data; size_t len; } keep[] = {
+      {"/stats.bin", nullptr, 0}, {"/rotation.txt", nullptr, 0}, {"/hooks.txt", nullptr, 0}};
+  {
+    FS old(FSImplPtr(new littlefs_impl::LittleFSImpl(0x100000, 0x3FA000 - 0x100000, 256, 8192, 2)));
+    if (old.begin()) {
+      for (Keep &k : keep) {
+        File f = old.open(k.path, "r");
+        if (!f || !f.size() || f.size() > 2048) continue;
+        k.data.reset(new (std::nothrow) uint8_t[f.size()]);
+        if (k.data) k.len = f.read(k.data.get(), f.size());
+      }
+      old.end();
+    }
+  }
+  fsOk = LittleFS.format() && LittleFS.begin();
+  if (!fsOk) return;  // sem marca: tenta de novo no próximo início
+  LittleFS.mkdir("/image");
+  LittleFS.mkdir("/gif");
+  LittleFS.mkdir("/faces");
+  for (Keep &k : keep) {
+    if (!k.len) continue;
+    File f = LittleFS.open(k.path, "w");
+    if (f) f.write(k.data.get(), k.len);
+  }
+  fsMark = {FS_MAGIC, 1};
+  EEPROM.put(FS_OFF, fsMark);
+  EEPROM.commit();
+}
 void sendStats();
 void setupUpdate();
 
@@ -1413,7 +1584,7 @@ static bool validGif(const String &path) {
 }
 
 void gifDraw(GIFDRAW *p) {
-  static uint16_t buf[240];
+  uint16_t *buf = uiRowBuf();  // alinhado: tftPixels não copia
   int y = p->iY + p->y + gifOffY;
   if (y < 0 || y >= 240) return;
   int x0 = p->iX + gifOffX;
@@ -1533,13 +1704,13 @@ bool idOk(const String &id) {
 bool loadPackFile(const String &path, String &msg) {
   File f = fsOk ? LittleFS.open(path, "r") : File();
   if (!f) {
-    msg = "arquivo nao encontrado";
+    msg = F("arquivo nao encontrado");
     return false;
   }
   size_t n = f.size();
   if (n == 0 || n > 16384) {
     f.close();
-    msg = "pacote vazio ou maior que 16 KB";
+    msg = F("pacote vazio ou maior que 16 KB");
     return false;
   }
   char err[96];
@@ -1576,28 +1747,28 @@ void handlePackUpload() {
     packGate.begin(false, 0);
     if (up.name == "face") { packUploadError = ""; packFaceReady = false; }
     if (!panelOk() || !uploadAuthed()) {
-      packUploadError = "Proibido";
+      packUploadError = F("Proibido");
       return;
     }
-    if (up.name != "face" && up.name != "preview") { packUploadError = "Campo invalido"; return; }
+    if (up.name != "face" && up.name != "preview") { packUploadError = F("Campo invalido"); return; }
     if (packUploadError.length()) return;
     if (!fsOk) {
-      packUploadError = "Sistema de arquivos indisponivel";
+      packUploadError = F("Sistema de arquivos indisponivel");
       return;
     }
     if (!LittleFS.exists("/faces")) LittleFS.mkdir("/faces");
     if (up.name == "face") { LittleFS.remove("/faces/_novo.json"); LittleFS.remove("/faces/_novo.png"); }
     packUpload = LittleFS.open(up.name == "preview" ? "/faces/_novo.png" : "/faces/_novo.json", "w");
-    if (!packUpload) { packUploadError = "Falha ao criar arquivo"; return; }
+    if (!packUpload) { packUploadError = F("Falha ao criar arquivo"); return; }
     packGate.begin(true, up.name == "face" ? 16384 : 65536);
   } else if (up.status == UPLOAD_FILE_WRITE) {
     if (!packGate.active) return;
-    if (!packGate.take(up.currentSize)) packUploadError = "Arquivo grande demais";
-    else if (packUpload.write(up.buf, up.currentSize) != up.currentSize) packUploadError = "Memoria cheia";
+    if (!packGate.take(up.currentSize)) packUploadError = F("Arquivo grande demais");
+    else if (packUpload.write(up.buf, up.currentSize) != up.currentSize) packUploadError = F("Memoria cheia");
     if (packUploadError.length()) { packUpload.close(); packGate.stop(); }
   } else if (up.status == UPLOAD_FILE_END || up.status == UPLOAD_FILE_ABORTED) {
     if (packUpload) packUpload.close();
-    if (up.status == UPLOAD_FILE_ABORTED) packUploadError = "Envio interrompido";
+    if (up.status == UPLOAD_FILE_ABORTED) packUploadError = F("Envio interrompido");
     if (packGate.active && !packUploadError.length() && up.name == "face") packFaceReady = true;
     packGate.stop();
     if (packUploadError.length()) packFaceReady = false;
@@ -1659,7 +1830,19 @@ void diagJson(String &j) {
   j += (uint32_t)((((uint64_t)diagWraps << 32) | millis()) / 1000);
   j += F(",\"draw\":");  // ms do último desenho que trocou a tela inteira (0 = ainda nenhum)
   j += fullDrawMs;
-  j += '}';
+  j += F(",\"boot\":{\"scr\":");  // ms desde que ligou até cada etapa do último início (0 = ainda não)
+  j += bootScreenMs;
+  j += F(",\"wifi\":");
+  j += bootWifiMs;
+  j += F(",\"wf\":");
+  j += bootWifiPath;
+  j += F(",\"time\":");
+  j += bootTimeMs;
+  j += F(",\"src\":");
+  j += bootTimeSrc;
+  j += F(",\"ntp\":");
+  j += bootNtpMs;
+  j += F("}}");
 }
 
 // "crash" só existe depois de uma queda: n = quantas, r = motivo (como diag.rst), x/epc/va = causa e endereços
@@ -1686,7 +1869,7 @@ void sendState() {
     fsInfoAt = millis() | 1;
   }
   String j;
-  j.reserve(1150 + rotList.length());  // estado, ajustes e diagnóstico: uma alocação só
+  j.reserve(1230 + rotList.length());  // estado, ajustes e diagnóstico: uma alocação só
   j += F("{\"phase\":\"");
   j += PHASE_KEY[phase];
   j += F("\",\"running\":");
@@ -1733,6 +1916,10 @@ void sendState() {
   j += weatherText(wx.code);
   j += F("\"},\"fs\":{\"ok\":");
   j += fsOk ? 1 : 0;
+  j += F(",\"l2\":");  // 1 = layout 4M2M (o painel só oferece a migração a quem ainda está no 4M3M)
+  j += fsLayout2() ? 1 : 0;
+  j += F(",\"mig\":");  // 1 = a memória foi reorganizada e o backup ainda não foi restaurado
+  j += fsMark.magic == FS_MAGIC && fsMark.pend ? 1 : 0;
   j += F(",\"used\":");
   j += (uint32_t)fi.usedBytes;
   j += F(",\"total\":");
@@ -1878,11 +2065,11 @@ void handleUpload() {
     uploadError = "";
     uploadPath = "";
     if (!panelOk() || !uploadAuthed()) {
-      uploadError = "Proibido";
+      uploadError = F("Proibido");
       return;
     }
     if (!fsOk) {
-      uploadError = "Sistema de arquivos indisponivel";
+      uploadError = F("Sistema de arquivos indisponivel");
       return;
     }
     // nome seguro: letras, números, - _ . e no máximo 28 caracteres (limite do LittleFS é 31)
@@ -1892,24 +2079,24 @@ void handleUpload() {
     while (name.indexOf("..") >= 0) name.replace("..", ".");  // mediaPath recusa "..": o arquivo não poderia ser apagado
     if (name.length() > 28) name = name.substring(name.length() - 28);
     if (!isJpg(name) && !isGif(name)) {
-      uploadError = "Use JPG ou GIF";
+      uploadError = F("Use JPG ou GIF");
       return;
     }
     FSInfo fi;
     LittleFS.info(fi);
     if (fi.totalBytes - fi.usedBytes < 16384) {
-      uploadError = "Memoria cheia";
+      uploadError = F("Memoria cheia");
       return;
     }
     if (!LittleFS.exists("/image")) LittleFS.mkdir("/image");
     uploadPath = "/image/" + name;
     uploadFile = LittleFS.open(uploadPath, "w");
-    if (!uploadFile) uploadError = "Falha ao criar arquivo";
+    if (!uploadFile) uploadError = F("Falha ao criar arquivo");
     else photoGate.begin(true, 3 * 1024 * 1024);
   } else if (up.status == UPLOAD_FILE_WRITE) {
     if (!photoGate.active) return;
-    if (!photoGate.take(up.currentSize)) uploadError = "Arquivo grande demais";
-    else if (uploadFile.write(up.buf, up.currentSize) != up.currentSize) uploadError = "Memoria cheia";
+    if (!photoGate.take(up.currentSize)) uploadError = F("Arquivo grande demais");
+    else if (uploadFile.write(up.buf, up.currentSize) != up.currentSize) uploadError = F("Memoria cheia");
     if (uploadError.length()) {
       photoGate.stop();
       uploadFile.close();
@@ -2035,7 +2222,7 @@ bool hostOk() {
 }
 bool panelOk() { return hostOk() && server.header("X-SmallTV") == "1"; }
 bool deny() {
-  server.send(403, "text/plain", "Proibido");
+  server.send_P(403, PSTR("text/plain"), PSTR("Proibido"));
   return false;
 }
 // Senha do painel (a mesma do /update, usuário admin): com ela definida, todo o painel e a API pedem
@@ -2059,7 +2246,7 @@ bool authBlocked(uint32_t ip, bool reply) {
   if (!cfg.otaPass[0] || !authThrottle.blocked(ip, millis(), &wait)) return false;
   if (reply) {
     server.sendHeader("Retry-After", String((wait + 999) / 1000));
-    server.send(429, "text/plain", "Tente novamente em alguns segundos");
+    server.send_P(429, PSTR("text/plain"), PSTR("Tente novamente em alguns segundos"));
   }
   return true;
 }
@@ -2163,7 +2350,7 @@ void setupWeb() {
   });
   server.on("/api/panel", HTTP_POST, [] {
     if (!guard()) return;
-    if (!panelResult.length()) server.send(400, "text/plain", "Painel invalido");
+    if (!panelResult.length()) server.send_P(400, PSTR("text/plain"), PSTR("Painel invalido"));
     else server.send(200, "text/plain", panelResult == PANEL_HASH ? "ok" : "guardado " + panelResult);
   }, handlePanelUpload);
   server.on("/api/state", HTTP_GET, sendState);
@@ -2199,7 +2386,7 @@ void setupWeb() {
     String rawWork = server.arg("w"), rawPause = server.arg("b");
     rawWork.trim(); rawPause.trim();
     if ((rawWork.length() && !work.length()) || (rawPause.length() && !pause.length())) {
-      server.send(400, "text/plain", "Use um endereco http:// valido (sem espacos ou controles)");
+      server.send_P(400, PSTR("text/plain"), PSTR("Use um endereco http:// valido (sem espacos ou controles)"));
       return;
     }
     hookWork = work;
@@ -2215,7 +2402,7 @@ void setupWeb() {
   server.on("/api/statsimport", HTTP_POST, [] {
     if (!guard()) return;
     if (!fsOk || !server.hasArg("days") || !server.hasArg("day")) {
-      server.send(400, "text/plain", "Backup invalido");
+      server.send_P(400, PSTR("text/plain"), PSTR("Backup invalido"));
       return;
     }
     const String &d = server.arg("days");
@@ -2226,12 +2413,12 @@ void setupWeb() {
       int e = d.indexOf(',', i);
       if (e < 0) e = d.length();
       int n = d.substring(i, e).toInt();
-      if (v.size() >= STATS_DAYS) { server.send(400, "text/plain", "Backup invalido"); return; }
+      if (v.size() >= STATS_DAYS) { server.send_P(400, PSTR("text/plain"), PSTR("Backup invalido")); return; }
       v.push_back(n < 0 ? 0 : n > 255 ? 255 : n);
       i = e + 1;
     }
     if (v.empty() || v.size() > STATS_DAYS) {
-      server.send(400, "text/plain", "Backup invalido");
+      server.send_P(400, PSTR("text/plain"), PSTR("Backup invalido"));
       return;
     }
     stats = {STATS_MAGIC, day, (uint16_t)server.arg("best").toInt(), (uint32_t)server.arg("total").toInt()};
@@ -2255,9 +2442,12 @@ void setupWeb() {
     for (uint8_t t = 0; t < THEME_COUNT; t++) {
       if (t) j += ',';
       j += F("{\"n\":\"");
-      jsonEscapeAppend(j, uiFaceName(t));
+      char nb[40], db[72];  // nome e descrição estão na flash
+      strncpy_P(nb, uiFaceName(t), sizeof nb - 1), nb[sizeof nb - 1] = 0;
+      strncpy_P(db, uiFaceDesc(t), sizeof db - 1), db[sizeof db - 1] = 0;
+      jsonEscapeAppend(j, nb);
       j += F("\",\"d\":\"");
-      jsonEscapeAppend(j, uiFaceDesc(t));
+      jsonEscapeAppend(j, db);
       j += F("\"}");
     }
     // pacotes instalados: nome/descrição/autor vêm do <id>.txt gravado na instalação
@@ -2456,7 +2646,7 @@ void setupWeb() {
     String id = ok ? facePackId() : "", name = ok ? facePackName() : "";
     if (ok && id[0] == '_') {  // "_novo" e afins são os temporários do envio
       ok = false;
-      msg = "id invalido";
+      msg = F("id invalido");
     }
     if (ok) {
       LittleFS.remove("/faces/" + id + ".json");
@@ -2490,7 +2680,7 @@ void setupWeb() {
     if (!guard()) return;
     const String &id = server.arg("pkg");
     if (!fsOk || !idOk(id) || !LittleFS.remove("/faces/" + id + ".json")) {
-      server.send(400, "text/plain", "Pacote nao encontrado");
+      server.send_P(400, PSTR("text/plain"), PSTR("Pacote nao encontrado"));
       return;
     }
     LittleFS.remove("/faces/" + id + ".png");
@@ -2517,7 +2707,7 @@ void setupWeb() {
       viewUntil = 0;
     }
     if (!fsOk || !mediaPath(f) || !LittleFS.remove(f)) {
-      server.send(400, "text/plain", "Nao foi possivel apagar");
+      server.send_P(400, PSTR("text/plain"), PSTR("Nao foi possivel apagar"));
       return;
     }
     rebuildAlbum();
@@ -2530,7 +2720,7 @@ void setupWeb() {
     String f = server.arg("f");
     if (!fsOk || !f.startsWith("/") || f.length() < 2 || f.length() > 96 || f.indexOf("..") >= 0 || f.indexOf("//") >= 0 ||
         f.endsWith("/") || fsKeep(f) || !LittleFS.exists(f)) {
-      server.send(400, "text/plain", "Nao foi possivel apagar");
+      server.send_P(400, PSTR("text/plain"), PSTR("Nao foi possivel apagar"));
       return;
     }
     if (curFile == f || curFile.startsWith(f + "/")) {  // o arquivo na tela, ou a pasta dele
@@ -2549,14 +2739,23 @@ void setupWeb() {
     if (!guard()) return;
     const String &f = server.arg("f");
     if (phase != IDLE) {
-      server.send(409, "text/plain", "Pomodoro em andamento");
+      server.send_P(409, PSTR("text/plain"), PSTR("Pomodoro em andamento"));
       return;
     }
     if (!fsOk || !mediaPath(f) || !showAlbumItem(f)) {
-      server.send(400, "text/plain", "Arquivo invalido");
+      server.send_P(400, PSTR("text/plain"), PSTR("Arquivo invalido"));
       return;
     }
     viewUntil = millis() + cfg.albumDelay * 1000UL;
+    server.send(200, "text/plain", "ok");
+  });
+  server.on("/api/migdone", HTTP_POST, [] {  // o painel restaurou (ou dispensou) o backup da migração
+    if (!guard()) return;
+    if (fsMark.magic == FS_MAGIC && fsMark.pend) {
+      fsMark.pend = 0;
+      EEPROM.put(FS_OFF, fsMark);
+      EEPROM.commit();
+    }
     server.send(200, "text/plain", "ok");
   });
   server.on("/api/format", HTTP_POST, [] {
@@ -2575,7 +2774,7 @@ void setupWeb() {
     File file;
     if (fsOk && mediaPath(f)) file = LittleFS.open(f, "r");
     if (!file) {
-      server.send(404, "text/plain", "nao encontrado");
+      server.send_P(404, PSTR("text/plain"), PSTR("nao encontrado"));
       return;
     }
     server.sendHeader("Cache-Control", "max-age=86400");
@@ -2586,12 +2785,12 @@ void setupWeb() {
   server.on("/api/otapass", HTTP_POST, [] {
     if (!guard()) return;
     if (cfg.otaPass[0] && server.arg("old") != cfg.otaPass) {
-      server.send(403, "text/plain", "Senha atual incorreta");
+      server.send_P(403, PSTR("text/plain"), PSTR("Senha atual incorreta"));
       return;
     }
     const String &p = server.arg("new");
     if (p.length() >= sizeof(cfg.otaPass)) {
-      server.send(400, "text/plain", "Senha muito longa (max 23)");
+      server.send_P(400, PSTR("text/plain"), PSTR("Senha muito longa (max 23)"));
       return;
     }
     strlcpy(cfg.otaPass, p.c_str(), sizeof(cfg.otaPass));
@@ -2725,18 +2924,27 @@ extern "C" uint32_t thunk_br_rsa_i15_pkcs1_vrfy(const unsigned char *x, size_t x
                                                 size_t hlen, const br_rsa_public_key *pk, unsigned char *out);
 make_stack_thunk(br_rsa_i15_pkcs1_vrfy);
 static br_sha256_context otaHash;
-static uint8_t otaSig[256];
+// A assinatura (256 bytes) só existe durante o envio: alocada aqui e liberada no fim (ou ao abortar), em vez de
+// ocupar a RAM fixa o tempo todo.
+static uint8_t *otaSig = nullptr;
 static bool otaSigGiven;
+static void otaSigFree() {
+  free(otaSig);
+  otaSig = nullptr;
+  otaSigGiven = false;
+}
 
 static void otaSigBegin() {
   br_sha256_init(&otaHash);
-  otaSigGiven = false;
+  otaSigFree();
   const String &b64 = server.header("X-Firmware-Sig");
   if (b64.length() < 340 || b64.length() > 348) return;  // 256 bytes = 344 caracteres
   char buf[264];
   base64_decodestate st;
   base64_init_decodestate(&st);
   if (base64_decode_block(b64.c_str(), b64.length(), buf, &st) != 256) return;
+  otaSig = (uint8_t *)malloc(256);
+  if (!otaSig) return;
   memcpy(otaSig, buf, 256);
   otaSigGiven = true;
 }
@@ -2757,7 +2965,7 @@ static bool otaSigOk() {
   br_rsa_public_key key = {n, sizeof n, e, sizeof e};
   br_sha256_out(&otaHash, want);
   stack_thunk_add_ref();
-  bool ok = thunk_br_rsa_i15_pkcs1_vrfy(otaSig, sizeof otaSig, BR_HASH_OID_SHA256, sizeof got, &key, got) &&
+  bool ok = thunk_br_rsa_i15_pkcs1_vrfy(otaSig, 256, BR_HASH_OID_SHA256, sizeof got, &key, got) &&
             !memcmp(got, want, sizeof got);
   stack_thunk_del_ref();
   if (!ok) ota.err = F("assinatura invalida");
@@ -2839,6 +3047,7 @@ void setupUpdate() {
         Update.end();
         ota.err = F("envio interrompido");
       }
+      if (up.status == UPLOAD_FILE_END || up.status == UPLOAD_FILE_ABORTED) otaSigFree();
       yield();
     });
 }
@@ -2912,6 +3121,10 @@ void startRecovery() {
     delay(300);
     if (fsOk) LittleFS.format();
     for (int i = 0; i < EE_SIZE; i++) EEPROM.write(i, 0);
+    if (fsLayout2()) {  // memória já formatada: sem a marca o próximo início formataria de novo e ofereceria um backup que não existe
+      fsMark = {FS_MAGIC, 0};
+      EEPROM.put(FS_OFF, fsMark);
+    }
     EEPROM.commit();
     WiFi.persistent(true);
     WiFi.disconnect(true);
@@ -3020,17 +3233,19 @@ volatile bool wifiDowngrade = false;
 static int authRank(uint8_t m) { return m == AUTH_OPEN ? 0 : m == AUTH_WEP ? 1 : 2; }  // WPA, WPA2 e misto: 2
 
 // Rede salva por outro firmware (o original) pode não exigir WPA: passa a exigir, como faz o begin() do núcleo
-void wifiHarden() {
+// devolve true se precisou mudar a rede salva
+bool wifiHarden() {
   struct station_config conf;
-  if (!wifi_station_get_config_default(&conf) || !conf.password[0]) return;  // rede aberta salva: nada a exigir
+  if (!wifi_station_get_config_default(&conf) || !conf.password[0]) return false;  // rede aberta salva: nada a exigir
   bool ok = conf.threshold.authmode >= AUTH_WPA_PSK;  // NONOS 2.2: só se conecta a redes com este modo ou melhor
 #if (NONOSDK >= (0x30000))
   ok = ok && conf.open_and_wep_mode_disable;
   conf.open_and_wep_mode_disable = 1;
 #endif
-  if (ok) return;
+  if (ok) return false;
   conf.threshold.authmode = AUTH_WPA_PSK;
   wifi_station_set_config(&conf);
+  return true;
 }
 
 void wifiGuardBegin() {
@@ -3039,21 +3254,93 @@ void wifiGuardBegin() {
   });
 }
 
+// Conexão com canal e BSSID fixos (ver connectStored): se cair e não voltar logo (o roteador mudou de canal ou, numa
+// rede mesh, o ponto de acesso é outro), volta à rede salva sem fixar nada.
+bool wifiPinned = false;
+uint32_t wifiLostAt = 0;
+
+void wifiUnpin() {
+  String ssid = WiFi.SSID(), psk = WiFi.psk();
+  WiFi.persistent(false);
+  WiFi.begin(ssid.c_str(), psk.c_str());
+  WiFi.persistent(true);
+  wifiPinned = false;
+}
+
 void wifiGuardLoop() {
+  if (wifiPinned) {
+    if (WiFi.status() == WL_CONNECTED) wifiLostAt = 0;
+    else if (!wifiLostAt) wifiLostAt = millis() | 1;
+    else if (millis() - wifiLostAt > 15000) wifiUnpin();
+  }
   if (!wifiDowngrade) return;
   wifiDowngrade = false;
   wifiDowngrades++;
   WiFi.reconnect();
 }
 
+static uint32_t ssidHash(const String &s) {  // FNV-1a
+  uint32_t h = 2166136261u;
+  for (char c : s) h = (h ^ (uint8_t)c) * 16777619u;
+  return h;
+}
+
+// Espera conectar animando a barra da tela de início (ver bootAnim)
+static bool waitWifi(uint32_t ms) {
+  uint32_t t0 = millis();
+  while (WiFi.status() != WL_CONNECTED && millis() - t0 < ms) {
+    bootAnim(0);
+    delay(30);
+  }
+  return WiFi.status() == WL_CONNECTED;
+}
+
+// Rede salva no SDK. Com o canal e o BSSID do último roteador (EEPROM, ver wifiHintSave) o SDK não varre os 13
+// canais: conecta direto. Só na RAM (persistent desligado): o BSSID fixo não vai para a flash, que segue com a rede
+// de sempre. Se não conectar em poucos segundos, volta à varredura completa.
 bool connectStored(uint32_t timeoutMs) {
+  uint32_t t0 = millis();
   WiFi.mode(WIFI_STA);
   WiFi.hostname(netName);
-  wifiHarden();
-  WiFi.begin();
-  uint32_t t0 = millis();
-  while (WiFi.status() != WL_CONNECTED && millis() - t0 < timeoutMs) delay(100);
-  return WiFi.status() == WL_CONNECTED;
+  bool hardened = wifiHarden();
+  if (!hardened && WiFi.status() == WL_CONNECTED) {  // o SDK conectou sozinho enquanto a tela iniciava
+    bootWifiPath = 2;
+    return true;
+  }
+  WifiHint h;
+  EEPROM.get(WIFIH_OFF, h);
+  String ssid = WiFi.SSID(), psk = WiFi.psk();
+  if (!ssid.length() || h.magic != WIFI_MAGIC || h.ssid != ssidHash(ssid) || h.chan < 1 || h.chan > 13) {
+    WiFi.begin();
+    return waitWifi(timeoutMs);
+  }
+  WiFi.persistent(false);
+  WiFi.begin(ssid.c_str(), psk.c_str(), h.chan, h.bssid);
+  bool ok = waitWifi(min<uint32_t>(4000, timeoutMs));
+  if (ok) {
+    bootWifiPath = 1;
+    wifiPinned = true;
+  } else {
+    bootWifiPath = 3;
+    WiFi.begin(ssid.c_str(), psk.c_str());
+    uint32_t used = millis() - t0;
+    ok = waitWifi(used < timeoutMs ? timeoutMs - used : 0);
+  }
+  WiFi.persistent(true);
+  return ok;
+}
+
+// Guarda canal e BSSID do roteador atual; só grava a flash se mudou (outra rede, outro canal, outro roteador)
+void wifiHintSave() {
+  String ssid = WiFi.SSID();
+  int32_t ch = WiFi.channel();
+  if (!ssid.length() || ch < 1 || ch > 13) return;
+  WifiHint h = {WIFI_MAGIC, ssidHash(ssid), {}, (uint8_t)ch, 0}, old;
+  memcpy(h.bssid, WiFi.BSSID(), 6);
+  EEPROM.get(WIFIH_OFF, old);
+  if (!memcmp(&old, &h, sizeof h)) return;
+  EEPROM.put(WIFIH_OFF, h);
+  EEPROM.commit();
 }
 
 void htmlEscapeAppend(String &o, const String &s) {
@@ -3123,6 +3410,17 @@ void startPortal() {
 }
 
 // ---------- setup / loop ----------
+// Depois de conectar, a tela de início fica uns segundos com o endereço do painel; o loop segue normal (painel,
+// SNTP, clima) em vez de travar num delay. Ela sai antes se alguém usar o relógio.
+uint32_t bootHoldUntil = 0;
+bool bootTitleTime = false;  // o título já diz "Conectado" (a hora chegou)
+void bootConnectedScreen() {
+  String addr = String(lanName[0] ? lanName : netName) + ".local";
+  bootTitleTime = timeValid();
+  message(bootTitleTime ? tr("Conectado", "Connected", "Conectado") : tr("Acertando a hora", "Setting the time", "Ajustando la hora"),
+          addr.c_str(), WiFi.localIP().toString().c_str());
+}
+
 void setup() {
   snprintf(netName, sizeof netName, HOSTNAME "-%04x", (unsigned)(ESP.getChipId() & 0xFFFF));
   pinMode(PIN_BL, OUTPUT);
@@ -3133,6 +3431,7 @@ void setup() {
   EEPROM.get(BOOT_OFF, bc);
   uint8_t boots = bc.magic == BOOT_MAGIC ? bc.n : 0;
   crashLoad();
+  rtcTimeRestore();  // reinício por software: a hora de antes já vale (sem confirmar) enquanto o Wi-Fi conecta
   recoveryMode = boots + 1 >= 3;
   setBootCount(recoveryMode ? 0 : boots + 1);  // a recuperação vale uma vez; o próximo reinício é normal
   updateBrightness(true);
@@ -3149,12 +3448,13 @@ void setup() {
   uiBlit = tftBitmap;
   uiScrollHw = tftScroll;
   applyPanel();
+  // A tela de início aparece já: montar a memória de arquivos, o histórico, o mostrador e a lista de fotos leva
+  // alguns segundos, e com a tela preta parecia travado.
+  message("SmallTV Pomodoro", tr("Iniciando", "Starting", "Iniciando"), "v" FW_VERSION);
+  bootScreenMs = millis() | 1;
+  uiBootProgress(millis(), 0);
 
-  // Monta o LittleFS do firmware original SEM formatar: se falhar, os arquivos ficam intactos.
-  LittleFSConfig fcfg;
-  fcfg.setAutoFormat(false);
-  LittleFS.setConfig(fcfg);
-  fsOk = LittleFS.begin();
+  fsMount();
   statsLoad();
   if (fsOk) {
     File rf = LittleFS.open("/rotation.txt", "r");
@@ -3172,7 +3472,7 @@ void setup() {
   if (cfg.theme == THEME_PACK) restoreActivePack();  // pacote ausente/inválido: volta ao Matriz
   rebuildAlbum();
 
-  message("SmallTV Pomodoro", tr("Conectando Wi-Fi", "Connecting Wi-Fi", "Conectando Wi-Fi"), "v" FW_VERSION);
+  uiMessageLine(tr("Conectando Wi-Fi", "Connecting Wi-Fi", "Conectando Wi-Fi"));
 
   // Usa a rede salva no ESP8266 (inclusive a que o firmware original já tinha configurado).
   wifiGuardBegin();
@@ -3181,13 +3481,15 @@ void setup() {
     startPortal();
     return;
   }
-  applyTimezone();
+  bootWifiMs = millis() | 1;
+  wifiHintSave();
+  applyTimezone();  // o SNTP já pergunta a hora enquanto o resto sobe
+  ntpAskAt = millis();
   setupWeb();
   alexaBegin();
   mdnsStart();
-  String addr = String(lanName[0] ? lanName : netName) + ".local";
-  message(tr("Conectado", "Connected", "Conectado"), addr.c_str(), WiFi.localIP().toString().c_str());
-  delay(3000);  // tempo de ler o endereço do painel
+  bootConnectedScreen();
+  bootHoldUntil = (millis() + 3000) | 1;  // o endereço fica na tela por 3 s, mas o resto já roda (ver loop)
 }
 
 uint32_t lastRender = 0, lastBriCheck = 0;
@@ -3225,8 +3527,25 @@ void loop() {
     lastBriCheck = now;
     updateBrightness();
     timeGuard.tick(time(nullptr), now);
+    rtcTimeSave();
   }
   briFade();
+  // O SNTP não respondeu: pergunta de novo (com outro servidor na frente) em vez de esperar o lwIP, que leva ~15 s
+  if (ntpAskAt && !bootNtpMs && ntpTries < 4 && now - ntpAskAt > 6000 && WiFi.status() == WL_CONNECTED) {
+    ntpAskAt = now;
+    applyTimezone(++ntpTries);
+  }
+
+  if (bootHoldUntil) {
+    if ((int32_t)(now - bootHoldUntil) < 0 && phase == IDLE && !previewActive() && !vcomTestUntil && !colorTestRequested) {
+      if (timeValid() && !bootTitleTime) bootConnectedScreen();
+      bootAnim(timeValid() ? 2 : 1);
+      return;
+    }
+    bootHoldUntil = 0;
+    uiInvalidate();
+    viewUntil = 0;
+  }
 
   if (vcomTestUntil) {
     if ((int32_t)(now - vcomTestUntil) < 0) {

@@ -56,7 +56,7 @@ sim/build.sh
 ## 4. Compile e confira o tamanho
 
 ```
-arduino-cli compile --fqbn "esp8266:esp8266:generic:eesz=4M3M,xtal=160,ip=lm2n" --output-dir build smalltv-pomodoro
+arduino-cli compile --fqbn "esp8266:esp8266:generic:eesz=4M2M,xtal=160,ip=lm2n" --output-dir build smalltv-pomodoro
 ```
 
 O `.bin` precisa ficar **abaixo de ~530 KB** para ainda ser possível voltar ao firmware de fábrica pelo painel.
