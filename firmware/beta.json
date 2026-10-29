@@ -1,41 +1,33 @@
 {
-  "version": "1.23.5",
-  "date": "2026-10-28",
+  "version": "1.24.0",
+  "date": "2026-10-29",
   "file": "beta/smalltv-pomodoro.bin",
   "size": 557216,
   "notes": {
     "pt": [
-      "Mesma da 1.23.4: confirma que a atualização pelo painel voltou a funcionar",
-      "Liga mais rápido e sem tela preta: a tela de início aparece na hora, o Wi-Fi conecta direto no roteador da última vez e uma barra em pixel art mostra as etapas (Wi-Fi, hora)",
-      "A hora aparece logo depois de reiniciar por atualização ou ajuste, e o relógio tenta outro servidor de hora se o primeiro demorar",
-      "smalltv.local mais confiável: o Wi-Fi não cochila mais (perdia as perguntas da rede) e a resposta vai também direto para quem perguntou",
-      "Uns 5 KB a mais de memória livre, o que ajuda os GIFs",
-      "O backup do painel agora leva também as fotos e os GIFs (preparação para a 1.24, que reorganiza a memória de arquivos)",
-      "Diagnóstico mostra quanto tempo levou cada etapa do último início"
+      "⚠️ ATENÇÃO: VERSÃO DE TESTE QUE PODE QUEBRAR O APARELHO. Ela reorganiza a memória e ainda não foi testada num relógio. Só instale se souber usar o modo de recuperação e, de preferência, tiver um cabo USB-TTL para regravar. Faça o backup antes",
+      "Memória reorganizada: o firmware passa a ter até ~1 MB (antes ~600 KB), espaço para recursos maiores; a memória de arquivos fica com 2 MB",
+      "Na primeira vez a memória de arquivos é recriada: fotos, GIFs e mostradores baixados são apagados. Ajustes, Wi-Fi, histórico, rodízio e avisos ficam. O painel salva um backup completo antes de atualizar; depois use Restaurar backup",
+      "Para voltar a uma 1.23 depois desta, é preciso formatar a memória de arquivos de novo"
     ],
     "en": [
-      "Same as 1.23.4: confirms that updating from the panel works again",
-      "Starts faster and without a black screen: the start screen shows up right away, Wi-Fi connects straight to the last router, and a pixel-art bar shows the steps (Wi-Fi, time)",
-      "The time shows up right after a restart from an update or setting change, and the clock tries another time server if the first one is slow",
-      "More reliable smalltv.local: Wi-Fi no longer naps (it missed network queries) and the answer also goes straight to whoever asked",
-      "About 5 KB more free memory, which helps GIFs",
-      "The panel backup now includes photos and GIFs too (getting ready for 1.24, which reorganizes the file storage)",
-      "Diagnostics show how long each step of the last start took"
+      "⚠️ WARNING: TEST VERSION THAT MAY BREAK THE DEVICE. It reorganizes the storage and has not been tested on a clock yet. Only install it if you know how to use recovery mode and, ideally, have a USB-TTL cable to reflash. Make the backup first",
+      "Storage reorganized: the firmware can now be up to ~1 MB (was ~600 KB), room for bigger features; the file storage becomes 2 MB",
+      "The first time, the file storage is recreated: photos, GIFs and downloaded faces are erased. Settings, Wi-Fi, history, rotation and notifications stay. The panel saves a full backup before updating; afterwards use Restore backup",
+      "Going back to a 1.23 after this one needs the file storage formatted again"
     ],
     "es": [
-      "Igual a la 1.23.4: confirma que la actualización desde el panel vuelve a funcionar",
-      "Arranca más rápido y sin pantalla negra: la pantalla de inicio aparece enseguida, el Wi-Fi se conecta directo al último router y una barra en pixel art muestra los pasos (Wi-Fi, hora)",
-      "La hora aparece enseguida tras reiniciar por una actualización o un ajuste, y el reloj prueba otro servidor de hora si el primero tarda",
-      "smalltv.local más confiable: el Wi-Fi ya no se duerme (perdía las consultas de la red) y la respuesta también va directo a quien preguntó",
-      "Unos 5 KB más de memoria libre, lo que ayuda a los GIF",
-      "La copia del panel ahora incluye también las fotos y los GIF (preparación para la 1.24, que reorganiza la memoria de archivos)",
-      "El diagnóstico muestra cuánto tardó cada paso del último arranque"
+      "⚠️ ATENCIÓN: VERSIÓN DE PRUEBA QUE PUEDE ROMPER EL APARATO. Reorganiza la memoria y aún no se probó en un reloj. Instálala solo si sabes usar el modo de recuperación y, de preferencia, tienes un cable USB-TTL para regrabar. Haz la copia antes",
+      "Memoria reorganizada: el firmware puede tener hasta ~1 MB (antes ~600 KB), espacio para funciones más grandes; la memoria de archivos queda en 2 MB",
+      "La primera vez se recrea la memoria de archivos: se borran las fotos, los GIF y las esferas descargadas. Los ajustes, el Wi-Fi, el historial, la rotación y los avisos se mantienen. El panel guarda una copia completa antes de actualizar; después usa Restaurar copia",
+      "Para volver a una 1.23 después de esta hay que formatear de nuevo la memoria de archivos"
     ]
   },
   "gz": "beta/smalltv-pomodoro.bin.gz",
-  "gzsize": 412234,
+  "gzsize": 412233,
+  "layout": "4m2m",
   "panel": "panel-187aacc309266c9356c1fa6a.html.gz",
   "psri": "sha256-GHqswwkmbJNWwfpqX/Q0FxFAcJfkS+bDuHfhJZs0pf8=",
-  "sig": "JGAEenvlGr8hXGneV3DVXOwFE1bhQoIIkKNlESLqCA1ZMFF1gH0VVxYDPo+ctoymOHzrYBPN9x3slIfhCeVtoCWX3eNfdyFkOS1SsWBCLguMT4v8IBPrQmHvke8ACtHkfZSTHYVcZx5OX5FCYJ5jbFsa0YgbhkoSuxxbQ+UVdwhp9LV1shbVf3PXado4IgMYv7frwZqgbXJG3M9psP+B6e5RY8L26RFo/gEe98sVCBFecMUH4PGqMGUZlsFy0eiVOCv6YF9JJGOHWn23VBdj6ZqT5iiTbiPYdtMGSQ3uJ4GDTKohZugWJpPo1Bzg9CxyBI7Jo8tRWBAvhkEznWjrMw==",
-  "gzsig": "G46S60oPqKxje6S6n7yQwjb2PcRjhxaXJCdeR+b026t8Ud2AqIH1g8DVB1pN+Jjtwm69q+9jxDXpf+AFvkQwgLrG5vjhF2Sq1asK7cXNpXskVClLGzUVsXTJ9SqLaLcWVmXYEemv0BTXg9glYoy9v99jgeAfZCDjs7chvJqjcDZvVi/ySdWlAmc97xmWyUCgIB/27w9oXLbqdAXizhLfJadhGpo8sywJrH5JGbs/uTyfITfh7n4X9LdyskvnoEHwsQPJW1+X1B84QQggFxaw654EFfekpCHqAyVQDGyGHAfwOd32NsIzWTtpOfl5Nqy2GVhlcQbeMkKTuDzFqOpD8w=="
+  "sig": "riwjlfZB7yYflPVej1K3XkSQo7m5WIwTfcH49gHM9A+g51DtIneyVbNKr04VFArGgSSK3pU03AFom1FiXtTEoQc0GclDRR2ZYyu6UzIxllxOzRsGZXwHIrdX4XjkWjgiacHjDzkcTJmzJgSWJjX8eku1PoMhNxDXVwy+6p0A2650C0BBUACWzeCIysKV9UM2AzVmG7w6eFfD33OAvH4zn1MOWBDkYOUdYPiJi3VOMozoII1wD0x/KGDQ+I9uU9dKcigdAKwWjK893wKZekPt27nbA/xB/gMR8HpnfMkeHD6G3MMh2cv7sLvS1YqKCMQ026ZupW6FjmVeGKtGOm4QNQ==",
+  "gzsig": "X+YN6+u7jKxXEAJtAxtHHg1SoiJmQwDnlS6KaqBB2RbVU+Cnhmo44Dx2+H1U6QuP/DdNLre64gxgvmHlzqKq7j47YYcgcRkXUVNBt20MXSSriKk5WH1+hdG+U4F4s/BjDT4BKzPe51DbuzTnP/JhLANrbYTrVtsoVY3g1DZrivvSV0TjIH8Zhu4+THG93JkrF/RgAIePlLPytAmjRgoBqHJWrZML9yFBGlbBy3rAKQb3yRp2NxE0x342+6HL3hoOVpy6Z7Hrd3nD6rIDRitNETSuOjnsWDii43phM5edNxqjxZV20EomJMRaEXTAeCQtAOiFxzO2bDUJ4qMzNx3Lbw=="
 }
