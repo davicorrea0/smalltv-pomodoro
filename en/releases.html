@@ -37,7 +37,7 @@
   <div class="page-head">
     <div class="wrap">
       <div class="eyebrow">Firmware</div>
-      <h1>Releases <span class="count">62 releases</span></h1>
+      <h1>Releases <span class="count">63 releases</span></h1>
       <p>Every firmware release, newest first, with what changed in each one and its files. The easiest way to update is the <strong>Update now</strong> button in the clock's panel; the files here are for installing through <code>/update</code> or for checking.</p>
       <div class="note warn"><strong>Do not use <a href="#v1.15.1">v1.15.1</a> or <a href="#v1.20.0">v1.20.0</a>.</strong> 1.15.1 made screen ghosting worse and 1.20.0 could leave the clock unable to start. If yours no longer starts, follow the <a href="https://github.com/davicorrea0/smalltv-pomodoro/blob/main/docs/RECUPERACAO.md">recovery guide</a> (in Portuguese).</div>
     </div>
@@ -46,6 +46,11 @@
   <section class="first releases">
     <div class="wrap">
       <p class="section-lead">Through <code>/update</code>, send the <code>.bin.gz</code> without unpacking it; from 1.20.1 on, send the <code>.bin.gz.sig</code> (the signature) with it. The uncompressed <code>.bin</code> is for flashing over a USB-TTL cable. <code>SHA256SUMS.txt</code> checks the files.</p>
+  <article class="rel" id="v1.24.4">
+    <div class="rel-head"><h2>1.24.4</h2><span class="tag">test</span><time datetime="2026-10-30">Oct 30, 2026</time></div>
+    <ul class="list"><li>⚠️ WARNING: TEST VERSION THAT MAY BREAK THE DEVICE. It reorganizes the storage and has not been tested on a clock yet. Only install it if you know how to use recovery mode and, ideally, have a USB-TTL cable to reflash. Make the backup first</li><li>Old-LCD green tint on the Retro LCD and Forecast LCD faces, done by the display chip itself (toggle under Brightness; on by default)</li><li>Warm color at night fixed: the screen turned green; now it turns amber</li><li>Switching between Retro LCD and Forecast LCD keeps the frame still: only the middle changes, like a curtain</li></ul>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.24.4/smalltv-pomodoro-v1.24.4.bin.gz"><img class="px" src="../img/icons/download.svg" alt="">.bin.gz <span class="sz">405 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.24.4/smalltv-pomodoro-v1.24.4.bin"><img class="px" src="../img/icons/download.svg" alt="">.bin <span class="sz">547 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.24.4/smalltv-pomodoro-v1.24.4.bin.gz.sig" title="signature">.bin.gz.sig</a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.24.4/smalltv-pomodoro-v1.24.4.bin.sig" title="signature">.bin.sig</a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.24.4/SHA256SUMS.txt">SHA256SUMS</a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.24.4"><span class="gh" aria-hidden="true"></span>View on GitHub</a></div>
+  </article>
   <article class="rel" id="v1.24.3">
     <div class="rel-head"><h2>1.24.3</h2><span class="tag">test</span><time datetime="2026-10-30">Oct 30, 2026</time></div>
     <ul class="list"><li>⚠️ WARNING: TEST VERSION THAT MAY BREAK THE DEVICE. It reorganizes the storage and has not been tested on a clock yet. Only install it if you know how to use recovery mode and, ideally, have a USB-TTL cable to reflash. Make the backup first</li><li>Warm color at night fixed: the screen turned green; now it turns amber</li><li>Switching between Retro LCD and Forecast LCD keeps the frame still: only the middle changes, like a curtain</li></ul>
