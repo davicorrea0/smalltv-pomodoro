@@ -68,7 +68,7 @@ void dsegDigit(int x, int y, int h, int d, uint16_t on, uint16_t off) {
 
 void themeLcd(const UiState &s, bool full) {
   if (full) {
-    textC(120, 9, 1, uiRgb(170, 170, 182), lcdLabel(false));
+    textC(120, 9, 1, uiRgb(170, 170, 182), lcdLabel(0));
     G->fillRoundRect(8, 24, 224, 186, 14, LCD_BG);
     G->drawFastHLine(22, 25, 196, uiRgb(140, 154, 116));  // sombra interna
     G->drawFastHLine(22, 26, 196, uiRgb(152, 165, 128));

@@ -147,7 +147,7 @@ struct Settings {
   uint8_t beta;         // 1 = o painel oferece também as versões de teste (firmware/beta.json); lixo vira 0
   uint8_t spi80;        // reservado: era a opção de 80 MHz de um teste (o ST7789 não aguenta e a imagem vira lixo); sempre 0
   uint8_t warm;         // cor quente à noite: 0 = desligada, 1..100 = quanto do azul sai (gama digital do ST7789V); lixo vira 0
-  uint8_t lcdGreen;     // 1 = tom verde de LCD antigo nos mostradores LCD retrô e Previsão LCD (warm.h); lixo vira 1
+  uint8_t lcdGreen;     // 1 = tom verde de LCD antigo nos mostradores LCD retrô, Previsão LCD e Mundo (warm.h); lixo vira 1
 };
 const uint32_t SETTINGS_MAGIC = 0x504F4D34;     // "POM4"
 const uint32_t SETTINGS_MAGIC_V3 = 0x504F4D33;  // "POM3": mesmos campos, sem os do v4
@@ -405,7 +405,7 @@ extern uint8_t previewTheme;
 // O mostrador na tela (inclusive prévia e rodízio) é um dos LCD e o tom verde está ligado
 bool lcdGreenNow() {
   uint8_t th = previewActive() ? previewTheme : cfg.theme;
-  return cfg.lcdGreen && (th == THEME_LCD || th == THEME_FORECAST_LCD);
+  return cfg.lcdGreen && (th == THEME_LCD || th == THEME_FORECAST_LCD || th == THEME_WORLD);
 }
 
 void warmFlush() {
@@ -1157,6 +1157,7 @@ String hhmm(const struct tm &t) {
 }
 
 char ipText[16];
+int32_t localOffset();  // hora local - UTC agora, em segundos (mais abaixo)
 
 UiState makeState() {
   UiState s;
@@ -1189,6 +1190,10 @@ UiState makeState() {
     }
   }
   s.city = cfg.city;
+  s.utcOff = localOffset();
+  s.lat10 = (int16_t)lroundf(cfg.lat * 10);
+  s.lon10 = (int16_t)lroundf(cfg.lon * 10);
+  s.hasLoc = cfg.city[0];
   s.theme = previewActive() ? previewTheme : cfg.theme;
   s.accent = clockColor();
   strlcpy(ipText, WiFi.localIP().toString().c_str(), sizeof ipText);

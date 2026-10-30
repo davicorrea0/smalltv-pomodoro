@@ -90,13 +90,14 @@ static void paintRows(void *c) {
   }
 }
 
-const char *lcdLabel(bool forecast) {
-  return forecast ? tr("TOMATE   PREVISAO   4 DIAS", "TOMATE   FORECAST   4 DAYS", "TOMATE   PRONOSTICO   4 DIAS") : "TOMATE   ALARM   CHRONO";
+const char *lcdLabel(uint8_t kind) {
+  if (kind == 2) return "TOMATE   WORLD   CHRONO";
+  return kind ? tr("TOMATE   PREVISAO   4 DIAS", "TOMATE   FORECAST   4 DAYS", "TOMATE   PRONOSTICO   4 DIAS") : "TOMATE   ALARM   CHRONO";
 }
 
 void themeForecastLcd(const UiState &s, bool full) {
   if (full) {
-    textC(120, 9, 1, uiRgb(170, 170, 182), lcdLabel(true));
+    textC(120, 9, 1, uiRgb(170, 170, 182), lcdLabel(1));
     G->fillRoundRect(8, 24, 224, 186, 14, LCD_BG);
     G->drawFastHLine(22, 25, 196, uiRgb(140, 154, 116));  // sombra interna
     G->drawFastHLine(22, 26, 196, uiRgb(152, 165, 128));
