@@ -492,27 +492,37 @@ async function backup(){try{const s=await (await fetch('/api/state')).json(),h=a
  setTimeout(()=>URL.revokeObjectURL(a.href),60000);toast(t('Backup salvo: ajustes, histórico, mostradores, avisos, fotos e GIFs'));return true}
  catch(x){toast(t('Falha no backup: ')+t(String(x)));return false}}
 function migDone(){$('mig').classList.remove('v');post('/api/migdone')}
+// Roda cada etapa da restauração à parte: uma falha não impede as outras. Devolve o que entrou e o que falhou (com o motivo).
+async function runSteps(steps){const ok=[],bad=[];for(const[n,f]of steps)try{await f();ok.push(n)}catch(x){bad.push([n,String(x&&x.message||x)])}return{ok,bad}}
 $('rbk').onchange=async e=>{const file=e.target.files[0];e.target.value='';if(!file)return;
  let b;try{b=JSON.parse(await file.text())}catch(x){}if(!b||b.app!='smalltv-pomodoro'||!b.cfg)return toast(t('Este arquivo não é um backup do SmallTV Pomodoro'));
  if(!confirm(t('Restaurar o backup de {0}? Os ajustes e o histórico atuais serão substituídos.',b.date)))return;
- try{toast(t('Restaurando...'));let lost=0;
-  const have=new Set(FACES.filter(f=>f.pkg).map(f=>f.pkg)),miss=(b.faces||[]).filter(id=>!have.has(id));
-  if(miss.length){const c=await (await fetch(CATALOG+'index.json',{cache:'no-store'})).json().catch(()=>({faces:[]}));
-   for(const id of miss){const e=(c.faces||[]).find(x=>x.id==id);if(!e){lost++;continue}
-    const fd=new FormData();fd.append('face',await (await fetch(CATALOG+e.file)).blob(),'face.json');
-    try{const r=await fetch(CATALOG+e.preview);if(r.ok)fd.append('preview',await r.blob(),'preview.png')}catch(x){}
-    await fetch('/api/faceinstall',{method:'POST',body:fd})}}
-  const c={...b.cfg};delete c.lock;if(c.theme==200)delete c.theme;else delete c.pkg;   // pacote: escolhido pelo id
-  if(!c.city||!c.lat||!c.lon){delete c.lat;delete c.lon;delete c.city}
-  await save(c);
-  if(b.stats&&b.stats.days){const r=await post('/api/statsimport',new URLSearchParams({day:b.stats.day,best:b.stats.best,total:b.stats.total,days:b.stats.days.join(',')}));if(!r.ok)throw await r.text();await loadStats()}
-  if(b.hooks&&(b.hooks.w||b.hooks.b))await post('/api/hooks',new URLSearchParams({w:b.hooks.w||'',b:b.hooks.b||''}));
-  let nf=0;if(b.media&&b.media.length){const have=new Set((await (await fetch('/api/files')).json()).files.map(x=>x.n.split('/').pop()));
+ toast(t('Restaurando...'));
+ const need=async r=>{if(!r.ok)throw (await r.text().catch(()=>''))||r.status};
+ const R=await runSteps([
+  ['Mostradores',async()=>{let lost=0;
+   const have=new Set(FACES.filter(f=>f.pkg).map(f=>f.pkg)),miss=(b.faces||[]).filter(id=>!have.has(id));
+   if(miss.length){const c=await (await fetch(CATALOG+'index.json',{cache:'no-store'})).json().catch(()=>({faces:[]}));
+    for(const id of miss){const e=(c.faces||[]).find(x=>x.id==id);if(!e){lost++;continue}
+     try{const fd=new FormData();fd.append('face',await (await fetch(CATALOG+e.file)).blob(),'face.json');
+      try{const r=await fetch(CATALOG+e.preview);if(r.ok)fd.append('preview',await r.blob(),'preview.png')}catch(x){}
+      await need(await fetch('/api/faceinstall',{method:'POST',body:fd}))}catch(x){lost++}}}
+   if(lost)throw t('{0} mostrador(es) não estão na galeria e precisam ser instalados de novo pelo arquivo',lost)}],
+  ['Ajustes',async()=>{const c={...b.cfg};delete c.lock;if(c.theme==200)delete c.theme;else delete c.pkg;   // pacote: escolhido pelo id
+   if(!c.city||!c.lat||!c.lon){delete c.lat;delete c.lon;delete c.city}
+   await save(c)}],
+  ['Histórico',async()=>{if(!(b.stats&&b.stats.days))return;
+   await need(await post('/api/statsimport',new URLSearchParams({day:b.stats.day,best:b.stats.best,total:b.stats.total,days:b.stats.days.join(',')})));await loadStats()}],
+  ['Avisos',async()=>{if(b.hooks&&(b.hooks.w||b.hooks.b))await need(await post('/api/hooks',new URLSearchParams({w:b.hooks.w||'',b:b.hooks.b||''})))}],
+  ['Fotos e GIFs',async()=>{if(!(b.media&&b.media.length))return;let nf=0;
+   const have=new Set((await (await fetch('/api/files')).json()).files.map(x=>x.n.split('/').pop()));
    for(let i=0;i<b.media.length;i++){const m=b.media[i],nm=m.n.split('/').pop();if(have.has(nm))continue;toast(t('Enviando {0}...',nm));
-    const fd=new FormData();fd.append('f',new Blob([unb64(m.d)]),nm);const r=await fetch('/api/upload',{method:'POST',body:fd});if(!r.ok)nf++}}
-  if(st&&st.fs&&st.fs.mig)migDone();
-  await loadFaces();files();filled=false;toast(nf?t('Backup restaurado; {0} foto(s)/GIF(s) não couberam e ficaram de fora',nf):lost?t('Backup restaurado; {0} mostrador(es) não estão na galeria e precisam ser instalados de novo pelo arquivo',lost):t('Backup restaurado'))}
- catch(x){toast(t('Falha ao restaurar: ')+t(String(x)))}};
+    try{const fd=new FormData();fd.append('f',new Blob([unb64(m.d)]),nm);if(!(await fetch('/api/upload',{method:'POST',body:fd})).ok)nf++}catch(x){nf++}}
+   if(nf)throw t('{0} foto(s)/GIF(s) não couberam e ficaram de fora',nf)}]]);
+ if(!R.bad.some(x=>x[0]=='Fotos e GIFs')&&st&&st.fs&&st.fs.mig)migDone();   // o aviso de migração só some se as fotos voltaram
+ try{await loadFaces();files();filled=false}catch(x){}
+ if(!R.bad.length)return toast(t('Backup restaurado'));
+ alert(t('Backup restaurado com falhas.')+'\n\n'+t('Entrou: {0}',R.ok.map(n=>t(n)).join(', ')||'—')+'\n'+t('Falhou:')+'\n'+R.bad.map(([n,m])=>'• '+t(n)+': '+t(m)).join('\n'))};
 // ---------- avisos de fim de fase (endereços chamados pelo relógio) ----------
 function hooksLoad(){fetch('/api/hooks').then(r=>r.json()).then(h=>{$('hkw').value=h.w;$('hkb').value=h.b}).catch(()=>{})}
 function hooksSave(){return post('/api/hooks',new URLSearchParams({w:$('hkw').value,b:$('hkb').value})).then(r=>{toast(t(r.ok?'Salvo':'Falha: ')+(r.ok?'':r.status));hooksLoad()})}

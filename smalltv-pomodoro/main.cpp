@@ -46,7 +46,7 @@ extern "C" uint32_t _FS_start;
 
 void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);  // ui.cpp: recorta para a área suja; fora da tela, cai na faixa
 
-#define FW_VERSION "1.23.5"
+#define FW_VERSION "1.24.1"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
@@ -90,6 +90,7 @@ static void tftBitmap(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h) 
 ESP8266WebServer server(80);
 bool panelOk();  // proteção do painel (mais abaixo, antes de setupWeb)
 bool readOk();
+bool guard();
 uint16_t wifiDowngrades = 0;  // rebaixamentos do Wi-Fi bloqueados desde que ligou (ver wifiGuardLoop)
 bool passOk();
 bool uploadAuthed();
@@ -1371,6 +1372,45 @@ void sendStats() {
   server.send(200, "application/json", j);
 }
 
+// restaura o histórico de um backup: "days" = contagens do mais antigo ao dia "day". Aceita tudo o que
+// /api/stats exporta (STATS_DAYS dias, inclusive). Com mais dias (backup de outra versão), guarda os STATS_DAYS
+// mais recentes: o anel não comporta mais, e recusar deixaria o painel sem restaurar nada.
+void handleStatsImport() {
+  if (!guard()) return;
+  if (!fsOk || !server.hasArg("days") || !server.hasArg("day")) {
+    server.send_P(400, PSTR("text/plain"), PSTR("Backup invalido"));
+    return;
+  }
+  const String &d = server.arg("days");
+  uint16_t day = server.arg("day").toInt();
+  std::vector<uint8_t> v;
+  v.reserve(min((size_t)STATS_DAYS, d.length() / 2 + 1));
+  for (int i = 0; i < (int)d.length();) {
+    int e = d.indexOf(',', i);
+    if (e < 0) e = d.length();
+    int n = d.substring(i, e).toInt();
+    if (v.size() >= STATS_DAYS) v.erase(v.begin());
+    v.push_back(n < 0 ? 0 : n > 255 ? 255 : n);
+    i = e + 1;
+  }
+  if (v.empty()) {
+    server.send_P(400, PSTR("text/plain"), PSTR("Backup invalido"));
+    return;
+  }
+  stats = {STATS_MAGIC, day, (uint16_t)server.arg("best").toInt(), (uint32_t)server.arg("total").toInt()};
+  File fh = LittleFS.open("/stats.bin", "w");
+  bool saved = fh;  // close() zera o arquivo: o resultado precisa ser lido antes
+  if (fh) {
+    uint8_t ring[STATS_DAYS] = {0};
+    for (size_t i = 0; i < v.size(); i++) ring[(day - (v.size() - 1) + i) % STATS_DAYS] = v[i];
+    fh.write((const uint8_t *)&stats, sizeof stats);
+    fh.write(ring, STATS_DAYS);
+    fh.close();
+  }
+  statsCompute();
+  server.send(saved ? 200 : 500, "text/plain", saved ? "ok" : "falhou");
+}
+
 void statsLoad() {
   File f = fsOk ? LittleFS.open("/stats.bin", "r") : File();
   size_t n = f ? f.size() : 0;
@@ -2392,47 +2432,14 @@ void setupWeb() {
     hookWork = work;
     hookBreak = pause;
     File f = fsOk ? LittleFS.open("/hooks.txt", "w") : File();
+    bool saved = f;  // close() zera o arquivo: o resultado precisa ser lido antes
     if (f) {
       f.print(hookWork + "\n" + hookBreak + "\n");
       f.close();
     }
-    server.send(f ? 200 : 500, "text/plain", f ? "ok" : "falhou");
+    server.send(saved ? 200 : 500, "text/plain", saved ? "ok" : "falhou");
   });
-  // restaura o histórico de um backup: "days" = contagens do mais antigo ao dia "day"
-  server.on("/api/statsimport", HTTP_POST, [] {
-    if (!guard()) return;
-    if (!fsOk || !server.hasArg("days") || !server.hasArg("day")) {
-      server.send_P(400, PSTR("text/plain"), PSTR("Backup invalido"));
-      return;
-    }
-    const String &d = server.arg("days");
-    uint16_t day = server.arg("day").toInt();
-    std::vector<uint8_t> v;
-    v.reserve(min((size_t)STATS_DAYS, d.length() / 2 + 1));
-    for (int i = 0; i < (int)d.length();) {
-      int e = d.indexOf(',', i);
-      if (e < 0) e = d.length();
-      int n = d.substring(i, e).toInt();
-      if (v.size() >= STATS_DAYS) { server.send_P(400, PSTR("text/plain"), PSTR("Backup invalido")); return; }
-      v.push_back(n < 0 ? 0 : n > 255 ? 255 : n);
-      i = e + 1;
-    }
-    if (v.empty() || v.size() > STATS_DAYS) {
-      server.send_P(400, PSTR("text/plain"), PSTR("Backup invalido"));
-      return;
-    }
-    stats = {STATS_MAGIC, day, (uint16_t)server.arg("best").toInt(), (uint32_t)server.arg("total").toInt()};
-    File fh = LittleFS.open("/stats.bin", "w");
-    if (fh) {
-      uint8_t ring[STATS_DAYS] = {0};
-      for (size_t i = 0; i < v.size(); i++) ring[(day - (v.size() - 1) + i) % STATS_DAYS] = v[i];
-      fh.write((const uint8_t *)&stats, sizeof stats);
-      fh.write(ring, STATS_DAYS);
-      fh.close();
-    }
-    statsCompute();
-    server.send(fh ? 200 : 500, "text/plain", fh ? "ok" : "falhou");
-  });
+  server.on("/api/statsimport", HTTP_POST, handleStatsImport);
   // lista dos mostradores para a galeria do painel (vem de faces_list.h)
   server.on("/api/faces", HTTP_GET, [] {
     if (!readOk()) return;
