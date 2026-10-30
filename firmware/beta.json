@@ -1,27 +1,33 @@
 {
-  "version": "1.24.1",
-  "date": "2026-10-29",
+  "version": "1.24.2",
+  "date": "2026-10-30",
   "file": "beta/smalltv-pomodoro.bin",
-  "size": 557168,
+  "size": 559056,
   "notes": {
     "pt": [
       "⚠️ ATENÇÃO: VERSÃO DE TESTE QUE PODE QUEBRAR O APARELHO. Ela reorganiza a memória e ainda não foi testada num relógio. Só instale se souber usar o modo de recuperação e, de preferência, tiver um cabo USB-TTL para regravar. Faça o backup antes",
-      "Restaurar backup não para mais no histórico; as fotos e GIFs voltam. A causa era o aparelho responder erro depois de gravar o histórico (e os avisos); agora cada etapa da restauração segue sozinha e o painel mostra o que entrou e o que falhou"
+      "O clima e os avisos não congelam mais a tela quando a internet cai ou o DNS demora: nome resolvido sem travar, prazos curtos e espera crescente entre tentativas (2, 4, 8 até 15 min)",
+      "Cor quente à noite (opcional, em Brilho): a tela tira o azul junto do brilho noturno, sem redesenhar nada; botão para ver por 15 s",
+      "Diagnóstico mostra a maior parada do relógio e onde aconteceu"
     ],
     "en": [
       "⚠️ WARNING: TEST VERSION THAT MAY BREAK THE DEVICE. It reorganizes the storage and has not been tested on a clock yet. Only install it if you know how to use recovery mode and, ideally, have a USB-TTL cable to reflash. Make the backup first",
-      "Restore backup no longer stops at the history; photos and GIFs come back. The cause was the device answering an error after saving the history (and the notifications); now each restore step goes on by itself and the panel shows what was restored and what failed"
+      "Weather and notifications no longer freeze the screen when the internet drops or DNS is slow: names resolve without blocking, short timeouts and growing waits between retries (2, 4, 8 up to 15 min)",
+      "Warm color at night (optional, under Brightness): the screen drops blue along with night brightness, without redrawing; a button previews it for 15 s",
+      "Diagnostics show the clock's longest stall and where it happened"
     ],
     "es": [
       "⚠️ ATENCIÓN: VERSIÓN DE PRUEBA QUE PUEDE ROMPER EL APARATO. Reorganiza la memoria y aún no se probó en un reloj. Instálala solo si sabes usar el modo de recuperación y, de preferencia, tienes un cable USB-TTL para regrabar. Haz la copia antes",
-      "Restaurar copia ya no se detiene en el historial; las fotos y los GIF vuelven. La causa era que el aparato respondía error después de guardar el historial (y los avisos); ahora cada paso de la restauración sigue solo y el panel muestra lo que entró y lo que falló"
+      "El clima y los avisos ya no congelan la pantalla cuando cae internet o el DNS tarda: los nombres se resuelven sin bloquear, plazos cortos y espera creciente entre intentos (2, 4, 8 hasta 15 min)",
+      "Color cálido de noche (opcional, en Brillo): la pantalla quita el azul junto con el brillo nocturno, sin redibujar; un botón lo muestra por 15 s",
+      "El diagnóstico muestra la mayor parada del reloj y dónde ocurrió"
     ]
   },
   "gz": "beta/smalltv-pomodoro.bin.gz",
-  "gzsize": 412190,
+  "gzsize": 413759,
   "layout": "4m2m",
-  "panel": "panel-9d896944c8fb500375501a58.html.gz",
-  "psri": "sha256-nYlpRMj7UAN1UBpYdqsA3EAAIlGIGDH+d2ukyImAfas=",
-  "sig": "nofAZakkd83/OcdIcMexJ+F8G6q1uYvreoOqRtGIrJBtxZZuY//btNs0TXA/xgKi5uAnDtXhXLToeql9cdng4ZXQeHJA1d5P0t+MDvj3rah4X6zrQcQeeDXvPHu8OqVcb5Q327irrg0R074i0vEwcInd4u0lfAIr4BvusgiqeSurL+FE/OE8sPkVyg+0cNOTEk+MxCfAIBlIpi+fzdH9cBiF/iIzJe0RK5dtqdoNrOmp3aptDvHlC5dl4biLT1aZ4yXz4Pz0I9+SnHdshhlSIKi9pxe5N9u+L9eDMV+Gc2CyHmBhrMBXv6BVGSBLPMv4mwslYYkLXtUbSbNVwj1HBA==",
-  "gzsig": "mRba+llAq2c0a6otoj6vM99eZ+S5yRr4JSJukxCF9mLW4gDt+gNHdGa3GfbGV0W+E7Vh1tArnR5BElcQmVRHGaJOHrPKGw6GodmjJ2JvJY02F2U4fWeCf89TzFN4CSgklA0JtCify80zPnAJsmrsMp71N74GID/8wUrZP2cQlTGMIb6n1eFQIWytRHSG7fSPkOnmOxiwgSqtWkgZsupPxZ7+rte7/+/dmuw6l6B6XKlybwebe59SU3pPZUmzhAcnmGkgipCc3ktODnS07KxnRWq/AlKQuGJLXaD6CP2mhUOfv3ywc2KAe/SEjOnTPj5FUbpnRAc4/X4kJhuwMwaYKg=="
+  "panel": "panel-ebf003aa550ad9e17fd70662.html.gz",
+  "psri": "sha256-6/ADqlUK2eF/1wZiRWzBwLEnlyx2zGcjwVfKJpsXyxA=",
+  "sig": "TlYqQwXFTXuIXU3EThFfCqftV24s1ObrUp7pDa7s+4I40gTsQwMCi150GkpFHiSTPBK4qIqq7OjzjYSO59EaamO98Oo824gQ66681OxYONTEcVNM3FgSsxLJ7Rs7Rd21m+bDyuOzbk0ah9Plqxrjk0ePsrJqegmezngi+CCQ+i8V4y167XFZUebrCmD4Qv+XyYTExFyt/6CgbFxSSjiKI82HbOGOoYVh3KYpPPDjqqTV2bFk7dWVACiuHNk1QPAqPuMfLJi0cgUoiItg5MEETWM/6Gx3EZ4izcO+acHO0ZwAtE5J28LD1rk2xxa652hUJ70X4s9ohnLgU+ZPjUuIlA==",
+  "gzsig": "Ota+xCvapBRwECvlyXqPg3y+kMC89gZetMDu3ZsIqbqDpZIyFUM3QrK53s6hSXTBER6OqLN70XXxdL62OWoPSUwHywTDuB+w6K2VI94l+LV1O1iP/TV4YESFsIkTiT1N22T3JlySIGRL0y4aEcJ7aT28eNrhfbKgJlToulxuoNMS+4DOx/Ghk8e5J/OeZBb5sZtz2edWawIg/Vn55SXeRTRXffLBWCq4tEL3VNKg1/RbRp3/yRM79nE1qzAyb/ZFHFzfHseQ2csTZZdoMiANizBfluEY2KmImGRKnOossGpusZpZ4Y0s+sFz4uEq5QSXdb2j1eUcPcltyEm1eCsZXg=="
 }
