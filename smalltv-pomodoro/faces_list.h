@@ -17,4 +17,5 @@
   X(WORDS, themeWords, "Palavras", "A hora por extenso, no idioma do relógio")         \
   X(FORECAST, themeForecast, "Previsão", "Hoje e os próximos 4 dias, com chuva e mín/máx") \
   X(FORECAST_CARDS, themeForecastCards, "Previsão em cartões", "Quatro dias em cartões, com a máxima em destaque") \
-  X(FORECAST_LCD, themeForecastLcd, "Previsão LCD", "Quatro dias no visor do LCD retrô")
+  X(FORECAST_LCD, themeForecastLcd, "Previsão LCD", "Quatro dias no visor do LCD retrô") \
+  X(WORLD, themeWorld, "Mundo", "Mapa-múndi com a faixa de dia e noite e o ponto do seu local")
