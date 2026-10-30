@@ -94,14 +94,36 @@ static void cityCode(const char *c, char *out) {
   }
   out[n] = 0;
 }
-// Etiqueta do código ao lado do ponto (à direita; à esquerda perto da borda): 21 x 11 px, contorno aceso
-static bool tagRect(const UiState &s, int *x, int *y) {
-  int dx, dy;
+// Canto do sol (11 x 11 px), na tela, sem sair do mapa
+static void sunRect(const Sun &u, int *x, int *y) {
+  int sx, sy;
+  sunPos(u, &sx, &sy);
+  sx -= 5; sy -= 5;
+  *x = MAP_X + (sx < 0 ? 0 : sx > MAP_W - 11 ? MAP_W - 11 : sx);
+  *y = MAP_Y + (sy < 0 ? 0 : sy > MAP_H - 11 ? MAP_H - 11 : sy);
+}
+// Etiqueta do código: 19 x 9 px (as letras e 1 px de fundo claro em volta), encostada no alvo, do lado que cabe
+// no mapa e cobre menos terra; nunca em cima do sol. Empate: na ordem da lista.
+static const int TAG_W = 19, TAG_H = 9;
+static const int8_t TAG_AT[8][2] PROGMEM = {{7, -1}, {-19, -1}, {-6, -9}, {-6, 7}, {7, -9}, {-19, -9}, {7, 7}, {-19, 7}};  // direita, esquerda, cima, baixo e as diagonais, a partir do canto do alvo
+static bool tagRect(const UiState &s, const Sun &u, int *x, int *y) {
+  int dx, dy, sx = -99, sy = -99, best = -1;
   if (!dotRect(s, &dx, &dy)) return false;
-  *x = dx + 7 + 21 <= MAP_X + MAP_W ? dx + 7 : dx - 21;
-  int ty = dy - 2;
-  *y = ty < MAP_Y ? MAP_Y : ty > MAP_Y + MAP_H - 11 ? MAP_Y + MAP_H - 11 : ty;
-  return true;
+  if (u.ok) sunRect(u, &sx, &sy);
+  for (int k = 0; k < 8; k++) {
+    const int tx = dx + (int8_t)pgm_read_byte(&TAG_AT[k][0]), ty = dy + (int8_t)pgm_read_byte(&TAG_AT[k][1]);
+    if (tx < MAP_X || ty < MAP_Y || tx + TAG_W > MAP_X + MAP_W || ty + TAG_H > MAP_Y + MAP_H) continue;
+    int cost = k;  // cada pixel de terra pesa mais que a ordem
+    if (tx < sx + 11 && tx + TAG_W > sx && ty < sy + 11 && ty + TAG_H > sy) cost += 4096;
+    for (int r = ty - MAP_Y; r < ty - MAP_Y + TAG_H; r++)
+      for (int c = tx - MAP_X; c < tx - MAP_X + TAG_W; c++) cost += (pgm_read_byte(&MAP[r][c >> 3]) >> (7 - (c & 7)) & 1) * 8;
+    if (best < 0 || cost < best) {
+      best = cost;
+      *x = tx;
+      *y = ty;
+    }
+  }
+  return best >= 0;
 }
 
 struct MapCtx { const UiState *s; int x0, y0, x1, y1; bool tick; };  // retângulo em pixels do mapa (inclusivo)
@@ -149,19 +171,17 @@ static void paintMap(void *p) {
       }
     }
   }
-  if (u.ok) {  // sol (11 x 11 com margem clara), sem sair do mapa
+  if (u.ok) {  // sol (11 x 11 com margem clara)
     int sx, sy;
-    sunPos(u, &sx, &sy);
-    sx -= 5; sy -= 5;
-    uiSprite(&SPR_SOL_LCD, MAP_X + (sx < 0 ? 0 : sx > MAP_W - 11 ? MAP_W - 11 : sx), MAP_Y + (sy < 0 ? 0 : sy > MAP_H - 11 ? MAP_H - 11 : sy));
+    sunRect(u, &sx, &sy);
+    uiSprite(&SPR_SOL_LCD, sx, sy);
   }
   int tx, ty, dx, dy;
   char code[4];
   cityCode(s.city, code);
-  if (code[0] && tagRect(s, &tx, &ty)) {
-    G->fillRect(tx, ty, 21, 11, LCD_BG);
-    G->drawRect(tx, ty, 21, 11, LCD_ON);
-    text(tx + 2 + (17 - textW(code, 1)) / 2, ty + 2, 1, LCD_ON, code);
+  if (code[0] && tagRect(s, u, &tx, &ty)) {
+    G->fillRect(tx, ty, TAG_W, TAG_H, LCD_BG);
+    text(tx + 1 + (17 - textW(code, 1)) / 2, ty + 1, 1, LCD_ON, code);
   }
   if (m->tick && dotRect(s, &dx, &dy)) {  // alvo: aro de 5 x 5 e miolo, com margem clara
     G->fillRect(dx, dy, 7, 7, LCD_BG);
@@ -174,7 +194,7 @@ static void paintMap(void *p) {
 // Na linha de baixo: o primeiro encostado à esquerda, o do meio centrado e o último encostado à direita.
 struct IconCtx { bool on[3]; };
 static const UiSprite *const ICONS[3] PROGMEM = {&SPR_ICONE_TOMATE_LCD, &SPR_ICONE_GOTA_LCD, &SPR_ICONE_WIFI_LCD};
-static const int ICON_Y = 192;
+static const int ICON_Y = 194;
 static void paintIcons(void *p) {
   IconCtx *ic = (IconCtx *)p;
   const char *label[3] = {tr("FOCO", "FOCUS", "FOCO"), tr("CHUVA", "RAIN", "LLUVIA"), "WI-FI"};
@@ -195,19 +215,19 @@ static void paintIcons(void *p) {
 // ---------- linha do dia: dia da semana, data em segmentos e fuso ----------
 static void paintDay(void *p) {
   const UiState &s = *(const UiState *)p;
-  G->fillRect(14, 120, 212, 18, LCD_BG);
-  text(16, 121, 2, LCD_ON, s.timeOk ? WD[s.now.tm_wday] : "---");
+  G->fillRect(14, 118, 212, 18, LCD_BG);
+  text(16, 119, 2, LCD_ON, s.timeOk ? WD[s.now.tm_wday] : "---");
   int a = s.timeOk ? s.now.tm_mday : -1, b = s.timeOk ? s.now.tm_mon + 1 : -1;
   if (uiLang == 1) { int t = a; a = b; b = t; }  // mês-dia em inglês
   const int H = 16, P = 12;  // dígitos de 16 px (10 de largura)
   int x = 62;
   for (int k = 0; k < 2; k++) {
     int v = k ? b : a;
-    dsegDigit(x, 121, H, v >= 10 ? v / 10 : -1, LCD_ON, LCD_GHOST);
-    dsegDigit(x + P, 121, H, v < 0 ? 10 : v % 10, LCD_ON, LCD_GHOST);
+    dsegDigit(x, 119, H, v >= 10 ? v / 10 : -1, LCD_ON, LCD_GHOST);
+    dsegDigit(x + P, 119, H, v < 0 ? 10 : v % 10, LCD_ON, LCD_GHOST);
     x += 2 * P;
     if (!k) {
-      G->fillRect(x, 128, 6, 2, LCD_ON);  // traço, como o "6-30" do relógio de pulso
+      G->fillRect(x, 126, 6, 2, LCD_ON);  // traço, como o "6-30" do relógio de pulso
       x += 10;
     }
   }
@@ -215,7 +235,7 @@ static void paintDay(void *p) {
   const int off = s.utcOff / 60, h = (off < 0 ? -off : off) / 60, mi = (off < 0 ? -off : off) % 60;
   if (off && mi) snprintf(tz, sizeof tz, "UTC%c%d:%02d", off < 0 ? '-' : '+', h, mi);
   else if (off) snprintf(tz, sizeof tz, "UTC%c%d", off < 0 ? '-' : '+', h);
-  textR(224, 121, 2, LCD_ON, tz);
+  textR(224, 119, 2, LCD_ON, tz);
 }
 
 void themeWorld(const UiState &s, bool full) {
@@ -251,10 +271,10 @@ void themeWorld(const UiState &s, bool full) {
   // dia da semana, data e fuso
   char dk[32];
   snprintf(dk, sizeof dk, "%d %d %d %d %d", s.timeOk ? s.now.tm_wday : -1, s.timeOk ? s.now.tm_mday : 0, s.timeOk ? s.now.tm_mon : 0, (int)(s.utcOff / 60), uiLang);
-  if (changed(cStatL, dk)) uiPaint(false, 14, 120, 212, 18, paintDay, (void *)&s);
-  // horas e minutos em DSEG7 de 40 px, com os segmentos apagados à mostra; segundos de 24 px e AM/PM sobre eles.
-  // O bloco (169 px) fica centrado.
-  const int X[4] = {35, 64, 105, 134}, XS = 171, Y = 145, H = 40;
+  if (changed(cStatL, dk)) uiPaint(false, 14, 118, 212, 18, paintDay, (void *)&s);
+  // horas e minutos em DSEG7 de 48 px (o que cabe entre a linha do dia e os ícones), com os segmentos apagados à
+  // mostra; segundos de 28 px e AM/PM sobre eles. O bloco (195 px) fica centrado.
+  const int X[4] = {22, 57, 106, 141}, XS = 179, Y = 141, H = 48;
   const int ampm = s.hour12 && s.timeOk ? (s.now.tm_hour < 12 ? 1 : 2) : 0;
   if (full || ampm != lastWxOn) {
     G->fillRect(XS, Y + 2, 12, 8, LCD_BG);
@@ -273,14 +293,14 @@ void themeWorld(const UiState &s, bool full) {
       lastDig[i] = v[i];
     }
   if (full || (int)tick != lastColon) {
-    G->fillRect(95, Y + 11, 4, 4, tick ? LCD_ON : LCD_GHOST);
-    G->fillRect(95, Y + 26, 4, 4, tick ? LCD_ON : LCD_GHOST);
+    G->fillRect(94, Y + 13, 5, 5, tick ? LCD_ON : LCD_GHOST);
+    G->fillRect(94, Y + 31, 5, 5, tick ? LCD_ON : LCD_GHOST);
     lastColon = tick;
   }
   int sec = s.timeOk ? s.now.tm_sec : -1;
   if (full || sec != lastSecW) {
-    dsegDigit(XS, Y + H - 24, 24, sec < 0 ? -1 : sec / 10, LCD_ON, LCD_GHOST);
-    dsegDigit(XS + 18, Y + H - 24, 24, sec < 0 ? -1 : sec % 10, LCD_ON, LCD_GHOST);
+    dsegDigit(XS, Y + H - 28, 28, sec < 0 ? -1 : sec / 10, LCD_ON, LCD_GHOST);
+    dsegDigit(XS + 21, Y + H - 28, 28, sec < 0 ? -1 : sec % 10, LCD_ON, LCD_GHOST);
     lastSecW = sec;
   }
   if (changed(cStatR, s.ip ? s.ip : "")) {
