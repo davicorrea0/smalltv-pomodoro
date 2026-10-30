@@ -35,6 +35,7 @@ extern "C" uint32_t _FS_start;
 #include "src/AnimatedGIF/AnimatedGIF.h"
 #include "gifcheck.h"
 #include "security.h"
+#include "warm.h"
 #include <new>
 #include <vector>
 #include <time.h>
@@ -145,6 +146,7 @@ struct Settings {
   uint8_t rainAlert;    // 1 = avisa na tela quando vai chover na próxima hora; lixo vira 1
   uint8_t beta;         // 1 = o painel oferece também as versões de teste (firmware/beta.json); lixo vira 0
   uint8_t spi80;        // reservado: era a opção de 80 MHz de um teste (o ST7789 não aguenta e a imagem vira lixo); sempre 0
+  uint8_t warm;         // cor quente à noite: 0 = desligada, 1..100 = quanto do azul sai (gama digital do ST7789V); lixo vira 0
 };
 const uint32_t SETTINGS_MAGIC = 0x504F4D34;     // "POM4"
 const uint32_t SETTINGS_MAGIC_V3 = 0x504F4D33;  // "POM3": mesmos campos, sem os do v4
@@ -152,7 +154,7 @@ Settings cfg;
 
 void defaultSettings() {
   cfg = Settings{SETTINGS_MAGIC, 25, 5, 15, 4, 80, 0, 0, "<-03>3", "", 0, -1,
-                 THEME_MATRIX, 0, 10, 0, 22, 7, 15, 1, 242, 242, 242, 0, 0, "", 0, 1, 0, 8, ACT_READ, "", 0, 0, 0, 1, "", UI_VCOM_DEFAULT, 0, 0, 1, 0, 0};
+                 THEME_MATRIX, 0, 10, 0, 22, 7, 15, 1, 242, 242, 242, 0, 0, "", 0, 1, 0, 8, ACT_READ, "", 0, 0, 0, 1, "", UI_VCOM_DEFAULT, 0, 0, 1, 0, 0, 0};
 }
 
 // ---------- recuperação: 3 inicializações curtas seguidas ----------
@@ -265,6 +267,7 @@ void loadSettings() {
   if (cfg.fahr > 1) cfg.fahr = 0;
   if (cfg.rainAlert > 1) cfg.rainAlert = 1;
   if (cfg.beta > 1) cfg.beta = 0;
+  if (cfg.warm > 100) cfg.warm = 0;
   cfg.spi80 = 0;  // quem ligou no teste volta aos 40 MHz
   if (!(fabsf(cfg.lat) <= 90 && fabsf(cfg.lon) <= 180)) cfg.lat = cfg.lon = 0;  // lixo ou NaN estouraria o String(float)
   // senha das redes do relógio: 8 letras/dígitos sem os que se confundem, sorteada pelo gerador do chip
@@ -375,6 +378,8 @@ const uint32_t BL_HZ = 20000;
 const uint16_t BL_MIN = 10;      // duty mínimo para qualquer brilho > 0
 const uint16_t BL_FADE_MS = 400;  // rampa entre dois níveis (dia/noite, slider)
 int curBri = -1;
+int curWarm = -1;
+bool tftReady = false;  // a tela já foi iniciada (o brilho é ajustado antes, no começo do setup)
 uint16_t blFrom = 0, blTo = 0, blNow = 0;
 uint32_t blT0 = 0;
 bool blBoot = true;  // primeira escrita (boot): sem rampa
@@ -386,9 +391,23 @@ uint16_t briDuty(int b) {
 
 int16_t sunRise = -1, sunSet = -1;  // minutos do dia (hora local), da última busca do clima
 
+// Cor quente à noite (warm.h): gama digital do ST7789V, ligado à mesma rampa do brilho. warmNow é a intensidade
+// 0..100 no instante; warmSent, a que o chip tem (-1 = desconhecida: depois de applyPanel ou antes de iniciar a tela).
+uint8_t warmFrom = 0, warmTo = 0, warmNow = 0, warmPreview = 0;
+int16_t warmSent = -1;
+uint32_t warmPreviewUntil = 0;  // prévia "ver agora" (aparência noturna) até este millis()
+
+void warmFlush() {
+  if (warmNow == warmSent) return;
+  warmApply([](uint8_t c, uint8_t *d, uint8_t n) { tft.sendCommand(c, d, n); }, warmNow);
+  warmSent = warmNow;
+}
+
 // Chamada a cada volta do loop: anda da posição atual até o alvo em BL_FADE_MS e só mexe no PWM quando muda
 void briFade() {
   uint32_t el = millis() - blT0;
+  warmNow = el >= BL_FADE_MS ? warmTo : (uint8_t)((int32_t)warmFrom + ((int32_t)warmTo - (int32_t)warmFrom) * (int32_t)el / (int32_t)BL_FADE_MS);
+  if (tftReady) warmFlush();
   uint16_t lvl = el >= BL_FADE_MS ? blTo : blFrom + (int32_t)(blTo - blFrom) * (int32_t)el / (int32_t)BL_FADE_MS;
   if (lvl == blNow) return;
   blNow = lvl;
@@ -398,22 +417,27 @@ void briFade() {
 void updateBrightness(bool force = false) {
   int b = cfg.brightness;
   struct tm t;
+  bool night = false, preview = warmPreviewUntil && (int32_t)(millis() - warmPreviewUntil) < 0;
   if (cfg.nightOn && localNow(t)) {
     int h = t.tm_hour, m = h * 60 + t.tm_min, s = cfg.nightStart, e = cfg.nightEnd;
-    bool night = false;
     if (cfg.nightSun && sunRise >= 0 && sunSet > sunRise) night = m < sunRise || m >= sunSet;  // do pôr ao nascer
     else if (s != e) night = s < e ? (h >= s && h < e) : (h >= s || h < e);  // horário fixo (ou sem o sol ainda)
-    if (night) b = cfg.nightBri;
   }
-  if (b == curBri && !force) return;
+  if (night || preview) b = cfg.nightBri;
+  uint8_t wt = warmTarget(night, preview, cfg.warm, warmPreview);
+  if (b == curBri && wt == curWarm && !force) return;
   curBri = b;
+  curWarm = wt;
   blFrom = blNow;
+  warmFrom = warmNow;
+  warmTo = wt;
   blTo = briDuty(b);
   blT0 = millis();
   if (blBoot) {  // boot: acende direto no nível pedido
     blBoot = false;
     blFrom = blTo;
     blNow = blTo;
+    warmFrom = warmNow = warmTo;
     analogWrite(PIN_BL, BL_RANGE - blTo);
     return;
   }
@@ -1096,6 +1120,9 @@ void applyPanel() {
   tft.invertDisplay(cfg.invert);
   tft.fillScreen(0);
   tftClearMargin();
+  tftReady = true;
+  warmSent = -1;  // o gama digital vai de novo (briFade reenvia na hora; no boot, já com a tela iniciada)
+  warmFlush();
   uiInvalidate();
 }
 
@@ -2079,6 +2106,8 @@ void sendState() {
   j += cfg.lang;
   j += F(",\"nsun\":");
   j += cfg.nightSun;
+  j += F(",\"warm\":");
+  j += cfg.warm;
   j += F(",\"alexa\":");
   j += cfg.alexa;
   j += F(",\"rotmin\":");
@@ -2575,6 +2604,15 @@ void setupWeb() {
     if (server.arg("save") == "1" || server.arg("stop") == "1") vcomTestUntil = millis();  // o loop encerra
     server.send(200, "application/json", String(F("{\"vcom\":")) + cfg.vcom + "}");
   });
+  // cor quente à noite: v=0..100 mostra a aparência noturna por 15 s (sem salvar); v=0 ou stop=1 encerra
+  server.on("/api/warm", HTTP_POST, [] {
+    if (!guard()) return;
+    int v = server.arg("v").toInt();
+    warmPreview = v < 0 ? 0 : v > 100 ? 100 : v;
+    warmPreviewUntil = server.arg("stop") == "1" || !warmPreview ? 0 : (millis() + 15000) | 1;
+    updateBrightness(true);
+    server.send(200, "application/json", String(F("{\"warm\":")) + cfg.warm + "}");
+  });
   server.on("/api/cmd", HTTP_POST, [] {
     if (!guard()) return;
     if (server.arg("c") == "preview") {
@@ -2631,6 +2669,7 @@ void setupWeb() {
     cfg.nightEnd = argRange("nend", cfg.nightEnd, 0, 23);
     cfg.nightBri = argRange("nbri", cfg.nightBri, 1, 100);
     cfg.nightSun = argRange("nsun", cfg.nightSun, 0, 1);
+    cfg.warm = argRange("warm", cfg.warm, 0, 100);
     cfg.rotMin = argRange("rotmin", cfg.rotMin, 0, 240);
     cfg.alexa = argRange("alexa", cfg.alexa, 0, 1);
     alexaBegin();  // ligada agora: começa a responder à descoberta sem reiniciar
@@ -2675,7 +2714,7 @@ void setupWeb() {
     if (panelChanged) applyPanel();
     // Brilho, horário noturno e opções que não aparecem na tela: sem apagar e redesenhar tudo, que piscaria
     // a cada movimento do controle (junto com a rampa do brilho)
-    static const char *const QUIET[] = {"bri", "non", "nstart", "nend", "nbri", "nsun", "beta", "alexa", "rotmin"};
+    static const char *const QUIET[] = {"bri", "non", "nstart", "nend", "nbri", "nsun", "warm", "beta", "alexa", "rotmin"};
     bool quiet = true;
     for (int i = 0; quiet && i < server.args(); i++) {
       bool q = false;
@@ -3589,6 +3628,10 @@ void loop() {
   hookLoop();
 
   uint32_t now = millis();
+  if (warmPreviewUntil && (int32_t)(now - warmPreviewUntil) >= 0) {  // fim da prévia: volta ao que vale agora
+    warmPreviewUntil = 0;
+    updateBrightness();
+  }
   if (now - lastBriCheck > 5000) {
     lastBriCheck = now;
     updateBrightness();
