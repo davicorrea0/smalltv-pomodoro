@@ -61,6 +61,17 @@ for(const [name,hs] of [['setupWeb',['Origin','X-Firmware-Sig','Authorization','
  const nomagic=Buffer.from(bin);nomagic[0]=0;
  if(!bad(nomagic,zlib.gzipSync(nomagic,{level:9,windowBits:13})))throw Error('conferir-gz accepts a .bin without magic 0xE9');
 }
+{ // chamadas HTTP de saída: nome por DNS assíncrono, prazos curtos e espera crescente; o laço nunca espera um nome
+ const hs=source.indexOf('int httpGet(WiFiClient'),hg=source.slice(hs,source.indexOf('\n}',hs));
+ if(!hg.includes('dnsResolve(host.c_str(), ip)')||!hg.includes('c.connect(IPAddress(ip), port)')||/c[.]connect[(](host|url)/.test(hg))throw Error('httpGet must connect by cached IP, never by name (blocking DNS)');
+ if(!hg.includes('c.setTimeout(HTTP_CONNECT_MS)')||!/HTTP_CONNECT_MS = 1[0-9]{3};/.test(source))throw Error('connect timeout must be short (<= 1.9 s)');
+ if(!source.includes('dns_gethostbyname(host, &a, dnsFound, nullptr)'))throw Error('lwIP async dns_gethostbyname with callback expected');
+ const wl=fn('weatherLoop'),hl=fn('hookLoop');
+ if(!wl.includes('wxBack.fail(millis())')||!wl.includes('wxBack.ok(millis(), 15UL * 60000UL)')||!wl.includes('if (d == 0) return;'))throw Error('weatherLoop: backoff and non-blocking dns wait required');
+ if(!hl.includes('hookBack.fail(millis())')||!hl.includes('hookBack.ok(millis(), 0)')||!hl.includes('code == HTTP_WAIT'))throw Error('hookLoop: backoff and dns wait required');
+ const tp=fn('tickPomodoro');if(tp.includes('hookFire')||tp.includes('httpGet')||tp.includes('hookLoop'))throw Error('tickPomodoro must not call HTTP');
+ if(!source.includes('stallAt\\"')||!source.includes('diagStallAt = diagWhere'))throw Error('diag must report the longest loop stall and where');
+}
 const out=process.argv[2];if(!out)throw Error('output.cpp required');
 const header=path.relative(path.dirname(path.resolve(out)),path.resolve(__dirname,'../smalltv-pomodoro/security.h')).replaceAll('\\','/');
 fs.writeFileSync(out,`#include "${header}"
@@ -213,6 +224,37 @@ int main(){
  {AuthThrottle a;assert(!a.blocked(7,1000));a.fail(7,1000);assert(a.blocked(7,1500)&&!a.blocked(8,1500)&&!a.blocked(7,2001));
   for(uint32_t ip=10;ip<20;ip++)a.fail(ip,3000+ip);assert(a.blocked(19,3100)&&!a.blocked(7,3100));}
  {RateLimit r;int n=0;for(int i=0;i<50;i++)n+=r.take(5000+i,4);assert(n==4);assert(r.take(6001,4));}
+ { // espera crescente das chamadas HTTP: 2, 4, 8 e 15 min; o sucesso zera
+  HttpBackoff b;assert(b.due(0));
+  uint32_t t=1000,want[]={2,4,8,15,15,15};
+  for(int i=0;i<6;i++){b.fail(t);assert(b.next==t+want[i]*60000UL&&b.fails==i+1);assert(!b.due(t)&&!b.due(b.next-1)&&b.due(b.next));t=b.next;}
+  b.ok(t,900000);assert(b.fails==0&&!b.due(t+899999)&&b.due(t+900000));
+  b.fail(t);assert(b.next==t+120000UL);                                // depois do sucesso recomeça em 2 min
+  HttpBackoff w;w.fails=255;w.fail(5);assert(w.fails==255&&w.next==5+900000UL);
+  HttpBackoff z;z.fail(4294900000u);assert(!z.due(4294900000u+119999)&&z.due(4294900000u+120000));  // millis() dando a volta
+ }
+ { // cache de nomes: não bloqueia, vale 1 h, falha vira espera
+  DnsCache c;uint32_t ip=0;int calls=0,mode=1;uint32_t got=0;
+  auto start=[&](const char*h,uint32_t&out){calls++;if(mode==0){out=0x0100007f;return 0;}return mode;};
+  assert(c.get("api.open-meteo.com",1000,ip,start)==0&&calls==1);       // em andamento: o laço segue
+  assert(c.get("api.open-meteo.com",1100,ip,start)==0&&calls==1);       // sem disparar outra busca
+  c.done("api.open-meteo.com",0x01020304,1500);
+  assert(c.get("api.open-meteo.com",1600,ip,start)==1&&ip==0x01020304&&calls==1);
+  assert(c.get("api.open-meteo.com",1500+DnsCache::TTL-1,ip,start)==1&&calls==1);   // vale 1 h
+  assert(c.get("api.open-meteo.com",1500+DnsCache::TTL,ip,start)==0&&calls==2);     // venceu: busca de novo
+  c.done("api.open-meteo.com",0,1500+DnsCache::TTL+50);                              // não achou
+  assert(c.get("api.open-meteo.com",1500+DnsCache::TTL+60,ip,start)==-1&&calls==2);  // falha uma vez...
+  assert(c.get("api.open-meteo.com",1500+DnsCache::TTL+70,ip,start)==0&&calls==3);   // ...e a seguinte recomeça
+  assert(c.get("api.open-meteo.com",1500+DnsCache::TTL+70+DnsCache::WAIT,ip,start)==-1);  // sem resposta do lwIP: desiste
+  c.done("api.open-meteo.com",0x05050505,0);                                          // aviso tardio é ignorado
+  assert(c.find("api.open-meteo.com")==nullptr);
+  mode=0;calls=0;assert(c.get("ex.com",10,ip,start)==1&&ip==0x0100007f&&calls==1);    // resolvido na hora (IP literal ou cache do lwIP)
+  mode=-1;assert(c.get("ruim.com",10,ip,start)==-1&&c.find("ruim.com")==nullptr);      // erro ao iniciar
+  mode=1;c.get("a.com",20,ip,start);c.get("b.com",30,ip,start);c.get("c.com",40,ip,start);
+  c.done("a.com",1,40);c.done("b.com",2,41);c.done("c.com",3,42);
+  assert(c.get("d.com",50,ip,start)==0&&c.find("a.com")==nullptr&&c.find("b.com")&&c.find("c.com"));  // troca o mais antigo
+  std::string big(60,'x');assert(c.get(big.c_str(),60,ip,start)==-1);                  // nome grande demais
+ }
  AuthThrottle throttle;uint32_t wait=0;
  assert(!throttle.blocked(1,100,&wait)&&wait==0);
  assert(throttle.fail(1,100)==1000&&throttle.blocked(1,100,&wait)&&wait==1000);
