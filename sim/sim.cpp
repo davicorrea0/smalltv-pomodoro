@@ -539,8 +539,8 @@ int main() {
   { UiState t = base(14, 37, 24); t.theme = THEME_WORLD; shot("21_mundo_dia", t, false); }
   { UiState t = base(23, 10, 41); t.theme = THEME_WORLD; t.wx.rainIn = 0; shot("21b_mundo_noite", t, false); }
   { UiState t = base(2, 37, 24); t.now.tm_yday = 293; t.now.tm_mday = 21; t.now.tm_wday = 3; t.theme = THEME_WORLD;
-    t.utcOff = 9 * 3600; t.lat10 = 357; t.lon10 = 1397; shot("21c_mundo_toquio", t, false); }
-  { UiState t = base(18, 37, 24); t.theme = THEME_WORLD; t.utcOff = 3600; t.lat10 = 515; t.lon10 = -1; t.hour12 = true;
+    t.utcOff = 9 * 3600; t.lat10 = 357; t.lon10 = 1397; t.city = "Tokyo"; shot("21c_mundo_toquio", t, false); }
+  { UiState t = base(18, 37, 24); t.theme = THEME_WORLD; t.utcOff = 3600; t.lat10 = 515; t.lon10 = -1; t.city = "London"; t.hour12 = true;
     t.running = true; t.wx.rainIn = 15; shot("21d_mundo_londres_12h", t, false); }
 
   // ---- animação da virada do Flip: 14:37 -> 14:38 ----
