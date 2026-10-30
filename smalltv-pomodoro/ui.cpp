@@ -346,6 +346,10 @@ static const char *activityLabel(uint8_t a) {
 }
 
 void (*uiFrameHook)() = nullptr;     // o firmware usa para ceder tempo ao Wi-Fi entre quadros
+void (*uiLcdViewHook)(bool) = nullptr;
+static void notifyLcdView(bool lcd) {
+  if (uiLcdViewHook) uiLcdViewHook(lcd);
+}
 uint32_t (*uiMillis)() = nullptr;    // relógio em ms (firmware: millis); sem ele, passos fixos de 20 ms
 void (*uiBlit)(int16_t, int16_t, uint16_t *, int16_t, int16_t) = nullptr;
 
@@ -725,6 +729,7 @@ static bool lcdFade(const UiState &s, uint8_t from, uint8_t t) {
 }
 
 void uiRenderClock(const UiState &s) {
+  notifyLcdView(s.theme == THEME_LCD || s.theme == THEME_FORECAST_LCD);
   if (s.theme == THEME_PACK) {  // mostrador instalado como pacote (facepack.cpp)
     slideOn = false;
     bool full = enter(SCR_PACK);
@@ -761,6 +766,7 @@ static void ringDot(int deg, uint16_t c) {
 }
 
 void uiRenderPomodoro(const UiState &s) {
+  notifyLcdView(false);
   bool full = enter(SCR_POMO);
   uint16_t col = phaseColor(s.phase);
   // anel: trilho apagado + progresso na cor da fase, desenhado só no trecho novo
@@ -831,6 +837,7 @@ void uiRenderPomodoro(const UiState &s) {
 // ---------- telas avulsas ----------
 static int8_t bootLast = -1;  // posição desenhada da barra do início (-1: tela nova, desenha a moldura)
 void uiMessage(const char *title, const char *l1, const char *l2, const char *l3) {
+  notifyLcdView(false);
   uiScrollEnd();
   screen = SCR_MSG;
   bootLast = -1;
@@ -878,6 +885,7 @@ void uiSyncHint(uint32_t ms) {
 }
 
 void uiColorTest() {
+  notifyLcdView(false);
   uiScrollEnd();
   screen = SCR_COLOR;
   G->fillScreen(BG);
@@ -897,6 +905,7 @@ void uiColorTest() {
 // diferentes e a estampa tremula; no ponto certo ela fica parada, e a imagem fantasma é a menor.
 // Quatro estampas porque o painel pode inverter a polaridade por ponto, por linha ou por coluna.
 void uiVcomTest(uint8_t vcom, bool full) {
+  notifyLcdView(false);
   static const uint16_t GRAY = uiRgb(128, 128, 128);
   if (full) {
     uiScrollEnd();
@@ -922,6 +931,7 @@ void uiVcomTest(uint8_t vcom, bool full) {
 }
 
 void uiError(const char *msg) {
+  notifyLcdView(false);
   uiScrollEnd();
   screen = SCR_ERROR;
   G->fillScreen(BG);

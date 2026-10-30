@@ -400,12 +400,9 @@ uint8_t warmFrom = 0, warmTo = 0, warmNow = 0, warmPreview = 0;
 int16_t warmSent = -1;
 uint32_t warmPreviewUntil = 0;  // prévia "ver agora" (aparência noturna) até este millis()
 
-bool previewActive();
-extern uint8_t previewTheme;
-// O mostrador na tela (inclusive prévia e rodízio) é um dos LCD e o tom verde está ligado
+bool lcdViewActive = false;  // tela realmente desenhada, não o mostrador salvo para depois do Pomodoro/álbum
 bool lcdGreenNow() {
-  uint8_t th = previewActive() ? previewTheme : cfg.theme;
-  return cfg.lcdGreen && (th == THEME_LCD || th == THEME_FORECAST_LCD);
+  return cfg.lcdGreen && lcdViewActive;
 }
 
 void warmFlush() {
@@ -413,6 +410,11 @@ void warmFlush() {
   if (st == warmSent) return;
   warmApplyState([](uint8_t c, uint8_t *d, uint8_t n) { tft.sendCommand(c, d, n); }, st, warmConj);
   warmSent = st;
+}
+
+void setLcdView(bool lcd) {
+  lcdViewActive = lcd;
+  if (tftReady) warmFlush();  // antes do primeiro pixel da tela nova; warmSent evita reenvios iguais
 }
 
 // Chamada a cada volta do loop: anda da posição atual até o alvo em BL_FADE_MS e só mexe no PWM quando muda
@@ -1746,6 +1748,7 @@ void stopAlbum() {
 bool showAlbumItem(const String &f) {
   stopAlbum();
   if (!LittleFS.exists(f)) return false;
+  setLcdView(false);  // fotos e GIFs usam as cores normais mesmo com um LCD salvo em cfg.theme
   tft.fillScreen(0);
   uiInvalidate();
   inAlbum = true;
@@ -3570,6 +3573,7 @@ void setup() {
   uiSetLang(cfg.lang);
   // entre os quadros de animação (virada do Flip): cede tempo ao Wi-Fi e dá ritmo à virada
   uiFrameHook = [] { yield(); };  // a animação é guiada pelo relógio: só cede tempo ao Wi-Fi
+  uiLcdViewHook = setLcdView;
   uiMillis = [] { return (uint32_t)millis(); };
   // linhas de pixels pelo caminho rápido do ST7789 (drawRGBBitmap não é virtual no Adafruit_GFX)
   uiBlit = tftBitmap;

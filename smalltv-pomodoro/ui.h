@@ -91,6 +91,8 @@ uint8_t uiSpriteFrame(const UiSprite *s, uint32_t ms);  // quadro da animação 
 void uiBegin(Adafruit_GFX *gfx);
 // Chamado entre os quadros de animação (ex.: virada do Flip) para ceder tempo ao Wi-Fi.
 extern void (*uiFrameHook)();
+// Antes de desenhar cada tela: true só para os dois mostradores LCD.
+extern void (*uiLcdViewHook)(bool lcd);
 // Relógio em ms para animações guiadas por tempo (firmware: millis). Sem ele, passos de 20 ms.
 extern uint32_t (*uiMillis)();
 // Envia um bloco de pixels RGB565 para a tela. O firmware aponta para o método rápido do
