@@ -48,7 +48,7 @@ extern "C" uint32_t _FS_start;
 
 void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);  // ui.cpp: recorta para a área suja; fora da tela, cai na faixa
 
-#define FW_VERSION "1.24.2"
+#define FW_VERSION "1.24.5"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
@@ -147,6 +147,7 @@ struct Settings {
   uint8_t beta;         // 1 = o painel oferece também as versões de teste (firmware/beta.json); lixo vira 0
   uint8_t spi80;        // reservado: era a opção de 80 MHz de um teste (o ST7789 não aguenta e a imagem vira lixo); sempre 0
   uint8_t warm;         // cor quente à noite: 0 = desligada, 1..100 = quanto do azul sai (gama digital do ST7789V); lixo vira 0
+  uint8_t lcdGreen;     // 1 = tom verde de LCD antigo nos mostradores LCD retrô e Previsão LCD (warm.h); lixo vira 1
 };
 const uint32_t SETTINGS_MAGIC = 0x504F4D34;     // "POM4"
 const uint32_t SETTINGS_MAGIC_V3 = 0x504F4D33;  // "POM3": mesmos campos, sem os do v4
@@ -154,7 +155,7 @@ Settings cfg;
 
 void defaultSettings() {
   cfg = Settings{SETTINGS_MAGIC, 25, 5, 15, 4, 80, 0, 0, "<-03>3", "", 0, -1,
-                 THEME_MATRIX, 0, 10, 0, 22, 7, 15, 1, 242, 242, 242, 0, 0, "", 0, 1, 0, 8, ACT_READ, "", 0, 0, 0, 1, "", UI_VCOM_DEFAULT, 0, 0, 1, 0, 0, 0};
+                 THEME_MATRIX, 0, 10, 0, 22, 7, 15, 1, 242, 242, 242, 0, 0, "", 0, 1, 0, 8, ACT_READ, "", 0, 0, 0, 1, "", UI_VCOM_DEFAULT, 0, 0, 1, 0, 0, 0, 1};
 }
 
 // ---------- recuperação: 3 inicializações curtas seguidas ----------
@@ -268,6 +269,7 @@ void loadSettings() {
   if (cfg.rainAlert > 1) cfg.rainAlert = 1;
   if (cfg.beta > 1) cfg.beta = 0;
   if (cfg.warm > 100) cfg.warm = 0;
+  if (cfg.lcdGreen > 1) cfg.lcdGreen = 1;
   cfg.spi80 = 0;  // quem ligou no teste volta aos 40 MHz
   if (!(fabsf(cfg.lat) <= 90 && fabsf(cfg.lon) <= 180)) cfg.lat = cfg.lon = 0;  // lixo ou NaN estouraria o String(float)
   // senha das redes do relógio: 8 letras/dígitos sem os que se confundem, sorteada pelo gerador do chip
@@ -398,10 +400,21 @@ uint8_t warmFrom = 0, warmTo = 0, warmNow = 0, warmPreview = 0;
 int16_t warmSent = -1;
 uint32_t warmPreviewUntil = 0;  // prévia "ver agora" (aparência noturna) até este millis()
 
+bool lcdViewActive = false;  // tela realmente desenhada, não o mostrador salvo para depois do Pomodoro/álbum
+bool lcdGreenNow() {
+  return cfg.lcdGreen && lcdViewActive;
+}
+
 void warmFlush() {
-  if (warmNow == warmSent) return;
-  warmApply([](uint8_t c, uint8_t *d, uint8_t n) { tft.sendCommand(c, d, n); }, warmNow, warmConj);
-  warmSent = warmNow;
+  uint8_t st = warmState(lcdGreenNow(), warmNow);
+  if (st == warmSent) return;
+  warmApplyState([](uint8_t c, uint8_t *d, uint8_t n) { tft.sendCommand(c, d, n); }, st, warmConj);
+  warmSent = st;
+}
+
+void setLcdView(bool lcd) {
+  lcdViewActive = lcd;
+  if (tftReady) warmFlush();  // antes do primeiro pixel da tela nova; warmSent evita reenvios iguais
 }
 
 // Chamada a cada volta do loop: anda da posição atual até o alvo em BL_FADE_MS e só mexe no PWM quando muda
@@ -1735,6 +1748,7 @@ void stopAlbum() {
 bool showAlbumItem(const String &f) {
   stopAlbum();
   if (!LittleFS.exists(f)) return false;
+  setLcdView(false);  // fotos e GIFs usam as cores normais mesmo com um LCD salvo em cfg.theme
   tft.fillScreen(0);
   uiInvalidate();
   inAlbum = true;
@@ -2109,6 +2123,8 @@ void sendState() {
   j += cfg.nightSun;
   j += F(",\"warm\":");
   j += cfg.warm;
+  j += F(",\"lcdg\":");
+  j += cfg.lcdGreen;
   j += F(",\"alexa\":");
   j += cfg.alexa;
   j += F(",\"rotmin\":");
@@ -2674,6 +2690,7 @@ void setupWeb() {
     cfg.nightBri = argRange("nbri", cfg.nightBri, 1, 100);
     cfg.nightSun = argRange("nsun", cfg.nightSun, 0, 1);
     cfg.warm = argRange("warm", cfg.warm, 0, 100);
+    cfg.lcdGreen = argRange("lcdg", cfg.lcdGreen, 0, 1);
     cfg.rotMin = argRange("rotmin", cfg.rotMin, 0, 240);
     cfg.alexa = argRange("alexa", cfg.alexa, 0, 1);
     alexaBegin();  // ligada agora: começa a responder à descoberta sem reiniciar
@@ -2718,7 +2735,7 @@ void setupWeb() {
     if (panelChanged) applyPanel();
     // Brilho, horário noturno e opções que não aparecem na tela: sem apagar e redesenhar tudo, que piscaria
     // a cada movimento do controle (junto com a rampa do brilho)
-    static const char *const QUIET[] = {"bri", "non", "nstart", "nend", "nbri", "nsun", "warm", "beta", "alexa", "rotmin"};
+    static const char *const QUIET[] = {"bri", "non", "nstart", "nend", "nbri", "nsun", "warm", "lcdg", "beta", "alexa", "rotmin"};
     bool quiet = true;
     for (int i = 0; quiet && i < server.args(); i++) {
       bool q = false;
@@ -3556,6 +3573,7 @@ void setup() {
   uiSetLang(cfg.lang);
   // entre os quadros de animação (virada do Flip): cede tempo ao Wi-Fi e dá ritmo à virada
   uiFrameHook = [] { yield(); };  // a animação é guiada pelo relógio: só cede tempo ao Wi-Fi
+  uiLcdViewHook = setLcdView;
   uiMillis = [] { return (uint32_t)millis(); };
   // linhas de pixels pelo caminho rápido do ST7789 (drawRGBBitmap não é virtual no Adafruit_GFX)
   uiBlit = tftBitmap;

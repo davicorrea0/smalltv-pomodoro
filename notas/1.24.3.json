@@ -1,0 +1,17 @@
+{
+  "pt": [
+    "⚠️ ATENÇÃO: VERSÃO DE TESTE QUE PODE QUEBRAR O APARELHO. Ela reorganiza a memória e ainda não foi testada num relógio. Só instale se souber usar o modo de recuperação e, de preferência, tiver um cabo USB-TTL para regravar. Faça o backup antes",
+    "Cor quente à noite corrigida: a tela ficava verde; agora fica âmbar",
+    "Troca entre LCD Retro e Previsão LCD com a moldura parada: só o miolo troca, como uma cortina"
+  ],
+  "en": [
+    "⚠️ WARNING: TEST VERSION THAT MAY BREAK THE DEVICE. It reorganizes the storage and has not been tested on a clock yet. Only install it if you know how to use recovery mode and, ideally, have a USB-TTL cable to reflash. Make the backup first",
+    "Warm color at night fixed: the screen turned green; now it turns amber",
+    "Switching between Retro LCD and Forecast LCD keeps the frame still: only the middle changes, like a curtain"
+  ],
+  "es": [
+    "⚠️ ATENCIÓN: VERSIÓN DE PRUEBA QUE PUEDE ROMPER EL APARATO. Reorganiza la memoria y aún no se probó en un reloj. Instálala solo si sabes usar el modo de recuperación y, de preferencia, tienes un cable USB-TTL para regrabar. Haz la copia antes",
+    "Color cálido de noche corregido: la pantalla se ponía verde; ahora queda ámbar",
+    "El cambio entre LCD retro y Pronóstico LCD deja el marco quieto: solo cambia el centro, como una cortina"
+  ]
+}

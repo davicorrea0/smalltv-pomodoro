@@ -131,7 +131,7 @@ nav button.on svg{stroke:var(--ac)}
 <section class="tab" id="t0">
  <div id="pvbar"></div>
  <div class="side">
- <div class="card hero"><div class="scr"><img id="curimg" alt=""></div><div><small>Mostrador atual</small><b id="curname">—</b><p id="curdesc"></p></div></div>
+ <div class="card hero"><div class="scr"><img id="curimg" alt=""></div><div><small>Mostrador atual</small><b id="curname">—</b><p id="curdesc"></p><label id="lcdgrow" style="display:none">Tom verde nos mostradores LCD<input data-k="lcdg" type="checkbox"></label></div></div>
  </div>
  <div class="body">
  <h2>Nativos</h2>
@@ -582,6 +582,7 @@ function load(s){if(s.cfg.lang!=null&&s.cfg.lang!=LG)setLang(s.cfg.lang);if(last
  // mostrador atual
  const ck=curKey(s),cf=FACES.find(f=>fkey(f)==ck);
  if(cf&&$('curimg').dataset.k!=ck){$('curimg').dataset.k=ck;$('curimg').onerror=cf.pkg?()=>{$('curimg').onerror=null;$('curimg').src=CATALOG+encodeURIComponent(cf.pkg)+'.png'}:null;$('curimg').src=faceSrc(cf);$('curname').textContent=cf.n;$('curdesc').textContent=cf.d}
+ $('lcdgrow').style.display=cf&&cf.pkg==null&&(cf.n0=='LCD retrô'||cf.n0=='Previsão LCD')?'':'none';
  const rk=rotKeys();document.querySelectorAll('#faces .face,#dl .face').forEach(b=>{b.classList.toggle('cur',b.dataset.k==ck);b.classList.toggle('rot',rk.includes(b.dataset.k))});
  // Alexa: há quanto tempo um Echo falou com o relógio e o último comando
  const ax=s.alexa||{ago:-1},ago=ax.ago,seen=s.cfg.alexa&&ago>=0;$('alx').classList.toggle('v',!!(seen&&ago<86400));

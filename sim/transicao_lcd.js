@@ -1,5 +1,5 @@
-// Monta a tira de quadros e o GIF da troca LCD retrô <-> Previsão LCD a partir de out/inc_cortina_*.raw
-// (gravados pelo sim.cpp, checkLcdCurtain). Saída: out/cortina_<de>_<para>.gif e out/cortina_tira.png.
+// Monta a tira de quadros e o GIF da troca LCD retrô <-> Previsão LCD a partir de out/inc_segmentos_*.raw
+// (gravados pelo sim.cpp, checkLcdCurtain). Saída: out/segmentos_<de>_<para>.gif e out/segmentos_tira.png.
 // Sem dependências: PNG (zlib) e GIF (LZW) escritos à mão.
 const fs = require('fs'), zlib = require('zlib'), path = require('path');
 const W = 240, dir = path.join(__dirname, 'out');
@@ -47,11 +47,11 @@ function gif(frames, delays) {
   return Buffer.concat(parts);
 }
 const sets = {};
-for (const f of fs.readdirSync(dir).filter(f => /^inc_cortina_.*_\d+\.raw$/.test(f)).sort()) (sets[f.replace(/_\d+\.raw$/, '').slice(4)] ||= []).push(fs.readFileSync(path.join(dir, f)));
+for (const f of fs.readdirSync(dir).filter(f => /^inc_segmentos_.*_\d+\.raw$/.test(f)).sort()) (sets[f.replace(/_\d+\.raw$/, '').slice(4)] ||= []).push(fs.readFileSync(path.join(dir, f)));
 const names = Object.keys(sets);
-if (!names.length) { console.log('sem quadros da cortina (rode o simulador)'); process.exit(0); }
+if (!names.length) { console.log('sem quadros da segmentos (rode o simulador)'); process.exit(0); }
 // tira: 6 quadros por linha em 1x (0, ..., fim), uma tira por sentido, empilhadas
-const pick = fr => [0, 2, 4, 6, 8, 10, 12, 14, fr.length - 1].map(i => Math.min(i, fr.length - 1)).filter((v, i, a) => a.indexOf(v) === i);
+const pick = fr => [...Array(9)].map((_, i) => Math.round(i * (fr.length - 1) / 8));
 const cols = 9, cell = W / 2 + 6, rows = names.length, sw = cols * cell + 6, sh = rows * cell + 6, sheet = Buffer.alloc(sw * sh * 3, 40);
 names.forEach((n, r) => pick(sets[n]).forEach((k, c) => {
   const fr = sets[n][k], ox = 6 + c * cell, oy = 6 + r * cell;
@@ -60,9 +60,9 @@ names.forEach((n, r) => pick(sets[n]).forEach((k, c) => {
     sheet[o] = R; sheet[o + 1] = G; sheet[o + 2] = B;
   }
 }));
-fs.writeFileSync(path.join(dir, 'cortina_tira.png'), png(sw, sh, sheet));
+fs.writeFileSync(path.join(dir, 'segmentos_tira.png'), png(sw, sh, sheet));
 for (const n of names) {
-  const fr = sets[n], d = fr.map((_, i) => (i === 0 || i === fr.length - 1 ? 90 : 3));  // centésimos: segura o primeiro e o último
-  fs.writeFileSync(path.join(dir, 'cortina_' + n.replace('cortina_', '') + '.gif'), gif(fr, d));
+  const fr = sets[n], d = fr.map((_, i) => (i === 0 || i === fr.length - 1 ? 90 : 6));  // centésimos: segura o primeiro e o último
+  fs.writeFileSync(path.join(dir, 'segmentos_' + n.replace('segmentos_', '') + '.gif'), gif(fr, d));
 }
-console.log('cortina: ' + names.length + ' GIFs e a tira em out/');
+console.log('segmentos: ' + names.length + ' GIFs e a tira em out/');

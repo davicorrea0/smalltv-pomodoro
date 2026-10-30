@@ -14,6 +14,7 @@ if grep -nE "%[-+ #0-9.]*[fFeEgG]|toFloat|atof|strtod|scanf" ../smalltv-pomodoro
 fi
 GFX="${GFX:-$HOME/Documents/Arduino/libraries/Adafruit_GFX_Library}"
 mkdir -p out
+node tint_test.cjs out/tint_test.inc || exit 1
 # Windows: executável Windows de 32 bits; Linux (também o build automático do GitHub): Linux de 32 bits, estático
 if [ -n "$LOCALAPPDATA" ]; then TARGET=x86-windows-gnu; BIN=sim.exe; else TARGET=x86-linux-musl; BIN=sim; fi
 # sem zig (Linux): o g++ de 32 bits (pacote g++-multilib), o mesmo dos testes de GIF e JPEG; com

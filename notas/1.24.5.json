@@ -1,0 +1,20 @@
+{
+  "pt": [
+    "⚠️ ATENÇÃO: VERSÃO DE TESTE QUE PODE QUEBRAR O APARELHO. Ela reorganiza a memória e ainda não foi testada num relógio. Só instale se souber usar o modo de recuperação e, de preferência, tiver um cabo USB-TTL para regravar. Faça o backup antes",
+    "Tom verde de LCD antigo nos mostradores LCD Retro e Previsão LCD, pelo próprio chip da tela (liga e desliga em Brilho; ligado de fábrica)",
+    "Cor quente à noite corrigida: a tela ficava verde; agora fica âmbar",
+    "Troca entre LCD Retro e Previsão LCD com a moldura parada: o miolo antigo apaga e o novo acende em segmentos, como num LCD de verdade"
+  ],
+  "en": [
+    "⚠️ WARNING: TEST VERSION THAT MAY BREAK THE DEVICE. It reorganizes the storage and has not been tested on a clock yet. Only install it if you know how to use recovery mode and, ideally, have a USB-TTL cable to reflash. Make the backup first",
+    "Old-LCD green tint on the Retro LCD and Forecast LCD faces, done by the display chip itself (toggle under Brightness; on by default)",
+    "Warm color at night fixed: the screen turned green; now it turns amber",
+    "Switching between Retro LCD and Forecast LCD keeps the frame still: the old middle switches off and the new one lights up in segments, like a real LCD"
+  ],
+  "es": [
+    "⚠️ ATENCIÓN: VERSIÓN DE PRUEBA QUE PUEDE ROMPER EL APARATO. Reorganiza la memoria y aún no se probó en un reloj. Instálala solo si sabes usar el modo de recuperación y, de preferencia, tienes un cable USB-TTL para regrabar. Haz la copia antes",
+    "Tono verde de LCD antiguo en las esferas LCD retro y Pronóstico LCD, hecho por el propio chip de la pantalla (se activa y desactiva en Brillo; activado de fábrica)",
+    "Color cálido de noche corregido: la pantalla se ponía verde; ahora queda ámbar",
+    "El cambio entre LCD retro y Pronóstico LCD deja el marco quieto: el centro viejo se apaga y el nuevo se enciende por segmentos, como un LCD de verdad"
+  ]
+}

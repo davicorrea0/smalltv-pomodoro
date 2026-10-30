@@ -71,5 +71,44 @@ int main() {
   warmApply(rec, warmTarget(false, false, 70, 40));
   assert(log_.back().c == 0xBA && log_.back().d[0] == 0x00);
   assert(log_.size() == 1 + 3 + 1 + 3 + 1 + 3 + 1);
+  // verde de LCD antigo: R = i, B = i*55/100, DGMEN ligado por último; vence a cor quente
+  log_.clear();
+  warmApplyState(rec, warmState(true, 70));
+  assert(log_.size() == 3 && log_[0].c == 0xE2 && log_[1].c == 0xE3 && log_[2].c == 0xBA && log_[2].d[0] == 0x04);
+  for (int i = 0; i < 64; i++) assert(log_[0].d[i] == i && log_[1].d[i] == i * 55 / 100);
+  assert(log_[0].d[63] == 63 && log_[1].d[63] == 34);
+
+  // entrar no LCD manda o verde; sair volta ao certo (noite com cor quente = tabelas quentes; dia = DGMEN desligado)
+  // simula o warmFlush: só envia quando o estado muda
+  int sent = -1;
+  auto flush = [&](bool lcd, bool on, bool night) {
+    uint8_t st = warmState(lcd && on, warmTarget(night, false, 70, 0));
+    if (st == sent) return;
+    warmApplyState(rec, st);
+    sent = st;
+  };
+  log_.clear();
+  flush(false, true, false);  // relógio comum de dia: DGMEN off
+  assert(log_.size() == 1 && log_[0].c == 0xBA && log_[0].d[0] == 0);
+  log_.clear();
+  flush(true, true, false);  // entra no LCD: verde
+  assert(log_.size() == 3 && log_[1].d[63] == 34);
+  log_.clear();
+  flush(true, true, false);  // continua no LCD: nada novo
+  assert(log_.empty());
+  flush(true, true, true);  // anoitece dentro do LCD: o verde vence, nada novo
+  assert(log_.empty());
+  flush(false, true, true);  // sai do LCD à noite: cor quente a 70 %
+  assert(log_.size() == 3 && log_[0].d[63] == 255 && log_[1].d[63] == 176);
+  log_.clear();
+  flush(true, true, true);
+  log_.clear();
+  flush(false, true, false);  // sai do LCD de dia: DGMEN desligado
+  assert(log_.size() == 1 && log_[0].c == 0xBA && log_[0].d[0] == 0);
+  log_.clear();
+  flush(true, false, false);  // desligado no painel: o LCD não manda tabela verde
+  assert(log_.empty());
+  flush(true, false, true);   // idem à noite: só a cor quente
+  assert(log_.size() == 3 && log_[0].d[63] == 255);
   puts("warm: ok");
 }

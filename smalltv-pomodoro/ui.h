@@ -91,6 +91,8 @@ uint8_t uiSpriteFrame(const UiSprite *s, uint32_t ms);  // quadro da animação 
 void uiBegin(Adafruit_GFX *gfx);
 // Chamado entre os quadros de animação (ex.: virada do Flip) para ceder tempo ao Wi-Fi.
 extern void (*uiFrameHook)();
+// Antes de desenhar cada tela: true só para os dois mostradores LCD.
+extern void (*uiLcdViewHook)(bool lcd);
 // Relógio em ms para animações guiadas por tempo (firmware: millis). Sem ele, passos de 20 ms.
 extern uint32_t (*uiMillis)();
 // Envia um bloco de pixels RGB565 para a tela. O firmware aponta para o método rápido do
@@ -112,6 +114,7 @@ void uiInvalidate();                         // redesenha tudo na próxima chama
 // troca é uma rolagem vertical por hardware (o antigo sobe e sai, o novo entra por baixo) em vez de
 // apagar e redesenhar na frente da pessoa. Sem uiScrollHw (simulador), vira uiInvalidate().
 void uiInvalidateSlide();
+extern void (*uiStepHook)();  // fim de cada quadro da troca LCD retrô <-> Previsão LCD (o simulador guarda os quadros)
 
 // ---- rolagem vertical por hardware (ST7789: VSCRDEF 0x33 e VSCSAD 0x37) ----
 // A RAM do painel tem 320 linhas e o vidro mostra 240. Rolar é só mudar de onde o painel começa a
