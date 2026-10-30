@@ -48,3 +48,26 @@ static inline void warmApply(Send send, uint8_t pct, bool conj = false) {
   uint8_t on = 0x04;  // DGMEN é o bit 2 do parâmetro
   send(WARM_DGMEN, &on, 1);
 }
+
+// "Verde de LCD antigo": o que a tela mostrou por defeito quando as tabelas iam em 0..63 em vez de 0..255 (vermelho
+// = i, ~25 %; azul = i * 55 / 100, o que a cor quente a 100 % mandava; verde intacto). Vale nos mostradores LCD
+// (LCD retrô e Previsão LCD) e vence a cor quente. WARM_GREEN é o código do estado no chip (> 100: não colide
+// com uma intensidade), para o warmFlush comparar com o que já foi enviado.
+static const uint8_t WARM_GREEN = 200;
+template <class Send>
+static inline void warmApplyGreen(Send send) {
+  uint8_t lut[64];
+  for (uint8_t i = 0; i < 64; i++) lut[i] = i;
+  send(WARM_LUT_R, lut, 64);
+  for (uint8_t i = 0; i < 64; i++) lut[i] = (uint8_t)(i * 55 / 100);
+  send(WARM_LUT_B, lut, 64);
+  uint8_t on = 0x04;
+  send(WARM_DGMEN, &on, 1);
+}
+// Estado que o chip deve ter: o verde (ligado e num LCD) vence; senão a intensidade da cor quente
+static inline uint8_t warmState(bool green, uint8_t pct) { return green ? WARM_GREEN : pct; }
+template <class Send>
+static inline void warmApplyState(Send send, uint8_t state, bool conj = false) {
+  if (state == WARM_GREEN) warmApplyGreen(send);
+  else warmApply(send, state, conj);
+}
