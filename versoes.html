@@ -37,7 +37,7 @@
   <div class="page-head">
     <div class="wrap">
       <div class="eyebrow">Firmware</div>
-      <h1>Versões <span class="count">59 versões</span></h1>
+      <h1>Versões <span class="count">61 versões</span></h1>
       <p>Todas as versões do firmware, da mais nova para a mais antiga, com o que mudou em cada uma e os arquivos. Para atualizar, o mais fácil é o botão <strong>Atualizar agora</strong> no painel do relógio; os arquivos daqui são para instalar pelo <code>/update</code> ou conferir.</p>
       <div class="note warn"><strong>Não use a <a href="#v1.15.1">v1.15.1</a> nem a <a href="#v1.20.0">v1.20.0</a>.</strong> A 1.15.1 aumentava a imagem fantasma da tela e a 1.20.0 podia deixar o relógio sem ligar. Se o seu já não liga, siga o <a href="https://github.com/davicorrea0/smalltv-pomodoro/blob/main/docs/RECUPERACAO.md">guia de recuperação</a>.</div>
     </div>
@@ -46,6 +46,17 @@
   <section class="first releases">
     <div class="wrap">
       <p class="section-lead">Pelo <code>/update</code>, envie o <code>.bin.gz</code> sem descompactar; a partir da 1.20.1 envie junto o <code>.bin.gz.sig</code> (a assinatura). O <code>.bin</code> sem compressão serve para gravar pelo cabo USB-TTL. <code>SHA256SUMS.txt</code> confere os arquivos.</p>
+  <article class="rel" id="v1.24.2">
+    <div class="rel-head"><h2>1.24.2</h2><span class="tag">teste</span><time datetime="2026-10-30">29 de out. de 2026</time></div>
+    <ul class="list"><li>⚠️ ATENÇÃO: VERSÃO DE TESTE QUE PODE QUEBRAR O APARELHO. Ela reorganiza a memória e ainda não foi testada num relógio. Só instale se souber usar o modo de recuperação e, de preferência, tiver um cabo USB-TTL para regravar. Faça o backup antes</li><li>O clima e os avisos não congelam mais a tela quando a internet cai ou o DNS demora: nome resolvido sem travar, prazos curtos e espera crescente entre tentativas (2, 4, 8 até 15 min)</li><li>Cor quente à noite (opcional, em Brilho): a tela tira o azul junto do brilho noturno, sem redesenhar nada; botão para ver por 15 s</li><li>Diagnóstico mostra a maior parada do relógio e onde aconteceu</li></ul>
+    <div class="btns"><a class="btn small primary" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.24.2/smalltv-pomodoro-v1.24.2.bin.gz"><img class="px" src="img/icons/download.svg" alt="">.bin.gz <span class="sz">404 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.24.2/smalltv-pomodoro-v1.24.2.bin"><img class="px" src="img/icons/download.svg" alt="">.bin <span class="sz">546 KB</span></a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.24.2/smalltv-pomodoro-v1.24.2.bin.gz.sig" title="assinatura">.bin.gz.sig</a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.24.2/smalltv-pomodoro-v1.24.2.bin.sig" title="assinatura">.bin.sig</a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/download/v1.24.2/SHA256SUMS.txt">SHA256SUMS</a><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.24.2"><span class="gh" aria-hidden="true"></span>Ver no GitHub</a></div>
+  </article>
+  <article class="rel avoid" id="v1.24.1">
+    <div class="rel-head"><h2>1.24.1</h2><span class="tag bad">não use</span><time datetime="2026-10-29">29 de out. de 2026</time></div>
+    <div class="note warn">⚠️ ATENÇÃO: VERSÃO DE TESTE QUE PODE QUEBRAR O APARELHO. Ela reorganiza a memória e ainda não foi testada num relógio. Só instale se souber usar o modo de recuperação e, de preferência, tiver um cabo USB-TTL para regravar. Faça o backup antes</div>
+    <ul class="list"><li>⚠️ ATENÇÃO: VERSÃO DE TESTE QUE PODE QUEBRAR O APARELHO. Ela reorganiza a memória e ainda não foi testada num relógio. Só instale se souber usar o modo de recuperação e, de preferência, tiver um cabo USB-TTL para regravar. Faça o backup antes</li><li>Restaurar backup não para mais no histórico; as fotos e GIFs voltam. A causa era o aparelho responder erro depois de gravar o histórico (e os avisos); agora cada etapa da restauração segue sozinha e o painel mostra o que entrou e o que falhou</li></ul>
+    <div class="btns"><a class="btn small" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/tag/v1.24.1"><span class="gh" aria-hidden="true"></span>Ver no GitHub</a></div>
+  </article>
   <article class="rel avoid" id="v1.24.0">
     <div class="rel-head"><h2>1.24.0</h2><span class="tag bad">não use</span><time datetime="2026-10-29">29 de out. de 2026</time></div>
     <div class="note warn">⚠️ ATENÇÃO: VERSÃO DE TESTE QUE PODE QUEBRAR O APARELHO. Ela reorganiza a memória e ainda não foi testada num relógio. Só instale se souber usar o modo de recuperação e, de preferência, tiver um cabo USB-TTL para regravar. Faça o backup antes</div>
