@@ -146,8 +146,10 @@ void uiInvalidate() {
   screen = -1;
   slideOn = false;
 }
+static int8_t slidePrev = -1;  // mostrador que estava na tela quando pediram a troca animada
 void uiInvalidateSlide() {
   bool was = screen >= 0 && screen < THEME_COUNT;
+  slidePrev = screen;
   screen = -1;
   slideOn = was;
 }
@@ -648,6 +650,43 @@ static bool slideTo(const UiState &s, uint8_t t) {
   return ok;  // false: quem chamou desenha o mostrador novo do jeito normal (tela cheia)
 }
 
+// ---------- troca LCD retrô <-> Previsão LCD: a moldura fica parada, só o miolo muda ----------
+// Os dois mostradores têm a mesma moldura (retângulo arredondado verde-acinzentado e sombra interna);
+// mudam o miolo (x 10..229, y 28..207: os dígitos grandes do LCD retrô passam de x 14) e os dois rótulos de fora (y < 24 e y >= 210). Os rótulos trocam
+// de uma vez e o miolo vira uma cortina: faixas de 12 linhas do novo conteúdo descem de cima para baixo,
+// com um filete de contraste na frente, como a varredura de um LCD atualizando. O resto da moldura nunca
+// é redesenhado. Cada faixa é um desenho completo recortado (slideStrip): sem memória além das faixas de
+// uiOffscreen (<= 8 KB), as mesmas da rolagem.
+static const int CUR_X = 10, CUR_Y = 28, CUR_W = 220, CUR_H = 180, CUR_BAND = 12;
+struct CurtainCtx { SlideCtx s; int16_t cueY; };
+static void curtainStrip(void *p) {
+  CurtainCtx *c = (CurtainCtx *)p;
+  slideStrip(&c->s);
+  if (c->cueY >= 0) {
+    G->fillRect(CUR_X, c->cueY, CUR_W, 1, uiRgb(132, 146, 108));  // o filete: 2 linhas mais escuras que o fundo
+    G->fillRect(CUR_X, c->cueY + 1, CUR_W, 1, uiRgb(150, 163, 126));
+  }
+}
+static bool lcdPair(int8_t a, int8_t b) {
+  return (a == THEME_LCD && b == THEME_FORECAST_LCD) || (a == THEME_FORECAST_LCD && b == THEME_LCD);
+}
+static bool lcdCurtain(const UiState &s, uint8_t t) {
+  const int N = (CUR_H + CUR_BAND - 1) / CUR_BAND;
+  const uint32_t MS = 360;
+  CurtainCtx c = {{&s, t}, -1};
+  if (!uiOffscreen(0, 0, 240, 24, curtainStrip, &c) || !uiOffscreen(0, 210, 240, 30, curtainStrip, &c)) return false;
+  uint32_t t0 = slideNow();
+  for (int n = 0; n < N; n++) {
+    while (slideNow() - t0 < MS * n / N)
+      if (uiFrameHook) uiFrameHook();
+    int y = CUR_Y + n * CUR_BAND, h = CUR_Y + CUR_H - y < CUR_BAND ? CUR_Y + CUR_H - y : CUR_BAND;
+    bool last = n == N - 1;
+    c.cueY = last ? -1 : y + h;
+    if (!uiOffscreen(CUR_X, y, CUR_W, last ? h : h + 2, curtainStrip, &c)) return false;
+  }
+  return true;
+}
+
 void uiRenderClock(const UiState &s) {
   if (s.theme == THEME_PACK) {  // mostrador instalado como pacote (facepack.cpp)
     slideOn = false;
@@ -658,7 +697,12 @@ void uiRenderClock(const UiState &s) {
   uint8_t t = s.theme < THEME_COUNT ? s.theme : 0;
   if (slideOn) {
     slideOn = false;
-    if (screen == -1 && slideTo(s, t)) {
+    bool lcd = screen == -1 && lcdPair(slidePrev, t);
+    if (lcd && lcdCurtain(s, t)) {  // sem memória para as faixas: desenha o novo do jeito normal, abaixo
+      screen = t;
+      return;
+    }
+    if (screen == -1 && !lcd && slideTo(s, t)) {
       screen = t;
       return;
     }
