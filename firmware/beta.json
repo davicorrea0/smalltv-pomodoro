@@ -1,33 +1,33 @@
 {
-  "version": "1.24.5",
+  "version": "1.24.6",
   "date": "2026-10-30",
   "file": "beta/smalltv-pomodoro.bin",
-  "size": 560096,
+  "size": 560304,
   "notes": {
     "pt": [
       "⚠️ ATENÇÃO: VERSÃO DE TESTE QUE PODE QUEBRAR O APARELHO. Ela reorganiza a memória e ainda não foi testada num relógio. Só instale se souber usar o modo de recuperação e, de preferência, tiver um cabo USB-TTL para regravar. Faça o backup antes",
       "Tom verde de LCD antigo nos mostradores LCD Retro e Previsão LCD, pelo próprio chip da tela (liga e desliga em Brilho; ligado de fábrica)",
       "Cor quente à noite corrigida: a tela ficava verde; agora fica âmbar",
-      "Troca entre LCD Retro e Previsão LCD com a moldura parada: o miolo antigo apaga e o novo acende em segmentos, como num LCD de verdade"
+      "Troca entre LCD Retro e Previsão LCD mais suave: a tinta do LCD escurece e clareia em degraus, como um LCD de verdade, e os textos de fora deslizam para os lados; a moldura fica parada"
     ],
     "en": [
       "⚠️ WARNING: TEST VERSION THAT MAY BREAK THE DEVICE. It reorganizes the storage and has not been tested on a clock yet. Only install it if you know how to use recovery mode and, ideally, have a USB-TTL cable to reflash. Make the backup first",
       "Old-LCD green tint on the Retro LCD and Forecast LCD faces, done by the display chip itself (toggle under Brightness; on by default)",
       "Warm color at night fixed: the screen turned green; now it turns amber",
-      "Switching between Retro LCD and Forecast LCD keeps the frame still: the old middle switches off and the new one lights up in segments, like a real LCD"
+      "Smoother switch between Retro LCD and Forecast LCD: the LCD ink fades out and in by steps, like a real LCD, and the outer labels slide sideways; the frame stays still"
     ],
     "es": [
       "⚠️ ATENCIÓN: VERSIÓN DE PRUEBA QUE PUEDE ROMPER EL APARATO. Reorganiza la memoria y aún no se probó en un reloj. Instálala solo si sabes usar el modo de recuperación y, de preferencia, tienes un cable USB-TTL para regrabar. Haz la copia antes",
       "Tono verde de LCD antiguo en las esferas LCD retro y Pronóstico LCD, hecho por el propio chip de la pantalla (se activa y desactiva en Brillo; activado de fábrica)",
       "Color cálido de noche corregido: la pantalla se ponía verde; ahora queda ámbar",
-      "El cambio entre LCD retro y Pronóstico LCD deja el marco quieto: el centro viejo se apaga y el nuevo se enciende por segmentos, como un LCD de verdad"
+      "Cambio más suave entre LCD retro y Pronóstico LCD: la tinta del LCD se apaga y se enciende por pasos, como un LCD de verdad, y los textos de fuera se deslizan hacia los lados; el marco queda quieto"
     ]
   },
   "gz": "beta/smalltv-pomodoro.bin.gz",
-  "gzsize": 414608,
+  "gzsize": 414803,
   "layout": "4m2m",
   "panel": "panel-0e87e73d4263dc774aab3d8f.html.gz",
   "psri": "sha256-DofnPUJj3HdKqz2PL5d5dQnLJhr6Igtt7NkXczZQYic=",
-  "sig": "cYNfoeYhwRvPB1Sgb52i4iVqwp2znTCvu5Rnecpe+Qxe4x+YhKJAfVoREi0calVi5NzTHnfaSk9ljY3D7t2jfzXAH+W4IACf8WDnG7bOYh47LxHsSpRo0SvmOmbBlv3z8CkMiZ/p/IFQdlBsYun8a1bJbcIL1PsBjixq9tSiGMhDr0NUIMAvKWPSsiNWbAuqRAqjytmT8iQ0hgsvd4ZtC6QCMUBCS9xNMKSr1JkeeGDqUxMcWaNVMRx+IIoNOemY/ItBo4z7zFDtRfKobAdbGkcC52pPR4HRG2877RRmLnQAAmYfsEbltesX8ONuZFHLxBIBjhw28DpM+zy81vIY4Q==",
-  "gzsig": "VW8c5bzI9Gdz39NGhZnMS7dIw+QRoBe5036JKzi5XBa3+NKlP/XBvWCVpfn98JDLlK7T7bttanzNMmbklH8u+ZGTKF6ga+Aui7TKGwWSglIzB5sjA/r9ciDAlTo2OZSuJs5xVx/Lml5/BhlCNHYlHzsfBPbklx/0ZUGYLpGMUdSfvU6COftVkV35iPDOuX3bJ4qvEDjIqBHPjV3sZ0hvKywamaDZJS/4N9uT8gI9gBVl9PH24Osd7dbB7QeFNWTdDwFCW7v6DAhrgb2NPDZSDE54Aq9Gv6Jr5144yhLsRgo0Uz6YUYQAvfas7DMuEB80ES1Hu8Gnjhd3uRg6libZpg=="
+  "sig": "iY/SOfy/OadViPWhTPPdmguuCMSgWzKJAKCQ9XO0m+ZpvEU6l98H6JpiTBIWLUiRCjfsKDBCUjtFS8TE3IpqnSgyOElCxTn0+W4AbAUQ44Ad80R7j/CmaEtT0P6EL4ZbcqgNP+uTGlDhCq8biklbi9FwBgsQNAvoP5xLKhLCdv/S7slLxHOf6IFPZR3gH1aacr3kt7Lqcy3njd90FokgYoD2VZd5SHe6T1udsZRiBSnZ1aLla016/n8szme3l2BapiYgYHOjX4WaSbAMGHWbP9z3GGih1iI68OVnZ1vcjVFS62jj1JFWXguQSbp+abW4Kpo+2nfiPQC0ZVAqZQQbbg==",
+  "gzsig": "eOlFRyxAOTyJ050/jDeZq/UwrvWeFz5G6c+F43mWnwuP3hzTAN3sPhpDOD6AzfEa7xusc808+hb7DzcfmrOS844lfW1z2PSWLiRCgFb4w1VVfbbayQ0CMm9i8E7qxp1if22F2cWrJ7m7Fyqsvk0LqMfjV4tE5CIhSC1zDPmnJ3MWcS3rUgKoumie1yRrmKgrw0tIbhXRhAqg4QclTzBpryjn+PTZ1xtC/QgS6oAywv0ekVzSPx0Km2uREnA2FFbXJxnhH+kOmo6opBEOaBa9F95dsM9QxFFI7A3V3Y8rfIQvMQLF8u8PHZ6QYsgcJ+Xk3NFQvFZ75dXdOTofhvahSw=="
 }
