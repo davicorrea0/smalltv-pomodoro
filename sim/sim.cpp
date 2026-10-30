@@ -240,21 +240,29 @@ static int checkSlide() {
   return fails;
 }
 
-// Troca LCD retrô <-> Previsão LCD (ui.cpp, lcdCurtain): a moldura tem que ficar parada. Em todo quadro da
+// Troca LCD retrô <-> Previsão LCD (ui.cpp, lcdFade): a moldura tem que ficar parada. Em todo quadro da
 // transição, os pixels fora do miolo (x 10..229, y 28..207) e dos rótulos de fora (y < 24 e y >= 210) são os
 // de antes (que são os mesmos do mostrador novo: a moldura é idêntica nos dois); no fim, a tela é igual a
 // um desenho do zero do mostrador novo (nada sobra do anterior). Grava os quadros em out/inc_segmentos_*.raw.
 static std::vector<std::vector<uint16_t>> segmentos;
-static Frame *segmentosF;
+static Frame *segmentosF, *segmentosA;
+static long segmentosBad;  // pixels da moldura diferentes do início, em qualquer faixa desenhada
+static bool lcdMoldura(int x, int y);
+static void segmentosFaixa() {
+  for (int i = 0; i < 240 * 240; i++) segmentosBad += lcdMoldura(i % 240, i / 240) && segmentosF->px[i] != segmentosA->px[i];
+}
 static void segmentosHook() {
   if (segmentos.empty() || memcmp(segmentos.back().data(), segmentosF->px, sizeof segmentosF->px))
     segmentos.emplace_back(segmentosF->px, segmentosF->px + 240 * 240);  // quadros repetidos (espera) não contam
 }
-static bool lcdMoldura(int x, int y) { return !(y < 24 || y >= 210 || (x >= 10 && x < 230 && y >= 28 && y < 208)); }
+static bool lcdMoldura(int x, int y) {
+  return !(y < 24 || y >= 210 || (x >= 10 && x < 230 && y >= 28 && y < 208));
+}
 static int checkLcdCurtain() {
   int fails = 0;
   Frame *f = new Frame(), *a = new Frame(), *b = new Frame();
   segmentosF = f;
+  segmentosA = a;
   for (int dir = 0; dir < 2; dir++) {
     int from = dir ? THEME_FORECAST_LCD : THEME_LCD, to = dir ? THEME_LCD : THEME_FORECAST_LCD;
     UiState sa = base(14, 58, 50), sb = sa;
@@ -265,13 +273,14 @@ static int checkLcdCurtain() {
     uiBegin(f); uiRenderClock(sa);
     segmentos.clear();
     segmentosHook();
-    uiFrameHook = segmentosHook;
+    segmentosBad = 0;
+    uiFrameHook = segmentosFaixa;  // a cada faixa desenhada
+    uiStepHook = segmentosHook;    // a cada quadro da troca
     uiInvalidateSlide();
     uiRenderClock(sb);
     uiFrameHook = nullptr;
-    long moldura = 0, sobra = 0;
-    for (auto &q : segmentos)
-      for (int i = 0; i < 240 * 240; i++) moldura += lcdMoldura(i % 240, i / 240) && q[i] != a->px[i];
+    uiStepHook = nullptr;
+    long moldura = segmentosBad, sobra = 0;
     for (int i = 0; i < 240 * 240; i++) {
       sobra += f->px[i] != b->px[i];
       moldura += lcdMoldura(i % 240, i / 240) && a->px[i] != b->px[i];  // moldura dos dois mostradores idêntica

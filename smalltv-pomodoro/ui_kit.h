@@ -60,6 +60,7 @@ struct TimeLayout { int x[4]; int y; int p; int colonX; };
 void drawTime4(const TimeLayout &L, int a, int b, int c, int d, bool colon, uint16_t on, uint16_t off);
 // DSEG7 (relógio LCD): dígito de 0,618h x h; segmentos apagados em "off"; d = 10 desenha "-", d < 0 só os apagados
 void dsegDigit(int x, int y, int h, int d, uint16_t on, uint16_t off);
+const char *lcdLabel(bool forecast);  // rótulo de cima dos mostradores LCD (face_previsao_lcd.cpp)
 // Fontes vetoriais suavizadas sobre bg (só dígitos, ':' e espaço), altura h (fonts.cpp)
 struct VecFont {
   const int16_t (*pt)[2];  // pontos dos contornos (célula de 720 de altura)

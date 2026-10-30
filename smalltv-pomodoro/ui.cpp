@@ -650,60 +650,76 @@ static bool slideTo(const UiState &s, uint8_t t) {
   return ok;  // false: quem chamou desenha o mostrador novo do jeito normal (tela cheia)
 }
 
-// ---------- troca LCD retrô <-> Previsão LCD: a moldura fica parada, os segmentos apagam e acendem ----------
+// ---------- troca LCD retrô <-> Previsão LCD: moldura parada, tinta com tempo de resposta ----------
 // Os dois mostradores têm a mesma moldura (retângulo arredondado verde-acinzentado e sombra interna); mudam
-// o miolo (x 10..229, y 28..207: os dígitos grandes do LCD retrô passam de x 14) e os dois rótulos de fora
-// (y < 24 e y >= 210). Primeiro o conteúdo antigo apaga aos poucos: o miolo vira uma grade de células de
-// 20 x 20 e 8 grupos espalhados delas voltam ao fundo do LCD, um a cada 25 ms, sem desenhar o mostrador (só
-// fillRect). Com o vidro vazio os rótulos de fora trocam; depois cada zona do mostrador novo (data, cada
-// dígito, temperatura, cada linha da previsão...) acende de uma vez, na ordem de leitura: um desenho
-// completo recortado nela (slideStrip), sem memória além das faixas de uiOffscreen (<= 8 KB). A moldura
-// nunca é redesenhada. Zonas: x, y, largura, altura; juntas cobrem o miolo inteiro.
-static const uint8_t ZONES_LCD[][4] PROGMEM = {
-    {10, 28, 112, 26}, {122, 28, 108, 26},
-    {10, 54, 52, 92}, {62, 54, 54, 92}, {116, 54, 9, 92}, {125, 54, 55, 92}, {180, 54, 50, 92},
-    {10, 146, 84, 62}, {94, 146, 72, 62}, {166, 146, 64, 62}};
-static const uint8_t ZONES_FORECAST[][4] PROGMEM = {
-    {10, 28, 138, 30}, {148, 28, 82, 30},
-    {10, 58, 90, 40}, {100, 58, 80, 40}, {180, 58, 50, 40},
-    {10, 98, 90, 36}, {100, 98, 80, 36}, {180, 98, 50, 36},
-    {10, 134, 90, 36}, {100, 134, 80, 36}, {180, 134, 50, 36},
-    {10, 170, 90, 38}, {100, 170, 80, 38}, {180, 170, 50, 38}};
+// o miolo (x 10..229, y 28..207: os dígitos grandes do LCD retrô passam de x 14) e os rótulos de fora
+// (y < 24 e y >= 210), que nunca passam da moldura. Num LCD de verdade o segmento não acende nem apaga de
+// estalo: escurece e clareia em alguns degraus. O miolo faz isso em 5 quadros (~450 ms com os rótulos): o
+// antigo com 69 e 34 por cento da tinta, o novo com 34, 69 e 100 por cento, cada quadro um desenho completo recortado em
+// faixas de uiOffscreen (<= 8 KB, sem memória extra) cuja cor é puxada para o fundo do LCD depois de
+// pronta (inkFade). Os rótulos brancos de fora deslizam para o lado: o antigo sai pela esquerda e o novo
+// entra pela direita. Nenhum pixel da moldura é redesenhado.
+void (*uiStepHook)() = nullptr;  // fim de cada quadro da troca (o simulador guarda os quadros)
+struct LcdCtx { SlideCtx s; const UiState *st; int16_t a, dxOld, dxNew; bool fcOld, fcNew; };
+// tinta (qualquer cor da faixa que não seja o preto de fora do vidro) a a/256 do caminho até o fundo do LCD
+static void inkFade(int a) {
+  const uint16_t bg = uiRgb(166, 180, 140);
+  const int r0 = bg >> 11, g0 = (bg >> 5) & 63, b0 = bg & 31;
+  uint16_t *p = bufGfx.buf;
+  for (int i = 0, n = bufGfx.bw * bufGfx.bh; i < n; i++) {
+    uint16_t c = p[i];
+    if (c == BG) continue;
+    int r = r0 + (((c >> 11) - r0) * a >> 8), g = g0 + ((((c >> 5) & 63) - g0) * a >> 8), b = b0 + (((c & 31) - b0) * a >> 8);
+    p[i] = r << 11 | g << 5 | b;
+  }
+}
+static void lcdFadeStrip(void *p) {
+  LcdCtx *c = (LcdCtx *)p;
+  slideStrip(&c->s);
+  if (c->a < 256) inkFade(c->a);
+}
+static void lcdLabels(const UiState &s, bool fc, int dx) {
+  const uint16_t gray = uiRgb(170, 170, 182);
+  textC(120 + dx, 9, 1, gray, lcdLabel(fc));
+  if (fc) {
+    textC(119 + dx, 216, 1, gray, "MAX");
+    textC(161 + dx, 216, 1, gray, "MIN");
+  } else textC(120 + dx, 220, 1, MUTED, s.ip ? s.ip : "");
+}
+static void lcdLabelStrip(void *p) {
+  LcdCtx *c = (LcdCtx *)p;
+  G->fillScreen(BG);
+  lcdLabels(*c->st, c->fcOld, c->dxOld);
+  lcdLabels(*c->st, c->fcNew, c->dxNew);
+}
 static bool lcdPair(int8_t a, int8_t b) {
   return (a == THEME_LCD && b == THEME_FORECAST_LCD) || (a == THEME_FORECAST_LCD && b == THEME_LCD);
 }
-static void lcdWait(uint32_t t0, uint32_t ms) {
-  while (slideNow() - t0 < ms)
-    if (uiFrameHook) uiFrameHook();
-}
-static bool lcdSegments(const UiState &s, uint8_t t) {
-  const int GX = 14, GY = 28, CELL = 20, COLS = 11, ROWS = 9, NGRP = 8;  // grade só dentro do vidro (os cantos arredondados ficam de fora)
-  static const uint8_t ORDER[NGRP] PROGMEM = {0, 5, 2, 7, 4, 1, 6, 3};
-  const bool lcd = t == THEME_LCD;
-  const uint8_t(*z)[4] = lcd ? ZONES_LCD : ZONES_FORECAST;
-  const int nz = lcd ? (int)(sizeof ZONES_LCD / 4) : (int)(sizeof ZONES_FORECAST / 4);
-  SlideCtx c = {&s, t};
+static bool lcdFade(const UiState &s, uint8_t from, uint8_t t) {
+  static const uint16_t AT[5] PROGMEM = {0, 90, 180, 270, 360};   // instante de cada quadro do miolo (ms)
+  static const uint16_t INK[5] PROGMEM = {176, 88, 88, 176, 256};  // tinta (256 = tinta toda); os 2 primeiros são do mostrador antigo
+  const int LS = 10, LMS = 45;  // rótulos: 10 passos de 45 ms
+  LcdCtx c = {{&s, from}, &s, 256, 0, 240, from == THEME_FORECAST_LCD, t == THEME_FORECAST_LCD};
   uint32_t t0 = slideNow();
-  for (int g = 0; g < NGRP; g++) {
-    lcdWait(t0, 25 * g);
-    for (int r = 0; r < ROWS; r++)
-      for (int k = 0; k < COLS; k++)
-        if ((k * 3 + r * 5) % NGRP == pgm_read_byte(&ORDER[g])) {
-          int x = GX + k * CELL, w = x + CELL > 226 ? 226 - x : CELL;
-          if (r >= 1 && r < ROWS - 1) {  // no meio a borda é reta: os dígitos grandes do retrô vão até x 10 e 229
-            if (!k) { x = 10; w += GX - 10; }
-            if (k == COLS - 1) w += 4;
-          }
-          G->fillRect(x, GY + r * CELL, w, CELL, uiRgb(166, 180, 140));  // fundo do LCD (LCD_BG dos dois mostradores)
-        }
-    if (uiFrameHook) uiFrameHook();
-  }
-  lcdWait(t0, 25 * NGRP + 50);  // o vidro vazio por um instante
-  if (!uiOffscreen(0, 0, 240, 24, slideStrip, &c) || !uiOffscreen(0, 210, 240, 30, slideStrip, &c)) return false;
-  uint32_t t1 = slideNow();
-  for (int i = 0; i < nz; i++) {
-    lcdWait(t1, 22 * i);
-    if (!uiOffscreen(pgm_read_byte(&z[i][0]), pgm_read_byte(&z[i][1]), pgm_read_byte(&z[i][2]), pgm_read_byte(&z[i][3]), slideStrip, &c)) return false;
+  int me = 0, lk = 0;
+  while (me < 5 || lk <= LS) {
+    uint32_t e = slideNow() - t0;
+    if (me < 5 && e >= pgm_read_word(&AT[me])) {
+      c.s.t = me < 2 ? from : t;
+      c.a = pgm_read_word(&INK[me]);
+      me++;
+      if (!uiOffscreen(10, 28, 220, 180, lcdFadeStrip, &c)) return false;
+    } else if (lk <= LS && e >= (uint32_t)(LMS * lk)) {
+      int x = lk * 1024 / LS, p = 240 * (x * x * (3072 - 2 * x) >> 20) / 1024;  // suaviza início e fim
+      c.dxOld = -p;
+      c.dxNew = 240 - p;
+      lk++;
+      if (!uiOffscreen(0, 8, 240, 10, lcdLabelStrip, &c) || !uiOffscreen(0, 214, 240, 16, lcdLabelStrip, &c)) return false;
+    } else {
+      if (uiFrameHook) uiFrameHook();
+      continue;
+    }
+    if (uiStepHook) uiStepHook();
   }
   return true;
 }
@@ -719,7 +735,7 @@ void uiRenderClock(const UiState &s) {
   if (slideOn) {
     slideOn = false;
     bool lcd = screen == -1 && lcdPair(slidePrev, t);
-    if (lcd && lcdSegments(s, t)) {  // sem memória para as faixas: desenha o novo do jeito normal, abaixo
+    if (lcd && lcdFade(s, slidePrev, t)) {  // sem memória para as faixas: desenha o novo do jeito normal, abaixo
       screen = t;
       return;
     }

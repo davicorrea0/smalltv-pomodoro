@@ -112,6 +112,7 @@ void uiInvalidate();                         // redesenha tudo na próxima chama
 // troca é uma rolagem vertical por hardware (o antigo sobe e sai, o novo entra por baixo) em vez de
 // apagar e redesenhar na frente da pessoa. Sem uiScrollHw (simulador), vira uiInvalidate().
 void uiInvalidateSlide();
+extern void (*uiStepHook)();  // fim de cada quadro da troca LCD retrô <-> Previsão LCD (o simulador guarda os quadros)
 
 // ---- rolagem vertical por hardware (ST7789: VSCRDEF 0x33 e VSCSAD 0x37) ----
 // A RAM do painel tem 320 linhas e o vidro mostra 240. Rolar é só mudar de onde o painel começa a

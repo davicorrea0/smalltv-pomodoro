@@ -29,7 +29,12 @@ static void fillConvex(const float *px, const float *py, int n, uint16_t c) {
     if (py[i] < y0) y0 = py[i];
     if (py[i] > y1) y1 = py[i];
   }
-  for (int y = (int)ceilf(y0 - 0.5f); y <= (int)floorf(y1 - 0.5f); y++) {
+  int ya = (int)ceilf(y0 - 0.5f), yb = (int)floorf(y1 - 0.5f);
+  if (uiClip.on) {  // desenho em faixas: as linhas fora da faixa não precisam de conta
+    if (ya < uiClip.y0) ya = uiClip.y0;
+    if (yb >= uiClip.y1) yb = uiClip.y1 - 1;
+  }
+  for (int y = ya; y <= yb; y++) {
     float sy = y + 0.5f, xl = 1e9f, xr = -1e9f;
     for (int i = 0; i < n; i++) {
       int j = (i + 1) % n;
@@ -63,7 +68,7 @@ void dsegDigit(int x, int y, int h, int d, uint16_t on, uint16_t off) {
 
 void themeLcd(const UiState &s, bool full) {
   if (full) {
-    textC(120, 9, 1, uiRgb(170, 170, 182), "TOMATE   ALARM   CHRONO");
+    textC(120, 9, 1, uiRgb(170, 170, 182), lcdLabel(false));
     G->fillRoundRect(8, 24, 224, 186, 14, LCD_BG);
     G->drawFastHLine(22, 25, 196, uiRgb(140, 154, 116));  // sombra interna
     G->drawFastHLine(22, 26, 196, uiRgb(152, 165, 128));

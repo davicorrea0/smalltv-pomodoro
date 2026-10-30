@@ -62,7 +62,7 @@ names.forEach((n, r) => pick(sets[n]).forEach((k, c) => {
 }));
 fs.writeFileSync(path.join(dir, 'segmentos_tira.png'), png(sw, sh, sheet));
 for (const n of names) {
-  const fr = sets[n], d = fr.map((_, i) => (i === 0 || i === fr.length - 1 ? 90 : 3));  // centésimos: segura o primeiro e o último
+  const fr = sets[n], d = fr.map((_, i) => (i === 0 || i === fr.length - 1 ? 90 : 6));  // centésimos: segura o primeiro e o último
   fs.writeFileSync(path.join(dir, 'segmentos_' + n.replace('segmentos_', '') + '.gif'), gif(fr, d));
 }
 console.log('segmentos: ' + names.length + ' GIFs e a tira em out/');
