@@ -650,39 +650,60 @@ static bool slideTo(const UiState &s, uint8_t t) {
   return ok;  // false: quem chamou desenha o mostrador novo do jeito normal (tela cheia)
 }
 
-// ---------- troca LCD retrô <-> Previsão LCD: a moldura fica parada, só o miolo muda ----------
-// Os dois mostradores têm a mesma moldura (retângulo arredondado verde-acinzentado e sombra interna);
-// mudam o miolo (x 10..229, y 28..207: os dígitos grandes do LCD retrô passam de x 14) e os dois rótulos de fora (y < 24 e y >= 210). Os rótulos trocam
-// de uma vez e o miolo vira uma cortina: faixas de 12 linhas do novo conteúdo descem de cima para baixo,
-// com um filete de contraste na frente, como a varredura de um LCD atualizando. O resto da moldura nunca
-// é redesenhado. Cada faixa é um desenho completo recortado (slideStrip): sem memória além das faixas de
-// uiOffscreen (<= 8 KB), as mesmas da rolagem.
-static const int CUR_X = 10, CUR_Y = 28, CUR_W = 220, CUR_H = 180, CUR_BAND = 12;
-struct CurtainCtx { SlideCtx s; int16_t cueY; };
-static void curtainStrip(void *p) {
-  CurtainCtx *c = (CurtainCtx *)p;
-  slideStrip(&c->s);
-  if (c->cueY >= 0) {
-    G->fillRect(CUR_X, c->cueY, CUR_W, 1, uiRgb(132, 146, 108));  // o filete: 2 linhas mais escuras que o fundo
-    G->fillRect(CUR_X, c->cueY + 1, CUR_W, 1, uiRgb(150, 163, 126));
-  }
-}
+// ---------- troca LCD retrô <-> Previsão LCD: a moldura fica parada, os segmentos apagam e acendem ----------
+// Os dois mostradores têm a mesma moldura (retângulo arredondado verde-acinzentado e sombra interna); mudam
+// o miolo (x 10..229, y 28..207: os dígitos grandes do LCD retrô passam de x 14) e os dois rótulos de fora
+// (y < 24 e y >= 210). Primeiro o conteúdo antigo apaga aos poucos: o miolo vira uma grade de células de
+// 20 x 20 e 8 grupos espalhados delas voltam ao fundo do LCD, um a cada 25 ms, sem desenhar o mostrador (só
+// fillRect). Com o vidro vazio os rótulos de fora trocam; depois cada zona do mostrador novo (data, cada
+// dígito, temperatura, cada linha da previsão...) acende de uma vez, na ordem de leitura: um desenho
+// completo recortado nela (slideStrip), sem memória além das faixas de uiOffscreen (<= 8 KB). A moldura
+// nunca é redesenhada. Zonas: x, y, largura, altura; juntas cobrem o miolo inteiro.
+static const uint8_t ZONES_LCD[][4] PROGMEM = {
+    {10, 28, 112, 26}, {122, 28, 108, 26},
+    {10, 54, 52, 92}, {62, 54, 54, 92}, {116, 54, 9, 92}, {125, 54, 55, 92}, {180, 54, 50, 92},
+    {10, 146, 84, 62}, {94, 146, 72, 62}, {166, 146, 64, 62}};
+static const uint8_t ZONES_FORECAST[][4] PROGMEM = {
+    {10, 28, 138, 30}, {148, 28, 82, 30},
+    {10, 58, 90, 40}, {100, 58, 80, 40}, {180, 58, 50, 40},
+    {10, 98, 90, 36}, {100, 98, 80, 36}, {180, 98, 50, 36},
+    {10, 134, 90, 36}, {100, 134, 80, 36}, {180, 134, 50, 36},
+    {10, 170, 90, 38}, {100, 170, 80, 38}, {180, 170, 50, 38}};
 static bool lcdPair(int8_t a, int8_t b) {
   return (a == THEME_LCD && b == THEME_FORECAST_LCD) || (a == THEME_FORECAST_LCD && b == THEME_LCD);
 }
-static bool lcdCurtain(const UiState &s, uint8_t t) {
-  const int N = (CUR_H + CUR_BAND - 1) / CUR_BAND;
-  const uint32_t MS = 360;
-  CurtainCtx c = {{&s, t}, -1};
-  if (!uiOffscreen(0, 0, 240, 24, curtainStrip, &c) || !uiOffscreen(0, 210, 240, 30, curtainStrip, &c)) return false;
+static void lcdWait(uint32_t t0, uint32_t ms) {
+  while (slideNow() - t0 < ms)
+    if (uiFrameHook) uiFrameHook();
+}
+static bool lcdSegments(const UiState &s, uint8_t t) {
+  const int GX = 14, GY = 28, CELL = 20, COLS = 11, ROWS = 9, GROUPS = 8;  // grade só dentro do vidro (os cantos arredondados ficam de fora)
+  static const uint8_t ORDER[GROUPS] PROGMEM = {0, 5, 2, 7, 4, 1, 6, 3};
+  const bool lcd = t == THEME_LCD;
+  const uint8_t(*z)[4] = lcd ? ZONES_LCD : ZONES_FORECAST;
+  const int nz = lcd ? (int)(sizeof ZONES_LCD / 4) : (int)(sizeof ZONES_FORECAST / 4);
+  SlideCtx c = {&s, t};
   uint32_t t0 = slideNow();
-  for (int n = 0; n < N; n++) {
-    while (slideNow() - t0 < MS * n / N)
-      if (uiFrameHook) uiFrameHook();
-    int y = CUR_Y + n * CUR_BAND, h = CUR_Y + CUR_H - y < CUR_BAND ? CUR_Y + CUR_H - y : CUR_BAND;
-    bool last = n == N - 1;
-    c.cueY = last ? -1 : y + h;
-    if (!uiOffscreen(CUR_X, y, CUR_W, last ? h : h + 2, curtainStrip, &c)) return false;
+  for (int g = 0; g < GROUPS; g++) {
+    lcdWait(t0, 25 * g);
+    for (int r = 0; r < ROWS; r++)
+      for (int k = 0; k < COLS; k++)
+        if ((k * 3 + r * 5) % GROUPS == pgm_read_byte(&ORDER[g])) {
+          int x = GX + k * CELL, w = x + CELL > 226 ? 226 - x : CELL;
+          if (r >= 1 && r < ROWS - 1) {  // no meio a borda é reta: os dígitos grandes do retrô vão até x 10 e 229
+            if (!k) { x = 10; w += GX - 10; }
+            if (k == COLS - 1) w += 4;
+          }
+          G->fillRect(x, GY + r * CELL, w, CELL, uiRgb(166, 180, 140));  // fundo do LCD (LCD_BG dos dois mostradores)
+        }
+    if (uiFrameHook) uiFrameHook();
+  }
+  lcdWait(t0, 25 * GROUPS + 50);  // o vidro vazio por um instante
+  if (!uiOffscreen(0, 0, 240, 24, slideStrip, &c) || !uiOffscreen(0, 210, 240, 30, slideStrip, &c)) return false;
+  uint32_t t1 = slideNow();
+  for (int i = 0; i < nz; i++) {
+    lcdWait(t1, 22 * i);
+    if (!uiOffscreen(pgm_read_byte(&z[i][0]), pgm_read_byte(&z[i][1]), pgm_read_byte(&z[i][2]), pgm_read_byte(&z[i][3]), slideStrip, &c)) return false;
   }
   return true;
 }
@@ -698,7 +719,7 @@ void uiRenderClock(const UiState &s) {
   if (slideOn) {
     slideOn = false;
     bool lcd = screen == -1 && lcdPair(slidePrev, t);
-    if (lcd && lcdCurtain(s, t)) {  // sem memória para as faixas: desenha o novo do jeito normal, abaixo
+    if (lcd && lcdSegments(s, t)) {  // sem memória para as faixas: desenha o novo do jeito normal, abaixo
       screen = t;
       return;
     }
