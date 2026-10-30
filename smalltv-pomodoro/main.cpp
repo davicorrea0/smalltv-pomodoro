@@ -393,13 +393,14 @@ int16_t sunRise = -1, sunSet = -1;  // minutos do dia (hora local), da última b
 
 // Cor quente à noite (warm.h): gama digital do ST7789V, ligado à mesma rampa do brilho. warmNow é a intensidade
 // 0..100 no instante; warmSent, a que o chip tem (-1 = desconhecida: depois de applyPanel ou antes de iniciar a tela).
+bool warmConj = false;  // só na prévia de comparação (ver warm.h)
 uint8_t warmFrom = 0, warmTo = 0, warmNow = 0, warmPreview = 0;
 int16_t warmSent = -1;
 uint32_t warmPreviewUntil = 0;  // prévia "ver agora" (aparência noturna) até este millis()
 
 void warmFlush() {
   if (warmNow == warmSent) return;
-  warmApply([](uint8_t c, uint8_t *d, uint8_t n) { tft.sendCommand(c, d, n); }, warmNow);
+  warmApply([](uint8_t c, uint8_t *d, uint8_t n) { tft.sendCommand(c, d, n); }, warmNow, warmConj);
   warmSent = warmNow;
 }
 
@@ -2610,6 +2611,9 @@ void setupWeb() {
     int v = server.arg("v").toInt();
     warmPreview = v < 0 ? 0 : v > 100 ? 100 : v;
     warmPreviewUntil = server.arg("stop") == "1" || !warmPreview ? 0 : (millis() + 15000) | 1;
+    bool conj = warmPreviewUntil && server.arg("c") == "1";  // tabela conjugada, só para comparar na tela
+    if (conj != warmConj) warmSent = -1;
+    warmConj = conj;
     updateBrightness(true);
     server.send(200, "application/json", String(F("{\"warm\":")) + cfg.warm + "}");
   });
@@ -3630,6 +3634,8 @@ void loop() {
   uint32_t now = millis();
   if (warmPreviewUntil && (int32_t)(now - warmPreviewUntil) >= 0) {  // fim da prévia: volta ao que vale agora
     warmPreviewUntil = 0;
+    if (warmConj) warmSent = -1;
+    warmConj = false;
     updateBrightness();
   }
   if (now - lastBriCheck > 5000) {
