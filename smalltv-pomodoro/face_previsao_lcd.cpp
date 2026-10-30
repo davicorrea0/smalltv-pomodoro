@@ -92,6 +92,7 @@ static void paintRows(void *c) {
 
 const char *lcdLabel(uint8_t kind) {
   if (kind == 2) return "TOMATE   WORLD   CHRONO";
+  if (kind == 3) return "TOMATE   CITY   CHRONO";
   return kind ? tr("TOMATE   PREVISAO   4 DIAS", "TOMATE   FORECAST   4 DAYS", "TOMATE   PRONOSTICO   4 DIAS") : "TOMATE   ALARM   CHRONO";
 }
 

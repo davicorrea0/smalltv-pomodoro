@@ -650,7 +650,7 @@ static bool slideTo(const UiState &s, uint8_t t) {
   return ok;  // false: quem chamou desenha o mostrador novo do jeito normal (tela cheia)
 }
 
-// ---------- troca entre os mostradores LCD (LCD retrô, Previsão LCD, Mundo): moldura parada, tinta com tempo de resposta ----------
+// ---------- troca entre os mostradores LCD (LCD retrô, Previsão LCD, Mundo, Mundo relógio): moldura parada, tinta com tempo de resposta ----------
 // Os dois mostradores têm a mesma moldura (retângulo arredondado verde-acinzentado e sombra interna); mudam
 // o miolo (x 10..229, y 28..207: os dígitos grandes do LCD retrô passam de x 14) e os rótulos de fora
 // (y < 24 e y >= 210), que nunca passam da moldura. Num LCD de verdade o segmento não acende nem apaga de
@@ -678,7 +678,7 @@ static void lcdFadeStrip(void *p) {
   slideStrip(&c->s);
   if (c->a < 256) inkFade(c->a);
 }
-static uint8_t lcdKind(int8_t t) { return t == THEME_FORECAST_LCD ? 1 : t == THEME_WORLD ? 2 : 0; }  // índice do rótulo (lcdLabel)
+static uint8_t lcdKind(int8_t t) { return t == THEME_FORECAST_LCD ? 1 : t == THEME_WORLD ? 2 : t == THEME_WORLD_WATCH ? 3 : 0; }  // índice do rótulo (lcdLabel)
 static void lcdLabels(const UiState &s, uint8_t kind, int dx) {
   const uint16_t gray = uiRgb(170, 170, 182);
   textC(120 + dx, 9, 1, gray, lcdLabel(kind));
@@ -693,7 +693,7 @@ static void lcdLabelStrip(void *p) {
   lcdLabels(*c->st, c->kOld, c->dxOld);
   lcdLabels(*c->st, c->kNew, c->dxNew);
 }
-static bool isLcd(int8_t t) { return t == THEME_LCD || t == THEME_FORECAST_LCD || t == THEME_WORLD; }
+static bool isLcd(int8_t t) { return t == THEME_LCD || t == THEME_FORECAST_LCD || t == THEME_WORLD || t == THEME_WORLD_WATCH; }
 static bool lcdPair(int8_t a, int8_t b) { return a != b && isLcd(a) && isLcd(b); }
 static bool lcdFade(const UiState &s, uint8_t from, uint8_t t) {
   static const uint16_t AT[5] PROGMEM = {0, 90, 180, 270, 360};   // instante de cada quadro do miolo (ms)

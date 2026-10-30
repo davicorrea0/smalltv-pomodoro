@@ -18,4 +18,4 @@
   X(FORECAST, themeForecast, "Previsão", "Hoje e os próximos 4 dias, com chuva e mín/máx") \
   X(FORECAST_CARDS, themeForecastCards, "Previsão em cartões", "Quatro dias em cartões, com a máxima em destaque") \
   X(FORECAST_LCD, themeForecastLcd, "Previsão LCD", "Quatro dias no visor do LCD retrô") \
-  X(WORLD, themeWorld, "Mundo", "Mapa-múndi com a faixa de dia e noite e o ponto do seu local")
+  X(WORLD, themeWorld, "Mundo", "Mapa-múndi com a faixa de dia e noite e o ponto do seu local")   X(WORLD_WATCH, themeWorldWatch, "Mundo relógio", "Relógio de pulso com mapa, código da cidade e fuso")

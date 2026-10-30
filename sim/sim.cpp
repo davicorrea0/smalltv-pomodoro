@@ -201,7 +201,7 @@ static int checkSlide() {
   Frame *a = new Frame(), *b = new Frame();
   PN = p;
   // entre dois mostradores LCD a troca é a da tinta (checkLcdCurtain), não a rolagem
-  auto lcd = [](int t) { return t == THEME_LCD || t == THEME_FORECAST_LCD || t == THEME_WORLD; };
+  auto lcd = [](int t) { return t == THEME_LCD || t == THEME_FORECAST_LCD || t == THEME_WORLD || t == THEME_WORLD_WATCH; };
   int n = 0;
   for (int flip = 0; flip < 2; flip++)
     for (int t = 0; t < THEME_COUNT; t++) {
@@ -270,10 +270,10 @@ static int checkLcdCurtain() {
   Frame *f = new Frame(), *a = new Frame(), *b = new Frame();
   segmentosF = f;
   segmentosA = a;
-  // os dois sentidos entre LCD retrô e Previsão LCD (as prévias da troca) e o Mundo com cada um deles
-  static const int8_t PAR[4][2] = {{THEME_LCD, THEME_FORECAST_LCD}, {THEME_FORECAST_LCD, THEME_LCD}, {THEME_LCD, THEME_WORLD}, {THEME_WORLD, THEME_FORECAST_LCD}};
-  static const char *const NOME[4] = {"lcd_previsao-lcd", "previsao-lcd_lcd", "lcd_mundo", "mundo_previsao-lcd"};
-  for (int dir = 0; dir < 4; dir++) {
+  // os dois sentidos entre LCD retrô e Previsão LCD (as prévias da troca), o Mundo com cada um deles e o Mundo relógio
+  static const int8_t PAR[5][2] = {{THEME_LCD, THEME_FORECAST_LCD}, {THEME_FORECAST_LCD, THEME_LCD}, {THEME_LCD, THEME_WORLD}, {THEME_WORLD, THEME_FORECAST_LCD}, {THEME_WORLD, THEME_WORLD_WATCH}};
+  static const char *const NOME[5] = {"lcd_previsao-lcd", "previsao-lcd_lcd", "lcd_mundo", "mundo_previsao-lcd", "mundo_mundo-relogio"};
+  for (int dir = 0; dir < 5; dir++) {
     int from = PAR[dir][0], to = PAR[dir][1];
     UiState sa = base(14, 58, 50), sb = sa;
     sa.theme = from;
@@ -539,9 +539,16 @@ int main() {
   { UiState t = base(14, 37, 24); t.theme = THEME_WORLD; shot("21_mundo_dia", t, false); }
   { UiState t = base(23, 10, 41); t.theme = THEME_WORLD; t.wx.rainIn = 0; shot("21b_mundo_noite", t, false); }
   { UiState t = base(2, 37, 24); t.now.tm_yday = 293; t.now.tm_mday = 21; t.now.tm_wday = 3; t.theme = THEME_WORLD;
-    t.utcOff = 9 * 3600; t.lat10 = 357; t.lon10 = 1397; t.city = "Tokyo"; shot("21c_mundo_toquio", t, false); }
-  { UiState t = base(18, 37, 24); t.theme = THEME_WORLD; t.utcOff = 3600; t.lat10 = 515; t.lon10 = -1; t.city = "London"; t.hour12 = true;
+    t.utcOff = 9 * 3600; t.lat10 = 357; t.lon10 = 1397; shot("21c_mundo_toquio", t, false); }
+  { UiState t = base(18, 37, 24); t.theme = THEME_WORLD; t.utcOff = 3600; t.lat10 = 515; t.lon10 = -1; t.hour12 = true;
     t.running = true; t.wx.rainIn = 15; shot("21d_mundo_londres_12h", t, false); }
+  // Mundo relógio: os mesmos quatro cenários, com o nome da cidade (código FLO, TOK e LON)
+  { UiState t = base(14, 37, 24); t.theme = THEME_WORLD_WATCH; shot("22_mundo_relogio_dia", t, false); }
+  { UiState t = base(23, 10, 41); t.theme = THEME_WORLD_WATCH; t.wx.rainIn = 0; shot("22b_mundo_relogio_noite", t, false); }
+  { UiState t = base(2, 37, 24); t.now.tm_yday = 293; t.now.tm_mday = 21; t.now.tm_wday = 3; t.theme = THEME_WORLD_WATCH;
+    t.utcOff = 9 * 3600; t.lat10 = 357; t.lon10 = 1397; t.city = "Tokyo"; shot("22c_mundo_relogio_toquio", t, false); }
+  { UiState t = base(18, 37, 24); t.theme = THEME_WORLD_WATCH; t.utcOff = 3600; t.lat10 = 515; t.lon10 = -1; t.city = "London"; t.hour12 = true;
+    t.running = true; t.wx.rainIn = 15; shot("22d_mundo_relogio_londres_12h", t, false); }
 
   // ---- animação da virada do Flip: 14:37 -> 14:38 ----
   {
