@@ -22,6 +22,7 @@ if [ -n "$ZIG" ]; then CXX="$ZIG c++ -target $TARGET"; else CXX="g++ -m32 -D_FIL
 $CXX -O1 -std=c++17 -DARDUINO=100 -DARDUINOJSON_ENABLE_ARDUINO_STRING=0 -DARDUINOJSON_ENABLE_ARDUINO_STREAM=0 -DARDUINOJSON_ENABLE_ARDUINO_PRINT=0 -DARDUINOJSON_ENABLE_PROGMEM=0 -Ishim -I"$GFX" -I"${JSON:-$HOME/Documents/Arduino/libraries/ArduinoJson/src}" sim.cpp ../smalltv-pomodoro/ui.cpp ../smalltv-pomodoro/face_*.cpp ../smalltv-pomodoro/facepack.cpp ../smalltv-pomodoro/fonts.cpp "$GFX/Adafruit_GFX.cpp" -o "$BIN" || exit 1
 ./"$BIN"; r=$?
 node png.js > /dev/null
+node transicao_lcd.js
 node faces.js
 node catalog.js
 node painel_test.cjs

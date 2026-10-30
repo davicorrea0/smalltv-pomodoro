@@ -240,6 +240,59 @@ static int checkSlide() {
   return fails;
 }
 
+// Troca LCD retrô <-> Previsão LCD (ui.cpp, lcdCurtain): a moldura tem que ficar parada. Em todo quadro da
+// transição, os pixels fora do miolo (x 10..229, y 28..207) e dos rótulos de fora (y < 24 e y >= 210) são os
+// de antes (que são os mesmos do mostrador novo: a moldura é idêntica nos dois); no fim, a tela é igual a
+// um desenho do zero do mostrador novo (nada sobra do anterior). Grava os quadros em out/inc_cortina_*.raw.
+static std::vector<std::vector<uint16_t>> cortina;
+static Frame *cortinaF;
+static void cortinaHook() {
+  if (cortina.empty() || memcmp(cortina.back().data(), cortinaF->px, sizeof cortinaF->px))
+    cortina.emplace_back(cortinaF->px, cortinaF->px + 240 * 240);  // quadros repetidos (espera) não contam
+}
+static bool lcdMoldura(int x, int y) { return !(y < 24 || y >= 210 || (x >= 10 && x < 230 && y >= 28 && y < 208)); }
+static int checkLcdCurtain() {
+  int fails = 0;
+  Frame *f = new Frame(), *a = new Frame(), *b = new Frame();
+  cortinaF = f;
+  for (int dir = 0; dir < 2; dir++) {
+    int from = dir ? THEME_FORECAST_LCD : THEME_LCD, to = dir ? THEME_LCD : THEME_FORECAST_LCD;
+    UiState sa = base(14, 58, 50), sb = sa;
+    sa.theme = from;
+    sb.theme = to;
+    uiBegin(a); uiRenderClock(sa);
+    uiBegin(b); uiRenderClock(sb);
+    uiBegin(f); uiRenderClock(sa);
+    cortina.clear();
+    cortinaHook();
+    uiFrameHook = cortinaHook;
+    uiInvalidateSlide();
+    uiRenderClock(sb);
+    uiFrameHook = nullptr;
+    long moldura = 0, sobra = 0;
+    for (auto &q : cortina)
+      for (int i = 0; i < 240 * 240; i++) moldura += lcdMoldura(i % 240, i / 240) && q[i] != a->px[i];
+    for (int i = 0; i < 240 * 240; i++) {
+      sobra += f->px[i] != b->px[i];
+      moldura += lcdMoldura(i % 240, i / 240) && a->px[i] != b->px[i];  // moldura dos dois mostradores idêntica
+    }
+    bool ok = !moldura && !sobra && cortina.size() >= 12;
+    printf("cortina %s -> %s: %s (%zu quadros, %ld pixels da moldura mudaram, %ld pixels sobrando)\n", uiFaceName(from), uiFaceName(to), ok ? "ok" : "FALHOU", cortina.size(), moldura, sobra);
+    fails += !ok;
+    for (size_t k = 0; k < cortina.size(); k++) {
+      Frame q;
+      memcpy(q.px, cortina[k].data(), sizeof q.px);
+      char n[64];
+      snprintf(n, sizeof n, "inc_cortina_%s_%02zu", dir ? "previsao-lcd_lcd" : "lcd_previsao-lcd", k);
+      save(q, n);
+    }
+    uiRenderClock(sb);  // quadro incremental depois da troca: nada muda
+    for (int i = 0; i < 240 * 240; i++) fails += f->px[i] != b->px[i] ? 1 : 0;
+  }
+  delete f; delete a; delete b;
+  return fails;
+}
+
 // Troca de tela: cada mostrador -> Pomodoro e Pomodoro -> cada mostrador tem que dar o mesmo que desenhar
 // a tela nova numa tela limpa. Até a 1.19 o Pomodoro e o 11º mostrador tinham o mesmo número de tela e a
 // troca entre eles não limpava: um aparecia por cima do outro.
@@ -533,6 +586,7 @@ int main() {
   fails += checkIncremental("pomodoro", p, true) != 0;
   fails += checkTransitions(p);
   fails += checkSlide();
+  fails += checkLcdCurtain();
   fails += testPackages(p);
   fails += testSpriteLimits();
   return fails;
