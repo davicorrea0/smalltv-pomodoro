@@ -1,33 +1,30 @@
 {
-  "version": "1.24.2",
+  "version": "1.24.3",
   "date": "2026-10-30",
   "file": "beta/smalltv-pomodoro.bin",
-  "size": 559056,
+  "size": 559584,
   "notes": {
     "pt": [
       "⚠️ ATENÇÃO: VERSÃO DE TESTE QUE PODE QUEBRAR O APARELHO. Ela reorganiza a memória e ainda não foi testada num relógio. Só instale se souber usar o modo de recuperação e, de preferência, tiver um cabo USB-TTL para regravar. Faça o backup antes",
-      "O clima e os avisos não congelam mais a tela quando a internet cai ou o DNS demora: nome resolvido sem travar, prazos curtos e espera crescente entre tentativas (2, 4, 8 até 15 min)",
-      "Cor quente à noite (opcional, em Brilho): a tela tira o azul junto do brilho noturno, sem redesenhar nada; botão para ver por 15 s",
-      "Diagnóstico mostra a maior parada do relógio e onde aconteceu"
+      "Cor quente à noite corrigida: a tela ficava verde; agora fica âmbar",
+      "Troca entre LCD Retro e Previsão LCD com a moldura parada: só o miolo troca, como uma cortina"
     ],
     "en": [
       "⚠️ WARNING: TEST VERSION THAT MAY BREAK THE DEVICE. It reorganizes the storage and has not been tested on a clock yet. Only install it if you know how to use recovery mode and, ideally, have a USB-TTL cable to reflash. Make the backup first",
-      "Weather and notifications no longer freeze the screen when the internet drops or DNS is slow: names resolve without blocking, short timeouts and growing waits between retries (2, 4, 8 up to 15 min)",
-      "Warm color at night (optional, under Brightness): the screen drops blue along with night brightness, without redrawing; a button previews it for 15 s",
-      "Diagnostics show the clock's longest stall and where it happened"
+      "Warm color at night fixed: the screen turned green; now it turns amber",
+      "Switching between Retro LCD and Forecast LCD keeps the frame still: only the middle changes, like a curtain"
     ],
     "es": [
       "⚠️ ATENCIÓN: VERSIÓN DE PRUEBA QUE PUEDE ROMPER EL APARATO. Reorganiza la memoria y aún no se probó en un reloj. Instálala solo si sabes usar el modo de recuperación y, de preferencia, tienes un cable USB-TTL para regrabar. Haz la copia antes",
-      "El clima y los avisos ya no congelan la pantalla cuando cae internet o el DNS tarda: los nombres se resuelven sin bloquear, plazos cortos y espera creciente entre intentos (2, 4, 8 hasta 15 min)",
-      "Color cálido de noche (opcional, en Brillo): la pantalla quita el azul junto con el brillo nocturno, sin redibujar; un botón lo muestra por 15 s",
-      "El diagnóstico muestra la mayor parada del reloj y dónde ocurrió"
+      "Color cálido de noche corregido: la pantalla se ponía verde; ahora queda ámbar",
+      "El cambio entre LCD retro y Pronóstico LCD deja el marco quieto: solo cambia el centro, como una cortina"
     ]
   },
   "gz": "beta/smalltv-pomodoro.bin.gz",
-  "gzsize": 413759,
+  "gzsize": 414153,
   "layout": "4m2m",
-  "panel": "panel-ebf003aa550ad9e17fd70662.html.gz",
-  "psri": "sha256-6/ADqlUK2eF/1wZiRWzBwLEnlyx2zGcjwVfKJpsXyxA=",
-  "sig": "TlYqQwXFTXuIXU3EThFfCqftV24s1ObrUp7pDa7s+4I40gTsQwMCi150GkpFHiSTPBK4qIqq7OjzjYSO59EaamO98Oo824gQ66681OxYONTEcVNM3FgSsxLJ7Rs7Rd21m+bDyuOzbk0ah9Plqxrjk0ePsrJqegmezngi+CCQ+i8V4y167XFZUebrCmD4Qv+XyYTExFyt/6CgbFxSSjiKI82HbOGOoYVh3KYpPPDjqqTV2bFk7dWVACiuHNk1QPAqPuMfLJi0cgUoiItg5MEETWM/6Gx3EZ4izcO+acHO0ZwAtE5J28LD1rk2xxa652hUJ70X4s9ohnLgU+ZPjUuIlA==",
-  "gzsig": "Ota+xCvapBRwECvlyXqPg3y+kMC89gZetMDu3ZsIqbqDpZIyFUM3QrK53s6hSXTBER6OqLN70XXxdL62OWoPSUwHywTDuB+w6K2VI94l+LV1O1iP/TV4YESFsIkTiT1N22T3JlySIGRL0y4aEcJ7aT28eNrhfbKgJlToulxuoNMS+4DOx/Ghk8e5J/OeZBb5sZtz2edWawIg/Vn55SXeRTRXffLBWCq4tEL3VNKg1/RbRp3/yRM79nE1qzAyb/ZFHFzfHseQ2csTZZdoMiANizBfluEY2KmImGRKnOossGpusZpZ4Y0s+sFz4uEq5QSXdb2j1eUcPcltyEm1eCsZXg=="
+  "panel": "panel-78ba89b8e0bcdb2560adc22e.html.gz",
+  "psri": "sha256-eLqJuOC82yVgrcIubu7v0Rp04q2huhGVr//GQnxapXg=",
+  "sig": "srN69CNnfpH1duB/zopS+/jHeoeOrJ5CTVsCCapAdxxs6WNQaNjGQ4qLt7mktDwBOnsWezFVKl7xx11/t/MYL6TzLt7YG4NhOUgOdpY60MTP5QA/hBnHh44/HjBwdBaiOTV8Jb9LiY9fa3Kw1wQHGpzAUWLiRcTd3pOGG5FYffO0mM8BM7Iu5ISmRm/yH6tRK2ngf7Iy8Tk9wtwkhR9dgyi0tdkoBFxMWt+2waVKmkFI8cU9Qpq0m8aa/raRntxEGcoN6Yy2e4veRhFjyk6qFkD8RLpxqafbywvtmVs/iz+W5Sey81C9ajUGYE1KBgLQgjgJL/FKVvYurMCxaO0pgw==",
+  "gzsig": "QKA+JBYv9hnOnMqxZo7i3Cve2sit+hm5b49m+ggJCh2gqpUyB+E6HlDDjIAbRo8PXd2HbG2cgoe3T5yYsSNHM5nsemjhsY4/Q0PtngkhVsNi+F2pWf3euzwcaEdbgxD9jLLqWerf52Sjd7yHtAJ2nxLRKGslpqhe6m3eQAssO5g3W27Fwh7ytZm2xWfo0MLnY3hum0Q1PEJKwvI/hbeyVWGtX6vGSFJBYqx8urYh/oyT3DQrLWOKu+y8AngcWKXsE4ixNP5RkwdkRKsOT0hQGovYXIjWffXW5EvHQob+Igo/P9V0kVNr6tWFE+jFbyVSPRcOKSKER7aumHXbHpAOyQ=="
 }
