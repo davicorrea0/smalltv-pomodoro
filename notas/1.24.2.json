@@ -1,0 +1,20 @@
+{
+  "pt": [
+    "⚠️ ATENÇÃO: VERSÃO DE TESTE QUE PODE QUEBRAR O APARELHO. Ela reorganiza a memória e ainda não foi testada num relógio. Só instale se souber usar o modo de recuperação e, de preferência, tiver um cabo USB-TTL para regravar. Faça o backup antes",
+    "O clima e os avisos não congelam mais a tela quando a internet cai ou o DNS demora: nome resolvido sem travar, prazos curtos e espera crescente entre tentativas (2, 4, 8 até 15 min)",
+    "Cor quente à noite (opcional, em Brilho): a tela tira o azul junto do brilho noturno, sem redesenhar nada; botão para ver por 15 s",
+    "Diagnóstico mostra a maior parada do relógio e onde aconteceu"
+  ],
+  "en": [
+    "⚠️ WARNING: TEST VERSION THAT MAY BREAK THE DEVICE. It reorganizes the storage and has not been tested on a clock yet. Only install it if you know how to use recovery mode and, ideally, have a USB-TTL cable to reflash. Make the backup first",
+    "Weather and notifications no longer freeze the screen when the internet drops or DNS is slow: names resolve without blocking, short timeouts and growing waits between retries (2, 4, 8 up to 15 min)",
+    "Warm color at night (optional, under Brightness): the screen drops blue along with night brightness, without redrawing; a button previews it for 15 s",
+    "Diagnostics show the clock's longest stall and where it happened"
+  ],
+  "es": [
+    "⚠️ ATENCIÓN: VERSIÓN DE PRUEBA QUE PUEDE ROMPER EL APARATO. Reorganiza la memoria y aún no se probó en un reloj. Instálala solo si sabes usar el modo de recuperación y, de preferencia, tienes un cable USB-TTL para regrabar. Haz la copia antes",
+    "El clima y los avisos ya no congelan la pantalla cuando cae internet o el DNS tarda: los nombres se resuelven sin bloquear, plazos cortos y espera creciente entre intentos (2, 4, 8 hasta 15 min)",
+    "Color cálido de noche (opcional, en Brillo): la pantalla quita el azul junto con el brillo nocturno, sin redibujar; un botón lo muestra por 15 s",
+    "El diagnóstico muestra la mayor parada del reloj y dónde ocurrió"
+  ]
+}
