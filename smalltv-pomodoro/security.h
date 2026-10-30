@@ -392,3 +392,69 @@ struct RateLimit {
     return used < n && ++used;
   }
 };
+
+// Espera entre as tentativas de uma chamada HTTP de saída (clima, avisos): 2, 4, 8 e depois 15 min a cada
+// falha seguida; o sucesso zera. Sem isso, Wi-Fi sem internet fazia o relógio parar a cada tentativa.
+struct HttpBackoff {
+  uint8_t fails = 0;
+  uint32_t next = 0;  // millis() da próxima tentativa
+  static uint32_t waitMs(uint8_t fails) { return (fails <= 1 ? 2UL : fails == 2 ? 4UL : fails == 3 ? 8UL : 15UL) * 60000UL; }
+  bool due(uint32_t ms) const { return (int32_t)(ms - next) >= 0; }
+  void ok(uint32_t ms, uint32_t afterMs) { fails = 0; next = ms + afterMs; }
+  void fail(uint32_t ms) { if (fails < 255) fails++; next = ms + waitMs(fails); }
+};
+
+// Cache de nomes (DNS) sem bloquear. A busca roda no lwIP (callback done()); get() só olha o cache e,
+// se preciso, dispara a busca: 1 = ip pronto, 0 = buscando (volte no próximo laço), -1 = falhou ou passou
+// de WAIT (a chamada seguinte recomeça). O IP vale TTL; o laço principal nunca espera por um nome.
+struct DnsCache {
+  static const uint32_t TTL = 3600000UL, WAIT = 4000;
+  struct Slot { char host[48]; uint32_t ip; uint32_t at; uint8_t st; };  // st: 0 livre, 1 buscando, 2 com IP, 3 falhou
+  Slot s[3] = {};
+  Slot *find(const char *host) {
+    for (Slot &x : s) if (x.st && !strcmp(x.host, host)) return &x;
+    return nullptr;
+  }
+  Slot *pick() {  // um livre; senão o mais antigo que não esteja buscando
+    Slot *best = nullptr;
+    for (Slot &x : s) {
+      if (!x.st) return &x;
+      if (x.st != 1 && (!best || (int32_t)(best->at - x.at) > 0)) best = &x;
+    }
+    return best ? best : &s[0];
+  }
+  // start(host, ip): 0 = resolvido na hora (ip preenchido), > 0 = em andamento (done() avisa), < 0 = erro
+  template <class F> int get(const char *host, uint32_t ms, uint32_t &ip, F start) {
+    if (strlen(host) >= sizeof s[0].host) return -1;
+    Slot *x = find(host);
+    if (x) {
+      if (x->st == 2 && (uint32_t)(ms - x->at) < TTL) { ip = x->ip; return 1; }
+      if (x->st == 1) {
+        if ((uint32_t)(ms - x->at) < WAIT) return 0;
+        x->st = 0;  // demorou demais: o aviso tardio do lwIP é ignorado
+        return -1;
+      }
+      if (x->st == 3) { x->st = 0; return -1; }
+    } else {
+      x = pick();
+      strcpy(x->host, host);
+    }
+    x->st = 1;
+    x->at = ms;
+    x->ip = 0;
+    uint32_t r4 = 0;
+    int r = start(host, r4);
+    if (r == 0 && r4) { x->ip = r4; x->st = 2; ip = r4; return 1; }
+    if (r > 0) return 0;
+    x->st = 0;
+    return -1;
+  }
+  // resposta da busca (0 = não achou)
+  void done(const char *host, uint32_t ip, uint32_t ms) {
+    Slot *x = find(host);
+    if (!x || x->st != 1) return;
+    x->ip = ip;
+    x->at = ms;
+    x->st = ip ? 2 : 3;
+  }
+};

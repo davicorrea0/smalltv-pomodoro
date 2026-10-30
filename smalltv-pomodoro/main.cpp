@@ -39,6 +39,7 @@ extern "C" uint32_t _FS_start;
 #include <vector>
 #include <time.h>
 #include <sys/time.h>
+#include <lwip/dns.h>  // dns_gethostbyname assíncrono (httpGet nunca espera por um nome)
 #include <coredecls.h>  // settimeofday_cb: avisa quando o SNTP muda a hora
 #include "ui.h"
 #include "web.h"
@@ -455,6 +456,7 @@ extern uint16_t statsStreak, statsBest;
 int8_t hookPending = -1;  // aviso de fim de fase a enviar no loop: 0 foco, 1 pausa (avisos na Alexa)
 String hookWork, hookBreak;  // endereços dos avisos (mais abaixo, em "avisos de fim de fase")
 int hookFire(const String &url);
+void hookLoop();
 String hookClean(String u);
 
 void advance(bool completed) {
@@ -808,11 +810,28 @@ struct Weather {
   char tzName[40] = "";  // fuso da cidade segundo o Open-Meteo (IANA, ex.: America/Sao_Paulo)
   int32_t utcOff = 0;     // deslocamento desse fuso agora, em segundos (o painel compara com o do relógio)
 } wx;
-uint32_t wxNext = 0;
-uint8_t wxFails = 0;  // buscas de clima seguidas que falharam
+HttpBackoff wxBack;  // espera entre buscas de clima: 15 min se deu certo; 2, 4, 8, 15 min a cada falha seguida
+HttpBackoff hookBack;  // o mesmo para os avisos de fim de fase
+uint8_t diagWhere = 0;  // o que o laço está fazendo de demorado: 1 clima, 2 aviso (diag.stallAt); 0 = outro
+uint32_t diagStall = 0;  // maior intervalo entre dois laços desde que ligou (ms)
+uint8_t diagStallAt = 0;
 
 // GET em HTTP/1.0 (resposta sem "chunked", fecha no fim) no lugar do HTTPClient (~4 KB).
 // Devolve o código HTTP (negativo se não conectar) e deixa o cliente no começo do corpo.
+const int HTTP_WAIT = -3;  // o nome (DNS) ainda está sendo buscado: tente de novo no próximo laço
+const int HTTP_DNS = -4;   // o nome não resolveu
+const uint16_t HTTP_CONNECT_MS = 1500;  // conectar: com o IP já em cache só falta o SYN/ACK; mais que isso é rede sem saída
+DnsCache dnsCache;
+static void dnsFound(const char *name, const ip_addr_t *ip, void *) { dnsCache.done(name, ip ? (uint32_t)IPAddress(ip) : 0, millis()); }
+static int dnsStart(const char *host, uint32_t &ip) {
+  ip_addr_t a;
+  err_t e = dns_gethostbyname(host, &a, dnsFound, nullptr);
+  if (e == ERR_OK) { ip = (uint32_t)IPAddress(a); return 0; }
+  return e == ERR_INPROGRESS ? 1 : -1;
+}
+// 1 = ip pronto (cache de 1 h), 0 = buscando, -1 = falhou
+static int dnsResolve(const char *host, uint32_t &ip) { return dnsCache.get(host, millis(), ip, dnsStart); }
+
 static bool httpLine(WiFiClient &c, String &line, uint32_t start, uint16_t timeoutMs) {
   line = "";
   while (millis() - start < timeoutMs) {
@@ -845,7 +864,9 @@ static void appendFixed(String &out, float value, uint8_t digits) {
 
 uint32_t httpDateEpoch = 0;  // cabeçalho Date da última resposta (0 = não veio)
 
-int httpGet(WiFiClient &c, const String &url, uint16_t timeoutMs) {
+// Devolve também HTTP_WAIT (buscando o nome: nada foi enviado, tente no próximo laço) e HTTP_DNS (nome não resolveu).
+// readMs vale para a primeira resposta e para cada pausa na leitura do corpo (o clima lê em pedaços).
+int httpGet(WiFiClient &c, const String &url, uint16_t readMs) {
   httpDateEpoch = 0;
   if (!safeHttpUrl(url.c_str(), url.length())) return -1;
   int end = 7;
@@ -858,8 +879,13 @@ int httpGet(WiFiClient &c, const String &url, uint16_t timeoutMs) {
     port = host.substring(colon + 1).toInt();
     host.remove(colon);
   }
-  c.setTimeout(timeoutMs);
-  if (!host.length() || !port || !c.connect(host.c_str(), port)) return -1;
+  if (!host.length() || !port) return -1;
+  uint32_t ip = 0;
+  int d = dnsResolve(host.c_str(), ip);
+  if (d <= 0) return d ? HTTP_DNS : HTTP_WAIT;
+  c.setTimeout(HTTP_CONNECT_MS);
+  if (!c.connect(IPAddress(ip), port)) return -1;
+  c.setTimeout(readMs);
   // Envia em partes: concatenar tudo criava um String temporário grande em toda consulta.
   c.print(F("GET "));
   c.print(path);
@@ -869,13 +895,13 @@ int httpGet(WiFiClient &c, const String &url, uint16_t timeoutMs) {
   uint32_t start = millis();
   String line;
   line.reserve(128);  // httpLine reutiliza a mesma capacidade para status e cabeçalhos
-  if (!httpLine(c, line, start, timeoutMs)) return -2;
+  if (!httpLine(c, line, start, readMs)) return -2;
   int sp = line.indexOf(' ');
   int code = sp > 0 ? line.substring(sp + 1).toInt() : 0;
   if (code <= 0) return -2;
   size_t total = line.length();
   for (int headers = 0; headers < 48; headers++) {
-    if (!httpLine(c, line, start, timeoutMs)) return -2;
+    if (!httpLine(c, line, start, readMs)) return -2;
     total += line.length();
     if (total > 8192) return -2;
     if (line.length() <= 1) return code;
@@ -887,11 +913,15 @@ int httpGet(WiFiClient &c, const String &url, uint16_t timeoutMs) {
   return -2;
 }
 
+static const char WX_HOST[] = "api.open-meteo.com";
+
 bool fetchWeather() {
   WiFiClient client;
   String url;
   url.reserve(384);
-  url = F("http://api.open-meteo.com/v1/forecast?latitude=");
+  url = F("http://");
+  url += WX_HOST;
+  url += F("/v1/forecast?latitude=");
   appendFixed(url, cfg.lat, 4);
   url += F("&longitude=");
   appendFixed(url, cfg.lon, 4);
@@ -900,7 +930,7 @@ bool fetchWeather() {
            "&minutely_15=precipitation,precipitation_probability&forecast_minutely_15=4"
            "&timezone=auto&forecast_days=");
   url += UI_DAYS;
-  if (httpGet(client, url, 5000) != 200) return false;
+  if (httpGet(client, url, 3000) != 200) return false;
   if (!timeValid() && httpDateEpoch) softTime(httpDateEpoch, 3);  // reserva só para mostrar até o SNTP chegar
   JsonDocument filter;
   filter["minutely_15"]["precipitation"] = true;  // 4 quartos de hora a partir do atual: a próxima hora
@@ -978,15 +1008,19 @@ bool fetchWeather() {
 
 void weatherLoop() {
   if (!cfg.weatherOn || !cfg.city[0] || WiFi.status() != WL_CONNECTED) return;
-  if ((int32_t)(millis() - wxNext) < 0) return;
-  // a cada 15 min; se falhar, tenta de novo em 2 min
-  bool ok = fetchWeather();
-  wxFails = ok ? 0 : wxFails < 255 ? wxFails + 1 : 255;
-  wxNext = millis() + (ok ? 15UL : 2UL) * 60000UL;
+  if (!wxBack.due(millis())) return;
+  // a cada 15 min; falhando, espera 2, 4, 8 e 15 min. O nome vem do cache; buscando, o laço segue (sem parar)
+  uint32_t ip;
+  int d = dnsResolve(WX_HOST, ip);
+  if (d == 0) return;
+  diagWhere = 1;
+  bool ok = d > 0 && fetchWeather();
+  if (ok) wxBack.ok(millis(), 15UL * 60000UL);
+  else wxBack.fail(millis());
 }
 
 // O clima confirma a hora enquanto estiver configurado e respondendo; sem ele, valem duas sincronizações.
-bool weatherConfirms() { return cfg.weatherOn && cfg.city[0] && wxFails < 3; }
+bool weatherConfirms() { return cfg.weatherOn && cfg.city[0] && wxBack.fails < 3; }
 
 void timeGuardBegin() {
   settimeofday_cb([](bool fromSntp) {
@@ -1001,7 +1035,7 @@ void timeGuardBegin() {
       timeval w = {(time_t)want, 0};
       settimeofday(&w, nullptr);
     }
-    if (!timeGuard.confirmed && weatherConfirms()) wxNext = millis();  // confirma já pelo clima
+    if (!timeGuard.confirmed && weatherConfirms()) wxBack.next = millis();  // confirma já pelo clima
   });
 }
 
@@ -1847,6 +1881,11 @@ uint16_t diagWraps = 0;  // millis() volta a zero a cada ~49,7 dias
 void diagLoop() {
   uint32_t now = millis(), h = ESP.getFreeHeap();
   if (now < diagLastMs) diagWraps++;
+  else if (diagLastMs && now - diagLastMs > diagStall) {
+    diagStall = now - diagLastMs;
+    diagStallAt = diagWhere;
+  }
+  diagWhere = 0;
   diagLastMs = now;
   if (h < diagMinHeap) diagMinHeap = h;
 }
@@ -1870,6 +1909,10 @@ void diagJson(String &j) {
   j += (uint32_t)((((uint64_t)diagWraps << 32) | millis()) / 1000);
   j += F(",\"draw\":");  // ms do último desenho que trocou a tela inteira (0 = ainda nenhum)
   j += fullDrawMs;
+  j += F(",\"stall\":");  // maior intervalo entre dois laços (ms) e onde foi: 1 clima, 2 aviso, 0 outro
+  j += diagStall;
+  j += F(",\"stallAt\":");
+  j += diagStallAt;
   j += F(",\"boot\":{\"scr\":");  // ms desde que ligou até cada etapa do último início (0 = ainda não)
   j += bootScreenMs;
   j += F(",\"wifi\":");
@@ -2418,7 +2461,10 @@ void setupWeb() {
   server.on("/api/hooks", HTTP_POST, [] {
     if (!guard()) return;
     if (server.hasArg("test")) {
+      diagWhere = 2;
       int code = hookFire(server.arg("test") == "b" ? hookBreak : hookWork);
+      for (uint32_t t0 = millis(); code == HTTP_WAIT && millis() - t0 < DnsCache::WAIT + 500; delay(5))  // teste manual: espera o nome
+        code = hookFire(server.arg("test") == "b" ? hookBreak : hookWork);
       server.send(200, "text/plain", String(code));
       return;
     }
@@ -2622,7 +2668,7 @@ void setupWeb() {
       cfg.weatherOn = won;
       wx.ok = false;
       wx.version++;
-      wxNext = millis();  // busca o clima já
+      wxBack.next = millis();  // busca o clima já
     }
     saveSettings();
     updateBrightness(true);
@@ -3215,10 +3261,27 @@ String hookClean(String u) {
 }
 
 // chama o endereço; devolve o código HTTP (0 = sem endereço ou sem Wi-Fi, negativo = falha de conexão)
+// A fase acabou: avisa fora do tick do Pomodoro. O nome vem do cache (buscando, o laço segue); o aviso que
+// encontra a espera das falhas (2, 4, 8, 15 min), sem Wi-Fi ou sem nome é descartado, sem atrasar nada.
+void hookLoop() {
+  if (hookPending < 0) return;
+  const String &u = hookPending ? hookBreak : hookWork;
+  if (!u.length() || WiFi.status() != WL_CONNECTED || !hookBack.due(millis())) {
+    hookPending = -1;
+    return;
+  }
+  diagWhere = 2;
+  int code = hookFire(u);
+  if (code == HTTP_WAIT) return;  // buscando o nome: tenta no próximo laço (o cache desiste em 4 s)
+  hookPending = -1;
+  if (code < 0) hookBack.fail(millis());
+  else hookBack.ok(millis(), 0);  // o serviço respondeu (mesmo com erro HTTP): a rede está boa
+}
+
 int hookFire(const String &url) {
   if (!url.length() || WiFi.status() != WL_CONNECTED) return 0;
   WiFiClient client;
-  int code = httpGet(client, url, 4000);
+  int code = httpGet(client, url, 2000);
   client.stop();
   return code;
 }
@@ -3523,11 +3586,7 @@ void loop() {
   tickPomodoro();
   weatherLoop();
   rotLoop();
-  if (hookPending >= 0) {  // a fase acabou: avisa (fora do tick do Pomodoro; leva até 4 s sem Wi-Fi bom)
-    int8_t p = hookPending;
-    hookPending = -1;
-    hookFire(p ? hookBreak : hookWork);
-  }
+  hookLoop();
 
   uint32_t now = millis();
   if (now - lastBriCheck > 5000) {
