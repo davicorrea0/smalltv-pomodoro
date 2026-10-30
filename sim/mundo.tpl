@@ -1,18 +1,15 @@
-// Mostrador Mundo: relógio de pulso "world time" no visor do LCD retrô (DSEG7). Indicadores em caixas à esquerda,
-// mapa-múndi em matriz de pontos numa janela à direita, com a faixa da noite andando com a hora UTC e o ponto do
-// local (a cidade do clima) piscando; abaixo, AM/PM, dia, data, o código da cidade e o fuso. Registrado em faces_list.h.
+// Mostrador Mundo: relógio de pulso com mapa-múndi em pixels, no visor do LCD retrô (DSEG7). A faixa de dia e
+// noite anda com a hora UTC e o ponto do local (a cidade do clima) pisca. Registrado em faces_list.h.
 #include "ui_kit.h"
 
 // mesmas cores do LCD retrô (face_lcd.cpp)
 static const uint16_t LCD_BG = uiRgb(166, 180, 140), LCD_ON = uiRgb(18, 24, 16), LCD_GHOST = uiRgb(161, 175, 136);
 static const uint16_t LCD_EDGE = uiRgb(140, 154, 116);
-// noite no mapa: o fundo da célula escurece (terra e mar) e o ponto apagado do mar acompanha
-static const uint16_t LCD_NIGHT = uiRgb(124, 137, 102), LCD_NDOT = uiRgb(116, 129, 95);
 
 // ---------- mapa ----------
 // 80 x 40 células de 2 x 2 px (160 x 80 px), 1 bit cada: equiretangular, longitude -180..180, latitude 78..-58
 // (cada célula cobre 4,5 x 3,4 graus). Gerado por sim/gerar_mapa.js, 10 bytes por linha, bit mais alto à esquerda.
-static const int MAP_W = 80, MAP_H = 40, MAP_X = 65, MAP_Y = 34;
+static const int MAP_W = 80, MAP_H = 40, MAP_X = 64, MAP_Y = 34;
 static const uint8_t MAP[MAP_H][MAP_W / 8] PROGMEM = {
 @MAPA@
 };
@@ -46,17 +43,16 @@ static bool isNight(const Sun &u, int c, int r) {
   return isin(lat) * u.sinD * 255 + icos(lat) * u.cosD * icos(h) < 0;
 }
 
-// Uma célula é um ponto da matriz, como num LCD de pontos: o pixel de cima à esquerda aceso na terra e apagado
-// (quase invisível) no mar. Na noite o fundo da célula escurece, então a faixa se lê sobre a terra e sobre o mar.
+// Uma célula: terra = 4 px acesos; mar de dia = vazio; mar de noite = xadrez (2 px), o sombreado dos mapas de relógio
 static void cell(const Sun &u, int c, int r) {
   const int x = MAP_X + c * 2, y = MAP_Y + r * 2;
   if (uiClip.on && (y + 2 <= uiClip.y0 || y >= uiClip.y1)) return;
-  bool land = pgm_read_byte(&MAP[r][c >> 3]) >> (7 - (c & 7)) & 1, night = isNight(u, c, r);
-  G->fillRect(x, y, 2, 2, night ? LCD_NIGHT : LCD_BG);
-  if (land) {
+  bool land = pgm_read_byte(&MAP[r][c >> 3]) >> (7 - (c & 7)) & 1;
+  G->fillRect(x, y, 2, 2, land ? LCD_ON : LCD_BG);
+  if (!land && isNight(u, c, r)) {
     G->drawPixel(x, y, LCD_ON);
     G->drawPixel(x + 1, y + 1, LCD_ON);
-  } else G->drawPixel(x, y, night ? LCD_NDOT : LCD_GHOST);
+  }
 }
 
 // Ponto do local: célula do mapa da cidade do clima
@@ -94,29 +90,14 @@ static void paintMap(void *p) {
   if (m->tick) dot(*m->s);
 }
 
-// ---------- indicadores à esquerda (como MUTE / ALM / SIG) ----------
-// A caixa e o rótulo ficam sempre impressos; só o quadradinho é o segmento que acende.
-static const int IND_X = 12, IND_W = 47, IND_H = 26;
+// ---------- indicadores à esquerda (como MUTE / ALM / SIG): só acesos quando valem ----------
 static void indicator(int y, bool on, const char *label) {
-  G->fillRect(IND_X + 1, y + 1, IND_W - 2, IND_H - 2, LCD_BG);
-  G->drawRect(IND_X, y, IND_W, IND_H, LCD_ON);
-  G->fillRect(IND_X + 3, y + 10, 5, 5, on ? LCD_ON : LCD_GHOST);
-  text(IND_X + 10, y + 9, 1, LCD_ON, label);
-}
-
-// Código da cidade, como nos relógios "world time": as 3 primeiras letras do nome, sem acento e em maiúsculas
-// ("Florianópolis" -> FLO, "Tokyo" -> TOK). FOLD tira o acento das letras U+00C0..U+00FF (0xC3 0x80..0xBF em UTF-8).
-static const char FOLD[33] PROGMEM = "AAAAAAACEEEEIIIIDNOOOOO.OUUUUY..";
-static void cityCode(const UiState &s, char *out) {
-  int k = 0;
-  for (const uint8_t *p = (const uint8_t *)(s.hasLoc && s.city ? s.city : ""); *p && k < 3; p++) {
-    uint8_t c = *p;
-    if (c == 0xC3 && p[1]) c = pgm_read_byte(&FOLD[*++p & 31]);
-    if (c >= 'a' && c <= 'z') c -= 32;
-    if (c >= 'A' && c <= 'Z') out[k++] = c;
-  }
-  while (k < 3) out[k++] = '-';
-  out[3] = 0;
+  const uint16_t c = on ? LCD_ON : LCD_GHOST;
+  G->fillRect(16, y, 8, 8, LCD_BG);
+  G->drawRect(16, y, 8, 8, c);
+  if (on) G->fillRect(18, y + 2, 4, 4, c);
+  G->fillRect(28, y, 34, 8, LCD_BG);
+  text(28, y, 1, c, label);
 }
 
 void themeWorld(const UiState &s, bool full) {
@@ -125,7 +106,7 @@ void themeWorld(const UiState &s, bool full) {
     G->fillRoundRect(8, 24, 224, 186, 14, LCD_BG);
     G->drawFastHLine(22, 25, 196, LCD_EDGE);  // sombra interna
     G->drawFastHLine(22, 26, 196, uiRgb(152, 165, 128));
-    G->drawRect(MAP_X - 3, MAP_Y - 3, MAP_W * 2 + 6, MAP_H * 2 + 6, LCD_ON);  // janela do mapa
+    G->drawRect(MAP_X - 2, MAP_Y - 2, MAP_W * 2 + 4, MAP_H * 2 + 4, LCD_EDGE);
   }
   // mapa: a faixa de dia e noite anda a cada minuto; o ponto pisca uma vez por segundo
   const bool tick = !s.timeOk || s.now.tm_sec % 2 == 0;
@@ -146,27 +127,23 @@ void themeWorld(const UiState &s, bool full) {
   // indicadores: FOCO com o Pomodoro rodando, CHUVA com o aviso de chuva ativo e WI-FI conectado
   const bool foco = s.running, chuva = s.wx.rainIn > 0, wifi = s.ip && s.ip[0] && strcmp(s.ip, "0.0.0.0");
   char ik[8];
-  snprintf(ik, sizeof ik, "%d%d%d%d", foco, chuva, wifi, uiLang);
+  snprintf(ik, sizeof ik, "%d%d%d", foco, chuva, wifi);
   if (changed(cC, ik)) {
-    indicator(31, foco, tr("FOCO", "FOCUS", "FOCO"));
-    indicator(61, chuva, tr("CHUVA", "RAIN", "LLUVIA"));
-    indicator(91, wifi, "WI-FI");
+    indicator(44, foco, tr("FOCO", "FOCUS", "FOCO"));
+    indicator(66, chuva, tr("CHUVA", "RAIN", "LLUVIA"));
+    indicator(88, wifi, "WI-FI");
   }
-  // linha do meio, como o "PM SUN 6-30" do relógio: AM/PM, dia da semana, dia-mês em segmentos (mês-dia em
-  // inglês) e, à direita, o código da cidade com o fuso
-  char city[4];
-  cityCode(s, city);
-  const int off = s.utcOff / 60, aoff = off < 0 ? -off : off;
-  char dk[40];
-  snprintf(dk, sizeof dk, "%d %d %d %d %d %s %d", s.timeOk ? s.now.tm_wday : -1, s.timeOk ? s.now.tm_mday : 0, s.timeOk ? s.now.tm_mon : 0, s.hour12 && s.timeOk ? (s.now.tm_hour < 12 ? 1 : 2) : 0, uiLang, city, off);
+  // linha de cima: AM/PM, dia da semana e dia-mês em segmentos (mês-dia em inglês)
+  char dk[32];
+  snprintf(dk, sizeof dk, "%d %d %d %d %d", s.timeOk ? s.now.tm_wday : -1, s.timeOk ? s.now.tm_mday : 0, s.timeOk ? s.now.tm_mon : 0, s.hour12 && s.timeOk ? (s.now.tm_hour < 12 ? 1 : 2) : 0, uiLang);
   if (changed(cStatL, dk)) {
-    G->fillRect(11, 120, 218, 23, LCD_BG);
-    if (s.hour12 && s.timeOk) text(12, 128, 1, LCD_ON, s.now.tm_hour < 12 ? "AM" : "PM");
-    text(28, 124, 2, LCD_ON, s.timeOk ? WD[s.now.tm_wday] : "---");
+    G->fillRect(16, 120, 208, 22, LCD_BG);
+    if (s.hour12 && s.timeOk) text(18, 128, 1, LCD_ON, s.now.tm_hour < 12 ? "AM" : "PM");
+    text(46, 124, 2, LCD_ON, s.timeOk ? WD[s.now.tm_wday] : "---");
     int a = s.timeOk ? s.now.tm_mday : -1, b = s.timeOk ? s.now.tm_mon + 1 : -1;
     if (uiLang == 1) { int t = a; a = b; b = t; }
     const int H = 20, W = 12;  // dígitos de 20 px (12,4 de largura): "dd-mm" = 4 dígitos e um traço fino de 8 px
-    int x = 70;
+    int x = 222 - (4 * (W + 4) + 12);
     for (int k = 0; k < 2; k++) {
       int v = k ? b : a;
       dsegDigit(x, 121, H, v >= 10 ? v / 10 : -1, LCD_ON, LCD_GHOST);
@@ -177,14 +154,6 @@ void themeWorld(const UiState &s, bool full) {
         x += 12;
       }
     }
-    // cidade e fuso: "FLO" grande e "UTC" sobre "-3" (ou "+5:30") em letra pequena
-    G->drawFastVLine(147, 122, 19, LCD_ON);
-    text(153, 124, 2, LCD_ON, city);
-    char z[8];
-    if (aoff % 60) snprintf(z, sizeof z, "%c%d:%02d", off < 0 ? '-' : '+', aoff / 60, aoff % 60);
-    else snprintf(z, sizeof z, "%c%d", off < 0 ? '-' : '+', aoff / 60);
-    text(191, 123, 1, LCD_ON, "UTC");
-    text(191, 132, 1, LCD_ON, z);
   }
   // horas e minutos grandes, com os segmentos apagados à mostra
   int v[4] = {-1, -1, -1, -1};
