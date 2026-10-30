@@ -1,0 +1,16 @@
+# Indicador WI-FI do mostrador Mundo: barras de sinal.
+cor K #121810
+fundo #a6b48c
+
+..........KK
+..........KK
+..........KK
+.......KK.KK
+.......KK.KK
+.......KK.KK
+....KK.KK.KK
+....KK.KK.KK
+....KK.KK.KK
+.KK.KK.KK.KK
+.KK.KK.KK.KK
+.KK.KK.KK.KK
