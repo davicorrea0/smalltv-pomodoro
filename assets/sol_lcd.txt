@@ -1,0 +1,16 @@
+# Sol do mostrador Mundo: marca o ponto onde o sol está a pino. A margem "b" (fundo do LCD) o separa do mapa.
+cor K #121810
+cor b #a6b48c
+fundo #a6b48c
+
+....bbb....
+..bbbKbbb..
+.bKbbbbbKb.
+.bbbKKKbbb.
+bbbKKKKKbbb
+bKbKKKKKbKb
+bbbKKKKKbbb
+.bbbKKKbbb.
+.bKbbbbbKb.
+..bbbKbbb..
+....bbb....
