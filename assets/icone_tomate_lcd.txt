@@ -1,0 +1,16 @@
+# Indicador FOCO do mostrador Mundo (Pomodoro rodando). O mostrador pinta aceso ou apagado com a tinta do LCD.
+cor K #121810
+fundo #a6b48c
+
+....K..K....
+.....KK.....
+...KK..KK...
+.KKKKKKKKKK.
+KK.KKKKKKKKK
+K.KKKKKKKKKK
+K.KKKKKKKKKK
+KKKKKKKKKKKK
+KKKKKKKKKKKK
+.KKKKKKKKKK.
+..KKKKKKKK..
+....KKKK....

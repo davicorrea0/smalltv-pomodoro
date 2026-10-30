@@ -499,6 +499,39 @@ static int testSpriteLimits() {
   return fails;
 }
 
+// Mundo: custo da virada do minuto (o mapa inteiro é refeito) contra um segundo comum (só o ponto e os segundos)
+// e contra um desenho completo do LCD retrô, que já roda no aparelho sem travar o relógio. Tempo de CPU no PC.
+static void checkWorldCost() {
+  using clk = std::chrono::steady_clock;
+  auto us = [](clk::time_point t0) { return std::chrono::duration<double, std::micro>(clk::now() - t0).count(); };
+  Frame *f = new Frame();
+  const int N = 200;
+  double tMin = 0, tSec = 0, tLcd = 0;
+  for (int i = 0; i < N; i++) {
+    UiState s = base(14, 37, 58);
+    s.theme = THEME_WORLD;
+    uiBegin(f);
+    uiRenderClock(s);
+    s.now.tm_sec = 59;
+    auto t0 = clk::now();
+    uiRenderClock(s);
+    tSec += us(t0);
+    s.now.tm_sec = 0;
+    s.now.tm_min = 38;
+    t0 = clk::now();
+    uiRenderClock(s);
+    tMin += us(t0);
+    UiState l = base(14, 37, 58);
+    l.theme = THEME_LCD;
+    t0 = clk::now();
+    uiBegin(f);
+    uiRenderClock(l);
+    tLcd += us(t0);
+  }
+  printf("mundo: virada do minuto (mapa inteiro) %ld us, segundo comum %ld us, desenho completo do LCD retro %ld us (CPU no PC, media de %d)\n", (long)(tMin / N), (long)(tSec / N), (long)(tLcd / N), N);
+  delete f;
+}
+
 int main() {
   if (const char *l = getenv("SIM_LANG")) uiSetLang(atoi(l));  // 1 = inglês, 2 = espanhol (as prévias oficiais ficam em português)
   // ---- relógio: temas ----
@@ -539,8 +572,8 @@ int main() {
   { UiState t = base(14, 37, 24); t.theme = THEME_WORLD; shot("21_mundo_dia", t, false); }
   { UiState t = base(23, 10, 41); t.theme = THEME_WORLD; t.wx.rainIn = 0; shot("21b_mundo_noite", t, false); }
   { UiState t = base(2, 37, 24); t.now.tm_yday = 293; t.now.tm_mday = 21; t.now.tm_wday = 3; t.theme = THEME_WORLD;
-    t.utcOff = 9 * 3600; t.lat10 = 357; t.lon10 = 1397; shot("21c_mundo_toquio", t, false); }
-  { UiState t = base(18, 37, 24); t.theme = THEME_WORLD; t.utcOff = 3600; t.lat10 = 515; t.lon10 = -1; t.hour12 = true;
+    t.utcOff = 9 * 3600; t.lat10 = 357; t.lon10 = 1397; t.city = "Tokyo"; shot("21c_mundo_toquio", t, false); }
+  { UiState t = base(18, 37, 24); t.theme = THEME_WORLD; t.utcOff = 3600; t.lat10 = 515; t.lon10 = -1; t.city = "London"; t.hour12 = true;
     t.running = true; t.wx.rainIn = 15; shot("21d_mundo_londres_12h", t, false); }
 
   // ---- animação da virada do Flip: 14:37 -> 14:38 ----
@@ -616,6 +649,7 @@ int main() {
   fails += checkTransitions(p);
   fails += checkSlide();
   fails += checkLcdCurtain();
+  checkWorldCost();
   fails += testPackages(p);
   fails += testSpriteLimits();
   return fails;
