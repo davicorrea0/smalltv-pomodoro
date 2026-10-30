@@ -677,18 +677,18 @@ static void lcdWait(uint32_t t0, uint32_t ms) {
     if (uiFrameHook) uiFrameHook();
 }
 static bool lcdSegments(const UiState &s, uint8_t t) {
-  const int GX = 14, GY = 28, CELL = 20, COLS = 11, ROWS = 9, GROUPS = 8;  // grade só dentro do vidro (os cantos arredondados ficam de fora)
-  static const uint8_t ORDER[GROUPS] PROGMEM = {0, 5, 2, 7, 4, 1, 6, 3};
+  const int GX = 14, GY = 28, CELL = 20, COLS = 11, ROWS = 9, NGRP = 8;  // grade só dentro do vidro (os cantos arredondados ficam de fora)
+  static const uint8_t ORDER[NGRP] PROGMEM = {0, 5, 2, 7, 4, 1, 6, 3};
   const bool lcd = t == THEME_LCD;
   const uint8_t(*z)[4] = lcd ? ZONES_LCD : ZONES_FORECAST;
   const int nz = lcd ? (int)(sizeof ZONES_LCD / 4) : (int)(sizeof ZONES_FORECAST / 4);
   SlideCtx c = {&s, t};
   uint32_t t0 = slideNow();
-  for (int g = 0; g < GROUPS; g++) {
+  for (int g = 0; g < NGRP; g++) {
     lcdWait(t0, 25 * g);
     for (int r = 0; r < ROWS; r++)
       for (int k = 0; k < COLS; k++)
-        if ((k * 3 + r * 5) % GROUPS == pgm_read_byte(&ORDER[g])) {
+        if ((k * 3 + r * 5) % NGRP == pgm_read_byte(&ORDER[g])) {
           int x = GX + k * CELL, w = x + CELL > 226 ? 226 - x : CELL;
           if (r >= 1 && r < ROWS - 1) {  // no meio a borda é reta: os dígitos grandes do retrô vão até x 10 e 229
             if (!k) { x = 10; w += GX - 10; }
@@ -698,7 +698,7 @@ static bool lcdSegments(const UiState &s, uint8_t t) {
         }
     if (uiFrameHook) uiFrameHook();
   }
-  lcdWait(t0, 25 * GROUPS + 50);  // o vidro vazio por um instante
+  lcdWait(t0, 25 * NGRP + 50);  // o vidro vazio por um instante
   if (!uiOffscreen(0, 0, 240, 24, slideStrip, &c) || !uiOffscreen(0, 210, 240, 30, slideStrip, &c)) return false;
   uint32_t t1 = slideNow();
   for (int i = 0; i < nz; i++) {
