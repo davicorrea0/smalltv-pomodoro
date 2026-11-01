@@ -1,33 +1,33 @@
 {
-  "version": "1.24.6",
-  "date": "2026-10-30",
+  "version": "1.24.7",
+  "date": "2026-11-01",
   "file": "beta/smalltv-pomodoro.bin",
-  "size": 560304,
+  "size": 571520,
   "notes": {
     "pt": [
       "⚠️ ATENÇÃO: VERSÃO DE TESTE QUE PODE QUEBRAR O APARELHO. Ela reorganiza a memória e ainda não foi testada num relógio. Só instale se souber usar o modo de recuperação e, de preferência, tiver um cabo USB-TTL para regravar. Faça o backup antes",
-      "Tom verde de LCD antigo nos mostradores LCD Retro e Previsão LCD, pelo próprio chip da tela (liga e desliga em Brilho; ligado de fábrica)",
-      "Cor quente à noite corrigida: a tela ficava verde; agora fica âmbar",
-      "Troca entre LCD Retro e Previsão LCD mais suave: a tinta do LCD escurece e clareia em degraus, como um LCD de verdade, e os textos de fora deslizam para os lados; a moldura fica parada"
+      "Mostrador novo Mundo: mapa-múndi em destaque no visor de LCD, com a faixa de dia e noite andando com a hora, o sol a pino e o código da sua cidade piscando",
+      "Mostrador novo Mundo relógio: no estilo de um relógio de pulso world time, com FOCO, CHUVA e WI-FI em caixas, a cidade e o fuso",
+      "A cidade e o fuso vêm da cidade do clima; o tom verde de LCD e a troca suave entre os LCDs valem também para os dois"
     ],
     "en": [
       "⚠️ WARNING: TEST VERSION THAT MAY BREAK THE DEVICE. It reorganizes the storage and has not been tested on a clock yet. Only install it if you know how to use recovery mode and, ideally, have a USB-TTL cable to reflash. Make the backup first",
-      "Old-LCD green tint on the Retro LCD and Forecast LCD faces, done by the display chip itself (toggle under Brightness; on by default)",
-      "Warm color at night fixed: the screen turned green; now it turns amber",
-      "Smoother switch between Retro LCD and Forecast LCD: the LCD ink fades out and in by steps, like a real LCD, and the outer labels slide sideways; the frame stays still"
+      "New World face: a world map front and center on the LCD screen, with the day/night band moving with the time, the overhead sun and your city's code blinking",
+      "New World watch face: in the style of a world time wristwatch, with FOCUS, RAIN and WI-FI in boxes, the city and the time zone",
+      "The city and time zone come from the weather city; the old-LCD green tint and the smooth switch between LCD faces also work on both"
     ],
     "es": [
       "⚠️ ATENCIÓN: VERSIÓN DE PRUEBA QUE PUEDE ROMPER EL APARATO. Reorganiza la memoria y aún no se probó en un reloj. Instálala solo si sabes usar el modo de recuperación y, de preferencia, tienes un cable USB-TTL para regrabar. Haz la copia antes",
-      "Tono verde de LCD antiguo en las esferas LCD retro y Pronóstico LCD, hecho por el propio chip de la pantalla (se activa y desactiva en Brillo; activado de fábrica)",
-      "Color cálido de noche corregido: la pantalla se ponía verde; ahora queda ámbar",
-      "Cambio más suave entre LCD retro y Pronóstico LCD: la tinta del LCD se apaga y se enciende por pasos, como un LCD de verdad, y los textos de fuera se deslizan hacia los lados; el marco queda quieto"
+      "Esfera nueva Mundo: mapamundi destacado en la pantalla LCD, con la franja de día y noche que avanza con la hora, el sol en el cenit y el código de tu ciudad parpadeando",
+      "Esfera nueva Mundo reloj: al estilo de un reloj de pulsera world time, con FOCO, LLUVIA y WI-FI en cajas, la ciudad y la zona horaria",
+      "La ciudad y la zona horaria vienen de la ciudad del clima; el tono verde de LCD y el cambio suave entre los LCD también valen para las dos"
     ]
   },
   "gz": "beta/smalltv-pomodoro.bin.gz",
-  "gzsize": 414803,
+  "gzsize": 421994,
   "layout": "4m2m",
-  "panel": "panel-0e87e73d4263dc774aab3d8f.html.gz",
-  "psri": "sha256-DofnPUJj3HdKqz2PL5d5dQnLJhr6Igtt7NkXczZQYic=",
-  "sig": "iY/SOfy/OadViPWhTPPdmguuCMSgWzKJAKCQ9XO0m+ZpvEU6l98H6JpiTBIWLUiRCjfsKDBCUjtFS8TE3IpqnSgyOElCxTn0+W4AbAUQ44Ad80R7j/CmaEtT0P6EL4ZbcqgNP+uTGlDhCq8biklbi9FwBgsQNAvoP5xLKhLCdv/S7slLxHOf6IFPZR3gH1aacr3kt7Lqcy3njd90FokgYoD2VZd5SHe6T1udsZRiBSnZ1aLla016/n8szme3l2BapiYgYHOjX4WaSbAMGHWbP9z3GGih1iI68OVnZ1vcjVFS62jj1JFWXguQSbp+abW4Kpo+2nfiPQC0ZVAqZQQbbg==",
-  "gzsig": "eOlFRyxAOTyJ050/jDeZq/UwrvWeFz5G6c+F43mWnwuP3hzTAN3sPhpDOD6AzfEa7xusc808+hb7DzcfmrOS844lfW1z2PSWLiRCgFb4w1VVfbbayQ0CMm9i8E7qxp1if22F2cWrJ7m7Fyqsvk0LqMfjV4tE5CIhSC1zDPmnJ3MWcS3rUgKoumie1yRrmKgrw0tIbhXRhAqg4QclTzBpryjn+PTZ1xtC/QgS6oAywv0ekVzSPx0Km2uREnA2FFbXJxnhH+kOmo6opBEOaBa9F95dsM9QxFFI7A3V3Y8rfIQvMQLF8u8PHZ6QYsgcJ+Xk3NFQvFZ75dXdOTofhvahSw=="
+  "panel": "panel-54f58cccda937faec8129855.html.gz",
+  "psri": "sha256-VPWMzNqTf67IEphVtDZzxsMuOVqov09uLPV1CjgTHmw=",
+  "sig": "HAKyznmnHQSEYNMdeTgAAlKh8aNlmFm9Tdr2/m8u/CkJAry+cCaPqczPZcwsvwBYMjX93XOlRUBKARaSwrtkDg7tL24aIw0mdZTXz3sljZH6rgFLsxDFSMN2YkwBoy/8UOFvnR5MHyheVA/oSe6nlHzdd9Fi8bSa7PPiAn3EzVXtQapWCOYNKMnGkZFvyVahSWmRw0YB+QLUKNRjHu5B0fVLxve9hM9eQ7lgFYQ6AXnLpwx0txC27xCOJ/gvfyow9AcsvhYKR0ezFkK7kR5Hu/4MXX1FJzxOqLFtoiLiVkGe4FyqSQgADW4MMvdy2cFUpnXRatezlQ0bg19ms2rdjg==",
+  "gzsig": "Kbk++VK0zWHSK++Lk+PoXIffMhzo7ZPV3piR5QxqKdZXXudVTnOiM6YRvv3FQEBTuE1v6Fv5whIRPzehewohkKJvTyqy3zLo7y4n3a5kl9AvnwjEmGPBhuX8ITfLJnAwmzgqbaCjT60a2NjBAKhrxFrRx2ypz4VDoFkq3/6k7D2iKMWcqxTo+MK+uzs9l7CtB8lbjn85Y7vONeW8GR+re1WFJRVzrup0HA6xgT2bzu39DRXw7Z+NqSAN0jrmN4i6GGVX5+6AfGH2nU2L1ASxZBMxddEgbrI2qqXOyQt7tacG76IYrJmf3HPvISCEJA4kxplmJEuQrUC8qlphi1Os4g=="
 }
