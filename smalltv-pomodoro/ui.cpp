@@ -650,7 +650,7 @@ static bool slideTo(const UiState &s, uint8_t t) {
   return ok;  // false: quem chamou desenha o mostrador novo do jeito normal (tela cheia)
 }
 
-// ---------- troca LCD retrô <-> Previsão LCD: moldura parada, tinta com tempo de resposta ----------
+// ---------- troca entre os mostradores LCD (LCD retrô, Previsão LCD, Mundo): moldura parada, tinta com tempo de resposta ----------
 // Os dois mostradores têm a mesma moldura (retângulo arredondado verde-acinzentado e sombra interna); mudam
 // o miolo (x 10..229, y 28..207: os dígitos grandes do LCD retrô passam de x 14) e os rótulos de fora
 // (y < 24 e y >= 210), que nunca passam da moldura. Num LCD de verdade o segmento não acende nem apaga de
@@ -660,7 +660,7 @@ static bool slideTo(const UiState &s, uint8_t t) {
 // pronta (inkFade). Os rótulos brancos de fora deslizam para o lado: o antigo sai pela esquerda e o novo
 // entra pela direita. Nenhum pixel da moldura é redesenhado.
 void (*uiStepHook)() = nullptr;  // fim de cada quadro da troca (o simulador guarda os quadros)
-struct LcdCtx { SlideCtx s; const UiState *st; int16_t a, dxOld, dxNew; bool fcOld, fcNew; };
+struct LcdCtx { SlideCtx s; const UiState *st; int16_t a, dxOld, dxNew; uint8_t kOld, kNew; };
 // tinta (qualquer cor da faixa que não seja o preto de fora do vidro) a a/256 do caminho até o fundo do LCD
 static void inkFade(int a) {
   const uint16_t bg = uiRgb(166, 180, 140);
@@ -678,10 +678,11 @@ static void lcdFadeStrip(void *p) {
   slideStrip(&c->s);
   if (c->a < 256) inkFade(c->a);
 }
-static void lcdLabels(const UiState &s, bool fc, int dx) {
+static uint8_t lcdKind(int8_t t) { return t == THEME_FORECAST_LCD ? 1 : t == THEME_WORLD ? 2 : 0; }  // índice do rótulo (lcdLabel)
+static void lcdLabels(const UiState &s, uint8_t kind, int dx) {
   const uint16_t gray = uiRgb(170, 170, 182);
-  textC(120 + dx, 9, 1, gray, lcdLabel(fc));
-  if (fc) {
+  textC(120 + dx, 9, 1, gray, lcdLabel(kind));
+  if (kind == 1) {
     textC(119 + dx, 216, 1, gray, "MAX");
     textC(161 + dx, 216, 1, gray, "MIN");
   } else textC(120 + dx, 220, 1, MUTED, s.ip ? s.ip : "");
@@ -689,17 +690,16 @@ static void lcdLabels(const UiState &s, bool fc, int dx) {
 static void lcdLabelStrip(void *p) {
   LcdCtx *c = (LcdCtx *)p;
   G->fillScreen(BG);
-  lcdLabels(*c->st, c->fcOld, c->dxOld);
-  lcdLabels(*c->st, c->fcNew, c->dxNew);
+  lcdLabels(*c->st, c->kOld, c->dxOld);
+  lcdLabels(*c->st, c->kNew, c->dxNew);
 }
-static bool lcdPair(int8_t a, int8_t b) {
-  return (a == THEME_LCD && b == THEME_FORECAST_LCD) || (a == THEME_FORECAST_LCD && b == THEME_LCD);
-}
+static bool isLcd(int8_t t) { return t == THEME_LCD || t == THEME_FORECAST_LCD || t == THEME_WORLD; }
+static bool lcdPair(int8_t a, int8_t b) { return a != b && isLcd(a) && isLcd(b); }
 static bool lcdFade(const UiState &s, uint8_t from, uint8_t t) {
   static const uint16_t AT[5] PROGMEM = {0, 90, 180, 270, 360};   // instante de cada quadro do miolo (ms)
   static const uint16_t INK[5] PROGMEM = {176, 88, 88, 176, 256};  // tinta (256 = tinta toda); os 2 primeiros são do mostrador antigo
   const int LS = 10, LMS = 45;  // rótulos: 10 passos de 45 ms
-  LcdCtx c = {{&s, from}, &s, 256, 0, 240, from == THEME_FORECAST_LCD, t == THEME_FORECAST_LCD};
+  LcdCtx c = {{&s, from}, &s, 256, 0, 240, lcdKind(from), lcdKind(t)};
   uint32_t t0 = slideNow();
   int me = 0, lk = 0;
   while (me < 5 || lk <= LS) {

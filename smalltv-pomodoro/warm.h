@@ -51,7 +51,7 @@ static inline void warmApply(Send send, uint8_t pct, bool conj = false) {
 
 // "Verde de LCD antigo": o que a tela mostrou por defeito quando as tabelas iam em 0..63 em vez de 0..255 (vermelho
 // = i, ~25 %; azul = i * 55 / 100, o que a cor quente a 100 % mandava; verde intacto). Vale nos mostradores LCD
-// (LCD retrô e Previsão LCD) e vence a cor quente. WARM_GREEN é o código do estado no chip (> 100: não colide
+// (LCD retrô, Previsão LCD e Mundo) e vence a cor quente. WARM_GREEN é o código do estado no chip (> 100: não colide
 // com uma intensidade), para o warmFlush comparar com o que já foi enviado.
 static const uint8_t WARM_GREEN = 200;
 template <class Send>

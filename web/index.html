@@ -582,7 +582,7 @@ function load(s){if(s.cfg.lang!=null&&s.cfg.lang!=LG)setLang(s.cfg.lang);if(last
  // mostrador atual
  const ck=curKey(s),cf=FACES.find(f=>fkey(f)==ck);
  if(cf&&$('curimg').dataset.k!=ck){$('curimg').dataset.k=ck;$('curimg').onerror=cf.pkg?()=>{$('curimg').onerror=null;$('curimg').src=CATALOG+encodeURIComponent(cf.pkg)+'.png'}:null;$('curimg').src=faceSrc(cf);$('curname').textContent=cf.n;$('curdesc').textContent=cf.d}
- $('lcdgrow').style.display=cf&&cf.pkg==null&&(cf.n0=='LCD retrô'||cf.n0=='Previsão LCD')?'':'none';
+ $('lcdgrow').style.display=cf&&cf.pkg==null&&(cf.n0=='LCD retrô'||cf.n0=='Previsão LCD'||cf.n0=='Mundo')?'':'none';
  const rk=rotKeys();document.querySelectorAll('#faces .face,#dl .face').forEach(b=>{b.classList.toggle('cur',b.dataset.k==ck);b.classList.toggle('rot',rk.includes(b.dataset.k))});
  // Alexa: há quanto tempo um Echo falou com o relógio e o último comando
  const ax=s.alexa||{ago:-1},ago=ax.ago,seen=s.cfg.alexa&&ago>=0;$('alx').classList.toggle('v',!!(seen&&ago<86400));

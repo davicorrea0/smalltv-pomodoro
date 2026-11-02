@@ -64,6 +64,10 @@ struct UiState {
   const char *ip;
   uint32_t ms;     // millis(): anda as animações
   bool celebrate;  // uma fase do Pomodoro acabou de terminar: toca a animação de fim
+  // local e fuso (mostrador Mundo)
+  int32_t utcOff;        // hora local - UTC agora, em segundos
+  int16_t lat10, lon10;  // local da cidade do clima, em décimos de grau
+  bool hasLoc;           // há cidade salva (lat/lon valem)
 };
 
 constexpr uint16_t uiRgb(uint8_t r, uint8_t g, uint8_t b) {
