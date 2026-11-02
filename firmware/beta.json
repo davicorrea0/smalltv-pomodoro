@@ -1,33 +1,39 @@
 {
-  "version": "1.24.7",
-  "date": "2026-11-01",
+  "version": "1.24.8",
+  "date": "2026-11-02",
   "file": "beta/smalltv-pomodoro.bin",
-  "size": 571520,
+  "size": 583600,
   "notes": {
     "pt": [
-      "⚠️ ATENÇÃO: VERSÃO DE TESTE QUE PODE QUEBRAR O APARELHO. Ela reorganiza a memória e ainda não foi testada num relógio. Só instale se souber usar o modo de recuperação e, de preferência, tiver um cabo USB-TTL para regravar. Faça o backup antes",
-      "Mostrador novo Mundo: mapa-múndi em destaque no visor de LCD, com a faixa de dia e noite andando com a hora, o sol a pino e o código da sua cidade piscando",
-      "Mostrador novo Mundo relógio: no estilo de um relógio de pulso world time, com FOCO, CHUVA e WI-FI em caixas, a cidade e o fuso",
-      "A cidade e o fuso vêm da cidade do clima; o tom verde de LCD e a troca suave entre os LCDs valem também para os dois"
+      "⚠️ ATENÇÃO: VERSÃO DE TESTE QUE PODE QUEBRAR O APARELHO. Ela muda as telas de configuração e de recuperação e ainda não foi testada num relógio. Só instale se souber usar o modo de recuperação e, de preferência, tiver um cabo USB-TTL para regravar. Faça o backup antes",
+      "Configuração por QR code: sem Wi-Fi, a tela mostra um QR que conecta o celular à rede do relógio e, depois, um segundo QR que abre a página de configuração. A rede, a senha e o endereço continuam escritos na tela",
+      "O modo de recuperação também ganha os dois QR codes. O QR é gerado no próprio relógio e nunca contém a senha do Wi-Fi da sua casa",
+      "O tom verde de LCD agora segue a tela que está à mostra: some no Pomodoro, nas fotos e nas mensagens, e continua nos LCDs, no Mundo e no Mundo relógio",
+      "Filtro na lista de mostradores do painel: Todos, Nativos, Baixados, Animados e estilos (Digital, Pixel art, Analógico, Retrô, Esportivo), que vale também para a galeria online",
+      "smalltv.local abre mais rápido e com mais confiança no Windows: o relógio agora responde também à pergunta de IPv6 e sempre pela rede inteira"
     ],
     "en": [
-      "⚠️ WARNING: TEST VERSION THAT MAY BREAK THE DEVICE. It reorganizes the storage and has not been tested on a clock yet. Only install it if you know how to use recovery mode and, ideally, have a USB-TTL cable to reflash. Make the backup first",
-      "New World face: a world map front and center on the LCD screen, with the day/night band moving with the time, the overhead sun and your city's code blinking",
-      "New World watch face: in the style of a world time wristwatch, with FOCUS, RAIN and WI-FI in boxes, the city and the time zone",
-      "The city and time zone come from the weather city; the old-LCD green tint and the smooth switch between LCD faces also work on both"
+      "⚠️ WARNING: TEST VERSION THAT MAY BREAK THE DEVICE. It changes the setup and recovery screens and has not been tested on a clock yet. Only install it if you know how to use recovery mode and, ideally, have a USB-TTL cable to reflash. Make the backup first",
+      "QR code setup: without Wi-Fi, the screen shows a QR that connects your phone to the clock's network and then a second QR that opens the setup page. The network, password and address are still written on the screen",
+      "Recovery mode also gets the two QR codes. The QR is generated on the clock itself and never contains your home Wi-Fi password",
+      "The old-LCD green tint now follows the screen being shown: it goes away on the Pomodoro, photos and messages, and stays on the LCD faces, World and World watch",
+      "Filter in the panel face list: All, Built-in, Downloaded, Animated and styles (Digital, Pixel art, Analog, Retro, Sporty), also applied to the online gallery",
+      "smalltv.local opens faster and more reliably on Windows: the clock now also answers the IPv6 question and always to the whole network"
     ],
     "es": [
-      "⚠️ ATENCIÓN: VERSIÓN DE PRUEBA QUE PUEDE ROMPER EL APARATO. Reorganiza la memoria y aún no se probó en un reloj. Instálala solo si sabes usar el modo de recuperación y, de preferencia, tienes un cable USB-TTL para regrabar. Haz la copia antes",
-      "Esfera nueva Mundo: mapamundi destacado en la pantalla LCD, con la franja de día y noche que avanza con la hora, el sol en el cenit y el código de tu ciudad parpadeando",
-      "Esfera nueva Mundo reloj: al estilo de un reloj de pulsera world time, con FOCO, LLUVIA y WI-FI en cajas, la ciudad y la zona horaria",
-      "La ciudad y la zona horaria vienen de la ciudad del clima; el tono verde de LCD y el cambio suave entre los LCD también valen para las dos"
+      "⚠️ ATENCIÓN: VERSIÓN DE PRUEBA QUE PUEDE ROMPER EL APARATO. Cambia las pantallas de configuración y de recuperación y aún no se probó en un reloj. Instálala solo si sabes usar el modo de recuperación y, de preferencia, tienes un cable USB-TTL para regrabar. Haz la copia antes",
+      "Configuración por código QR: sin Wi-Fi, la pantalla muestra un QR que conecta el celular a la red del reloj y luego un segundo QR que abre la página de configuración. La red, la clave y la dirección siguen escritas en la pantalla",
+      "El modo de recuperación también tiene los dos códigos QR. El QR se genera en el propio reloj y nunca contiene la clave del Wi-Fi de tu casa",
+      "El tono verde de LCD ahora sigue la pantalla que se muestra: desaparece en el Pomodoro, las fotos y los mensajes, y sigue en los LCD, Mundo y Mundo reloj",
+      "Filtro en la lista de esferas del panel: Todas, Nativas, Descargadas, Animadas y estilos (Digital, Pixel art, Analógico, Retro, Deportivo), también en la galería en línea",
+      "smalltv.local abre más rápido y con más fiabilidad en Windows: el reloj ahora también responde la pregunta de IPv6 y siempre a toda la red"
     ]
   },
   "gz": "beta/smalltv-pomodoro.bin.gz",
-  "gzsize": 421994,
+  "gzsize": 429962,
   "layout": "4m2m",
-  "panel": "panel-54f58cccda937faec8129855.html.gz",
-  "psri": "sha256-VPWMzNqTf67IEphVtDZzxsMuOVqov09uLPV1CjgTHmw=",
-  "sig": "HAKyznmnHQSEYNMdeTgAAlKh8aNlmFm9Tdr2/m8u/CkJAry+cCaPqczPZcwsvwBYMjX93XOlRUBKARaSwrtkDg7tL24aIw0mdZTXz3sljZH6rgFLsxDFSMN2YkwBoy/8UOFvnR5MHyheVA/oSe6nlHzdd9Fi8bSa7PPiAn3EzVXtQapWCOYNKMnGkZFvyVahSWmRw0YB+QLUKNRjHu5B0fVLxve9hM9eQ7lgFYQ6AXnLpwx0txC27xCOJ/gvfyow9AcsvhYKR0ezFkK7kR5Hu/4MXX1FJzxOqLFtoiLiVkGe4FyqSQgADW4MMvdy2cFUpnXRatezlQ0bg19ms2rdjg==",
-  "gzsig": "Kbk++VK0zWHSK++Lk+PoXIffMhzo7ZPV3piR5QxqKdZXXudVTnOiM6YRvv3FQEBTuE1v6Fv5whIRPzehewohkKJvTyqy3zLo7y4n3a5kl9AvnwjEmGPBhuX8ITfLJnAwmzgqbaCjT60a2NjBAKhrxFrRx2ypz4VDoFkq3/6k7D2iKMWcqxTo+MK+uzs9l7CtB8lbjn85Y7vONeW8GR+re1WFJRVzrup0HA6xgT2bzu39DRXw7Z+NqSAN0jrmN4i6GGVX5+6AfGH2nU2L1ASxZBMxddEgbrI2qqXOyQt7tacG76IYrJmf3HPvISCEJA4kxplmJEuQrUC8qlphi1Os4g=="
+  "panel": "panel-68380550f5626f4cf9b60e16.html.gz",
+  "psri": "sha256-aDgFUPVib0z5tg4W4X3nvyMgqommbEQRwN/UU182pQY=",
+  "sig": "aS1/TLtvJgHVjT+PqYjNSO9Iqq8HQ1YExEKjnzPFeJuGGz64l5VN4WTNlamwNEapzTo2yRktPvRDKpTjE/irv1e3TyVQaJFTRxvdLw9rv6FiCYd/8d2+bRnUpYyd3WqW/IkGPLP0Z45W8rVlqhzpQoQK0uZVZz6XNoKSsNils4KSs4q6F9Hxy6bT4oLyV7Rd5orpv9n7d1mA99fVccJOz83q96eSoc760y6l8UlR95SdUv0GVVNJANl0mocSW2FI3xp5rocbWqzCOqjfF6l4+K2OJk80Ym5/WvWrTjyTqVC19iLlXGweVDzuTHd+rtVZE+sXrp2gHRcU6gm3lGSbmg==",
+  "gzsig": "tLe5SFq+d1XBY/kbASmOlYN3Fmrh1kkYjz9tZu7Df3cM/r729yhMM+RLSZpmZKG2E3y1j/G/LDASt+tTyyr6hnJRx4b1S7xqgVbYDX/0Z4TMg081OUSMP9ekDcUh4o3cvxckO4lAqD6lDFP1a2IZqqO9ldR012kZXD/oQs0XTOMHvTW8N7jvA1L95gKuuDAjBF3OPJB/PeT79FPKVtpYhf2ikOqykNSggkD+Xc2I/Bd9Y90LE9nusVdTs/Vqlyz9cz0lhpo7xakUPanCIteB3BNoEFec8l+a0HGZh3HdgQPlcGhnWNpu+NdOHYj02RWu/mViXc975bwT7OVZUcUicA=="
 }
