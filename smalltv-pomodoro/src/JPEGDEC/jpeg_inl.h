@@ -105,8 +105,8 @@ static int jpegTablesBegin(void)
     return 1;
 }
 const int iBitMasks[33] = {0,1,3,7,0xf,0x1f,0x3f,0x7f,0xff,0x1ff,0x3ff,0x7ff,0x0fff,0x1fff,0x3fff,0x7fff,0xffff,0x1ffff,0x3ffff,0x7ffff,0xfffff,0x1fffff,0x3fffff,0x7fffff,0xffffff,0x1ffffff,0x3ffffff,0x7ffffff,0xfffffff,0x1fffffff,0x3fffffff,0x7fffffff,1};
-// zigzag ordering of DCT coefficients
-static const unsigned char cZigZag[64] = {0,1,5,6,14,15,27,28,
+// zigzag ordering of DCT coefficients (SmallTV: na flash, lidas com pgm_read_byte)
+static const unsigned char cZigZag[64] PROGMEM = {0,1,5,6,14,15,27,28,
     2,4,7,13,16,26,29,42,
     3,8,12,17,25,30,41,43,
     9,11,18,24,31,40,44,53,
@@ -116,7 +116,7 @@ static const unsigned char cZigZag[64] = {0,1,5,6,14,15,27,28,
     35,36,48,49,57,58,62,63};
 
 // un-zigzag ordering
-static const unsigned char cZigZag2[64] = {0,1,8,16,9,2,3,10,
+static const unsigned char cZigZag2[64] PROGMEM = {0,1,8,16,9,2,3,10,
     17,24,32,25,18,11,4,5,
     12,19,26,33,40,48,41,34,
     27,20,13,6,7,14,21,28,
@@ -1439,7 +1439,7 @@ static void JPEGFixQuantD(JPEGIMAGE *pJPEG)
         iTableOffset = iTable * DCTSIZE;
         p = (uint16_t *)&pJPEG->sQuantTable[iTableOffset];
         for (i=0; i<DCTSIZE; i++)
-            sTemp[i] = p[cZigZag[i]];
+            sTemp[i] = p[pgm_read_byte(&cZigZag[i])];
         memcpy(&pJPEG->sQuantTable[iTableOffset], sTemp, DCTSIZE*sizeof(short)); // copy back to original spot
         
         // Prescale for DCT multiplication
@@ -1852,9 +1852,10 @@ static int JPEGDecodeMCU(JPEGIMAGE *pJPEG, int iMCU, int *iDCPredictor)
                 ulTemp = ~(my_ulong) (((my_long) ulCode) >> (REGISTER_WIDTH-1)); // slide sign bit across other 63 bits
                 ulCode >>= (REGISTER_WIDTH - usHuff);
                 ulCode -= ulTemp >> (REGISTER_WIDTH - usHuff);
-                u16MCUFlags |= 1<<(*pZig & 7); // keep track of occupied columns
-                u16MCUFlags |= *pZig << 8; // for testing occupied rows
-                pMCU[*pZig] = (signed short)ulCode; // store AC coefficient (already reordered)
+                const int iZig = pgm_read_byte(pZig); // SmallTV: cZigZag2 fica na flash
+                u16MCUFlags |= 1<<(iZig & 7); // keep track of occupied columns
+                u16MCUFlags |= iZig << 8; // for testing occupied rows
+                pMCU[iZig] = (signed short)ulCode; // store AC coefficient (already reordered)
             }
             ulBitOff += usHuff; // add (SSSS) extra length
             pZig++;
@@ -1900,9 +1901,10 @@ static int JPEGDecodeMCU(JPEGIMAGE *pJPEG, int iMCU, int *iDCPredictor)
                 ulTemp = ~(my_ulong) (((my_long) ulCode) >> (REGISTER_WIDTH-1)); // slide sign bit across other 63 bits
                 ulCode >>= (REGISTER_WIDTH - usHuff);
                 ulCode -= ulTemp >> (REGISTER_WIDTH - usHuff);
-                u16MCUFlags |= 1<<(*pZig & 7); // keep track of occupied columns
-                u16MCUFlags |= *pZig << 8; // for testing occupied rows
-                pMCU[*pZig] = (signed short)ulCode; // store AC coefficient (already reordered)
+                const int iZig = pgm_read_byte(pZig); // SmallTV: cZigZag2 fica na flash
+                u16MCUFlags |= 1<<(iZig & 7); // keep track of occupied columns
+                u16MCUFlags |= iZig << 8; // for testing occupied rows
+                pMCU[iZig] = (signed short)ulCode; // store AC coefficient (already reordered)
             }
             ulBitOff += usHuff; // add (SSSS) extra length
             pZig++;

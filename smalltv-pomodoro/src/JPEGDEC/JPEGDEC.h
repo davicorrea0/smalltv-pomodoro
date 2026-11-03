@@ -28,6 +28,9 @@
 #define memcpy_P memcpy
 #define PROGMEM
 #endif
+#ifndef pgm_read_byte
+#define pgm_read_byte(a) (*(const uint8_t *)(a))
+#endif
 #ifdef _M_X64 //MSVC
 #define __x86_64__
 #define __builtin_bswap16 _byteswap_ushort
