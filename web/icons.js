@@ -64,9 +64,13 @@ const I = {
     for (let y = 6; y <= 12; y++) for (let x = 1; x <= 14; x++) { const a = Math.abs(x - 5) <= (y - 6) * .8 && y >= 7, b = y >= 9 && Math.abs(x - 11) <= (y - 8) * .8; if (a || b) g.put('d', [[x, y]]) }
     return g;
   },
-  ajustes: () => lit([  // engrenagem (opção A)
-    '................', '......XXXX......', '......XXXX......', '..XX.XXXXXX.XX..', '..XXXXXXXXXXXX..', '...XXXXXXXXXX...', '.XXXXXX..XXXXXX.', '.XXXXX....XXXXX.',
-    '.XXXXX....XXXXX.', '.XXXXXX..XXXXXX.', '...XXXXXXXXXX...', '..XXXXXXXXXXXX..', '..XX.XXXXXX.XX..', '......XXXX......', '......XXXX......', '................']),
+  // controles deslizantes (três trilhos de 2 px; o botão é um miolo 2x2 que, com o contorno, fecha 4x4)
+  ajustes: () => {
+    const g = new G(), kn = [[9, 3], [3, 7], [7, 11]];
+    g.add((x, y, X, Y) => kn.some(([a, b]) => X >= a && X < a + 2 && Y >= b && Y < b + 2));
+    for (const [kx, y] of kn) for (let x = 1; x <= 14; x++) if (x < kx - 1 || x > kx + 2) g.put('d', [[x, y], [x, y + 1]]);
+    return g;
+  },
   zerar: () => {
     const g = new G().add((x, y) => {
       const dx = x - 8, dy = y - 8.6, r = Math.hypot(dx, dy);
@@ -114,16 +118,7 @@ const I = {
     return g;
   },
 };
-// opção B de "ajustes" (controles deslizantes), só na folha
-const EXTRA = {
-  // B: controles deslizantes, ainda mais legível que a engrenagem (três trilhos de 2 px; o botão é um miolo 2x2 que, com o contorno, fecha 4x4)
-  ajustesb: () => {
-    const g = new G(), kn = [[9, 3], [3, 7], [7, 11]];
-    g.add((x, y, X, Y) => kn.some(([a, b]) => X >= a && X < a + 2 && Y >= b && Y < b + 2));
-    for (const [kx, y] of kn) for (let x = 1; x <= 14; x++) if (x < kx - 1 || x > kx + 2) g.put('d', [[x, y], [x, y + 1]]);
-    return g;
-  },
-};
+const EXTRA = {};
 Object.assign(I, EXTRA);
 const ids = Object.keys(I).filter(k => !EXTRA[k]), sheetIds = Object.keys(I);
 function rects(rows, set) {
