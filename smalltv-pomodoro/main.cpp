@@ -90,6 +90,24 @@ static void tftBitmap(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h) 
 }
 
 ESP8266WebServer server(80);
+
+// Respostas JSON grandes usam HTTP em partes: o ESP8266 não precisa manter o documento inteiro em uma
+// String contígua no heap. O pedaço vazio no fim fecha a resposta chunked (mesmo padrão de /api/storage).
+void jsonBegin() {
+  server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+  server.send(200, "application/json", "");
+}
+void jsonFlush(String &chunk) {
+  if (!chunk.length()) return;
+  server.sendContent(chunk);
+  chunk = "";  // conserva a capacidade para o próximo pedaço, sem fragmentar o heap
+  yield();
+}
+void jsonEnd(String &chunk) {
+  jsonFlush(chunk);
+  server.sendContent("");
+}
+
 bool panelOk();  // proteção do painel (mais abaixo, antes de setupWeb)
 bool readOk();
 bool guard();
@@ -1446,7 +1464,8 @@ void sendStats() {
   uint8_t d[STATS_DAYS];
   bool ok = stats.magic == STATS_MAGIC && statsRead(d);
   String j;
-  j.reserve(STATS_DAYS * 3 + 96);
+  j.reserve(704);
+  jsonBegin();
   j = F("{\"day\":");
   j += stats.lastDay;
   j += F(",\"goal\":");
@@ -1461,9 +1480,10 @@ void sendStats() {
   for (int i = 0; i < STATS_DAYS; i++) {
     if (i) j += ',';
     j += ok ? d[i] : 0;
+    if (j.length() > 640) jsonFlush(j);
   }
   j += "]}";
-  server.send(200, "application/json", j);
+  jsonEnd(j);
 }
 
 // restaura o histórico de um backup: "days" = contagens do mais antigo ao dia "day". Aceita tudo o que
@@ -2022,7 +2042,9 @@ void sendState() {
     fsInfoAt = millis() | 1;
   }
   String j;
-  j.reserve(1230 + rotList.length());  // estado, ajustes e diagnóstico: uma alocação só
+  j.reserve(704);
+  server.sendHeader("Cache-Control", "no-store");  // cidade, rede e ajustes: o navegador não guarda
+  jsonBegin();
   j += F("{\"phase\":\"");
   j += PHASE_KEY[phase];
   j += F("\",\"running\":");
@@ -2077,7 +2099,9 @@ void sendState() {
   j += (uint32_t)fi.usedBytes;
   j += F(",\"total\":");
   j += (uint32_t)fi.totalBytes;
-  j += F("},\"cfg\":{\"work\":");
+  j += '}';
+  jsonFlush(j);
+  j = F(",\"cfg\":{\"work\":");
   j += cfg.work;
   j += F(",\"short\":");
   j += cfg.shortBreak;
@@ -2158,8 +2182,12 @@ void sendState() {
   j += F(",\"rotmin\":");
   j += cfg.rotMin;
   j += F(",\"rot\":\"");
-  j += rotList;
-  j += F("\"},\"alexa\":{\"ago\":");  // segundos desde o último pedido de um Echo (-1 = nenhum)
+  jsonFlush(j);
+  if (rotList.length()) {
+    server.sendContent(rotList);
+    yield();
+  }
+  j = F("\"},\"alexa\":{\"ago\":");  // segundos desde o último pedido de um Echo (-1 = nenhum)
   j += alexaSeen ? (long)((millis() - alexaSeen) / 1000) : -1L;
   j += F(",\"ip\":\"");
   j += alexaSeen ? alexaIp.toString() : String();
@@ -2184,8 +2212,7 @@ void sendState() {
   diagJson(j);
   crashJson(j);
   j += F(",\"ver\":\"" FW_VERSION "\"}");
-  server.sendHeader("Cache-Control", "no-store");  // cidade, rede e ajustes: o navegador não guarda
-  server.send(200, "application/json", j);
+  jsonEnd(j);
 }
 
 // "-23.5478" -> -23.5478. Lê só o que o painel manda (latitude/longitude), sem a leitura de decimais da newlib.
@@ -2279,10 +2306,9 @@ void handleUpload() {
 
 void sendFiles() {
   if (!readOk()) return;
-  size_t cap = 16;
-  for (const String &n : album) cap += n.length() * 2 + 32;
   String j;
-  j.reserve(cap);  // uma alocação, em vez de crescer a resposta a cada arquivo
+  j.reserve(704);
+  jsonBegin();
   j = F("{\"files\":[");
   bool first = true;
   for (const String &n : album) {
@@ -2295,9 +2321,10 @@ void sendFiles() {
     j += (uint32_t)(f ? f.size() : 0);
     j += '}';
     if (f) f.close();
+    if (j.length() > 640) jsonFlush(j);
   }
   j += "]}";
-  server.send(200, "application/json", j);
+  jsonEnd(j);
 }
 
 // ---------- armazenamento: tudo o que ocupa a memória de arquivos ----------
@@ -2567,7 +2594,8 @@ void setupWeb() {
   server.on("/api/faces", HTTP_GET, [] {
     if (!readOk()) return;
     String j;
-    j.reserve(1800);
+    j.reserve(704);
+    jsonBegin();
     j = '[';
     for (uint8_t t = 0; t < THEME_COUNT; t++) {
       if (t) j += ',';
@@ -2579,6 +2607,7 @@ void setupWeb() {
       j += F("\",\"d\":\"");
       jsonEscapeAppend(j, db);
       j += F("\"}");
+      if (j.length() > 640) jsonFlush(j);
     }
     // pacotes instalados: nome/descrição/autor vêm do <id>.txt gravado na instalação
     if (fsOk) {
@@ -2603,10 +2632,11 @@ void setupWeb() {
         j += F("\",\"pkg\":\"");
         j += id;
         j += F("\"}");
+        if (j.length() > 640) jsonFlush(j);
       }
     }
     j += "]";
-    server.send(200, "application/json", j);
+    jsonEnd(j);
   });
   // prévia PNG de um mostrador para a galeria do painel. As dos embutidos ficam no site (geradas pelo
   // simulador, sem ocupar a flash do relógio); as dos pacotes instalados, no LittleFS.
