@@ -1,38 +1,30 @@
 {
-  "version": "1.23.5",
-  "date": "2026-10-29",
+  "version": "1.24.9",
+  "date": "2026-11-03",
   "file": "smalltv-pomodoro.bin",
-  "size": 557216,
+  "size": 583760,
   "notes": {
     "pt": [
-      "Liga mais rápido e sem tela preta: a tela de início aparece na hora, o Wi-Fi conecta direto no roteador da última vez e uma barra em pixel art mostra as etapas (Wi-Fi, hora)",
-      "A hora aparece logo depois de reiniciar por atualização ou ajuste, e o relógio tenta outro servidor de hora se o primeiro demorar",
-      "smalltv.local mais confiável: o Wi-Fi não cochila mais (perdia as perguntas da rede) e a resposta vai também direto para quem perguntou",
-      "Uns 5 KB a mais de memória livre, o que ajuda os GIFs",
-      "O backup do painel agora leva também as fotos e os GIFs (preparação para a 1.24, que reorganiza a memória de arquivos)",
-      "Diagnóstico mostra quanto tempo levou cada etapa do último início"
+      "⚠️ VERSÃO DE TESTE. Faça o backup antes e só instale se souber usar o modo de recuperação (desligar e ligar 3 vezes seguidas, menos de 30 s cada)",
+      "smalltv.local passa a funcionar também com o computador na rede de 5 GHz: o relógio, que fica no 2,4 GHz, agora manda a resposta também para a rede inteira, e não só pelo caminho que alguns roteadores não repassam entre as duas faixas",
+      "Se ainda falhar, o README explica como reservar o IP do relógio no roteador e abrir pelo IP, o caminho que sempre funciona (inclusive no Android)"
     ],
     "en": [
-      "Starts faster and without a black screen: the start screen shows up right away, Wi-Fi connects straight to the last router, and a pixel-art bar shows the steps (Wi-Fi, time)",
-      "The time shows up right after a restart from an update or setting change, and the clock tries another time server if the first one is slow",
-      "More reliable smalltv.local: Wi-Fi no longer naps (it missed network queries) and the answer also goes straight to whoever asked",
-      "About 5 KB more free memory, which helps GIFs",
-      "The panel backup now includes photos and GIFs too (getting ready for 1.24, which reorganizes the file storage)",
-      "Diagnostics show how long each step of the last start took"
+      "⚠️ TEST VERSION. Make the backup first and only install it if you know how to use recovery mode (power off and on 3 times in a row, less than 30 s each)",
+      "smalltv.local now also works with the computer on the 5 GHz network: the clock, which stays on 2.4 GHz, now also sends its answer to the whole network, not only through the path some routers do not pass between the two bands",
+      "If it still fails, the README explains how to reserve the clock's IP in the router and open it by IP, the path that always works (Android included)"
     ],
     "es": [
-      "Arranca más rápido y sin pantalla negra: la pantalla de inicio aparece enseguida, el Wi-Fi se conecta directo al último router y una barra en pixel art muestra los pasos (Wi-Fi, hora)",
-      "La hora aparece enseguida tras reiniciar por una actualización o un ajuste, y el reloj prueba otro servidor de hora si el primero tarda",
-      "smalltv.local más confiable: el Wi-Fi ya no se duerme (perdía las consultas de la red) y la respuesta también va directo a quien preguntó",
-      "Unos 5 KB más de memoria libre, lo que ayuda a los GIF",
-      "La copia del panel ahora incluye también las fotos y los GIF (preparación para la 1.24, que reorganiza la memoria de archivos)",
-      "El diagnóstico muestra cuánto tardó cada paso del último arranque"
+      "⚠️ VERSIÓN DE PRUEBA. Haz la copia antes e instálala solo si sabes usar el modo de recuperación (apagar y encender 3 veces seguidas, menos de 30 s cada vez)",
+      "smalltv.local ahora también funciona con la computadora en la red de 5 GHz: el reloj, que está en 2,4 GHz, ahora también envía la respuesta a toda la red, y no solo por el camino que algunos routers no pasan entre las dos bandas",
+      "Si aún falla, el README explica cómo reservar la IP del reloj en el router y abrirlo por la IP, el camino que siempre funciona (también en Android)"
     ]
   },
   "gz": "smalltv-pomodoro.bin.gz",
-  "gzsize": 412234,
-  "panel": "panel-187aacc309266c9356c1fa6a.html.gz",
-  "psri": "sha256-GHqswwkmbJNWwfpqX/Q0FxFAcJfkS+bDuHfhJZs0pf8=",
-  "sig": "JGAEenvlGr8hXGneV3DVXOwFE1bhQoIIkKNlESLqCA1ZMFF1gH0VVxYDPo+ctoymOHzrYBPN9x3slIfhCeVtoCWX3eNfdyFkOS1SsWBCLguMT4v8IBPrQmHvke8ACtHkfZSTHYVcZx5OX5FCYJ5jbFsa0YgbhkoSuxxbQ+UVdwhp9LV1shbVf3PXado4IgMYv7frwZqgbXJG3M9psP+B6e5RY8L26RFo/gEe98sVCBFecMUH4PGqMGUZlsFy0eiVOCv6YF9JJGOHWn23VBdj6ZqT5iiTbiPYdtMGSQ3uJ4GDTKohZugWJpPo1Bzg9CxyBI7Jo8tRWBAvhkEznWjrMw==",
-  "gzsig": "G46S60oPqKxje6S6n7yQwjb2PcRjhxaXJCdeR+b026t8Ud2AqIH1g8DVB1pN+Jjtwm69q+9jxDXpf+AFvkQwgLrG5vjhF2Sq1asK7cXNpXskVClLGzUVsXTJ9SqLaLcWVmXYEemv0BTXg9glYoy9v99jgeAfZCDjs7chvJqjcDZvVi/ySdWlAmc97xmWyUCgIB/27w9oXLbqdAXizhLfJadhGpo8sywJrH5JGbs/uTyfITfh7n4X9LdyskvnoEHwsQPJW1+X1B84QQggFxaw654EFfekpCHqAyVQDGyGHAfwOd32NsIzWTtpOfl5Nqy2GVhlcQbeMkKTuDzFqOpD8w=="
+  "gzsize": 430082,
+  "layout": "4m2m",
+  "panel": "panel-68380550f5626f4cf9b60e16.html.gz",
+  "psri": "sha256-aDgFUPVib0z5tg4W4X3nvyMgqommbEQRwN/UU182pQY=",
+  "sig": "HwqE/booY8Qc2/JJEvr2Uu1SlwI+Y+gJan9WN+7FIeIpCLf4kVJzM6AXqnBdvfOnDvjZhYYtKgZvWnkW759NrcwEzu8FAC0TZvx5KLmovuVv1QtFA8fyLJ49Q8v6HPmWuhuMVVJoC2+x9zwwaB7vrbEMD8GpaA8OhtiMk9/nE1wEJk2RObJHee0Gm5HjXqfbtTNlXSNXbJya+IuHvG7xt5FMAfEzvjFVua3vZVK+W7xqfgiMdNxAa9ahIK7IKPQDtJRBj7jsj5/m0yfT9CmvJwiqERjP8TJsaQKBCewKIu5MR7jw8sPI0o5TxUsyhS2EDvvW/Anxc03v3kBG0rRJlA==",
+  "gzsig": "ndjbeAIEW0DxZhdrgnhn7YLfrbOJNUM461Gw6ojP8N8XFsqXE6kUUNSJv5DzgdF2uJjDXfiYeL4AshAqNOurPdtAl1FpSVNlrB0RTO9G2zQLlnIxel98RblvZEJuygRK4Y25V0mvXuKwL8b4DwEoSa9Ksjk2sExg8T1BOrivHAji7jBexz5X4jt7hpI/ITqoN62T+N5c2fgYSAhrR8vSitTxVa87c7iyDNtpn6JHwZFzIFcSIHSOWnTplD+xkJKojiEglJD2UC8BpSqjbGUoAR+kyXxoYhcnAWIpJAfO2rP3S4ahL/RqmSok6aDsuU2bCtQOYkviAKCYPJ2teFhKDg=="
 }
