@@ -31,9 +31,11 @@
 #include <pgmspace.h>
 #define QR_CONST PROGMEM
 #define QR_READ8(p) ((int8_t)pgm_read_byte(p))
+#define QR_MEMCHR memchr_P
 #else
 #define QR_CONST
 #define QR_READ8(p) (*(p))
+#define QR_MEMCHR memchr
 #endif
 
 #ifndef QRCODEGEN_TEST
@@ -100,7 +102,7 @@ static int numCharCountBits(enum qrcodegen_Mode mode, int version);
 
 // The set of all legal characters in alphanumeric mode, where each character
 // value maps to the index in the string. For checking text and encoding segments.
-static const char *ALPHANUMERIC_CHARSET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:";
+static const char ALPHANUMERIC_CHARSET[] QR_CONST = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:";
 
 // For generating error correction codes.
 testable const int8_t ECC_CODEWORDS_PER_BLOCK[4][41] QR_CONST = {
@@ -525,8 +527,8 @@ static void drawLightFunctionModules(uint8_t qrcode[], int version) {
 static void drawFormatBits(enum qrcodegen_Ecc ecl, enum qrcodegen_Mask mask, uint8_t qrcode[]) {
 	// Calculate error correction code and pack bits
 	assert(0 <= (int)mask && (int)mask <= 7);
-	static const int table[] = {1, 0, 3, 2};
-	int data = table[(int)ecl] << 3 | (int)mask;  // errCorrLvl is uint2, mask is uint3
+	static const int8_t table[] QR_CONST = {1, 0, 3, 2};
+	int data = QR_READ8(&table[(int)ecl]) << 3 | (int)mask;  // errCorrLvl is uint2, mask is uint3
 	int rem = data;
 	for (int i = 0; i < 10; i++)
 		rem = (rem << 1) ^ ((rem >> 9) * 0x537);
@@ -830,7 +832,7 @@ bool qrcodegen_isNumeric(const char *text) {
 bool qrcodegen_isAlphanumeric(const char *text) {
 	assert(text != NULL);
 	for (; *text != '\0'; text++) {
-		if (strchr(ALPHANUMERIC_CHARSET, *text) == NULL)
+		if (QR_MEMCHR(ALPHANUMERIC_CHARSET, *text, sizeof ALPHANUMERIC_CHARSET - 1) == NULL)
 			return false;
 	}
 	return true;
@@ -946,7 +948,7 @@ struct qrcodegen_Segment qrcodegen_makeAlphanumeric(const char *text, uint8_t bu
 	unsigned int accumData = 0;
 	int accumCount = 0;
 	for (; *text != '\0'; text++) {
-		const char *temp = strchr(ALPHANUMERIC_CHARSET, *text);
+		const char *temp = (const char *)QR_MEMCHR(ALPHANUMERIC_CHARSET, *text, sizeof ALPHANUMERIC_CHARSET - 1);
 		assert(temp != NULL);
 		accumData = accumData * 45 + (unsigned int)(temp - ALPHANUMERIC_CHARSET);
 		accumCount++;
@@ -1021,10 +1023,10 @@ static int numCharCountBits(enum qrcodegen_Mode mode, int version) {
 	assert(qrcodegen_VERSION_MIN <= version && version <= qrcodegen_VERSION_MAX);
 	int i = (version + 7) / 17;
 	switch (mode) {
-		case qrcodegen_Mode_NUMERIC     : { static const int temp[] = {10, 12, 14}; return temp[i]; }
-		case qrcodegen_Mode_ALPHANUMERIC: { static const int temp[] = { 9, 11, 13}; return temp[i]; }
-		case qrcodegen_Mode_BYTE        : { static const int temp[] = { 8, 16, 16}; return temp[i]; }
-		case qrcodegen_Mode_KANJI       : { static const int temp[] = { 8, 10, 12}; return temp[i]; }
+		case qrcodegen_Mode_NUMERIC     : { static const int8_t temp[] QR_CONST = {10, 12, 14}; return QR_READ8(&temp[i]); }
+		case qrcodegen_Mode_ALPHANUMERIC: { static const int8_t temp[] QR_CONST = { 9, 11, 13}; return QR_READ8(&temp[i]); }
+		case qrcodegen_Mode_BYTE        : { static const int8_t temp[] QR_CONST = { 8, 16, 16}; return QR_READ8(&temp[i]); }
+		case qrcodegen_Mode_KANJI       : { static const int8_t temp[] QR_CONST = { 8, 10, 12}; return QR_READ8(&temp[i]); }
 		case qrcodegen_Mode_ECI         : return 0;
 		default:  assert(false);  return -1;  // Dummy value
 	}
