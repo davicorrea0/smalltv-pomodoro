@@ -1,0 +1,14 @@
+{
+  "pt": [
+    "Versão de teste: libera memória do relógio (tabelas do QR code, do GIF/descompressor e do JPEG agora ficam na flash) e não muda nada que você veja",
+    "Foto sem memória deixou de aparecer como \"JPG inválido\": se faltar memória no momento, o relógio avisa \"Sem memória p/ foto\" e tenta de novo na próxima foto; só avisa arquivo inválido quando o arquivo está mesmo estragado"
+  ],
+  "en": [
+    "Test version: frees up memory on the clock (the QR code, GIF/decompressor and JPEG tables now live in flash) and changes nothing you can see",
+    "A photo that fails for lack of memory no longer shows as \"Invalid JPG\": if memory is short at that moment the clock says \"No memory for photo\" and tries again on the next photo; it only reports an invalid file when the file is really damaged"
+  ],
+  "es": [
+    "Versión de prueba: libera memoria del reloj (las tablas del código QR, del GIF/descompresor y del JPEG ahora quedan en la flash) y no cambia nada que se vea",
+    "Una foto que falla por falta de memoria ya no aparece como \"JPG invalido\": si falta memoria en ese momento, el reloj avisa \"Sin memoria p/ foto\" y lo intenta de nuevo con la siguiente foto; solo avisa archivo inválido cuando el archivo está realmente dañado"
+  ]
+}

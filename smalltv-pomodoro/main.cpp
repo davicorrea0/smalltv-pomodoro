@@ -48,7 +48,7 @@ extern "C" uint32_t _FS_start;
 
 void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);  // ui.cpp: recorta para a área suja; fora da tela, cai na faixa
 
-#define FW_VERSION "1.24.9"
+#define FW_VERSION "1.24.10"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 
@@ -1639,9 +1639,16 @@ int jpgCheckDraw(JPEGDRAW *) {
   yield();
   return 1;
 }
-bool validJpg(const String &path) {
-  JPEGDEC *jpg = new (std::nothrow) JPEGDEC();
-  if (!jpg) return false;
+// Resultado de uma foto: falta de memória no momento não é arquivo estragado.
+enum JpgResult : uint8_t { JPG_OK, JPG_BAD, JPG_NOMEM };
+// O decodificador (~18 KB) precisa de um bloco contíguo; sem ele, nullptr (e o arquivo não é culpado).
+JPEGDEC *jpgAlloc() {
+  if (ESP.getMaxFreeBlockSize() < sizeof(JPEGDEC) + 1024) return nullptr;
+  return new (std::nothrow) JPEGDEC();
+}
+JpgResult validJpg(const String &path) {
+  JPEGDEC *jpg = jpgAlloc();
+  if (!jpg) return JPG_NOMEM;
   bool opened = jpg->open(path.c_str(), mediaOpen, mediaClose, jpgRead, jpgSeek, jpgCheckDraw);
   bool ok = false;
   if (opened && jpgDimensionsOk(jpg)) {
@@ -1653,14 +1660,14 @@ bool validJpg(const String &path) {
   }
   jpg->close();
   delete jpg;
-  return ok;
+  return ok ? JPG_OK : JPG_BAD;
 }
 
 // Camada "image" dos pacotes: JPEG em /faces/<arquivo>, no ponto (x, y), sem escala.
 bool drawJpgAt(const char *file, int x, int y) {
   String path = String("/faces/") + file;
   if (strstr(file, "..") || !LittleFS.exists(path)) return false;
-  JPEGDEC *jpg = new (std::nothrow) JPEGDEC();
+  JPEGDEC *jpg = jpgAlloc();
   if (!jpg) return false;
   bool ok = false;
   if (jpg->open(path.c_str(), mediaOpen, mediaClose, jpgRead, jpgSeek, jpgDraw) && jpgDimensionsOk(jpg)) {
@@ -1672,9 +1679,9 @@ bool drawJpgAt(const char *file, int x, int y) {
   return ok;
 }
 
-bool drawJpg(const String &f) {
-  JPEGDEC *jpg = new (std::nothrow) JPEGDEC();  // ~18 KB: só existe durante a decodificação
-  if (!jpg) return false;
+JpgResult drawJpg(const String &f) {
+  JPEGDEC *jpg = jpgAlloc();  // ~18 KB: só existe durante a decodificação
+  if (!jpg) return JPG_NOMEM;
   bool ok = false;
   if (jpg->open(f.c_str(), mediaOpen, mediaClose, jpgRead, jpgSeek, jpgDraw) && jpgDimensionsOk(jpg)) {
     int w = jpg->getWidth(), h = jpg->getHeight(), sc = 1;
@@ -1685,7 +1692,7 @@ bool drawJpg(const String &f) {
   }
   jpg->close();
   delete jpg;
-  return ok;
+  return ok ? JPG_OK : JPG_BAD;
 }
 int32_t gifRead(GIFFILE *f, uint8_t *buf, int32_t len) {
   yield();  // inclusive arquivos que gastam muito tempo em códigos LZW sem produzir pixels
@@ -1794,7 +1801,9 @@ bool showAlbumItem(const String &f) {
     gifOffY = max(0, (240 - gif->getCanvasHeight()) / 2);
     nextFrameAt = 0;
   } else {
-    if (!drawJpg(f)) uiError(tr("JPG invalido", "Invalid JPG", "JPG invalido"));
+    JpgResult r = drawJpg(f);
+    if (r == JPG_NOMEM) uiError(tr("Sem memoria p/ foto", "No memory for photo", "Sin memoria p/ foto"));  // o próximo item tenta de novo
+    else if (r == JPG_BAD) uiError(tr("JPG invalido", "Invalid JPG", "JPG invalido"));
   }
   return true;
 }
@@ -2257,9 +2266,12 @@ void handleUpload() {
     if (up.status == UPLOAD_FILE_END && !uploadError.length() && isGif(uploadPath) && !validGif(uploadPath)) {
       LittleFS.remove(uploadPath);
       uploadError = tr("GIF fora do padrao", "Unsupported GIF", "GIF fuera de norma");
-    } else if (up.status == UPLOAD_FILE_END && !uploadError.length() && isJpg(uploadPath) && !validJpg(uploadPath)) {
-      LittleFS.remove(uploadPath);
-      uploadError = tr("JPG fora do padrao", "Unsupported JPG", "JPG fuera de norma");
+    } else if (up.status == UPLOAD_FILE_END && !uploadError.length() && isJpg(uploadPath)) {
+      JpgResult r = validJpg(uploadPath);
+      if (r != JPG_OK) {
+        LittleFS.remove(uploadPath);
+        uploadError = r == JPG_NOMEM ? tr("Sem memoria p/ foto", "No memory for photo", "Sin memoria p/ foto") : tr("JPG fora do padrao", "Unsupported JPG", "JPG fuera de norma");
+      }
     }
     rebuildAlbum();
   }

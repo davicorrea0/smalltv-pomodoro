@@ -1,6 +1,7 @@
 #!/bin/bash
 # Testes de C++ do firmware (Linux/WSL, g++ com multilib), em 32 bits como o ESP8266, com ASan/UBSan:
 #  - handlers reais de upload, host e senha (security_test.cjs) e histórico de focos (stats_test.cjs);
+#  - foto sem memória × foto estragada (jpg_nomem_test.cjs);
 #  - cor quente (warm.h): os comandos do gama digital de dia, de noite e na prévia;
 #  - GIF e JPEG: as amostras válidas precisam decodificar e o fuzzing não pode achar erro de memória.
 # Uso: sim/testes.sh [casos de fuzzing por formato, padrão 5000]
@@ -13,9 +14,10 @@ G="${GEN:-$T}"
 if [ -z "${GEN:-}" ]; then
   node security_test.cjs "$G/sec.cpp"
   node stats_test.cjs "$G/stats.cpp"
+  node jpg_nomem_test.cjs "$G/jpg_nomem.cpp"
 fi
 export ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1
-for t in sec stats; do
+for t in sec stats jpg_nomem; do
   g++ -std=c++17 -fsanitize=address,undefined -g -w "$G/$t.cpp" -o "$T/$t"
   "$T/$t"
 done
