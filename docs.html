@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Como usar — SmallTV Pomodoro</title>
+<meta name="description" content="Guia passo a passo do SmallTV Pomodoro: instalar, conectar ao Wi-Fi, achar o painel, usar o Pomodoro, mostradores, fotos, clima, backup, recuperação e perguntas frequentes.">
+<meta property="og:title" content="Como usar — SmallTV Pomodoro">
+<meta property="og:description" content="Guia passo a passo do SmallTV Pomodoro: instalar, conectar ao Wi-Fi, achar o painel, usar o Pomodoro, mostradores, fotos, clima, backup, recuperação e perguntas frequentes.">
+<meta property="og:image" content="https://davicorrea0.github.io/smalltv-pomodoro/img/mostradores.png">
+<meta name="theme-color" content="#0b0d10">
+<link rel="alternate" hreflang="pt-BR" href="https://davicorrea0.github.io/smalltv-pomodoro/docs.html">
+<link rel="alternate" hreflang="en" href="https://davicorrea0.github.io/smalltv-pomodoro/en/docs.html">
+<link rel="icon" href="img/tomate.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Silkscreen&display=swap">
+<link rel="stylesheet" href="style.css?v=16">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="./"><img class="px" src="img/tomate.svg" alt=""><span>SmallTV Pomodoro</span></a>
+    <nav class="nav">
+      <a href="./">Início</a>
+      <a href="galeria.html">Galeria</a>
+      <a href="docs.html" aria-current="page">Docs</a>
+      <a href="versoes.html">Versões</a>
+      <a href="jogo.html">Jogo</a>
+      <a class="opt" href="https://github.com/davicorrea0/smalltv-pomodoro"><span class="gh" aria-hidden="true"></span>GitHub</a>
+    </nav>
+    <a class="lang" href="en/docs.html" hreflang="en" lang="en"><img class="px" src="img/icons/globo.svg" alt="">EN</a>
+  </div>
+</header>
+
+<main>
+  <div class="page-head">
+    <div class="wrap">
+      <div class="eyebrow">Docs</div>
+      <h1>Como usar</h1>
+      <p>Do primeiro Wi-Fi à recuperação por cabo, em passos curtos. Cada ajuste citado aqui está no painel do relógio, na aba indicada.</p>
+      <nav class="toc" aria-label="Seções"><a href="#primeiros-passos">Primeiros passos</a><a href="#dia-a-dia">O dia a dia</a><a href="#manutencao">Manutenção</a><a href="#faq">Perguntas frequentes</a></nav>
+    </div>
+  </div>
+
+<section id="primeiros-passos" class="doc">
+ <div class="wrap">
+  <div class="eyebrow">1 · Primeiros passos</div>
+  <h2>Do relógio de fábrica ao Pomodoro</h2>
+  <p class="section-lead">Leva uns 10 minutos, sem cabo e sem abrir o relógio. Funciona só no <strong>SmallTV Ultra</strong> (ESP8266). Não grave no SmallTV Pro (ESP32) nem em outros modelos.</p>
+
+  <h3 class="sub">Instalar o firmware</h3>
+  <ol class="steps"><li><h3>Baixe o arquivo</h3><p>Pegue o <code>.bin</code> mais recente na <a href="https://github.com/davicorrea0/smalltv-pomodoro/releases">página de versões</a> (ou no botão de download da <a href="./">página inicial</a>). Use a versão <strong>estável</strong>.</p></li><li><h3>Abra a página do relógio de fábrica</h3><p>No navegador, entre no endereço do relógio (o IP que aparece na tela dele) e abra <strong>Firmware Upgrade</strong>.</p></li><li><h3>Envie o arquivo</h3><p>Escolha o <code>.bin</code>, envie e espere o relógio reiniciar sozinho. As telas do Pomodoro aparecem em seguida.</p></li></ol>
+  <div class="note warn"><p><strong>Deu ERROR[4]: Not Enough Space?</strong> O espaço de atualização de fábrica varia de um relógio para outro. Resolva em dois passos:</p>
+   <ol style="margin:6px 0 0;padding-left:20px;color:var(--muted)">
+    <li>Envie primeiro o carregador <a href="https://github.com/giovi321/smalltv-mod/releases/tag/v2.8.2"><code>smalltv-mod-loader.bin</code></a> (giovi321/smalltv-mod v2.8.2) pelo mesmo <strong>Firmware Upgrade</strong>.</li>
+    <li>Entre na rede aberta <code>SmallTV-Loader</code> e envie o firmware Pomodoro em <code>http://192.168.4.1/update</code>.</li>
+   </ol></div>
+  <div class="note"><p><strong>Fotos e GIFs do firmware de fábrica:</strong> a instalação formata a memória de arquivos, então as fotos do original <strong>não ficam</strong>. Os ajustes e o Wi-Fi salvo ficam. Envie as fotos de novo pelo painel depois.</p></div>
+
+  <h3 class="sub">Conectar o relógio ao Wi-Fi</h3>
+  <p>Se o relógio já tinha o Wi-Fi de casa salvo pelo firmware de fábrica, ele entra sozinho e você pode pular para <a href="#achar-painel">achar o painel</a>. Se não entrou:</p>
+  <ol class="steps"><li><h3>Escaneie o QR da tela</h3><p>A tela mostra <strong>ETAPA 1/2</strong> com um QR. Aponte a câmera do celular e confirme entrar na rede <code>SmallTV-Pomodoro</code>. O QR já leva a senha temporária dessa rede.</p><p class="m">Sem câmera ou o QR não leu? Entre na rede <code>SmallTV-Pomodoro</code> pelo Wi-Fi do celular e digite a senha de 8 caracteres que está na própria tela.</p></li><li><h3>Abra o portal</h3><p>Com o celular conectado, a tela muda para <strong>ETAPA 2/2</strong>. O portal costuma abrir sozinho. Se não abrir, escaneie o segundo QR ou abra <code>http://192.168.4.1/</code>.</p></li><li><h3>Escolha o Wi-Fi de casa</h3><p>Selecione a sua rede e digite a senha dela. Só funcionam redes de <strong>2,4 GHz</strong> (o relógio não tem 5 GHz). O relógio reinicia e mostra o endereço do painel.</p></li></ol>
+  <div class="row2">
+   <figure class="lcd"><img class="px" src="docs/img/qr-1.png" width="240" height="240" loading="lazy" alt="Tela com QR e a senha da rede SmallTV-Pomodoro"><figcaption>Etapa 1/2: entrar na rede do relógio</figcaption></figure>
+   <figure class="lcd"><img class="px" src="docs/img/qr-2.png" width="240" height="240" loading="lazy" alt="Tela com o QR que abre o portal de configuração"><figcaption>Etapa 2/2: abrir o portal</figcaption></figure>
+  </div>
+  <p style="color:var(--muted);font-size:14px">Telas geradas pelo simulador do projeto. O QR não leva a senha do seu Wi-Fi de casa: ela só é digitada no portal. Para trocar de rede depois: <em>Ajustes → Resetar Wi-Fi</em>.</p>
+
+  <h3 class="sub" id="achar-painel">Achar o painel</h3>
+  <p>O painel é a página do relógio no seu navegador, onde ficam todos os ajustes. Ele abre em qualquer aparelho que esteja na mesma rede, com 4 abas: <strong>Relógio, Foco, Fotos, Ajustes</strong>.</p>
+  <div class="grid two">
+   <div class="card"><h3>Pelo nome</h3><p>Digite <code>http://smalltv.local/</code> (com o <code>http://</code>, senão alguns navegadores fazem uma busca) e salve nos favoritos. Funciona no Windows 10/11, macOS, iOS e Linux com Avahi.</p><p class="m">Com um segundo relógio na rede, o nome dele é <code>smalltv-2.local</code>, depois <code>-3</code>… O <code>smalltv-xxxx.local</code> (4 dígitos do chip) sempre funciona.</p></div>
+   <div class="card"><h3>Pelo IP (o mais seguro)</h3><p>O relógio mostra o IP no rodapé da maioria dos mostradores. Abra <code>http://IP/</code> e salve nos favoritos. É o caminho para celulares <strong>Android</strong>, que podem não achar nomes <code>.local</code>.</p><p class="m">Para o IP não mudar, <strong>reserve-o no roteador</strong>: procure <em>DHCP → Reserva de endereço</em> (ou <em>Static lease</em>) e escolha o relógio pelo nome <code>smalltv-xxxx</code> ou pelo MAC.</p></div>
+  </div>
+  <details class="note"><summary>O <code>smalltv.local</code> só abre às vezes e meu computador está no 5 GHz</summary>
+   <p>Muitos roteadores não passam o multicast da rede de 2,4 GHz para a de 5 GHz. O relógio fica sempre no 2,4 GHz, então a resposta dele não chega ao computador (só uma cópia direta chega, e no Windows ela pode cair em outro programa, como o Chrome, em vez do sistema: por isso funciona só às vezes).</p>
+   <ol><li>Ponha o computador na rede de <strong>2,4 GHz</strong>: aí funciona.</li><li>Ou use o <strong>IP</strong> nos favoritos (acima).</li><li>Alguns roteadores têm uma opção para isso: <em>IGMP snooping</em>, <em>multicast enhancement</em> ou <em>mDNS/Bonjour forwarding</em>.</li></ol>
+  </details>
+ </div>
+</section>
+
+<section id="dia-a-dia" class="doc">
+ <div class="wrap">
+  <div class="eyebrow">2 · O dia a dia</div>
+  <h2>Usando o relógio</h2>
+  <p class="section-lead">Tudo se ajusta no painel e <strong>salva sozinho</strong> ao mudar.</p>
+
+  <div class="topic" id="pomodoro"><h3>Pomodoro: focar, pausar, bater a meta</h3>
+   <ol class="steps"><li><p>Abra a aba <strong>Foco</strong> e escolha <em>O que vou fazer no foco</em>: ler, estudar, programar, tarefas ou desenhar. O relógio mostra o objeto da atividade ao lado do tomate.</p></li><li><p>Ajuste os <em>Tempos</em> (foco, pausa curta, pausa longa, pausa longa a cada quantos focos) e a <em>Meta diária de focos</em>. Ligue <em>Iniciar a próxima fase sozinho</em> se quiser que as fases emendem.</p></li><li><p>Toque em <strong>Iniciar/pausar</strong> (ou aperte a barra de espaço no computador). <em>Pular fase</em> avança, <em>Zerar</em> volta ao início. Ao acabar uma fase o tomate pula de alegria.</p></li></ol>
+   <div class="strip n5">
+    <figure><img class="px" src="docs/img/pt-foco.png" width="240" height="240" loading="lazy" alt=""><figcaption>Foco</figcaption></figure>
+    <figure><img class="px" src="docs/img/pt-pausa.png" width="240" height="240" loading="lazy" alt=""><figcaption>Pausa</figcaption></figure>
+    <figure><img class="px" src="docs/img/pt-longa.png" width="240" height="240" loading="lazy" alt=""><figcaption>Pausa longa</figcaption></figure>
+    <figure><img class="px" src="docs/img/pt-pausado.png" width="240" height="240" loading="lazy" alt=""><figcaption>Pausado</figcaption></figure>
+    <figure><img class="px" src="docs/img/pt-fim.png" width="240" height="240" loading="lazy" alt=""><figcaption>Fase concluída</figcaption></figure>
+   </div>
+   <p><strong>Histórico e conquistas:</strong> o relógio guarda um ano de focos por dia. Na aba Foco ficam a sequência de dias na meta, a <em>Horta</em> (cada quadrado é um dia; vermelho = meta batida) e 10 <em>Conquistas</em>. A plantinha ao lado do tomate cresce a cada dia seguido na meta, até o tomate dourado aos 7 dias.</p>
+   <div class="row2">
+    <div><p style="color:var(--muted);font-size:15.5px"><strong style="color:var(--text)">Cartão de compartilhar:</strong> em <em>Compartilhar meu dia</em> o painel desenha um cartão em pixel art com seus focos e sua sequência. No celular, abre o menu de compartilhar.</p></div>
+    <figure class="lcd"><img class="px" src="img/jogo/cartao-pt.png" width="240" height="300" loading="lazy" alt="Cartão do dia em pixel art" style="max-width:240px"></figure>
+   </div>
+  </div>
+
+  <div class="topic" id="mostradores"><h3>Mostradores nativos e a galeria</h3>
+   <p>Na aba <strong>Relógio</strong>, a seção <em>Nativos</em> lista os mostradores que já vêm no firmware: toque em um para usar. <em>Ver no relógio (15 s)</em> testa sem salvar.</p>
+   <img class="px" src="img/mostradores.png" width="1160" height="950" loading="lazy" alt="Os mostradores embutidos" style="border-radius:8px;border:1px solid var(--line);margin:8px 0 14px">
+   <p><strong>Instalar um mostrador novo</strong></p>
+   <ol class="steps"><li><p>Em <em>Relógio → Mais mostradores</em>, toque em <strong>Ver a galeria online</strong> e escolha um (a <a href="galeria.html">galeria</a> tem as prévias).</p></li><li><p>Ou baixe o <code>.json</code> na galeria do site e use <strong>Instalar de um arquivo</strong> no painel (escolha o <code>.json</code> e, se tiver, o <code>.png</code> da prévia).</p></li><li><p>O mostrador fica guardado no relógio, sem gravar o firmware de novo. Alguns pedem uma versão mínima do firmware; o painel avisa.</p></li></ol>
+   <p><strong>Rodízio:</strong> em <em>Trocar de mostrador</em> escolha de quanto em quanto tempo ele muda (1 min a 1 h; <em>Nunca</em> desliga). Depois toque num mostrador e escolha <em>Incluir no rodízio</em> (2 ou mais).</p>
+  </div>
+
+  <div class="topic" id="fotos"><h3>Fotos e GIFs (álbum)</h3>
+   <ol class="steps"><li><p>Na aba <strong>Fotos</strong>, toque em <em>Enviar fotos ou GIFs</em>. As fotos são recortadas para 240×240 no seu navegador antes de ir; os GIFs vão como estão (o ideal é 240×240).</p></li><li><p>Em <em>Relógio → O que mostrar</em> escolha <strong>Álbum de fotos</strong> ou <strong>Alternar relógio e álbum</strong> (e os <em>segundos por item</em>).</p></li><li><p>Na aba Fotos, <em>Mostrar agora</em> exibe uma imagem na hora e <em>Apagar</em> remove.</p></li></ol>
+   <div class="note warn"><p>Se o relógio avisar que falta memória para um GIF, use um GIF menor (240×240, menos quadros). É o limite do chip: o decodificador precisa de cerca de 24 KB livres seguidos.</p></div>
+  </div>
+
+  <div class="topic" id="clima"><h3>Clima e aviso de chuva</h3>
+   <ol class="steps"><li><p>Em <strong>Ajustes → Clima</strong>, ligue <em>Mostrar clima</em>, digite a cidade e toque em <em>Buscar cidade</em>. O clima vem do Open-Meteo, sem cadastro nem chave.</p></li><li><p>Ao escolher a cidade, o <strong>fuso horário</strong> (com horário de verão) acompanha. Se o do relógio não bater, o painel oferece corrigir.</p></li><li><p>Ligue <em>Avisar quando for chover</em>: se a chuva deve começar na próxima hora, o relógio mostra “chuva 15 min” e o tomate abre o guarda-chuva. Use <em>Temperatura em °F</em> se preferir Fahrenheit.</p></li></ol>
+   
+  </div>
+
+  <div class="topic" id="brilho"><h3>Brilho: noturno, pelo sol e cor quente</h3>
+   <ul>
+    <li><strong>Brilho noturno</strong> (Ajustes → Brilho): o relógio escurece à noite, com <em>Brilho à noite</em> no valor que você escolher.</li>
+    <li>Dá para usar horário fixo (<em>Das</em> / <em>Até</em>) ou <strong>Seguir o sol</strong>, do pôr ao nascer do sol da sua cidade. Para isso a cidade precisa estar escolhida em Clima; até lá vale o horário fixo.</li>
+    <li><strong>Cor quente à noite:</strong> a tela perde um pouco do azul junto com o brilho noturno, sem mudar a imagem. O valor 0 desliga, e <em>Ver agora por 15 s</em> mostra o efeito.</li>
+   </ul>
+  </div>
+
+  <div class="topic" id="lcd-verde"><h3>Tom verde dos LCDs</h3>
+   <p>Os mostradores LCD retrô, Previsão LCD e os do mapa-múndi imitam o visor verde de um relógio de pulso. Com um deles em uso, o cartão <em>Mostrador atual</em> ganha a opção <strong>Tom verde nos mostradores LCD</strong>: marque para ligar o tom verde, desmarque para voltar às cores normais. Ele só vale nesses mostradores; as telas de QR sempre ficam em preto e branco.</p>
+  </div>
+
+  <div class="topic" id="alexa"><h3>Alexa e avisos de fim de fase</h3>
+   <ol class="steps"><li><p>Em <strong>Ajustes</strong>, ligue <em>Controlar pela Alexa</em>. Com um Echo na mesma rede, diga <strong>“Alexa, descobrir dispositivos”</strong>: o relógio aparece como <strong>três lâmpadas</strong> (Pomodoro, Pausa e Pausa longa). Não precisa de conta nem de nuvem.</p></li><li><p><strong>Pomodoro:</strong> “ligar” começa ou retoma o foco, “desligar” pausa e, de novo, encerra; “Pomodoro em 40%” foca 40 minutos. <strong>Pausa</strong> e <strong>Pausa longa</strong>: “ligar” começa a pausa, “desligar” volta ao foco.</p></li><li><p>Nas rotinas do app da Alexa dá para usar frases suas, como “Alexa, hora de focar”.</p></li></ol>
+   <p><strong>Para a Alexa falar quando uma fase terminar</strong></p>
+   <ol class="steps"><li><p>Ative a skill <strong>Virtual Smart Home</strong> e crie um <em>URL Routine Trigger</em> em virtualsmarthome.xyz (Voice Monkey e IFTTT também servem).</p></li><li><p>No painel, cole o endereço em <em>Avisar quando o foco terminar</em> e/ou <em>Avisar quando a pausa terminar</em> e toque em <em>Salvar avisos</em>. <em>Testar foco</em> e <em>Testar pausa</em> conferem.</p></li><li><p>No app da Alexa, crie uma rotina que começa com esse gatilho e faz a Alexa dizer “Pomodoro concluído”.</p></li></ol>
+  </div>
+
+  <div class="topic" id="idioma"><h3>Idioma</h3>
+   <p>Em <strong>Ajustes → Idioma</strong> escolha português, inglês ou espanhol. O idioma vale para o painel <strong>e</strong> para a tela do relógio (datas, clima, Pomodoro, o mostrador Palavras).</p>
+  </div>
+ </div>
+</section>
+
+<section id="manutencao" class="doc">
+ <div class="wrap">
+  <div class="eyebrow">3 · Manutenção</div>
+  <h2>Atualizar, guardar e consertar</h2>
+
+  <div class="topic" id="atualizacoes"><h3>Atualizações: estável × versões de teste</h3>
+   <p>Quando há versão nova, o painel avisa e mostra o que mudou. Toque em <strong>Atualizar agora</strong> e espere o relógio reiniciar (não desligue). Também dá para ir em <em>Ajustes → Atualizar firmware</em>. Antes de trocar, o relógio confere o arquivo e recusa um que esteja incompleto ou errado; pela rede ele só aceita firmware assinado deste projeto.</p>
+   <div class="grid two">
+    <div class="card"><h3>Estável</h3><p>O padrão. É o que o botão de download do site entrega e o que o painel oferece. Escolha esta se você só quer o relógio funcionando.</p></div>
+    <div class="card"><h3>Versões de teste</h3><p>Ligando <em>Receber versões de teste</em> (Ajustes), o painel passa a oferecer também as versões de teste, antes de todo mundo. Elas podem ter problemas. Faça o backup antes e só use se souber o <a href="#recuperacao">modo de recuperação</a>. Todas estão em <a href="versoes.html">Versões</a>.</p></div>
+   </div>
+  </div>
+
+  <div class="topic" id="backup"><h3>Backup e restauração</h3>
+   <ol class="steps"><li><p>Em <strong>Ajustes</strong>, toque em <em>Fazer backup</em>. O painel salva no seu aparelho um arquivo <code>smalltv-backup-….json</code> com ajustes, histórico de focos, mostradores baixados, avisos, fotos e GIFs. <strong>Não</strong> leva senhas nem dados do Wi-Fi.</p></li><li><p>Para voltar, toque em <em>Restaurar backup</em> e escolha o arquivo. Os ajustes e o histórico atuais são substituídos. Se algum mostrador não estiver na galeria, instale-o de novo pelo arquivo; fotos que não couberem ficam de fora e o painel avisa.</p></li></ol>
+  </div>
+
+  <div class="topic" id="senha"><h3>Senha do painel</h3>
+   <p>Em <em>Ajustes</em>, <strong>Senha do painel e do /update</strong>: digite uma senha (até 23 caracteres) e <em>Salvar senha</em>. A partir daí o navegador pede o usuário <code>admin</code> e essa senha ao abrir o painel. Campo vazio = sem senha. Para trocar, informe também a senha atual. A Alexa continua funcionando sem senha, porque só consegue iniciar e parar o timer.</p>
+   <p>Esqueceu? Use o <a href="#recuperacao">modo de recuperação</a>.</p>
+  </div>
+
+  <div class="topic" id="diagnostico"><h3>Diagnóstico: o que cada linha significa</h3>
+   <p>Fica no fim da aba <strong>Ajustes</strong>. Se o relógio reiniciar sozinho, o motivo aparece aqui.</p>
+   <table class="diag"><tbody><tr><th>Ligado há</th><td>Há quanto tempo o relógio está ligado sem reiniciar.</td></tr><tr><th>Último reinício</th><td>Por que reiniciou: <em>ligado na tomada</em>, <em>reiniciado pelo próprio relógio</em> (atualização ou ajuste), <em>travou</em> (com o código do erro e o endereço) ou <em>reiniciado por fora</em> (por algo externo ao relógio).</td></tr><tr><th>Última troca de tela</th><td>Quanto tempo a última troca completa de tela levou, em milissegundos.</td></tr><tr><th>Maior parada do relógio</th><td>O maior tempo em que o relógio ficou sem responder, e o motivo (<em>clima</em>, <em>aviso</em> ou <em>outro</em>). Paradas longas e frequentes costumam vir de Wi-Fi ruim.</td></tr><tr><th>Último início</th><td>Quanto cada etapa do ligar demorou: tela, Wi-Fi (“rápido” se reconectou direto), hora e NTP.</td></tr><tr><th>Sinal do Wi-Fi</th><td>Em dBm: <em>bom</em> (−60 ou mais), <em>médio</em> (até −72), <em>fraco</em> (abaixo disso). Abaixo de −75 dBm costuma explicar clima e atualização falhando.</td></tr><tr><th>Memória livre</th><td>A memória do chip agora, a menor desde que ligou, o maior bloco contínuo e a fragmentação. Um bloco pequeno é o que faz um GIF não caber.</td></tr><tr><th>Última queda</th><td>Só aparece se houve uma queda: o número, o motivo, a versão e quanto tempo ele estava ligado. <em>Limpar</em> apaga o registro.</td></tr></tbody></table>
+   <p>Ainda em Ajustes, <em>Ver o que ocupa espaço</em> mostra a memória de arquivos (fotos e GIFs, mostradores baixados, painel, histórico) e deixa apagar o que não precisa. <em>Ajuste anti-fantasma</em> está nas <a href="#faq">perguntas frequentes</a>.</p>
+  </div>
+
+  <div class="topic" id="recuperacao"><h3>Modo de recuperação</h3>
+   <p>Se o relógio travar ou ficar reiniciando (por exemplo depois de uma atualização), ele abre uma rede própria, sem botão:</p>
+   <ol class="steps"><li><p><strong>Desligue e ligue o relógio 3 vezes seguidas</strong>, deixando ligado menos de 30 segundos a cada vez.</p></li><li><p>Na terceira, a tela mostra <em>MODO DE RECUPERAÇÃO</em> com um QR. Entre na rede <code>SmallTV-Recuperacao</code> (o QR leva a senha temporária; a senha também está na tela).</p></li><li><p>Abra <code>http://192.168.4.1</code> (o segundo QR faz isso). Não pede senha. Lá você pode <strong>enviar um firmware</strong>, <strong>voltar os ajustes ao padrão</strong>, <strong>esquecer o Wi-Fi</strong> ou <strong>baixar o histórico de focos</strong>.</p></li><li><p><em>Reiniciar normalmente</em> volta ao relógio.</p></li></ol>
+   <div class="row2">
+    <figure class="lcd"><img class="px" src="docs/img/rec-1.png" width="240" height="240" loading="lazy" alt="Tela do modo de recuperação com o QR da rede"><figcaption>Recuperação, etapa 1/2</figcaption></figure>
+    <figure class="lcd"><img class="px" src="docs/img/rec-2.png" width="240" height="240" loading="lazy" alt="Tela do modo de recuperação com o QR que abre o painel"><figcaption>Recuperação, etapa 2/2</figcaption></figure>
+   </div>
+   <p><strong>A tela nem acende e a recuperação não abre?</strong></p>
+   <p>Dá para regravar por cabo, num adaptador USB-TTL de 3,3 V, <strong>sem perder fotos nem ajustes</strong> (em relógios que já estão na memória 4M2M). Resumo: ligue <code>GND</code>, <code>TXD0→RX</code>, <code>RXD0→TX</code> e <code>GPIO0→GND</code> (só na hora de ligar); faça uma cópia com <code>esptool read_flash 0x0 0x400000</code> e grave com <code>esptool write_flash 0x0 smalltv-pomodoro-vX.Y.Z.bin</code>. <code>erase_flash</code> só em último caso: apaga tudo. Sem adaptador USB-TTL há alternativas (NodeMCU/ESP32, Raspberry Pi, Arduino Uno). Passo a passo com fios, comandos e erros comuns: <a href="https://github.com/davicorrea0/smalltv-pomodoro/blob/main/docs/RECUPERACAO.md">guia de recuperação por cabo</a> (em inglês).</p>
+  </div>
+
+  <div class="topic" id="voltar-original"><h3>Voltar ao firmware original</h3>
+   <ol class="steps"><li><p>Baixe o <code>.bin</code> da GeekMagic em <a href="https://github.com/GeekMagicClock/smalltv-ultra">GeekMagicClock/smalltv-ultra</a>.</p></li><li><p>Abra o <a href="#recuperacao">modo de recuperação</a> (3 liga/desliga) e envie o arquivo por lá. <em>Ajustes → Atualizar firmware</em> não serve: ele só aceita firmware assinado deste projeto.</p></li></ol>
+   <div class="note"><p>O firmware original espera as fotos em outro lugar da memória; as do Pomodoro ficam para trás (ele pode formatar ou reaproveitar a área). Faça o backup antes se quiser guardá-las.</p></div>
+  </div>
+ </div>
+</section>
+
+<section id="faq" class="doc">
+ <div class="wrap">
+  <div class="eyebrow">4 · Perguntas frequentes</div>
+  <h2>Problemas comuns</h2>
+  <div class="faq">
+   <details class="note"><summary>O <code>smalltv.local</code> não abre.</summary><p>Confira se digitou o <code>http://</code> na frente. Se o computador está na rede de 5 GHz, o relógio (sempre no 2,4 GHz) pode não ser visto: ponha o computador no 2,4 GHz ou use o IP que aparece na tela do relógio, de preferência reservado no roteador. No Android, use sempre o IP. Detalhes em <a href="#achar-painel">Achar o painel</a>.</p></details>
+   <details class="note"><summary>O GIF não aparece: “sem memória”.</summary><p>O decodificador de GIF precisa de cerca de 24 KB de memória livre em um bloco só, e o chip tem pouca. Use um GIF de 240×240 com menos quadros ou cores. Em <em>Ajustes → Diagnóstico</em>, o <em>maior bloco</em> mostra quanto há disponível. Reiniciar o relógio costuma liberar.</p></details>
+   <details class="note"><summary>A tela mostra uma imagem fantasma no fundo (VCOM).</summary><p>Acontece quando um mostrador fica parado por muito tempo. Em <em>Ajustes</em>, abra o <strong>Ajuste anti-fantasma</strong> (<em>Tensão do painel</em>), olhe as estampas cinza no relógio de perto e de frente e mova o controle até elas pararem de tremer: nesse ponto o fantasma é o menor. O padrão é 0,850 V. <em>Salvar</em> ou <em>Cancelar</em> no fim.</p></details>
+   <details class="note"><summary>As cores estão erradas, trocadas ou negativas.</summary><p>Em <em>Ajustes → Tela do aparelho</em> use <em>Testar cores no relógio</em>: a primeira barra deve ser vermelha e o fundo preto. Vermelho e azul trocados: mude a <em>Ordem de cor</em>. Fundo branco ou cores em negativo: alterne <em>Inverter cores</em>. Se a imagem aparecer de cabeça para baixo, use <em>Girar 180°</em>.</p></details>
+   <details class="note"><summary>O relógio reiniciou sozinho.</summary><p>Veja o motivo em <em>Ajustes → Diagnóstico → Último reinício</em> (e <em>Última queda</em>, se houver). Uma queda com Wi-Fi <em>fraco</em> costuma melhorar aproximando o relógio do roteador. Se acontecer de novo e de novo, anote o erro e o endereço mostrados e <a href="https://github.com/davicorrea0/smalltv-pomodoro/issues">abra um aviso no GitHub</a>. Se ele não sobe mais, use o <a href="#recuperacao">modo de recuperação</a>.</p></details>
+   <details class="note"><summary>A atualização da 1.24 apagou minhas fotos. Era para ser assim?</summary><p>Sim, uma vez só. A primeira versão no novo layout de memória (4M2M, que dá mais espaço ao programa) formata a memória de arquivos no primeiro início: fotos, GIFs e mostradores baixados são apagados; ajustes, senha, Wi-Fi, histórico, rodízio e avisos ficam. Antes de atualizar o painel avisa e salva um backup completo no seu aparelho: depois da atualização, use <em>Restaurar backup</em> com o arquivo <code>smalltv-backup-*.json</code> dos downloads. Se atualizou por outro caminho e não tem backup, as fotos precisam ser enviadas de novo.</p></details>
+   <details class="note"><summary>O relógio não entra no Wi-Fi.</summary><p>Confirme que a rede é de <strong>2,4 GHz</strong> e que a senha está certa. Para escolher outra rede, use <em>Ajustes → Resetar Wi-Fi</em> (no painel) ou <em>esquecer o Wi-Fi</em> no <a href="#recuperacao">modo de recuperação</a>: o relógio reinicia e abre a configuração com QR de novo.</p></details>
+   <details class="note"><summary>Clima ou atualização falham.</summary><p>Veja o <em>Sinal do Wi-Fi</em> no Diagnóstico: abaixo de −75 dBm é o motivo mais comum. Aproxime o relógio do roteador e confira se a cidade está escolhida em Clima.</p></details>
+  </div>
+ </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-bottom">
+      <img class="px" src="img/tomate.svg" alt="">
+      <span>SmallTV Pomodoro · feito por Davi Mattos</span>
+      <div class="links">
+        <a href="./">Início</a>
+        <a href="https://github.com/davicorrea0/smalltv-pomodoro"><span class="gh" aria-hidden="true"></span>Código no GitHub</a>
+        <a href="versoes.html">Versões</a>
+        <a href="en/docs.html" hreflang="en">English</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
