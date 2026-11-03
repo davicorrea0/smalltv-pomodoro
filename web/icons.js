@@ -115,11 +115,15 @@ const I = {
   },
 };
 // opção B de "ajustes" (controles deslizantes), só na folha
-const EXTRA = { ajustesb: () => {
-  const g = new G(), kn = [[9, 2], [3, 6], [7, 10]];
-  g.add((x, y, X, Y) => kn.some(([a, b]) => X >= a && X < a + 4 && Y >= b && Y < b + 4));
-  for (const y of [3, 7, 11]) for (let x = 1; x <= 14; x++) if (!g.in(x, y) && !g.in(x, y + 1)) g.put('d', [[x, y], [x, y + 1]]);
-  return g } };
+const EXTRA = {
+  // B: controles deslizantes, ainda mais legível que a engrenagem (três trilhos de 2 px; o botão é um miolo 2x2 que, com o contorno, fecha 4x4)
+  ajustesb: () => {
+    const g = new G(), kn = [[9, 3], [3, 7], [7, 11]];
+    g.add((x, y, X, Y) => kn.some(([a, b]) => X >= a && X < a + 2 && Y >= b && Y < b + 2));
+    for (const [kx, y] of kn) for (let x = 1; x <= 14; x++) if (x < kx - 1 || x > kx + 2) g.put('d', [[x, y], [x, y + 1]]);
+    return g;
+  },
+};
 Object.assign(I, EXTRA);
 const ids = Object.keys(I).filter(k => !EXTRA[k]), sheetIds = Object.keys(I);
 function rects(rows, set) {
