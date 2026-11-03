@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://davicorrea0.github.io/smalltv-pomodoro/</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://davicorrea0.github.io/smalltv-pomodoro/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://davicorrea0.github.io/smalltv-pomodoro/en/"/>
+  </url>
+  <url>
+    <loc>https://davicorrea0.github.io/smalltv-pomodoro/en/</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://davicorrea0.github.io/smalltv-pomodoro/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://davicorrea0.github.io/smalltv-pomodoro/en/"/>
+  </url>
+  <url>
+    <loc>https://davicorrea0.github.io/smalltv-pomodoro/galeria.html</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://davicorrea0.github.io/smalltv-pomodoro/galeria.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://davicorrea0.github.io/smalltv-pomodoro/en/gallery.html"/>
+  </url>
+  <url>
+    <loc>https://davicorrea0.github.io/smalltv-pomodoro/en/gallery.html</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://davicorrea0.github.io/smalltv-pomodoro/galeria.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://davicorrea0.github.io/smalltv-pomodoro/en/gallery.html"/>
+  </url>
+  <url>
+    <loc>https://davicorrea0.github.io/smalltv-pomodoro/docs.html</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://davicorrea0.github.io/smalltv-pomodoro/docs.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://davicorrea0.github.io/smalltv-pomodoro/en/docs.html"/>
+  </url>
+  <url>
+    <loc>https://davicorrea0.github.io/smalltv-pomodoro/en/docs.html</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://davicorrea0.github.io/smalltv-pomodoro/docs.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://davicorrea0.github.io/smalltv-pomodoro/en/docs.html"/>
+  </url>
+  <url>
+    <loc>https://davicorrea0.github.io/smalltv-pomodoro/versoes.html</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://davicorrea0.github.io/smalltv-pomodoro/versoes.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://davicorrea0.github.io/smalltv-pomodoro/en/releases.html"/>
+  </url>
+  <url>
+    <loc>https://davicorrea0.github.io/smalltv-pomodoro/en/releases.html</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://davicorrea0.github.io/smalltv-pomodoro/versoes.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://davicorrea0.github.io/smalltv-pomodoro/en/releases.html"/>
+  </url>
+  <url>
+    <loc>https://davicorrea0.github.io/smalltv-pomodoro/jogo.html</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://davicorrea0.github.io/smalltv-pomodoro/jogo.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://davicorrea0.github.io/smalltv-pomodoro/en/game.html"/>
+  </url>
+  <url>
+    <loc>https://davicorrea0.github.io/smalltv-pomodoro/en/game.html</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://davicorrea0.github.io/smalltv-pomodoro/jogo.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://davicorrea0.github.io/smalltv-pomodoro/en/game.html"/>
+  </url>
+</urlset>

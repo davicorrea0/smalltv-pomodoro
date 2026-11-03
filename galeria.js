@@ -90,6 +90,8 @@
 
   function fill(id) {
     var grid = document.getElementById(id);
+    // o HTML estático (gerado no build, para os buscadores) fica até a lista chegar; depois o JS refaz tudo, com os filtros
+    if (!lists[id].length && grid.querySelector(".face")) return grid.querySelectorAll(".face").length;
     var list = lists[id].filter(match);
     grid.textContent = "";
     list.forEach(function (f) { grid.appendChild(card(f)); });
@@ -154,6 +156,7 @@
 
   function soon() {
     var grid = document.getElementById("packs");
+    if (grid.querySelector(".face")) return;
     grid.textContent = "";
     var box = el("div", "soon");
     var img = new Image(64, 64);

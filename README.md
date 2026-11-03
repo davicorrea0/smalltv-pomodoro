@@ -4,7 +4,10 @@ Branch `gh-pages`: o site publicado em https://davicorrea0.github.io/smalltv-pom
 (em inglês: https://davicorrea0.github.io/smalltv-pomodoro/en/).
 O firmware está na branch [`main`](https://github.com/davicorrea0/smalltv-pomodoro).
 
-Site estático, sem etapa de build: edite os arquivos e faça push.
+Site estático: edite os arquivos e faça push. Uma parte é gerada pelo repositório principal (`scripts/site-seo.cjs`,
+rodado pelo `scripts/publicar.sh`; `scripts/releases-page.cjs` gera as páginas de versões): `faces.js`, `sitemap.xml`, o bloco
+`<!-- seo: ... -->` do `<head>` de todas as páginas (title, description, canonical, hreflang, Open Graph, Twitter, JSON-LD) e o que
+estiver entre `<!--g:NOME-->` e `<!--/g-->` (versão, contagens e os cartões estáticos da galeria). Não edite essas partes à mão: a próxima publicação as reescreve.
 
 | Arquivo | Conteúdo |
 |---|---|
@@ -12,7 +15,8 @@ Site estático, sem etapa de build: edite os arquivos e faça push.
 | `galeria.html`, `en/gallery.html` + `galeria.js` | Galeria: mostradores novos (catálogo) e embutidos |
 | `docs.html`, `en/docs.html` | Docs ("Como usar"): primeiros passos, dia a dia, manutenção e perguntas frequentes. Imagens em `docs/img/` (telas do simulador) |
 | `jogo.html`, `en/game.html` | Jogo do foco (v1.8): sequência, planta, horta, conquistas e cartão do dia. Imagens em `img/jogo/` (telas do simulador e o cartão desenhado pelo código do painel) |
-| `faces.js` | Os mostradores embutidos (mesma ordem de `faces_list.h` na `main`), com nomes em PT e EN |
+| `faces.js` | Os mostradores embutidos (mesma ordem de `faces_list.h` na `main`), com nomes em PT e EN (gerado) |
+| `sitemap.xml` | Páginas em PT e EN para os buscadores (gerado; enviar no Google Search Console) |
 | `catalog/` | Pacotes de mostradores instaláveis e `index.json` (formato em `catalog/README.md`) |
 | `firmware/` | `latest.json` + `smalltv-pomodoro.bin`: o painel do relógio (v1.8.0+) lê daqui para avisar e instalar atualizações. Formato em `firmware/README.md` |
 | `img/` | Imagens copiadas de `docs/` da `main`; `img/icons/` são ícones em pixel art (SVG) feitos dos sprites de `assets/` |

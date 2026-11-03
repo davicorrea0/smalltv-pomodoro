@@ -3,14 +3,31 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- seo: gerado por scripts/site-seo.cjs (repositório principal); não edite à mão -->
 <title>SmallTV Pomodoro — firmware for the GeekMagic SmallTV Ultra</title>
-<meta name="description" content="Open source alternative firmware for the GeekMagic SmallTV Ultra desk clock: 11 clock faces plus installable ones, a Pomodoro timer with a tomato mascot, keyless weather, photo album and a web panel.">
-<meta property="og:title" content="SmallTV Pomodoro">
-<meta property="og:description" content="Alternative firmware for the GeekMagic SmallTV Ultra: clock faces, a Pomodoro timer with a tomato mascot, weather and photo album.">
-<meta property="og:image" content="https://davicorrea0.github.io/smalltv-pomodoro/img/mostradores.png">
-<meta name="theme-color" content="#0b0d10">
+<meta name="description" content="Open source firmware for the GeekMagic SmallTV Ultra desk clock: 13 built-in clock faces and 41 installable ones, a Pomodoro timer with a tomato mascot, keyless weather, photo album and a web panel.">
+<link rel="canonical" href="https://davicorrea0.github.io/smalltv-pomodoro/en/">
 <link rel="alternate" hreflang="pt-BR" href="https://davicorrea0.github.io/smalltv-pomodoro/">
 <link rel="alternate" hreflang="en" href="https://davicorrea0.github.io/smalltv-pomodoro/en/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="SmallTV Pomodoro">
+<meta property="og:title" content="SmallTV Pomodoro — firmware for the GeekMagic SmallTV Ultra">
+<meta property="og:description" content="Open source firmware for the GeekMagic SmallTV Ultra desk clock: 13 built-in clock faces and 41 installable ones, a Pomodoro timer with a tomato mascot, keyless weather, photo album and a web panel.">
+<meta property="og:url" content="https://davicorrea0.github.io/smalltv-pomodoro/en/">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="pt_BR">
+<meta property="og:image" content="https://davicorrea0.github.io/smalltv-pomodoro/img/mostradores.png">
+<meta property="og:image:width" content="1160">
+<meta property="og:image:height" content="950">
+<meta property="og:image:alt" content="SmallTV Pomodoro clock faces on the GeekMagic SmallTV Ultra">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="SmallTV Pomodoro — firmware for the GeekMagic SmallTV Ultra">
+<meta name="twitter:description" content="Open source firmware for the GeekMagic SmallTV Ultra desk clock: 13 built-in clock faces and 41 installable ones, a Pomodoro timer with a tomato mascot, keyless weather, photo album and a web panel.">
+<meta name="twitter:image" content="https://davicorrea0.github.io/smalltv-pomodoro/img/mostradores.png">
+<meta name="twitter:image:alt" content="SmallTV Pomodoro clock faces on the GeekMagic SmallTV Ultra">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","@id":"https://davicorrea0.github.io/smalltv-pomodoro/#site","name":"SmallTV Pomodoro","url":"https://davicorrea0.github.io/smalltv-pomodoro/en/","description":"Open source firmware for the GeekMagic SmallTV Ultra desk clock: 13 built-in clock faces and 41 installable ones, a Pomodoro timer with a tomato mascot, keyless weather, photo album and a web panel.","inLanguage":"en","publisher":{"@type":"Person","name":"Davi Mattos","url":"https://github.com/davicorrea0"}},{"@type":"SoftwareSourceCode","@id":"https://davicorrea0.github.io/smalltv-pomodoro/#codigo","name":"SmallTV Pomodoro","url":"https://davicorrea0.github.io/smalltv-pomodoro/en/","description":"Open source firmware for the GeekMagic SmallTV Ultra desk clock: 13 built-in clock faces and 41 installable ones, a Pomodoro timer with a tomato mascot, keyless weather, photo album and a web panel.","codeRepository":"https://github.com/davicorrea0/smalltv-pomodoro","license":"https://www.gnu.org/licenses/gpl-3.0.html","programmingLanguage":["C++","JavaScript"],"runtimePlatform":"ESP8266","version":"1.24.9","dateModified":"2026-11-03","author":{"@type":"Person","name":"Davi Mattos","url":"https://github.com/davicorrea0"},"inLanguage":"en","isPartOf":{"@id":"https://davicorrea0.github.io/smalltv-pomodoro/#site"}}]}</script>
+<!-- /seo -->
+<meta name="theme-color" content="#0b0d10">
 <link rel="icon" href="../img/tomate.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -73,8 +90,8 @@
       </div>
     </div>
     <figure class="shot" style="margin-top:14px">
-      <img class="px" src="../img/mostradores.png" alt="The 11 built-in faces: Matrix, Tomato, Analog, Weather, Neon, Flip, Retro LCD, Words, Forecast, Forecast cards and Forecast LCD" width="1160" height="950" loading="lazy">
-      <figcaption>The 11 built-in faces. Images rendered by the project's simulator, which compiles the same drawing code as the firmware.</figcaption>
+      <img class="px" src="../img/mostradores.png" alt="Built-in faces: Matrix, Tomato, Analog, Weather, Neon, Flip, Retro LCD, Words, Forecast, Forecast cards and Forecast LCD" width="1160" height="950" loading="lazy">
+      <figcaption>Some of the <!--g:builtin-->13<!--/g--> built-in faces. Images rendered by the project's simulator, which compiles the same drawing code as the firmware.</figcaption>
     </figure>
   </div>
 </section>
@@ -83,9 +100,9 @@
   <div class="wrap">
     <div class="eyebrow">New gallery</div>
     <h2>New clock faces to install</h2>
-    <p class="section-lead">Besides the 11 built-in faces, there is a gallery of faces that don't ship with the firmware: Bento, Synthwave, Terminal, Aquarium, Station and more. Each one is a small file the clock installs without reflashing.</p>
+    <p class="section-lead">Besides the <!--g:builtin-->13<!--/g--> built-in faces, there is a gallery of faces that don't ship with the firmware: Bento, Synthwave, Terminal, Aquarium, Station and more. Each one is a small file the clock installs without reflashing.</p>
     <div class="shelf" id="shelf"><div class="ph"></div><div class="ph"></div><div class="ph"></div><div class="ph"></div></div>
-    <a class="btn primary" href="gallery.html">Open the gallery (<span id="shelf-count">…</span> new)</a>
+    <a class="btn primary" href="gallery.html">Open the gallery (<span id="shelf-count"><!--g:catalog-->41<!--/g--></span> new)</a>
   </div>
 </section>
 
@@ -98,7 +115,7 @@
       <div class="row">
         <div class="topic">Clock faces</div>
         <div class="was">Factory themes</div>
-        <div class="now">11 built-in faces plus a <a href="gallery.html">gallery of new ones</a> to install; previews in the panel, and "Ver no relógio" (show on clock) tries one for 15 s without saving</div>
+        <div class="now"><!--g:builtin-->13<!--/g--> built-in faces plus a <a href="gallery.html">gallery of new ones</a> to install; previews in the panel, and "Ver no relógio" (show on clock) tries one for 15 s without saving</div>
       </div>
       <div class="row">
         <div class="topic">Focus</div>
@@ -144,7 +161,7 @@
     <h2>Features</h2>
     <p class="section-lead">It all fits in about 520 KB (390 KB compressed) and runs on the clock itself. Screens and panel in Portuguese, English or Spanish.</p>
     <div class="grid three">
-      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/relogio.svg" alt=""></span>11 clock faces</h3><p>Matrix, Tomato, Analog, Weather, Neon, Flip (with a real flipping animation), Retro LCD, Words (the time spelled out) Forecast (the next 5 days), Forecast cards and Forecast LCD.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/relogio.svg" alt=""></span><!--g:builtin-->13<!--/g--> clock faces</h3><p>Matrix, Tomato, Analog, Weather, Neon, Flip (with a real flipping animation), Retro LCD, Words (the time spelled out) Forecast (the next 5 days), Forecast cards, Forecast LCD, World (a world map with day and night) and World watch.</p></div>
       <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/focado.svg" alt=""></span>Pomodoro with a mascot</h3><p>The tomato focuses, relaxes with a coffee on breaks, sleeps while the timer is paused and jumps for joy when a phase ends.</p></div>
       <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/livro.svg" alt=""></span>Focus activity</h3><p>Pick what you're doing in the panel: reading, studying, coding, chores or drawing. The screen shows the activity's object next to the tomato.</p></div>
       <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/sol.svg" alt=""></span>Weather</h3><p>From <a href="https://open-meteo.com/">Open-Meteo</a>, no sign-up or API key. In °C or °F. Warns you when rain is about to start within the hour. In the rain the tomato opens an umbrella; in the cold it wears a scarf; in the heat, sunglasses.</p></div>
@@ -159,7 +176,7 @@
 
 <section id="new">
   <div class="wrap">
-    <div class="eyebrow">New in v1.19 (current: v1.19.5)</div>
+    <div class="eyebrow">New in v1.19 (current: v<!--g:version-->1.24.9<!--/g-->)</div>
     <h2><span class="h-ico"><img class="px" src="../img/icons/nuvem.svg" alt=""></span>Rain warning, °F and more security</h2>
     <div class="grid three">
       <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/nuvem.svg" alt=""></span>Rain is coming</h3><p>When rain should start within the next hour, the screen shows “rain 15 min” and the tomato opens its umbrella. It uses Open-Meteo's 15-minute forecast. Turn it on or off in <strong>Settings → Weather</strong>.</p></div>
@@ -332,7 +349,7 @@
   </div>
 </footer>
 
-<script src="../faces.js?v=4"></script>
+<script src="../faces.js?v=0b04f8b5"></script>
 <script src="../site.js?v=7"></script>
 </body>
 </html>
