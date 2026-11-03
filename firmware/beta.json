@@ -1,39 +1,30 @@
 {
-  "version": "1.24.8",
-  "date": "2026-11-02",
+  "version": "1.24.9",
+  "date": "2026-11-03",
   "file": "beta/smalltv-pomodoro.bin",
-  "size": 583600,
+  "size": 583760,
   "notes": {
     "pt": [
-      "⚠️ ATENÇÃO: VERSÃO DE TESTE QUE PODE QUEBRAR O APARELHO. Ela muda as telas de configuração e de recuperação e ainda não foi testada num relógio. Só instale se souber usar o modo de recuperação e, de preferência, tiver um cabo USB-TTL para regravar. Faça o backup antes",
-      "Configuração por QR code: sem Wi-Fi, a tela mostra um QR que conecta o celular à rede do relógio e, depois, um segundo QR que abre a página de configuração. A rede, a senha e o endereço continuam escritos na tela",
-      "O modo de recuperação também ganha os dois QR codes. O QR é gerado no próprio relógio e nunca contém a senha do Wi-Fi da sua casa",
-      "O tom verde de LCD agora segue a tela que está à mostra: some no Pomodoro, nas fotos e nas mensagens, e continua nos LCDs, no Mundo e no Mundo relógio",
-      "Filtro na lista de mostradores do painel: Todos, Nativos, Baixados, Animados e estilos (Digital, Pixel art, Analógico, Retrô, Esportivo), que vale também para a galeria online",
-      "smalltv.local abre mais rápido e com mais confiança no Windows: o relógio agora responde também à pergunta de IPv6 e sempre pela rede inteira"
+      "⚠️ VERSÃO DE TESTE. Faça o backup antes e só instale se souber usar o modo de recuperação (desligar e ligar 3 vezes seguidas, menos de 30 s cada)",
+      "smalltv.local passa a funcionar também com o computador na rede de 5 GHz: o relógio, que fica no 2,4 GHz, agora manda a resposta também para a rede inteira, e não só pelo caminho que alguns roteadores não repassam entre as duas faixas",
+      "Se ainda falhar, o README explica como reservar o IP do relógio no roteador e abrir pelo IP, o caminho que sempre funciona (inclusive no Android)"
     ],
     "en": [
-      "⚠️ WARNING: TEST VERSION THAT MAY BREAK THE DEVICE. It changes the setup and recovery screens and has not been tested on a clock yet. Only install it if you know how to use recovery mode and, ideally, have a USB-TTL cable to reflash. Make the backup first",
-      "QR code setup: without Wi-Fi, the screen shows a QR that connects your phone to the clock's network and then a second QR that opens the setup page. The network, password and address are still written on the screen",
-      "Recovery mode also gets the two QR codes. The QR is generated on the clock itself and never contains your home Wi-Fi password",
-      "The old-LCD green tint now follows the screen being shown: it goes away on the Pomodoro, photos and messages, and stays on the LCD faces, World and World watch",
-      "Filter in the panel face list: All, Built-in, Downloaded, Animated and styles (Digital, Pixel art, Analog, Retro, Sporty), also applied to the online gallery",
-      "smalltv.local opens faster and more reliably on Windows: the clock now also answers the IPv6 question and always to the whole network"
+      "⚠️ TEST VERSION. Make the backup first and only install it if you know how to use recovery mode (power off and on 3 times in a row, less than 30 s each)",
+      "smalltv.local now also works with the computer on the 5 GHz network: the clock, which stays on 2.4 GHz, now also sends its answer to the whole network, not only through the path some routers do not pass between the two bands",
+      "If it still fails, the README explains how to reserve the clock's IP in the router and open it by IP, the path that always works (Android included)"
     ],
     "es": [
-      "⚠️ ATENCIÓN: VERSIÓN DE PRUEBA QUE PUEDE ROMPER EL APARATO. Cambia las pantallas de configuración y de recuperación y aún no se probó en un reloj. Instálala solo si sabes usar el modo de recuperación y, de preferencia, tienes un cable USB-TTL para regrabar. Haz la copia antes",
-      "Configuración por código QR: sin Wi-Fi, la pantalla muestra un QR que conecta el celular a la red del reloj y luego un segundo QR que abre la página de configuración. La red, la clave y la dirección siguen escritas en la pantalla",
-      "El modo de recuperación también tiene los dos códigos QR. El QR se genera en el propio reloj y nunca contiene la clave del Wi-Fi de tu casa",
-      "El tono verde de LCD ahora sigue la pantalla que se muestra: desaparece en el Pomodoro, las fotos y los mensajes, y sigue en los LCD, Mundo y Mundo reloj",
-      "Filtro en la lista de esferas del panel: Todas, Nativas, Descargadas, Animadas y estilos (Digital, Pixel art, Analógico, Retro, Deportivo), también en la galería en línea",
-      "smalltv.local abre más rápido y con más fiabilidad en Windows: el reloj ahora también responde la pregunta de IPv6 y siempre a toda la red"
+      "⚠️ VERSIÓN DE PRUEBA. Haz la copia antes e instálala solo si sabes usar el modo de recuperación (apagar y encender 3 veces seguidas, menos de 30 s cada vez)",
+      "smalltv.local ahora también funciona con la computadora en la red de 5 GHz: el reloj, que está en 2,4 GHz, ahora también envía la respuesta a toda la red, y no solo por el camino que algunos routers no pasan entre las dos bandas",
+      "Si aún falla, el README explica cómo reservar la IP del reloj en el router y abrirlo por la IP, el camino que siempre funciona (también en Android)"
     ]
   },
   "gz": "beta/smalltv-pomodoro.bin.gz",
-  "gzsize": 429962,
+  "gzsize": 430082,
   "layout": "4m2m",
   "panel": "panel-68380550f5626f4cf9b60e16.html.gz",
   "psri": "sha256-aDgFUPVib0z5tg4W4X3nvyMgqommbEQRwN/UU182pQY=",
-  "sig": "aS1/TLtvJgHVjT+PqYjNSO9Iqq8HQ1YExEKjnzPFeJuGGz64l5VN4WTNlamwNEapzTo2yRktPvRDKpTjE/irv1e3TyVQaJFTRxvdLw9rv6FiCYd/8d2+bRnUpYyd3WqW/IkGPLP0Z45W8rVlqhzpQoQK0uZVZz6XNoKSsNils4KSs4q6F9Hxy6bT4oLyV7Rd5orpv9n7d1mA99fVccJOz83q96eSoc760y6l8UlR95SdUv0GVVNJANl0mocSW2FI3xp5rocbWqzCOqjfF6l4+K2OJk80Ym5/WvWrTjyTqVC19iLlXGweVDzuTHd+rtVZE+sXrp2gHRcU6gm3lGSbmg==",
-  "gzsig": "tLe5SFq+d1XBY/kbASmOlYN3Fmrh1kkYjz9tZu7Df3cM/r729yhMM+RLSZpmZKG2E3y1j/G/LDASt+tTyyr6hnJRx4b1S7xqgVbYDX/0Z4TMg081OUSMP9ekDcUh4o3cvxckO4lAqD6lDFP1a2IZqqO9ldR012kZXD/oQs0XTOMHvTW8N7jvA1L95gKuuDAjBF3OPJB/PeT79FPKVtpYhf2ikOqykNSggkD+Xc2I/Bd9Y90LE9nusVdTs/Vqlyz9cz0lhpo7xakUPanCIteB3BNoEFec8l+a0HGZh3HdgQPlcGhnWNpu+NdOHYj02RWu/mViXc975bwT7OVZUcUicA=="
+  "sig": "HwqE/booY8Qc2/JJEvr2Uu1SlwI+Y+gJan9WN+7FIeIpCLf4kVJzM6AXqnBdvfOnDvjZhYYtKgZvWnkW759NrcwEzu8FAC0TZvx5KLmovuVv1QtFA8fyLJ49Q8v6HPmWuhuMVVJoC2+x9zwwaB7vrbEMD8GpaA8OhtiMk9/nE1wEJk2RObJHee0Gm5HjXqfbtTNlXSNXbJya+IuHvG7xt5FMAfEzvjFVua3vZVK+W7xqfgiMdNxAa9ahIK7IKPQDtJRBj7jsj5/m0yfT9CmvJwiqERjP8TJsaQKBCewKIu5MR7jw8sPI0o5TxUsyhS2EDvvW/Anxc03v3kBG0rRJlA==",
+  "gzsig": "ndjbeAIEW0DxZhdrgnhn7YLfrbOJNUM461Gw6ojP8N8XFsqXE6kUUNSJv5DzgdF2uJjDXfiYeL4AshAqNOurPdtAl1FpSVNlrB0RTO9G2zQLlnIxel98RblvZEJuygRK4Y25V0mvXuKwL8b4DwEoSa9Ksjk2sExg8T1BOrivHAji7jBexz5X4jt7hpI/ITqoN62T+N5c2fgYSAhrR8vSitTxVa87c7iyDNtpn6JHwZFzIFcSIHSOWnTplD+xkJKojiEglJD2UC8BpSqjbGUoAR+kyXxoYhcnAWIpJAfO2rP3S4ahL/RqmSok6aDsuU2bCtQOYkviAKCYPJ2teFhKDg=="
 }
