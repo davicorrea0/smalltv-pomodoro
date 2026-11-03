@@ -2,6 +2,7 @@
 // e o contorno de 1 px sai sozinho em volta da forma, então contorno e miolo vêm do mesmo desenho.
 // Rode `node web/icons.js`: reescreve o bloco de ícones de web/index.html (sprite SVG de <symbol>, usados com
 // <use>) e gera web/out/icones.html (folha de conferência, nos dois estados).
+// (b azul e y amarelo: toques de cor da paleta)
 // Camadas (classe no SVG): @ contorno (sempre) | o miolo, só ativo (.f) | h brilho, só ativo (.w)
 //   d detalhe: linha no inativo, creme no ativo (.k) | x creme só no ativo (.c) | g folha verde (.v)
 // Cores (CSS no painel): inativo = só linhas na cor secundária; ativo (.on) = vermelho do tomate, contorno mais
@@ -56,24 +57,19 @@ const I = {
     return g;
   },
   ajustes: () => {
-    const g = new G().add((x, y) => {
-      const dx = x - 8, dy = y - 8, r = Math.hypot(dx, dy);
-      if (r <= 4.7) return true;
-      if (r > 7.1) return false;
-      const a = (Math.atan2(dy, dx) * 180 / Math.PI + 360) % 45, d = Math.min(a, 45 - a);
-      return d < 9.5;
-    });
-    g.del(disc(8, 8, 2.5)); g.put('x', [[7, 7], [8, 7], [7, 8], [8, 8]]);
+    const g = new G().add(or(disc(8, 8, 4.7), box(7, 1, 8, 4), box(7, 11, 8, 14), box(1, 7, 4, 8), box(11, 7, 14, 8),
+      box(3, 3, 4, 4), box(11, 3, 12, 4), box(3, 11, 4, 12), box(11, 11, 12, 12)));
+    g.del(box(6, 6, 9, 9)); g.put('x', [[7, 7], [8, 7], [7, 8], [8, 8]]);
     return g;
   },
   zerar: () => {
     const g = new G().add((x, y) => {
-      const dx = x - 8, dy = y - 9, r = Math.hypot(dx, dy);
-      if (r < 4.3 || r > 6.3) return false;
+      const dx = x - 8, dy = y - 8.5, r = Math.hypot(dx, dy);
+      if (r < 4.4 || r > 6.3) return false;
       const a = Math.atan2(dy, dx) * 180 / Math.PI;
-      return !(a > -88 && a < -18);
+      return !(a > -90 && a < -5);
     });
-    const head = [[7, 1], [8, 1], [7, 2], [8, 2], [9, 2], [10, 2], [7, 3], [8, 3], [9, 3], [10, 3], [11, 3], [12, 3], [7, 4], [8, 4], [9, 4], [10, 4], [7, 5], [8, 5]];
+    const head = [[7, 1], [8, 1], [7, 2], [8, 2], [9, 2], [10, 2], [7, 3], [8, 3], [9, 3], [10, 3], [11, 3], [12, 3], [7, 4], [8, 4], [9, 4], [10, 4], [11, 4], [12, 4], [7, 5], [8, 5], [9, 5], [10, 5], [7, 6], [8, 6]];
     g.add(inSet(head)); g.put('x', head);
     return g;
   },
@@ -104,11 +100,11 @@ const I = {
     return g;
   },
   desenhar: () => {
-    const g = new G().add(ell(6.8, 9.4, 5.9, 5.5)).del(disc(9.2, 12.4, 1.7));
-    g.rect('d', 3, 8, 4, 9).rect('d', 6, 6, 7, 7).rect('g', 9, 7, 10, 8);
+    const g = new G().add(ell(7, 9.5, 6.2, 5.2)).del(disc(10.3, 13.2, 1.9));
+    g.rect('y', 2, 9, 3, 10).rect('b', 4, 6, 5, 7).rect('g', 7, 8, 8, 9).rect('d', 3, 12, 4, 13);
     const br = [];
-    for (let k = 0; k < 5; k++) br.push([14 - k, k], [13 - k, k], [14 - k, k + 1]);
-    g.add(inSet(br)); g.put('x', [[10, 4], [9, 4], [10, 3]]);
+    for (let k = 0; k < 6; k++) br.push([14 - k, 1 + k], [13 - k, 1 + k]);
+    g.add(inSet(br)); g.put('d', br); g.put('y', [[9, 6], [8, 6]]);
     return g;
   },
 };
@@ -123,7 +119,7 @@ function rects(rows, set) {
 const all = ids.map(k => {
   const rows = I[k]().rows(), P = (cls, set) => { const d = rects(rows, set); return d ? `<path${cls ? ` class="${cls}"` : ''} d="${d}"/>` : '' };
   if (process.argv[2] == '-v') console.log(k + '\n' + rows.join('\n'));
-  return `<symbol id="i-${k}" viewBox="0 0 16 16">${P('f', 'o') + P('w', 'h') + P('c', 'x') + P('k', 'd') + P('v', 'g') + P('', '@')}</symbol>`;
+  return `<symbol id="i-${k}" viewBox="0 0 16 16">${P('f', 'o') + P('w', 'h') + P('c', 'x') + P('k', 'd') + P('v', 'g') + P('b', 'b') + P('y', 'y') + P('', '@')}</symbol>`;
 });
 const block = `<!--icons-->\n<svg width="0" height="0" style="position:absolute" aria-hidden="true">${all.join('')}</svg>\n<!--/icons-->`;
 const f = path.join(__dirname, 'index.html');
