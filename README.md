@@ -10,6 +10,7 @@ Site estático, sem etapa de build: edite os arquivos e faça push.
 |---|---|
 | `index.html`, `en/index.html` | Explicação, instalação, downloads e créditos (PT e EN) |
 | `galeria.html`, `en/gallery.html` + `galeria.js` | Galeria: mostradores novos (catálogo) e embutidos |
+| `docs.html`, `en/docs.html` | Docs ("Como usar"): primeiros passos, dia a dia, manutenção e perguntas frequentes. Imagens em `docs/img/` (telas do simulador) |
 | `jogo.html`, `en/game.html` | Jogo do foco (v1.8): sequência, planta, horta, conquistas e cartão do dia. Imagens em `img/jogo/` (telas do simulador e o cartão desenhado pelo código do painel) |
 | `faces.js` | Os mostradores embutidos (mesma ordem de `faces_list.h` na `main`), com nomes em PT e EN |
 | `catalog/` | Pacotes de mostradores instaláveis e `index.json` (formato em `catalog/README.md`) |

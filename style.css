@@ -432,3 +432,51 @@ section[data-kind].first { border-top: 0; padding-top: 16px; }
 .tag.bad { color: #ffc43d; border-color: rgba(255, 196, 61, 0.5); }
 .face .title .tag + .tag { margin-left: 0; }
 .tag.anim { color: var(--green); border-color: rgba(96, 196, 84, 0.45); }
+
+/* ---------- Docs (Como usar) ---------- */
+.toc { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0 6px; }
+.toc a {
+  border: 1px solid var(--line); background: var(--card); color: var(--muted);
+  border-radius: 6px; padding: 8px 14px; font: 600 14px var(--sans); text-decoration: none;
+}
+.toc a:hover { color: var(--text); background: var(--card-2); }
+.doc h2 { margin-top: 0; }
+.doc h3.sub { margin: 30px 0 10px; font-size: 1.25rem; }
+.doc .steps { margin: 12px 0 16px; }
+.doc .steps > li p { color: var(--text); }
+.doc .steps > li p.m { color: var(--muted); }
+.doc .topic { margin: 0 0 14px; }
+.doc .topic > h3 { margin-bottom: 6px; }
+.doc .topic > p, .doc .topic > ul { color: var(--muted); font-size: 15.5px; }
+.doc .topic strong { color: var(--text); }
+.doc .topic ul { padding-left: 20px; margin: 0 0 1em; }
+.doc .topic li { margin-bottom: 4px; }
+.doc .card h3 { margin-bottom: 8px; }
+.doc .note { margin: 14px 0; }
+.doc .note p { margin: 0 0 6px; }
+.doc .note p:last-child { margin: 0; }
+.doc .row2 { display: grid; gap: 14px; margin: 14px 0; align-items: start; }
+@media (min-width: 760px) { .doc .row2 { grid-template-columns: 1fr 1fr; } }
+.doc figure.lcd { margin: 0; text-align: center; }
+.doc figure.lcd img { width: 100%; max-width: 240px; margin: 0 auto; border-radius: 6px; border: 1px solid var(--line); }
+.doc figure.lcd figcaption { font-size: 13px; color: var(--muted); margin-top: 8px; }
+.doc .strip { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 14px 0; }
+@media (min-width: 760px) { .doc .strip.n4 { grid-template-columns: repeat(4, 1fr); } .doc .strip.n5 { grid-template-columns: repeat(5, 1fr); } }
+.doc .strip figure { margin: 0; text-align: center; }
+.doc .strip img { width: 100%; border-radius: 6px; border: 1px solid var(--line); }
+.doc .strip figcaption { font-size: 13px; color: var(--muted); margin-top: 6px; }
+.doc .diag { width: 100%; border-collapse: collapse; font-size: 15px; margin: 8px 0 14px; }
+.doc .diag th, .doc .diag td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.doc .diag th { color: var(--text); white-space: nowrap; font-weight: 600; }
+.doc .diag td { color: var(--muted); }
+.doc details.note summary { color: var(--text); }
+.doc details.note p { color: var(--muted); }
+.doc .faq details.note { background: var(--card); border-color: var(--line); }
+.doc .faq details.note[open] { border-color: rgba(255, 90, 71, 0.35); }
+@media (max-width: 400px) {
+  .top .wrap { gap: 8px; }
+  .nav { gap: 0; }
+  .nav a { padding: 8px 5px; font-size: 13px; }
+  .lang { padding-left: 8px; padding-right: 8px; }
+}
+.doc .topic { margin-bottom: 40px; }
