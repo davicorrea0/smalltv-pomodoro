@@ -2,7 +2,9 @@
 # Testes de C++ do firmware (Linux/WSL, g++ com multilib), em 32 bits como o ESP8266, com ASan/UBSan:
 #  - handlers reais de upload, host e senha (security_test.cjs) e histórico de focos (stats_test.cjs);
 #  - cor quente (warm.h): os comandos do gama digital de dia, de noite e na prévia;
-#  - GIF e JPEG: as amostras válidas precisam decodificar e o fuzzing não pode achar erro de memória.
+#  - GIF e JPEG: as amostras válidas precisam decodificar e o fuzzing não pode achar erro de memória;
+#  - pacotes .stheme (stheme.h, etapa 0 do leitor spec 2): as amostras passam, os defeitos são recusados e o
+#    fuzzing não acha erro de memória.
 # Uso: sim/testes.sh [casos de fuzzing por formato, padrão 5000]
 # Os .cpp dos dois primeiros testes são gerados com node; sem node (WSL), passe a pasta já gerada em GEN.
 set -euo pipefail
@@ -22,11 +24,11 @@ done
 g++ -std=c++17 -fsanitize=address,undefined -g -w warm_test.cpp -o "$T/warm"
 "$T/warm"
 # saída completa em arquivo; um erro em qualquer um interrompe tudo (set -e) e mostra o fim do log
-for f in gif jpeg; do
+for f in gif jpeg stheme; do
   if ! bash "test-$f.sh" "$f-seeds" "$N" > "$T/$f.log" 2>&1; then
     tail -20 "$T/$f.log"
     echo "testes: FALHA no $f (log completo em $T/$f.log)"
     exit 1
   fi
 done
-echo "testes: ok (handlers, histórico, cor quente, $N casos de fuzzing de GIF e de JPEG)"
+echo "testes: ok (handlers, histórico, cor quente, $N casos de fuzzing de GIF, de JPEG e de .stheme)"
