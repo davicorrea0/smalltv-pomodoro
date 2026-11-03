@@ -38,14 +38,16 @@ static bool check(const Bytes &p, long failFrom = -1) {
   readFailed = m.failed;
   return ok;
 }
-static int failures = 0;
+static int failures = 0, accepts = 0, rejects = 0;
 static void accept(const Bytes &p, const char *what) {
+  accepts++;
   if (!check(p)) {
     printf("FALHA: %s foi recusado: %s\n", what, err);
     failures++;
   }
 }
 static void reject(const Bytes &p, const char *why, const char *what) {
+  rejects++;
   if (check(p)) {
     printf("FALHA: %s foi aceito\n", what);
     failures++;
@@ -394,6 +396,7 @@ int main(int argc, char **argv) {
     printf("stheme: %d falhas\n", failures);
     return 1;
   }
-  puts("stheme: pacotes reais, contêiner, imagens STI1/STI2, theme.json e fontes de dados ok");
+  printf("stheme: pacotes reais, contêiner, imagens STI1/STI2, theme.json e fontes de dados ok (%d defeitos recusados, %d casos aceitos)\n",
+         rejects, accepts);
   return 0;
 }
