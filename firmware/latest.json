@@ -5,19 +5,34 @@
   "size": 583760,
   "notes": {
     "pt": [
-      "⚠️ VERSÃO DE TESTE. Faça o backup antes e só instale se souber usar o modo de recuperação (desligar e ligar 3 vezes seguidas, menos de 30 s cada)",
-      "smalltv.local passa a funcionar também com o computador na rede de 5 GHz: o relógio, que fica no 2,4 GHz, agora manda a resposta também para a rede inteira, e não só pelo caminho que alguns roteadores não repassam entre as duas faixas",
-      "Se ainda falhar, o README explica como reservar o IP do relógio no roteador e abrir pelo IP, o caminho que sempre funciona (inclusive no Android)"
+      "Atenção: esta versão reorganiza a memória do relógio. Antes de atualizar, o painel salva um backup completo (fotos, GIFs e mostradores); depois, use Restaurar backup. Ajustes, Wi-Fi, histórico, rodízio e avisos ficam sozinhos",
+      "Espaço para o firmware crescer: até ~1 MB de programa; a memória de arquivos fica com 2 MB",
+      "Mostradores novos Mundo e Mundo relógio: mapa-múndi no visor de LCD com a faixa de dia e noite andando com a hora e a sua cidade piscando",
+      "Tom verde de LCD antigo nos mostradores LCD (liga e desliga no cartão do mostrador) e troca suave entre eles, como um LCD de verdade",
+      "Cor quente à noite (opcional, em Brilho): a tela tira o azul junto do brilho noturno",
+      "Configuração por QR code: sem Wi-Fi, a tela mostra um QR que conecta o celular ao relógio e outro que abre a página de configuração",
+      "smalltv.local mais rápido e confiável no Windows e também com o computador no 5 GHz; clima e avisos não congelam mais a tela quando a internet cai",
+      "Filtro na lista de mostradores do painel (Nativos, Baixados, Animados e estilos); Restaurar backup mostra o que entrou e o que falhou"
     ],
     "en": [
-      "⚠️ TEST VERSION. Make the backup first and only install it if you know how to use recovery mode (power off and on 3 times in a row, less than 30 s each)",
-      "smalltv.local now also works with the computer on the 5 GHz network: the clock, which stays on 2.4 GHz, now also sends its answer to the whole network, not only through the path some routers do not pass between the two bands",
-      "If it still fails, the README explains how to reserve the clock's IP in the router and open it by IP, the path that always works (Android included)"
+      "Heads up: this version reorganizes the clock's storage. Before updating, the panel saves a full backup (photos, GIFs and faces); afterwards, use Restore backup. Settings, Wi-Fi, history, rotation and notifications stay on their own",
+      "Room for the firmware to grow: up to ~1 MB of program; the file storage becomes 2 MB",
+      "New World and World watch faces: a world map on the LCD with the day/night band moving with the time and your city blinking",
+      "Old-LCD green tint on the LCD faces (toggle on the face card) and a smooth switch between them, like a real LCD",
+      "Warm color at night (optional, under Brightness): the screen drops blue along with night brightness",
+      "QR code setup: without Wi-Fi, the screen shows a QR that connects your phone to the clock and another one that opens the setup page",
+      "smalltv.local is faster and more reliable on Windows and also with the computer on 5 GHz; weather and notifications no longer freeze the screen when the internet drops",
+      "Filter in the panel's face list (Built-in, Downloaded, Animated and styles); Restore backup shows what went in and what failed"
     ],
     "es": [
-      "⚠️ VERSIÓN DE PRUEBA. Haz la copia antes e instálala solo si sabes usar el modo de recuperación (apagar y encender 3 veces seguidas, menos de 30 s cada vez)",
-      "smalltv.local ahora también funciona con la computadora en la red de 5 GHz: el reloj, que está en 2,4 GHz, ahora también envía la respuesta a toda la red, y no solo por el camino que algunos routers no pasan entre las dos bandas",
-      "Si aún falla, el README explica cómo reservar la IP del reloj en el router y abrirlo por la IP, el camino que siempre funciona (también en Android)"
+      "Atención: esta versión reorganiza la memoria del reloj. Antes de actualizar, el panel guarda una copia completa (fotos, GIF y esferas); después, usa Restaurar copia. Los ajustes, el Wi-Fi, el historial, la rotación y los avisos se mantienen solos",
+      "Espacio para que el firmware crezca: hasta ~1 MB de programa; la memoria de archivos queda en 2 MB",
+      "Esferas nuevas Mundo y Mundo reloj: mapamundi en el visor LCD con la franja de día y noche avanzando con la hora y tu ciudad parpadeando",
+      "Tono verde de LCD antiguo en las esferas LCD (se activa en la tarjeta de la esfera) y cambio suave entre ellas, como un LCD de verdad",
+      "Color cálido de noche (opcional, en Brillo): la pantalla quita el azul junto con el brillo nocturno",
+      "Configuración por código QR: sin Wi-Fi, la pantalla muestra un QR que conecta el móvil al reloj y otro que abre la página de configuración",
+      "smalltv.local más rápido y fiable en Windows y también con el ordenador en 5 GHz; el clima y los avisos ya no congelan la pantalla cuando cae internet",
+      "Filtro en la lista de esferas del panel (Incluidas, Descargadas, Animadas y estilos); Restaurar copia muestra lo que entró y lo que falló"
     ]
   },
   "gz": "smalltv-pomodoro.bin.gz",
