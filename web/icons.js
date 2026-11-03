@@ -16,13 +16,20 @@ class G {
   del(f) { for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (f(x + .5, y + .5, x, y)) this.m.delete(K(x, y)); return this }
   put(ch, cells) { for (const [x, y] of cells) if (x >= 0 && y >= 0 && x < N && y < N) this.c[K(x, y)] = ch; return this }
   rect(ch, x0, y0, x1, y1) { const a = []; for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) a.push([x, y]); return this.put(ch, a) }
+  holes() {  // células vazias fechadas (não alcançam a borda): o furo
+    const seen = new Set(), st = [];
+    for (let i = 0; i < N; i++) for (const [x, y] of [[i, 0], [i, N - 1], [0, i], [N - 1, i]]) if (!this.in(x, y) && !seen.has(K(x, y))) { seen.add(K(x, y)); st.push([x, y]) }
+    while (st.length) { const [x, y] = st.pop(); for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const X = x + a, Y = y + b, k = K(X, Y); if (X >= 0 && Y >= 0 && X < N && Y < N && !this.in(X, Y) && !seen.has(k)) { seen.add(k); st.push([X, Y]) } } }
+    const h = new Set(); for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (!this.in(x, y) && !seen.has(K(x, y))) h.add(K(x, y));
+    return h;
+  }
   rows() {
-    const r = [];
+    const r = [], hole = this.holes();
     for (let y = 0; y < N; y++) {
       let s = '';
       for (let x = 0; x < N; x++) {
         const k = K(x, y); let ch = this.c[k];
-        if (!ch) { if (this.m.has(k)) ch = 'o'; else ch = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, b]) => this.in(x + a, y + b)) ? '@' : '.' }
+        if (!ch) { if (this.m.has(k)) ch = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, b]) => hole.has(K(x + a, y + b))) ? '@' : 'o'; else if (hole.has(k)) ch = '.'; else ch = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, b]) => this.in(x + a, y + b)) ? '@' : '.' }
         s += ch;
       }
       r.push(s);
@@ -34,6 +41,7 @@ const disc = (cx, cy, r) => (x, y) => (x - cx) ** 2 + (y - cy) ** 2 <= r * r;
 const ell = (cx, cy, rx, ry) => (x, y) => ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 <= 1;
 const box = (x0, y0, x1, y1) => (x, y, X, Y) => X >= x0 && X <= x1 && Y >= y0 && Y <= y1;
 const or = (...f) => (...a) => f.some(g => g(...a));
+const lit = rows => { const g = new G(); rows.forEach((r, y) => [...r].forEach((c, x) => { if (c == 'X') g.m.add(K(x, y)) })); return g };
 const inSet = cells => (x, y, X, Y) => cells.some(([a, b]) => a == X && b == Y);
 
 const I = {
@@ -56,21 +64,19 @@ const I = {
     for (let y = 6; y <= 12; y++) for (let x = 1; x <= 14; x++) { const a = Math.abs(x - 5) <= (y - 6) * .8 && y >= 7, b = y >= 9 && Math.abs(x - 11) <= (y - 8) * .8; if (a || b) g.put('d', [[x, y]]) }
     return g;
   },
-  ajustes: () => {
-    const g = new G().add(or(disc(8, 8, 4.7), box(7, 1, 8, 4), box(7, 11, 8, 14), box(1, 7, 4, 8), box(11, 7, 14, 8),
-      box(3, 3, 4, 4), box(11, 3, 12, 4), box(3, 11, 4, 12), box(11, 11, 12, 12)));
-    g.del(box(6, 6, 9, 9)); g.put('x', [[7, 7], [8, 7], [7, 8], [8, 8]]);
-    return g;
-  },
+  ajustes: () => lit([  // engrenagem (opção A)
+    '................', '......XXXX......', '......XXXX......', '..XX.XXXXXX.XX..', '..XXXXXXXXXXXX..', '...XXXXXXXXXX...', '.XXXXXX..XXXXXX.', '.XXXXX....XXXXX.',
+    '.XXXXX....XXXXX.', '.XXXXXX..XXXXXX.', '...XXXXXXXXXX...', '..XXXXXXXXXXXX..', '..XX.XXXXXX.XX..', '......XXXX......', '......XXXX......', '................']),
   zerar: () => {
     const g = new G().add((x, y) => {
-      const dx = x - 8, dy = y - 8.5, r = Math.hypot(dx, dy);
-      if (r < 4.4 || r > 6.3) return false;
+      const dx = x - 8, dy = y - 8.6, r = Math.hypot(dx, dy);
+      if (r < 4.6 || r > 6.5) return false;
       const a = Math.atan2(dy, dx) * 180 / Math.PI;
-      return !(a > -90 && a < -5);
+      return !(a > -80 && a < -15);
     });
-    const head = [[7, 1], [8, 1], [7, 2], [8, 2], [9, 2], [10, 2], [7, 3], [8, 3], [9, 3], [10, 3], [11, 3], [12, 3], [7, 4], [8, 4], [9, 4], [10, 4], [11, 4], [12, 4], [7, 5], [8, 5], [9, 5], [10, 5], [7, 6], [8, 6]];
-    g.add(inSet(head)); g.put('x', head);
+    const head = [];
+    for (let x = 8; x <= 13; x++) { const h = x <= 9 ? [1, 6] : x <= 11 ? [2, 5] : [3, 4]; for (let y = h[0]; y <= h[1]; y++) head.push([x, y]) }
+    g.add(inSet(head));
     return g;
   },
   tocar: () => new G().add((x, y, X) => X >= 3 && X <= 12 && Math.abs(y - 8) <= (13.4 - x) * .68),
@@ -108,7 +114,14 @@ const I = {
     return g;
   },
 };
-const ids = Object.keys(I);
+// opção B de "ajustes" (controles deslizantes), só na folha
+const EXTRA = { ajustesb: () => {
+  const g = new G(), kn = [[9, 2], [3, 6], [7, 10]];
+  g.add((x, y, X, Y) => kn.some(([a, b]) => X >= a && X < a + 4 && Y >= b && Y < b + 4));
+  for (const y of [3, 7, 11]) for (let x = 1; x <= 14; x++) if (!g.in(x, y) && !g.in(x, y + 1)) g.put('d', [[x, y], [x, y + 1]]);
+  return g } };
+Object.assign(I, EXTRA);
+const ids = Object.keys(I).filter(k => !EXTRA[k]), sheetIds = Object.keys(I);
 function rects(rows, set) {
   const runs = [];
   rows.forEach((r, y) => { for (let x = 0; x < N;) { if (!set.includes(r[x])) { x++; continue } let e = x; while (e < N && set.includes(r[e])) e++; runs.push({ x, y, w: e - x, h: 1 }); x = e } });
@@ -116,12 +129,14 @@ function rects(rows, set) {
   for (const r of runs) { const p = out.find(o => o.x == r.x && o.w == r.w && o.y + o.h == r.y); p ? p.h++ : out.push(r) }
   return out.map(r => `M${r.x} ${r.y}h${r.w}v${r.h}h-${r.w}z`).join('');
 }
-const all = ids.map(k => {
+const sym = k => {
   const rows = I[k]().rows(), P = (cls, set) => { const d = rects(rows, set); return d ? `<path${cls ? ` class="${cls}"` : ''} d="${d}"/>` : '' };
   if (process.argv[2] == '-v') console.log(k + '\n' + rows.join('\n'));
   return `<symbol id="i-${k}" viewBox="0 0 16 16">${P('f', 'o') + P('w', 'h') + P('c', 'x') + P('k', 'd') + P('v', 'g') + P('b', 'b') + P('y', 'y') + P('', '@')}</symbol>`;
-});
+};
+const all = ids.map(sym);
 const block = `<!--icons-->\n<svg width="0" height="0" style="position:absolute" aria-hidden="true">${all.join('')}</svg>\n<!--/icons-->`;
+const sheetBlock = `<svg width="0" height="0" style="position:absolute" aria-hidden="true">${sheetIds.map(sym).join("")}</svg>`;
 const f = path.join(__dirname, 'index.html');
 let h = fs.readFileSync(f, 'utf8');
 if (/\n<!--icons-->/.test(h)) h = h.replace(/\n<!--icons-->[\s\S]*?<!--\/icons-->/, () => '\n' + block);
@@ -133,6 +148,6 @@ const css = h.match(/<style[^>]*>([\s\S]*?)<\/style>/)[1];
 fs.mkdirSync(path.join(__dirname, 'out'), { recursive: true });
 fs.writeFileSync(path.join(__dirname, 'out', 'icones.html'), `<!doctype html><meta charset=utf-8><style>${css}
 body{padding:24px;display:block}.g{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}.c{background:var(--card);border-radius:14px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px}.p{display:flex;gap:18px;align-items:center}.c small{color:var(--mut)}h3{color:var(--mut);font-weight:500;margin:22px 0 10px}.real{display:flex;gap:22px;flex-wrap:wrap;background:var(--card);border-radius:14px;padding:16px}.real span{display:flex;gap:8px;align-items:center}.off{color:var(--mut)}</style>
-${block}<h3>Contorno (inativo) e preenchido (ativo), 4x</h3><div class=g>${ids.map(i => `<div class=c><div class=p>${cell(i, 'off', 64)}${cell(i, 'on', 64)}</div><small>${i}</small></div>`).join('')}</div>
-<h3>No tamanho do painel (2x, 32 px)</h3><div class=real>${ids.map(i => `<span>${cell(i, 'off', 32)}${cell(i, 'on', 32)}</span>`).join('')}</div>`);
+${sheetBlock}<h3>Contorno (inativo) e preenchido (ativo), 4x</h3><div class=g>${sheetIds.map(i => `<div class=c><div class=p>${cell(i, 'off', 64)}${cell(i, 'on', 64)}</div><small>${i}</small></div>`).join('')}</div>
+<h3>No tamanho do painel (2x, 32 px)</h3><div class=real>${sheetIds.map(i => `<span>${cell(i, 'off', 32)}${cell(i, 'on', 32)}</span>`).join('')}</div>`);
 console.log('ok', all.join('').length, 'bytes de sprite');
