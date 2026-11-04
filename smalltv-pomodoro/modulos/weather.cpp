@@ -1,5 +1,5 @@
 // Cliente HTTP mínimo (DNS assíncrono) e busca do clima.
-#include "app.h"
+#include "../app.h"
 
 int16_t sunRise = -1, sunSet = -1;  // minutos do dia (hora local), da última busca do clima
 

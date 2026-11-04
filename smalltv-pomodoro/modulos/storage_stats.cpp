@@ -1,9 +1,9 @@
 // Sistema de arquivos (montagem e migração 4M3M→4M2M), histórico de focos e uso de espaço.
-#include "app.h"
+#include "../app.h"
 
 static uint8_t statsPending = 0;  // focos terminados antes da hora ser confirmada (gravados no histórico depois)
 
-// ---------- álbum: fotos (JPG) e GIFs no LittleFS ----------
+// ---------- memória de arquivos (LittleFS) ----------
 bool fsOk = false;
 
 // O símbolo _FS_start vem do script do linker do layout escolhido (eagle.flash.4m2m.ld: 0x40400000).

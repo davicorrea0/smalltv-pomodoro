@@ -1,5 +1,5 @@
 // Brilho (PWM), rampa suave e cor quente/modo LCD verde.
-#include "app.h"
+#include "../app.h"
 
 static int curBri = -1;
 

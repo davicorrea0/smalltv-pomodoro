@@ -9,7 +9,7 @@ fi
 [ -z "$ZIG" ] && ! command -v g++ >/dev/null && { echo "zig (ou g++ com multilib) não encontrado"; exit 1; }
 node ../assets/gerar.js || exit 1  # assets/*.txt -> smalltv-pomodoro/assets.h
 # o firmware é compilado sem printf/scanf de float (compilar.sh): %f e companhia não imprimiriam nada
-if grep -nE "%[-+ #0-9.]*[fFeEgG]|toFloat|atof|strtod|scanf" ../smalltv-pomodoro/*.cpp ../smalltv-pomodoro/*.h; then
+if grep -nE "%[-+ #0-9.]*[fFeEgG]|toFloat|atof|strtod|scanf" ../smalltv-pomodoro/*.cpp ../smalltv-pomodoro/modulos/*.cpp ../smalltv-pomodoro/*.h; then
   echo "use números inteiros ou String(x, casas) em vez de float no printf/scanf"; exit 1
 fi
 GFX="${GFX:-$HOME/Documents/Arduino/libraries/Adafruit_GFX_Library}"

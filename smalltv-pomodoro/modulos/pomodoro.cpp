@@ -1,5 +1,5 @@
 // Fases do Pomodoro, comandos e avisos de fim de fase (hooks).
-#include "app.h"
+#include "../app.h"
 
 const char *PHASE_KEY[] = {"idle", "work", "short", "long"};
 

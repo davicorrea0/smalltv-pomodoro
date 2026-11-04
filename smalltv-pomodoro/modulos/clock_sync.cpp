@@ -1,5 +1,5 @@
 // Hora: confirmação por segunda fonte (TimeGuard), memória RTC entre reinícios e fuso horário.
-#include "app.h"
+#include "../app.h"
 
 TimeGuard timeGuard;      // hora confirmada por uma segunda fonte (security.h); ver timeGuardBegin
 

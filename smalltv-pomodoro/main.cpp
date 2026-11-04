@@ -13,6 +13,21 @@
 
 
 #include "app.h"
+// Os módulos ficam em modulos/ (fora da raiz do sketch, o arduino-cli não os compila sozinhos) e entram aqui,
+// numa só unidade de compilação: assim o compilador ainda junta as funções pequenas entre eles, e o binário fica
+// do tamanho de quando tudo estava neste arquivo. Separados em 11 .cpp, o firmware crescia ~1,8 KB (inlining
+// perdido, construtores globais e cópias dos templates do servidor web em cada arquivo). Cada módulo inclui app.h
+// e usa dos outros só o que está declarado nele; o que é de um módulo só fica static (nomes repetidos não compilam).
+#include "modulos/settings.cpp"
+#include "modulos/clock_sync.cpp"
+#include "modulos/backlight.cpp"
+#include "modulos/pomodoro.cpp"
+#include "modulos/net_services.cpp"
+#include "modulos/weather.cpp"
+#include "modulos/storage_stats.cpp"
+#include "modulos/album.cpp"
+#include "modulos/ota_update.cpp"
+#include "modulos/web_portal.cpp"
 
 Adafruit_ST7789 tft(-1, PIN_DC, PIN_RST);
 

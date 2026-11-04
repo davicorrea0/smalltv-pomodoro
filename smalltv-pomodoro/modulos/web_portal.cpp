@@ -1,7 +1,7 @@
 // Servidor web: Wi-Fi, portal de configuração, proteções, envios e rotas /api.
-#include "app.h"
+#include "../app.h"
 #include <bearssl/bearssl_hash.h>
-#include "web.h"
+#include "../web.h"
 
 // respostas curtas repetidas nas rotas: um só corpo no binário em vez de três String temporárias em cada uso
 static void sendOk() { server.send_P(200, PSTR("text/plain"), PSTR("ok")); }

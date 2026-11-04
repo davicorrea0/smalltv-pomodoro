@@ -1,10 +1,10 @@
 // Atualização pela rede: conferência da assinatura, descompactação e modo de recuperação.
-#include "app.h"
+#include "../app.h"
 #include <bearssl/bearssl_hash.h>
 #include <bearssl/bearssl_rsa.h>
 #include <StackThunk.h>
-#include "ota_key.h"
-#include "src/uzlib/uzlib.h"
+#include "../ota_key.h"
+#include "../src/uzlib/uzlib.h"
 
 static OtaCheck ota;
 

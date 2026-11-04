@@ -1,10 +1,10 @@
 // Fotos JPEG, GIFs animados, álbum, pacotes de mostradores e rotação entre mostradores.
-#include "app.h"
-#include "src/JPEGDEC/JPEGDEC.h"
-#include "src/AnimatedGIF/AnimatedGIF.h"
-#include "gifcheck.h"
+#include "../app.h"
+#include "../src/JPEGDEC/JPEGDEC.h"
+#include "../src/AnimatedGIF/AnimatedGIF.h"
+#include "../gifcheck.h"
 
-// ---------- rodízio de mostradores ----------
+// ---------- álbum: fotos (JPG) e GIFs no LittleFS; rodízio de mostradores ----------
 // Lista "t:1,p:bento,..." (embutido pelo número, pacote pelo id) em /rotation.txt; a cada cfg.rotMin
 // minutos, com o relógio parado (sem Pomodoro nem prévia), passa para o próximo. A troca não grava na
 // EEPROM (seria uma gravação a cada troca): vale o que estiver salvo ao reiniciar.

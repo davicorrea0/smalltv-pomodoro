@@ -1,5 +1,5 @@
 // mDNS (smalltv.local) e emulação de lâmpadas Hue para a Alexa.
-#include "app.h"
+#include "../app.h"
 
 // ---------- Alexa ----------
 // O relógio aparece para a Alexa como lâmpadas reguláveis de uma ponte Philips Hue, na rede local: sem

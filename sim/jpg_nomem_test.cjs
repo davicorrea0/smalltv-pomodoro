@@ -1,9 +1,9 @@
-// Foto sem memória × foto estragada: compila drawJpg/jpgAlloc/showAlbumItem reais de main.cpp com um JPEGDEC
+// Foto sem memória × foto estragada: compila drawJpg/jpgAlloc/showAlbumItem reais do firmware (sim/fonte.cjs) com um JPEGDEC
 // de mentira e confere que a falta de memória (alocação nula ou maior bloco livre pequeno) mostra
 // "Sem memoria p/ foto" e NÃO "JPG invalido", e que só o decodificador recusando o arquivo dá "JPG invalido".
-// Uso: node sim/jpg_nomem_test.cjs saida.cpp [main.cpp]; depois g++ -std=c++17 saida.cpp.
+// Uso: node sim/jpg_nomem_test.cjs saida.cpp [fonte.cpp]; depois g++ -std=c++17 saida.cpp.
 const fs = require('fs'), path = require('path');
-const source = (process.argv[3] ? fs.readFileSync(process.argv[3], 'utf8') : (()=>{const d=path.join(__dirname,'../smalltv-pomodoro');return fs.readdirSync(d).filter(f=>/^(?!face_|facepack|fonts|ui\.cpp|assets|web\.h|ota_key).*\.(cpp|h)$/.test(f)).sort((a,b)=>(a==='app.h')-(b==='app.h')||(a<b?-1:1)).map(f=>fs.readFileSync(path.join(d,f),'utf8')).join('\n')})());
+const source = (process.argv[3] ? fs.readFileSync(process.argv[3], 'utf8') : require('./fonte.cjs'));
 const out = process.argv[2];
 if (!out) throw Error('output.cpp required');
 function fn(sig) { const a = source.indexOf(sig), b = source.indexOf('\n}', a); if (a < 0 || b < 0) throw Error(sig); return source.slice(a, b + 2); }

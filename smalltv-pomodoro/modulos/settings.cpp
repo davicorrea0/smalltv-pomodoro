@@ -1,5 +1,5 @@
 // Ajustes na EEPROM, registro da última queda, contador de inicializações e reinício seguro.
-#include "app.h"
+#include "../app.h"
 
 Settings cfg;
 

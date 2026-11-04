@@ -1,5 +1,5 @@
 // app.h — declarações compartilhadas entre os módulos do firmware (constantes, estruturas, o estado
-// global e os protótipos). Cada módulo define o que é seu; o que só ele usa fica static no .cpp.
+// global e os protótipos). Cada módulo (modulos/*.cpp, incluídos por main.cpp) define o que é seu; o que só ele usa fica static.
 #pragma once
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
