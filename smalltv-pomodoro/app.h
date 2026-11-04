@@ -17,6 +17,7 @@
 #include <libb64/cdecode.h>
 #include "security.h"
 #include "warm.h"
+#include "bri_curva.h"  // curva de brilho em tabela (sim/gerar_brilho.js)
 #include <new>
 #include <vector>
 #include <time.h>

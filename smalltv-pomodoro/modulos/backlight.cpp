@@ -13,9 +13,11 @@ static uint32_t blT0 = 0;
 
 static bool blBoot = true;  // primeira escrita (boot): sem rampa
 
+// Tabela gerada por sim/gerar_brilho.js (BL_MIN + (BL_RANGE - BL_MIN) * (b/100)^2.2); o teste sim/brilho_test.cpp a compara com o powf
 static uint16_t briDuty(int b) {
   if (b <= 0) return 0;
-  return BL_MIN + (uint16_t)((BL_RANGE - BL_MIN) * powf(b / 100.0f, 2.2f) + 0.5f);
+  if (b > 100) b = 100;
+  return pgm_read_word(&BRI_CURVA[b]);  // gama 2.2 pré-calculada (sim/gerar_brilho.js), sem powf
 }
 
 // Cor quente à noite (warm.h): gama digital do ST7789V, ligado à mesma rampa do brilho. warmNow é a intensidade

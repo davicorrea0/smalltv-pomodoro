@@ -3,6 +3,7 @@
 #  - handlers reais de upload, host e senha (security_test.cjs) e histórico de focos (stats_test.cjs);
 #  - foto sem memória × foto estragada (jpg_nomem_test.cjs);
 #  - cor quente (warm.h): os comandos do gama digital de dia, de noite e na prévia;
+#  - curva de brilho (bri_curva.h) contra a fórmula antiga com powf, em todas as entradas;
 #  - GIF e JPEG: as amostras válidas precisam decodificar e o fuzzing não pode achar erro de memória.
 # Uso: sim/testes.sh [casos de fuzzing por formato, padrão 5000]
 # Os .cpp dos dois primeiros testes são gerados com node; sem node (WSL), passe a pasta já gerada em GEN.
@@ -23,6 +24,8 @@ for t in sec stats jpg_nomem; do
 done
 g++ -std=c++17 -fsanitize=address,undefined -g -w warm_test.cpp -o "$T/warm"
 "$T/warm"
+g++ -std=c++17 -fsanitize=address,undefined -g -w -Ishim brilho_test.cpp -o "$T/brilho"
+"$T/brilho"
 # saída completa em arquivo; um erro em qualquer um interrompe tudo (set -e) e mostra o fim do log
 for f in gif jpeg; do
   if ! bash "test-$f.sh" "$f-seeds" "$N" > "$T/$f.log" 2>&1; then
