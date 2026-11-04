@@ -1,42 +1,151 @@
-// Ícones do painel: vetoriais em contorno arredondado (viewBox 24x24, traço 2, pontas e junções redondas).
-// Desenhos próprios, na linguagem de traço do Lucide/Tabler (ambos MIT; nenhum path foi copiado).
-// Rode `node web/icons.js`: reescreve o bloco de ícones de web/index.html (sprite SVG de <symbol>, usados com <use>)
-// e gera web/out/icones.html (folha de conferência, inativo e ativo, 1x e 2x).
-// Classes nas formas: a = área fechada, preenchida só no estado ativo (var --pa); s = sólido sempre (var currentColor).
-// Cores e traço vêm do CSS do painel (.pi): inativo = só linha na cor do texto secundário; ativo (.on) = vermelho do tomate.
+// Ícones do painel em pixel art, grade 16x16. Cada desenho é montado por formas (disco, retângulo, triângulo...)
+// e o contorno de 1 px sai sozinho em volta da forma, então contorno e miolo vêm do mesmo desenho.
+// Rode `node web/icons.js`: reescreve o bloco de ícones de web/index.html (sprite SVG de <symbol>, usados com
+// <use>) e gera web/out/icones.html (folha de conferência, nos dois estados).
+// (b azul e y amarelo: toques de cor da paleta)
+// Camadas (classe no SVG): @ contorno (sempre) | o miolo, só ativo (.f) | h brilho, só ativo (.w)
+//   d detalhe: linha no inativo, creme no ativo (.k) | x creme só no ativo (.c) | g folha verde (.v)
+// Cores (CSS no painel): inativo = só linhas na cor secundária; ativo (.on) = vermelho do tomate, contorno mais
+// escuro, detalhes em creme, folha verde.
 const fs = require('fs'), path = require('path');
-const A = d => `<path class="a" d="${d}"/>`, L = d => `<path d="${d}"/>`, S = (x, y, r = 1.1) => `<circle class="s" cx="${x}" cy="${y}" r="${r}"/>`;
+const N = 16, K = (x, y) => x + ',' + y;
+class G {
+  constructor() { this.m = new Set(); this.c = {} }
+  in(x, y) { return this.m.has(K(x, y)) }
+  add(f) { for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (f(x + .5, y + .5, x, y)) this.m.add(K(x, y)); return this }
+  del(f) { for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (f(x + .5, y + .5, x, y)) this.m.delete(K(x, y)); return this }
+  put(ch, cells) { for (const [x, y] of cells) if (x >= 0 && y >= 0 && x < N && y < N) this.c[K(x, y)] = ch; return this }
+  rect(ch, x0, y0, x1, y1) { const a = []; for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) a.push([x, y]); return this.put(ch, a) }
+  holes() {  // células vazias fechadas (não alcançam a borda): o furo
+    const seen = new Set(), st = [];
+    for (let i = 0; i < N; i++) for (const [x, y] of [[i, 0], [i, N - 1], [0, i], [N - 1, i]]) if (!this.in(x, y) && !seen.has(K(x, y))) { seen.add(K(x, y)); st.push([x, y]) }
+    while (st.length) { const [x, y] = st.pop(); for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const X = x + a, Y = y + b, k = K(X, Y); if (X >= 0 && Y >= 0 && X < N && Y < N && !this.in(X, Y) && !seen.has(k)) { seen.add(k); st.push([X, Y]) } } }
+    const h = new Set(); for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (!this.in(x, y) && !seen.has(K(x, y))) h.add(K(x, y));
+    return h;
+  }
+  rows() {
+    const r = [], hole = this.holes();
+    for (let y = 0; y < N; y++) {
+      let s = '';
+      for (let x = 0; x < N; x++) {
+        const k = K(x, y); let ch = this.c[k];
+        if (!ch) { if (this.m.has(k)) ch = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, b]) => hole.has(K(x + a, y + b))) ? '@' : 'o'; else if (hole.has(k)) ch = '.'; else ch = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, b]) => this.in(x + a, y + b)) ? '@' : '.' }
+        s += ch;
+      }
+      r.push(s);
+    }
+    return r;
+  }
+}
+const disc = (cx, cy, r) => (x, y) => (x - cx) ** 2 + (y - cy) ** 2 <= r * r;
+const ell = (cx, cy, rx, ry) => (x, y) => ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 <= 1;
+const box = (x0, y0, x1, y1) => (x, y, X, Y) => X >= x0 && X <= x1 && Y >= y0 && Y <= y1;
+const or = (...f) => (...a) => f.some(g => g(...a));
+const lit = rows => { const g = new G(); rows.forEach((r, y) => [...r].forEach((c, x) => { if (c == 'X') g.m.add(K(x, y)) })); return g };
+const inSet = cells => (x, y, X, Y) => cells.some(([a, b]) => a == X && b == Y);
+
 const I = {
-  relogio: A('M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z') + L('M12 7.5V12l3 2'),
-  foco: A('M12 8.5c5 0 8.5 2.8 8.5 6.3S16.8 21 12 21s-8.5-2.7-8.5-6.2S7 8.5 12 8.5z') + A('M12 8.5C11 6.5 9 5.5 6.5 6c1 2 3 2.8 5.5 2.5z') + A('M12 8.5c1-2 3-3 5.5-2.5-1 2-3 2.8-5.5 2.5z') + L('M12 8.5V4'),
-  fotos: A('M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z') + L('M3.5 17.5l5-5 4 4 3-3 5 5') + S(8.5, 9),
-  ajustes: L('M4 6h8') + L('M18 6h2') + A('M15 3.8a2.2 2.2 0 1 0 0 4.4 2.2 2.2 0 0 0 0-4.4z') +
-    L('M4 12h2') + L('M12 12h8') + A('M9 9.8a2.2 2.2 0 1 0 0 4.4 2.2 2.2 0 0 0 0-4.4z') +
-    L('M4 18h9') + L('M19 18h1') + A('M16 15.8a2.2 2.2 0 1 0 0 4.4 2.2 2.2 0 0 0 0-4.4z'),
-  zerar: L('M4.5 12a7.5 7.5 0 1 0 2.2-5.3L4.5 9') + L('M4.5 4.5V9H9'),
-  tocar: A('M8 5.5v13l10.5-6.5z'),
-  pausar: A('M7.5 5h2a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z') + A('M14.5 5h2a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z'),
-  pular: A('M5.5 6.5v11l8.5-5.5z') + L('M18.5 6v12'),
-  ler: A('M12 6.5C10 5 7 4.5 3.5 5v12.5c3.5-.4 6.5.1 8.5 1.8 2-1.7 5-2.2 8.5-1.8V5C17 4.5 14 5 12 6.5z') + L('M12 6.5v12.8'),
-  codar: A('M5 4h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z') + L('M9 8.5l-2.5 2.5L9 13.5') + L('M15 8.5l2.5 2.5-2.5 2.5') + L('M8 20.5h8'),
-  estudar: A('M8 3h6l5 5v11a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z') + L('M14 3v5h5') + L('M9.5 13h5') + L('M9.5 17h5'),
-  tarefas: A('M7 4.5h10a2 2 0 0 1 2 2V19a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6.5a2 2 0 0 1 2-2z') + A('M10 3h4a1 1 0 0 1 1 1v1.5a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z') + L('M9 14l2.5 2.5L16 12'),
-  desenhar: A('M12 3a9 9 0 0 0 0 18c1.5 0 2-1 2-2 0-1.2-.7-1.7-.7-2.7 0-1 .8-1.8 1.8-1.8H17a4 4 0 0 0 4-4c0-4.4-4-7.5-9-7.5z') + S(7.5, 11.5) + S(9.5, 7.5) + S(14.5, 7.5),
+  relogio: () => {
+    const g = new G().add(disc(8, 8, 7.3));
+    g.put('h', [[3, 4], [3, 5], [4, 3], [5, 3], [3, 6]]);
+    g.put('x', [[7, 2], [8, 2], [7, 13], [8, 13], [2, 7], [2, 8], [13, 7], [13, 8]]);
+    g.rect('d', 7, 4, 7, 8).rect('d', 7, 8, 11, 8);
+    return g;
+  },
+  foco: () => {
+    const g = new G().add(ell(8, 9.6, 6.9, 5.9));
+    g.put('h', [[3, 6], [3, 7], [4, 6], [4, 5], [5, 5]]);
+    g.put('g', [[7, 0], [8, 0], [5, 1], [6, 1], [7, 1], [8, 1], [9, 1], [10, 1], [3, 2], [4, 2], [5, 2], [7, 2], [8, 2], [10, 2], [11, 2], [12, 2]]);
+    return g;
+  },
+  fotos: () => {
+    const g = new G().add(box(1, 2, 14, 13)).del((x, y, X, Y) => (X == 1 || X == 14) && (Y == 2 || Y == 13));
+    g.rect('d', 10, 4, 11, 5);
+    for (let y = 6; y <= 12; y++) for (let x = 1; x <= 14; x++) { const a = Math.abs(x - 5) <= (y - 6) * .8 && y >= 7, b = y >= 9 && Math.abs(x - 11) <= (y - 8) * .8; if (a || b) g.put('d', [[x, y]]) }
+    return g;
+  },
+  // controles deslizantes (três trilhos de 2 px; o botão é um miolo 2x2 que, com o contorno, fecha 4x4)
+  ajustes: () => {
+    const g = new G(), kn = [[9, 3], [3, 7], [7, 11]];
+    g.add((x, y, X, Y) => kn.some(([a, b]) => X >= a && X < a + 2 && Y >= b && Y < b + 2));
+    for (const [kx, y] of kn) for (let x = 1; x <= 14; x++) if (x < kx - 1 || x > kx + 2) g.put('d', [[x, y], [x, y + 1]]);
+    return g;
+  },
+  ler: () => {
+    const yt = X => [2, 2, 3, 3, 4, 4, 4][Math.min(X, 15 - X) - 1];
+    const g = new G().add((x, y, X, Y) => { const k = Math.min(X, 15 - X); if (k < 1 || k > 6) return false; return Y >= yt(X) && Y <= yt(X) + 9 });
+    for (const X of [2, 3, 4, 5]) for (const y of [6, 8, 10]) g.put('x', [[X, y], [15 - X, y]]);
+    return g;
+  },
+  codar: () => {
+    const g = new G().add(or(box(2, 1, 13, 9), box(1, 12, 14, 13)));
+    g.rect('x', 3, 2, 12, 8);
+    g.put('@', [[5, 3], [4, 4], [3, 5], [4, 6], [5, 7], [8, 3], [8, 4], [7, 5], [7, 6], [7, 7], [10, 3], [11, 4], [12, 5], [11, 6], [10, 7]]);
+    return g;
+  },
+  estudar: () => {
+    const g = new G().add(box(3, 1, 13, 14));
+    for (const y of [3, 6, 9, 12]) g.rect('d', 1, y, 4, y);
+    for (const y of [4, 7, 10]) g.rect('d', 7, y, 11, y);
+    return g;
+  },
+  tarefas: () => {
+    const g = new G().add(or(box(2, 3, 13, 14), box(5, 1, 10, 3))).rect('x', 6, 2, 9, 2);
+    for (const y of [6, 9, 12]) { g.rect('d', 4, y, 5, y); g.rect('d', 7, y, 11, y) }
+    return g;
+  },
+  desenhar: () => {
+    const g = new G().add(ell(7, 9.5, 6.2, 5.2)).del(disc(10.3, 13.2, 1.9));
+    g.rect('y', 2, 9, 3, 10).rect('b', 4, 6, 5, 7).rect('g', 7, 8, 8, 9).rect('d', 3, 12, 4, 13);
+    const br = [];
+    for (let k = 0; k < 6; k++) br.push([14 - k, 1 + k], [13 - k, 1 + k]);
+    g.add(inSet(br)); g.put('d', br); g.put('y', [[9, 6], [8, 6]]);
+    return g;
+  },
 };
-const ids = Object.keys(I);
-const sym = k => `<symbol id="i-${k}" viewBox="0 0 24 24">${I[k]}</symbol>`;
-const sprite = `<svg width="0" height="0" style="position:absolute" aria-hidden="true">${ids.map(sym).join('')}</svg>`;
-const block = `<!--icons-->\n${sprite}\n<!--/icons-->`;
+const EXTRA = {};
+Object.assign(I, EXTRA);
+
+// Os três controles do timer (zerar, tocar, pausar, pular) são vetores em contorno arredondado, não pixel art:
+// viewBox 24, traço 2 (estilo no CSS, .vi). Desenhos próprios. a = área fechada preenchida (var --va).
+const AV = d => `<path class="a" d="${d}"/>`, LV = d => `<path d="${d}"/>`;
+const V = {
+  zerar: LV('M4.5 12a7.5 7.5 0 1 0 2.2-5.3L4.5 9') + LV('M4.5 4.5V9H9'),
+  tocar: AV('M8 5.5v13l10.5-6.5z'),
+  pausar: AV('M7.5 5h2a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z') + AV('M14.5 5h2a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z'),
+  pular: AV('M5.5 6.5v11l8.5-5.5z') + LV('M18.5 6v12'),
+};
+const vecSprite = `<svg width="0" height="0" style="position:absolute" aria-hidden="true">${Object.keys(V).map(k => `<symbol id="v-${k}" viewBox="0 0 24 24">${V[k]}</symbol>`).join('')}</svg>`;
+const ids = Object.keys(I).filter(k => !EXTRA[k]), sheetIds = Object.keys(I);
+function rects(rows, set) {
+  const runs = [];
+  rows.forEach((r, y) => { for (let x = 0; x < N;) { if (!set.includes(r[x])) { x++; continue } let e = x; while (e < N && set.includes(r[e])) e++; runs.push({ x, y, w: e - x, h: 1 }); x = e } });
+  const out = [];
+  for (const r of runs) { const p = out.find(o => o.x == r.x && o.w == r.w && o.y + o.h == r.y); p ? p.h++ : out.push(r) }
+  return out.map(r => `M${r.x} ${r.y}h${r.w}v${r.h}h-${r.w}z`).join('');
+}
+const sym = k => {
+  const rows = I[k]().rows(), P = (cls, set) => { const d = rects(rows, set); return d ? `<path${cls ? ` class="${cls}"` : ''} d="${d}"/>` : '' };
+  if (process.argv[2] == '-v') console.log(k + '\n' + rows.join('\n'));
+  return `<symbol id="i-${k}" viewBox="0 0 16 16">${P('f', 'o') + P('w', 'h') + P('c', 'x') + P('k', 'd') + P('v', 'g') + P('b', 'b') + P('y', 'y') + P('', '@')}</symbol>`;
+};
+const all = ids.map(sym);
+const block = `<!--icons-->\n<svg width="0" height="0" style="position:absolute" aria-hidden="true">${all.join('')}</svg>\n<!--/icons-->`;
+const sheetBlock = `<svg width="0" height="0" style="position:absolute" aria-hidden="true">${sheetIds.map(sym).join("")}</svg>`;
 const f = path.join(__dirname, 'index.html');
 let h = fs.readFileSync(f, 'utf8');
 if (/\n<!--icons-->/.test(h)) h = h.replace(/\n<!--icons-->[\s\S]*?<!--\/icons-->/, () => '\n' + block);
 else h = h.replace('<nav>', () => block + '\n<nav>');
+const vb = '<!--vec-->\n' + vecSprite + '\n<!--/vec-->';
+if (/\n<!--vec-->/.test(h)) h = h.replace(/\n<!--vec-->[\s\S]*?<!--\/vec-->/, () => '\n' + vb);
+else h = h.replace('<!--icons-->', () => vb + '\n<!--icons-->');
 fs.writeFileSync(f, h);
-const css = h.match(/<style[^>]*>([\s\S]*?)<\/style>/)[1];
+// folha de conferência: grande (4x) nos dois estados lado a lado e no tamanho real do painel (2x)
 const cell = (id, cls, px) => `<svg class="pi ${cls}" style="width:${px}px;height:${px}px"><use href="#i-${id}"/></svg>`;
+const css = h.match(/<style[^>]*>([\s\S]*?)<\/style>/)[1];
 fs.mkdirSync(path.join(__dirname, 'out'), { recursive: true });
 fs.writeFileSync(path.join(__dirname, 'out', 'icones.html'), `<!doctype html><meta charset=utf-8><style>${css}
-body{padding:24px;display:block}.g{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.c{background:var(--card);border-radius:14px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px}.p{display:flex;gap:18px}.real{display:flex;flex-wrap:wrap;gap:16px;background:var(--card);padding:16px;border-radius:14px}.real span{display:flex;gap:6px}h3{color:var(--mut);font-weight:500}</style>
-${sprite}<h3>Inativo e ativo, 64 px</h3><div class=g>${ids.map(i => `<div class=c><div class=p>${cell(i, 'off', 64)}${cell(i, 'on', 64)}</div><small>${i}</small></div>`).join('')}</div>
-<h3>Tamanho do painel (26 px)</h3><div class=real>${ids.map(i => `<span>${cell(i, 'off', 26)}${cell(i, 'on', 26)}</span>`).join('')}</div>`);
-console.log('ok', sprite.length, 'bytes de sprite');
+body{padding:24px;display:block}.g{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}.c{background:var(--card);border-radius:14px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px}.p{display:flex;gap:18px;align-items:center}.c small{color:var(--mut)}h3{color:var(--mut);font-weight:500;margin:22px 0 10px}.real{display:flex;gap:22px;flex-wrap:wrap;background:var(--card);border-radius:14px;padding:16px}.real span{display:flex;gap:8px;align-items:center}.off{color:var(--mut)}</style>
+${sheetBlock}<h3>Contorno (inativo) e preenchido (ativo), 4x</h3><div class=g>${sheetIds.map(i => `<div class=c><div class=p>${cell(i, 'off', 64)}${cell(i, 'on', 64)}</div><small>${i}</small></div>`).join('')}</div>
+<h3>No tamanho do painel (2x, 32 px)</h3><div class=real>${sheetIds.map(i => `<span>${cell(i, 'off', 32)}${cell(i, 'on', 32)}</span>`).join('')}</div>`);
+console.log('ok', all.join('').length, 'bytes de sprite');
