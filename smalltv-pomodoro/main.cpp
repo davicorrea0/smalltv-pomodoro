@@ -36,6 +36,7 @@ extern "C" uint32_t _FS_start;
 #include "gifcheck.h"
 #include "security.h"
 #include "warm.h"
+#include "bri_curva.h"  // curva de brilho em tabela (sim/gerar_brilho.js)
 #include <new>
 #include <vector>
 #include <time.h>
@@ -404,9 +405,11 @@ uint16_t blFrom = 0, blTo = 0, blNow = 0;
 uint32_t blT0 = 0;
 bool blBoot = true;  // primeira escrita (boot): sem rampa
 
+// Tabela gerada por sim/gerar_brilho.js (BL_MIN + (BL_RANGE - BL_MIN) * (b/100)^2.2); o teste sim/brilho_test.cpp a compara com o powf
 uint16_t briDuty(int b) {
   if (b <= 0) return 0;
-  return BL_MIN + (uint16_t)((BL_RANGE - BL_MIN) * powf(b / 100.0f, 2.2f) + 0.5f);
+  if (b > 100) b = 100;
+  return pgm_read_word(&BRI_CURVA[b]);  // gama 2.2 pré-calculada (sim/gerar_brilho.js), sem powf
 }
 
 int16_t sunRise = -1, sunSet = -1;  // minutos do dia (hora local), da última busca do clima
