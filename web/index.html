@@ -524,8 +524,11 @@ async function shareDay(){if(!st)return;if(!STATS)await loadStats();
 // ---------- versão nova (firmware/latest.json no site) ----------
 let UPD=null,updating=false,updChecked=false,lastToday=-1;
 // com "Receber versões de teste" ligado, firmware/beta.json também conta: vale a mais nova das duas
+// ponte de layout (scripts/ponte.cjs): o topo do JSON é sempre uma versão que cabe no 1 MB do layout antigo (é o que os
+// painéis antigos leem); "l2" traz a versão maior, só para quem já está no 4M2M (fs.l2)
+const updL2=(j,l2)=>j&&l2&&j.l2&&vnum(j.l2.version)>vnum(j.version)?j.l2:j;
 function checkUpdate(){const get=f=>fetch(SITE+'firmware/'+f,{cache:'no-store'}).then(r=>r.ok?r.json():null).catch(()=>null);
- Promise.all([get('latest.json'),st&&st.cfg.beta?get('beta.json'):null]).then(([a,b])=>{let u=a;if(b&&(!u||vnum(b.version)>vnum(u.version)))u=Object.assign({beta:1},b);
+ Promise.all([get('latest.json'),st&&st.cfg.beta?get('beta.json'):null]).then(([a,b])=>{const l2=!!(st&&st.fs&&st.fs.l2);a=updL2(a,l2);b=updL2(b,l2);let u=a;if(b&&(!u||vnum(b.version)>vnum(u.version)))u=Object.assign({beta:1},b);
   if(!u||!st||vnum(u.version)<=vnum(st.ver))return;UPD=u;let skip='';try{skip=localStorage.updSkip||''}catch(e){}if(skip==u.version)return;showUpdate()})}
 function showUpdate(){const u=UPD;if(!u)return;$('updt').textContent=t(u.beta?'Versão de teste {0} disponível':'Nova versão {0} disponível',u.version);const n=$('updn');n.innerHTML='';
  ((u.notes||{})[LANGS[LG]]||(u.notes||{}).pt||[]).forEach(x=>n.appendChild(el('li',null,x)));$('upd').classList.add('v')}
