@@ -1,0 +1,26 @@
+{
+  "pt": [
+    "Versão de teste: controles do timer (zerar, tocar, pausar, pular) redesenhados em contorno arredondado",
+    "Ícones do painel em pixel art 16x16, nítidos também em telas com escala de 125% e 150%; logo, timer e títulos na fonte pixel Silkscreen",
+    "Ajustes do painel com controles deslizantes",
+    "Prepara o relógio para as próximas atualizações; relógios mais antigos atualizam em duas etapas, sozinhos",
+    "Mais memória livre no relógio: tabelas do QR code, GIF e JPEG na flash, e respostas do painel enviadas em partes",
+    "Foto que falha por falta de memória mostra \"Sem memória p/ foto\" e tenta de novo, em vez de \"JPG inválido\""
+  ],
+  "en": [
+    "Test version: timer controls (reset, play, pause, skip) redrawn as rounded outlines",
+    "Panel icons in 16x16 pixel art, sharp also at 125% and 150% display scaling; logo, timer and headings in the Silkscreen pixel font",
+    "Panel Settings use sliders",
+    "Prepares the clock for upcoming updates; older clocks update in two steps, on their own",
+    "More free memory on the clock: QR code, GIF and JPEG tables moved to flash, and panel responses sent in chunks",
+    "A photo that fails for lack of memory shows \"No memory for photo\" and retries, instead of \"Invalid JPG\""
+  ],
+  "es": [
+    "Versión de prueba: controles del temporizador (reiniciar, reproducir, pausar, saltar) rediseñados con contorno redondeado",
+    "Iconos del panel en pixel art 16x16, nítidos también con escalado de 125% y 150%; logo, temporizador y títulos en la fuente pixel Silkscreen",
+    "Los Ajustes del panel usan controles deslizantes",
+    "Prepara el reloj para las próximas actualizaciones; los relojes más antiguos se actualizan en dos pasos, solos",
+    "Más memoria libre en el reloj: tablas del código QR, GIF y JPEG en la flash, y respuestas del panel enviadas en partes",
+    "Una foto que falla por falta de memoria muestra \"Sin memoria p/ foto\" y lo intenta de nuevo, en lugar de \"JPG invalido\""
+  ]
+}
