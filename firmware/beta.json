@@ -1,33 +1,39 @@
 {
-  "version": "1.24.10",
-  "date": "2026-11-03",
+  "version": "1.24.11",
+  "date": "2026-11-04",
   "file": "beta/smalltv-pomodoro.bin",
   "size": 584096,
   "notes": {
     "pt": [
-      "Versão de teste: libera 832 bytes de RAM do relógio; tabelas do QR code, do GIF/descompressor e do JPEG agora ficam na flash",
-      "O painel ganhou ícones em pixel art, com contorno quando inativos e preenchimento colorido quando ativos",
+      "Versão de teste: ícones do painel refeitos em pixel art 16x16, com contorno quando inativos e duas cores quando ativos",
+      "Engrenagem nova, seta do botão de zerar redesenhada e nova paleta no desenhar",
+      "Ajustes do painel agora com controles deslizantes",
+      "Libera 832 bytes de RAM do relógio; tabelas do QR code, do GIF/descompressor e do JPEG agora ficam na flash",
       "Estado, histórico, fotos e mostradores agora são enviados em partes, reduzindo os picos e a fragmentação da memória",
       "Foto sem memória deixou de aparecer como \"JPG inválido\": se faltar memória no momento, o relógio avisa \"Sem memória p/ foto\" e tenta de novo na próxima foto; só avisa arquivo inválido quando o arquivo está mesmo estragado"
     ],
     "en": [
-      "Test version: frees 832 bytes of RAM on the clock; the QR code, GIF/decompressor and JPEG tables now live in flash",
-      "The panel now has pixel-art icons, outlined when inactive and color-filled when active",
+      "Test version: panel icons redrawn in 16x16 pixel art, outlined when inactive and two-colored when active",
+      "New gear icon, redesigned reset arrow and new palette in the drawing tool",
+      "Panel Settings now use sliders",
+      "Frees 832 bytes of RAM on the clock; the QR code, GIF/decompressor and JPEG tables now live in flash",
       "State, history, photos and faces are now sent in chunks, reducing memory peaks and fragmentation",
       "A photo that fails for lack of memory no longer shows as \"Invalid JPG\": if memory is short at that moment the clock says \"No memory for photo\" and tries again on the next photo; it only reports an invalid file when the file is really damaged"
     ],
     "es": [
-      "Versión de prueba: libera 832 bytes de RAM del reloj; las tablas del código QR, del GIF/descompresor y del JPEG ahora quedan en la flash",
-      "El panel ahora tiene iconos en pixel art, con contorno cuando están inactivos y relleno de color cuando están activos",
+      "Versión de prueba: iconos del panel rehechos en pixel art 16x16, con contorno cuando están inactivos y dos colores cuando están activos",
+      "Engranaje nuevo, flecha de reiniciar rediseñada y nueva paleta en el dibujo",
+      "Los Ajustes del panel ahora usan controles deslizantes",
+      "Libera 832 bytes de RAM del reloj; las tablas del código QR, del GIF/descompresor y del JPEG ahora quedan en la flash",
       "El estado, el historial, las fotos y las esferas ahora se envían en partes, reduciendo los picos y la fragmentación de memoria",
       "Una foto que falla por falta de memoria ya no aparece como \"JPG invalido\": si falta memoria en ese momento, el reloj avisa \"Sin memoria p/ foto\" y lo intenta de nuevo con la siguiente foto; solo avisa archivo inválido cuando el archivo está realmente dañado"
     ]
   },
   "gz": "beta/smalltv-pomodoro.bin.gz",
-  "gzsize": 430481,
+  "gzsize": 430487,
   "layout": "4m2m",
-  "panel": "panel-0e9d676e685bde8ce666fbd2.html.gz",
-  "psri": "sha256-Dp1nbmhb3ozmZvvSoIAf4cpvsbhwD65TQ39PTKku8zU=",
-  "sig": "DkOmUrsGZKd8LgCeWlVDM8RFp47XTl0D/b6kPG02sISA7rwx/V/KoIiO4SNquvPjiwSSBi+eVrxRbJ4C5/vNfXru/6M2y2e3oMFKIT8l7IZf+DYvxJoWyV8xOF4mV9uE/+NXRBMZDtI4wHERguU6m7FzjjjsREooO1/tgZJ1lq5rcoloI7THRvl6Wwf/z1OZH7ro+SDL0+Zn7BnZ3VypknsyvdG9l5h6mU1fuazCMrN7jG8InKFR7PNxxTqV7cic/n2L1plw72PrDV56QHlOUwLzI1yIXL4003Jl5kuqApUdt3qz/klLtz6QyxvL7vcO4/yUY4mbL3kw5LROt91ZMQ==",
-  "gzsig": "OIhF+/PIvLMUtOvcXm+K8eVW5j2BVitjrqecfFj6+ZbJdaliO3xGu4aOy0laaVZZMMxHGVljKfnRfBbrKBVm6eaoR+UmDgnedgdtkLR+ZjFmznkEf6a3yxAdfs3HBeOubVCExCLCDP4PwEovHOYBnlELqu0zTWBA3zRPQLWDYA64czmG8b6/q3IVH9n7Pn3/kfWw8KufC/oOMj10ndutEcGtZleYRFNNTcrAvXK+hY062lcNhmwgvlmGTVsVUi4AFuU+XoE0Gwu2K0DgSGyEm1pLVFZSeI6Uj9uV0/blZtodEt72/tnywSJhlsGGlnQcDN9Oi7VL8w/3AD1y18OlJg=="
+  "panel": "panel-e94ca5e11af6c68ce9c798af.html.gz",
+  "psri": "sha256-6Uyl4Rr2xozpx5ivhtWmiUCKVsGFAwS8tcgnebFCVRY=",
+  "sig": "GJaQed176rP72BxCfiUJueLp0g+3xbS5CvDdJItVhNl4Ln0W4pg++Bjmn9HoQdtswSWOtGFMJdvtcJ9y+tmhtK6vxpldSYyaxuxMTBCzZu4hGoUS0iT0MtkIc2CUXqwMTFrlLB3aDg3fvERbMov3kyVvRRIkCmulxwDLl8kjMHEF05Vy2uPe/7TkkXzB31e2dUQtJn05w7n5R9m1L/YgddKl3YeBW3teSA43jQYKUIt/ikxSNlRyCsvgcsADc5V6AFfK1B1ArvbRDlSnfjbV0rs/AGler45SM1yP5kAHBOybBuBFAA+Jw46+32cP2sqDNUYHCEymVE0W8ykvBHKuYQ==",
+  "gzsig": "pNDxeNeU8OPpU0WTDWOTAPfvlrbcB8WNRTfXwNImSy9YoKrkWKoEkK8KPRpqWKEdeFElflDdRExSk0PZ2Kd0aphHHAmqc1TgdTnVKKtNnXM3JB2Gb3gGSNLnqyvgrHW/VEMnUZq+XSyrcSPRZmSDzJ45mqtqpfHZU8g6knUepQBUH6zkwGZ9eWYVVPsyaR+RIn8TdaqBboT0VzrWUjK8bLTVJIZIAJjIy8A1PUrkKRWBNg+XiYUUwQpTY8TD/TVoR0rKXUmNhCTiG5CYjqiV4V+iyJXqWH1jQ2AuIRB5zRow+zRmtbKbn46ibUAo3AlvHODUjo5n35oKFlQTRf2SJA=="
 }
