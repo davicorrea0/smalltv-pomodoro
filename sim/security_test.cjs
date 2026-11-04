@@ -1,6 +1,6 @@
 // Compile the actual upload handlers with an in-memory filesystem/server double.
 const fs=require('fs'),path=require('path');
-const source=fs.readFileSync(path.join(__dirname,'../smalltv-pomodoro/main.cpp'),'utf8');
+const source=(()=>{const d=path.join(__dirname,'../smalltv-pomodoro');return fs.readdirSync(d).filter(f=>/^(?!face_|facepack|fonts|ui\.cpp|assets|web\.h|ota_key).*\.(cpp|h)$/.test(f)).sort((a,b)=>(a==='app.h')-(b==='app.h')||(a<b?-1:1)).map(f=>fs.readFileSync(path.join(d,f),'utf8')).join('\n')})();
 function fn(name){const a=source.indexOf(`void ${name}() {`),b=source.indexOf('\n}',a);if(a<0||b<0)throw Error(name);return source.slice(a,b+2);}
 for(const name of ['handleUpload','handlePackUpload','handlePanelUpload'])
  if(!fn(name).includes('uploadAuthed()'))throw Error(`${name} bypasses upload throttle`);
