@@ -101,7 +101,7 @@ To go back to the original firmware, open recovery mode and upload GeekMagic's `
 
 | Folder | Contents |
 |---|---|
-| `smalltv-pomodoro/` | Firmware (Arduino/ESP8266). `main.cpp`: Wi-Fi, weather, album, Pomodoro, history, updates, recovery and the web server. `ui.cpp` + `ui_kit.h`: the drawing core and kit. `face_*.cpp`: one file per face, registered in `faces_list.h`. `facepack.cpp`: the engine for downloadable faces. `fonts.cpp`: anti-aliased vector fonts. `assets.h` is generated from `assets/` |
+| `smalltv-pomodoro/` | Firmware (Arduino/ESP8266). `main.cpp`: display, state and `setup()`/`loop()`; `app.h` shares constants, structs and prototypes; one module per area in `modulos/` (included by `main.cpp`, so the firmware is still one compilation unit and no larger; every new `.cpp` in `modulos/` needs its `#include` in `main.cpp`, and the `sim/build.sh` check enforces it): `settings`, `clock_sync`, `backlight`, `pomodoro`, `net_services` (mDNS/Alexa), `weather`, `storage_stats`, `album`, `ota_update`, `web_portal` (Wi-Fi, portal and /api routes). `ui.cpp` + `ui_kit.h`: the drawing core and kit. `face_*.cpp`: one file per face, registered in `faces_list.h`. `facepack.cpp`: the engine for downloadable faces. `fonts.cpp`: anti-aliased vector fonts. `assets.h` is generated from `assets/` |
 | `web/` | Web panel: edit `web/index.html`; `web/build.js` minifies and gzips it into `web/out/panel-<hash>.html.gz` (published on the website) and generates `web.h` with the small loader (`web/loader.html`) and the expected hash |
 | `assets/` | Pixel art sprites (one `.txt` per sprite), palettes and the `gerar.js` generator |
 | `faces/` | Downloadable face packages (`.json`), their previews and `catalog.json` |
