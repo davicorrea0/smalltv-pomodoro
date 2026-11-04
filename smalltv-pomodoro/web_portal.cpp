@@ -3,6 +3,10 @@
 #include <bearssl/bearssl_hash.h>
 #include "web.h"
 
+// respostas curtas repetidas nas rotas: um só corpo no binário em vez de três String temporárias em cada uso
+static void sendOk() { server.send_P(200, PSTR("text/plain"), PSTR("ok")); }
+static void sendCode(int code) { server.send_P(code, PSTR("text/plain"), PSTR("")); }
+
 ESP8266WebServer server(80);
 
 // Respostas JSON grandes usam HTTP em partes: o ESP8266 não precisa manter o documento inteiro em uma
@@ -457,7 +461,7 @@ static bool passOk() {
 
 void askLogin() {
   server.sendHeader(F("WWW-Authenticate"), F("Basic realm=\"SmallTV\""));
-  server.send(401, "text/plain", "");
+  sendCode(401);
 }
 
 static AuthThrottle authThrottle;
@@ -581,7 +585,7 @@ void setupWeb() {
     crashRec.magic = 0;
     EEPROM.put(CRASH_OFF, crashRec);
     EEPROM.commit();
-    server.send(200, "text/plain", "ok");
+    sendOk();
   });
   // avisos de fim de fase: GET lê, POST (w, b) grava, POST test=w|b chama o endereço e devolve o código
   server.on("/api/hooks", HTTP_GET, [] {
@@ -680,7 +684,7 @@ void setupWeb() {
       const String &id = server.arg("pkg");
       File f = fsOk && idOk(id) ? LittleFS.open("/faces/" + id + ".png", "r") : File();
       if (!f) {
-        server.send(404, "text/plain", "");
+        sendCode(404);
         return;
       }
       server.sendHeader("Cache-Control", "max-age=300");
@@ -690,11 +694,11 @@ void setupWeb() {
     }
     int t = server.arg("t").toInt();
     if (t < 0 || t >= THEME_COUNT) {
-      server.send(404, "text/plain", "");
+      sendCode(404);
       return;
     }
     server.sendHeader("Location", String(F("https://davicorrea0.github.io/smalltv-pomodoro/img/faces/face-")) + t + ".png");
-    server.send(302, "text/plain", "");
+    sendCode(302);
   });
   // anti-fantasma: v=0..63 aplica e mostra a estampa (3 min); save=1 guarda; stop=1 volta ao salvo
   server.on("/api/vcom", HTTP_POST, [] {
@@ -900,12 +904,12 @@ void setupWeb() {
       facePackUnload();
       uiInvalidate();
     }
-    server.send(200, "text/plain", "ok");
+    sendOk();
   });
   server.on("/api/upload", HTTP_POST, [] {
     if (!guard()) return;
     if (uploadError.length()) server.send(400, "text/plain", uploadError);
-    else server.send(200, "text/plain", "ok");
+    else sendOk();
   }, handleUpload);
   server.on("/api/delete", HTTP_POST, [] {
     if (!guard()) return;
@@ -919,7 +923,7 @@ void setupWeb() {
       return;
     }
     rebuildAlbum();
-    server.send(200, "text/plain", "ok");
+    sendOk();
   });
   server.on("/api/storage", HTTP_GET, sendStorage);
   // apaga qualquer arquivo ou pasta da memória, menos o que o relógio precisa (fsKeep)
@@ -955,7 +959,7 @@ void setupWeb() {
       return;
     }
     viewUntil = millis() + cfg.albumDelay * 1000UL;
-    server.send(200, "text/plain", "ok");
+    sendOk();
   });
   server.on("/api/migdone", HTTP_POST, [] {  // o painel restaurou (ou dispensou) o backup da migração
     if (!guard()) return;
@@ -964,7 +968,7 @@ void setupWeb() {
       EEPROM.put(FS_OFF, fsMark);
       EEPROM.commit();
     }
-    server.send(200, "text/plain", "ok");
+    sendOk();
   });
   server.on("/api/format", HTTP_POST, [] {
     if (!guard()) return;
@@ -1007,7 +1011,7 @@ void setupWeb() {
   });
   server.on("/api/wifireset", HTTP_POST, [] {
     if (!guard()) return;
-    server.send(200, "text/plain", "ok");
+    sendOk();
     delay(300);
     WiFi.persistent(true);
     WiFi.disconnect(true);  // com persistent, apaga a rede salva
@@ -1210,7 +1214,7 @@ void startPortal() {
   // qualquer outro endereço cai no formulário (portal cativo do celular)
   server.onNotFound([] {
     server.sendHeader("Location", "http://192.168.4.1/");
-    server.send(302, "text/plain", "");
+    sendCode(302);
   });
   server.begin();
 }
