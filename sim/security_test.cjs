@@ -105,7 +105,7 @@ struct{bool exists(const String&){return true;}void mkdir(const char*){}File ope
  void info(FSInfo&){}void remove(const String&){deletes++;}}LittleFS;
 bool isJpg(String s){s.toLowerCase();return s.endsWith(".jpg")||s.endsWith(".jpeg");}
 bool isGif(String s){s.toLowerCase();return s.endsWith(".gif");}
-bool validGif(const String&){return true;}bool validJpg(const String&){return true;}void rebuildAlbum(){rebuilds++;}
+bool validGif(const String&){return true;}enum JpgResult:uint8_t{JPG_OK,JPG_BAD,JPG_NOMEM};JpgResult validJpg(const String&){return JPG_OK;}void rebuildAlbum(){rebuilds++;}
 const char*tr(const char*a,const char*,const char*){return a;}
 File uploadFile,packUpload;String uploadPath,uploadError,packUploadError;
 UploadGate photoGate,packGate;bool packFaceReady=false;

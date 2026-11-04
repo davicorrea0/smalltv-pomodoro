@@ -64,26 +64,26 @@ unsigned short dist_base[30];
 
 #else
 
-const unsigned char length_bits[30] = {
+const unsigned char length_bits[30] PROGMEM = {
    0, 0, 0, 0, 0, 0, 0, 0,
    1, 1, 1, 1, 2, 2, 2, 2,
    3, 3, 3, 3, 4, 4, 4, 4,
    5, 5, 5, 5
 };
-const unsigned short length_base[30] = {
+const unsigned short length_base[30] PROGMEM = {
    3, 4, 5, 6, 7, 8, 9, 10,
    11, 13, 15, 17, 19, 23, 27, 31,
    35, 43, 51, 59, 67, 83, 99, 115,
    131, 163, 195, 227, 258
 };
 
-const unsigned char dist_bits[30] = {
+const unsigned char dist_bits[30] PROGMEM = {
    0, 0, 0, 0, 1, 1, 2, 2,
    3, 3, 4, 4, 5, 5, 6, 6,
    7, 7, 8, 8, 9, 9, 10, 10,
    11, 11, 12, 12, 13, 13
 };
-const unsigned short dist_base[30] = {
+const unsigned short dist_base[30] PROGMEM = {
    1, 2, 3, 4, 5, 7, 9, 13,
    17, 25, 33, 49, 65, 97, 129, 193,
    257, 385, 513, 769, 1025, 1537, 2049, 3073,
@@ -93,7 +93,7 @@ const unsigned short dist_base[30] = {
 #endif
 
 /* special ordering of code length codes */
-const unsigned char clcidx[] = {
+const unsigned char clcidx[] PROGMEM = {
    16, 17, 18, 0, 8, 7, 9, 6,
    10, 5, 11, 4, 12, 3, 13, 2,
    14, 1, 15
@@ -329,7 +329,7 @@ static int tinf_decode_trees(TINF_DATA *d, TINF_TREE *lt, TINF_TREE *dt)
       /* get 3 bits code length (0-7) */
       unsigned int clen = tinf_read_bits(d, 3, 0);
 
-      lengths[clcidx[i]] = clen;
+      lengths[pgm_read_byte(&clcidx[i])] = clen;
    }
 
    /* build code length tree, temporarily use length tree */
@@ -436,7 +436,7 @@ static int tinf_inflate_block_data(TINF_DATA *d, TINF_TREE *lt, TINF_TREE *dt)
         }
 
         /* possibly get more bits from length code */
-        d->curlen = tinf_read_bits(d, length_bits[sym], length_base[sym]);
+        d->curlen = tinf_read_bits(d, pgm_read_byte(&length_bits[sym]), pgm_read_word(&length_base[sym]));
 
         dist = tinf_decode_symbol(d, dt);
         if (dist < 0 || dist >= 30) { /* SmallTV: errors are negative, never table indices. */
@@ -444,7 +444,7 @@ static int tinf_inflate_block_data(TINF_DATA *d, TINF_TREE *lt, TINF_TREE *dt)
         }
 
         /* possibly get more bits from distance code */
-        offs = tinf_read_bits(d, dist_bits[dist], dist_base[dist]);
+        offs = tinf_read_bits(d, pgm_read_byte(&dist_bits[dist]), pgm_read_word(&dist_base[dist]));
 
         /* calculate and validate actual LZ offset to use */
         if (d->dict_ring) {

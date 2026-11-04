@@ -18,6 +18,8 @@ fs.writeFileSync(out, `#include <cstdint>
 #include <type_traits>
 #define F(s) (s)
 #define PSTR(s) (s)
+#define CONTENT_LENGTH_UNKNOWN -1
+#define yield() ((void)0)
 using std::min;
 static std::map<std::string, std::vector<uint8_t>> disk;
 struct File {
@@ -60,10 +62,15 @@ struct String : std::string {
 static std::map<std::string, String> args;
 static int sentCode = 0; static std::string sentBody;
 struct { bool hasArg(const char *n) { return args.count(n); } const String &arg(const char *n) { return args[n]; }
+  void setContentLength(int) {}
+  void sendContent(const std::string &b) { sentBody += b; }
   void send(int c, const char *, const std::string &b) { sentCode = c; sentBody = b; }
   void send_P(int c, const char *, const char *b) { sentCode = c; sentBody = b; } } server;
 bool guard() { return true; }
 bool readOk() { return true; }
+${fn('void jsonBegin() {')}
+${fn('void jsonFlush(')}
+${fn('void jsonEnd(')}
 ${fn('bool statsRead(')}
 ${fn('void statsCompute(')}
 ${fn('void statsWrite(')}

@@ -69,7 +69,8 @@ static AnimatedGIF *gif = nullptr;
 static void stopAlbum() { delete gif; gif = nullptr; inAlbum = false; curFile.clear(); uiInvalidate(); }
 static bool isGif(const String &s) { return s.find(".gif") != String::npos; }
 static bool validGif(const String &) { return true; }
-static bool drawJpg(const String &) { G->drawPixel(0, 0, TEXT); return true; }
+enum JpgResult : uint8_t { JPG_OK, JPG_BAD, JPG_NOMEM };
+static JpgResult drawJpg(const String &) { G->drawPixel(0, 0, TEXT); return JPG_OK; }
 ${fn('bool showAlbumItem(const String &f)')}
 ${qrFixture}
 
