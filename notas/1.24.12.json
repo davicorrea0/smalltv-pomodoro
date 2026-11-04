@@ -1,35 +1,26 @@
 {
   "pt": [
-    "Versão de teste: controles do timer (zerar, tocar, pausar, pular) redesenhados em contorno arredondado, nítidos em qualquer escala de tela",
-    "Ícones pixel art do painel sempre nítidos em telas com escala de 125% e 150%; logo, timer e títulos na fonte pixel Silkscreen",
-    "Atualização em duas etapas para relógios antigos: esta versão é a ponte que cabe no layout antigo; as versões maiores ficam só para quem já passou por ela",
-    "Ícones do painel refeitos em pixel art 16x16, com contorno quando inativos e duas cores quando ativos",
-    "Engrenagem nova, seta do botão de zerar redesenhada e nova paleta no desenhar",
-    "Ajustes do painel agora com controles deslizantes",
-    "Libera 832 bytes de RAM do relógio; tabelas do QR code, do GIF/descompressor e do JPEG agora ficam na flash",
-    "Estado, histórico, fotos e mostradores agora são enviados em partes, reduzindo os picos e a fragmentação da memória",
-    "Foto sem memória deixou de aparecer como \"JPG inválido\": se faltar memória no momento, o relógio avisa \"Sem memória p/ foto\" e tenta de novo na próxima foto; só avisa arquivo inválido quando o arquivo está mesmo estragado"
+    "Versão de teste: controles do timer (zerar, tocar, pausar, pular) redesenhados em contorno arredondado",
+    "Ícones do painel em pixel art 16x16, nítidos também em telas com escala de 125% e 150%; logo, timer e títulos na fonte pixel Silkscreen",
+    "Ajustes do painel com controles deslizantes",
+    "Prepara o relógio para as próximas atualizações; relógios mais antigos atualizam em duas etapas, sozinhos",
+    "Mais memória livre no relógio: tabelas do QR code, GIF e JPEG na flash, e respostas do painel enviadas em partes",
+    "Foto que falha por falta de memória mostra \"Sem memória p/ foto\" e tenta de novo, em vez de \"JPG inválido\""
   ],
   "en": [
-    "Test version: timer controls (reset, play, pause, skip) redrawn as rounded outlines, sharp at any screen scale",
-    "Panel pixel-art icons now stay sharp at 125% and 150% display scaling; logo, timer and headings use the Silkscreen pixel font",
-    "Two-step updates for older clocks: this version is the bridge that fits the old layout; larger versions are offered only to clocks that already went through it",
-    "Panel icons redrawn in 16x16 pixel art, outlined when inactive and two-colored when active",
-    "New gear icon, redesigned reset arrow and new palette in the drawing tool",
-    "Panel Settings now use sliders",
-    "Frees 832 bytes of RAM on the clock; the QR code, GIF/decompressor and JPEG tables now live in flash",
-    "State, history, photos and faces are now sent in chunks, reducing memory peaks and fragmentation",
-    "A photo that fails for lack of memory no longer shows as \"Invalid JPG\": if memory is short at that moment the clock says \"No memory for photo\" and tries again on the next photo; it only reports an invalid file when the file is really damaged"
+    "Test version: timer controls (reset, play, pause, skip) redrawn as rounded outlines",
+    "Panel icons in 16x16 pixel art, sharp also at 125% and 150% display scaling; logo, timer and headings in the Silkscreen pixel font",
+    "Panel Settings use sliders",
+    "Prepares the clock for upcoming updates; older clocks update in two steps, on their own",
+    "More free memory on the clock: QR code, GIF and JPEG tables moved to flash, and panel responses sent in chunks",
+    "A photo that fails for lack of memory shows \"No memory for photo\" and retries, instead of \"Invalid JPG\""
   ],
   "es": [
-    "Versión de prueba: controles del temporizador (reiniciar, reproducir, pausar, saltar) rediseñados con contorno redondeado, nítidos en cualquier escala de pantalla",
-    "Los iconos pixel art del panel quedan nítidos con escalado de 125% y 150%; logo, temporizador y títulos usan la fuente pixel Silkscreen",
-    "Actualización en dos pasos para relojes antiguos: esta versión es el puente que cabe en el diseño antiguo; las versiones mayores solo se ofrecen a los relojes que ya pasaron por ella",
-    "Iconos del panel rehechos en pixel art 16x16, con contorno cuando están inactivos y dos colores cuando están activos",
-    "Engranaje nuevo, flecha de reiniciar rediseñada y nueva paleta en el dibujo",
-    "Los Ajustes del panel ahora usan controles deslizantes",
-    "Libera 832 bytes de RAM del reloj; las tablas del código QR, del GIF/descompresor y del JPEG ahora quedan en la flash",
-    "El estado, el historial, las fotos y las esferas ahora se envían en partes, reduciendo los picos y la fragmentación de memoria",
-    "Una foto que falla por falta de memoria ya no aparece como \"JPG invalido\": si falta memoria en ese momento, el reloj avisa \"Sin memoria p/ foto\" y lo intenta de nuevo con la siguiente foto; solo avisa archivo inválido cuando el archivo está realmente dañado"
+    "Versión de prueba: controles del temporizador (reiniciar, reproducir, pausar, saltar) rediseñados con contorno redondeado",
+    "Iconos del panel en pixel art 16x16, nítidos también con escalado de 125% y 150%; logo, temporizador y títulos en la fuente pixel Silkscreen",
+    "Los Ajustes del panel usan controles deslizantes",
+    "Prepara el reloj para las próximas actualizaciones; los relojes más antiguos se actualizan en dos pasos, solos",
+    "Más memoria libre en el reloj: tablas del código QR, GIF y JPEG en la flash, y respuestas del panel enviadas en partes",
+    "Una foto que falla por falta de memoria muestra \"Sin memoria p/ foto\" y lo intenta de nuevo, en lugar de \"JPG invalido\""
   ]
 }
