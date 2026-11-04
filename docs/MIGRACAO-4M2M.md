@@ -17,11 +17,30 @@ Conferido no core 3.1.2 (`boards.txt` e `tools/sdk/ld/eagle.flash.4m2m.ld` / `4m
 
 Novo limite do firmware: **~1019 KB** (1.044.464 bytes, o teto de execução do ESP8266). Antes, o limite prático era ~600 KB (firmware + `.gz` cabendo em 1 MB).
 
-## Limite da transição (importante)
+## Janela do layout antigo e a ponte
 
-A primeira versão 4M2M chega aos relógios por atualização pela rede feita pelo firmware **antigo** (4M3M), que só enxerga 1 MB: o `.gz` é gravado no fim desse 1 MB e o firmware descompactado precisa terminar antes dele. Por isso **a primeira versão 4M2M tem de continuar cabendo no layout antigo**: `firmware (arredondado a 4 KB) + .gz (arredondado, +512 bytes do envio) ≤ 1 MB`. Hoje: 551.920 bytes + .gz 407.844 bytes, folga de ~48 KB de firmware.
+Um relógio no layout **antigo** (4M3M: 1.23.x ou anterior) só enxerga 1 MB para a atualização: o `.gz` é gravado no fim desse 1 MB e o firmware descompactado precisa terminar antes dele: `firmware (arredondado a 4 KB) + .gz (arredondado, +512 bytes do envio) ≤ 1 MB`. A 1.24.11 tem 584 KB + .gz 431 KB, ~16 KB de folga. Já no 4M2M o teto é o do linker (1.044.464 bytes).
 
-Salvaguarda: o `compilar.sh` (e portanto o `scripts/publicar.sh`, que o chama) **recusa** o build que passe desse limite enquanto `RELOGIOS_4M3M=1` (o padrão). Só se muda isso de propósito, com `RELOGIOS_4M3M=0 sh compilar.sh`, quando nenhum relógio estiver mais no layout antigo (ou aceitando que quem ficou para trás atualize pelo modo de recuperação). Um relógio no layout antigo que receba uma versão maior que o limite recusa a troca ("firmware grande demais para descompactar") e continua com o firmware atual, sem risco.
+**O que o relógio antigo faz com um firmware grande demais:** recusa sem risco. Desde a 1.14, `otaVerifyGz` descompacta o `.gz` gravado e, se a imagem alcançaria o `.gz`, cancela a troca ("firmware grande demais para descompactar", `eboot_command_clear`) e o firmware atual continua; se o `.gz` nem cabe na área livre, `Update.begin` já falha. Ninguém quebra, mas o painel antigo ficaria oferecendo para sempre uma versão que nunca instala.
+
+**Como os relógios descobrem as versões:** o relógio não manda versão nem layout para o site (o site é estático). Quem decide é o painel, que roda no navegador: lê `firmware/latest.json` (e `firmware/beta.json` com "Receber versões de teste", desde a 1.22), compara `version` com a do relógio (`/api/state`) e envia o arquivo ao `/update`. O painel é o que o firmware instalado guarda (o hash vem dentro do firmware), então cada relógio roda o painel da própria versão. Todos os painéis até a 1.24.11 leem **só o topo** do JSON. Desde a 1.24.0 o `/api/state` informa `fs.l2` (1 = layout 4M2M).
+
+**A ponte** (`scripts/ponte.cjs`, aplicada pelo `scripts/publicar.sh` no `latest.json` e no `beta.json`):
+
+- o **topo** do JSON é sempre uma versão que cabe na janela de 1 MB **e** cujo painel conhece a ponte (`"ponte": 1`). Os painéis antigos só veem essa;
+- a versão que não cabe vai para o campo **`l2`** (arquivos em `firmware/l2/` ou `firmware/beta/l2/`, sem tocar nos da ponte). O painel novo (`updL2` em `web/index.html`) usa o `l2` só quando o relógio informa `fs.l2` e o `l2` é mais novo que o topo;
+- o `publicar.sh` **recusa** publicar uma versão que não cabe se o topo atual (no beta: o do `beta.json` ou, na falta, o do `latest.json`) não for uma ponte. Por isso a primeira versão com este painel precisa sair como estável cabendo na janela: ela é a ponte;
+- uma versão que cabe sempre vira o topo (e a nova ponte); um `l2` mais novo que ela continua valendo.
+
+| Relógio | O que o painel oferece | Caminho |
+|---|---|---|
+| 1.14–1.23.x (4M3M, painel antigo) | o topo (a ponte) | instala a ponte, que cabe em 1 MB; o painel novo dela passa a ver o `l2` |
+| 1.23.2/1.23.3 (OTA quebrada) | o topo, mas a troca não pega | modo de recuperação com o `.bin.gz` da ponte (o da versão grande é recusado sem risco) |
+| 1.24.0–1.24.11 (4M2M, painel antigo) | o topo (a ponte) | instala a ponte e depois o `l2` |
+| ponte ou mais nova (4M2M, painel novo) | o `l2`, se houver e for mais novo | direto |
+| anterior à 1.14 | (como antes) | passa antes pela 1.14 |
+
+O `compilar.sh` não recusa mais o build acima da janela (`RELOGIOS_4M3M=0` é o padrão); só informa "janela antiga: cabe/não cabe". `RELOGIOS_4M3M=1 sh compilar.sh` volta a recusar (para compilar de propósito uma versão-ponte). O `sim/ponte_test.cjs` (rodado pelo `sim/build.sh`) simula cada tipo de relógio atualizando ao longo das publicações.
 
 ## O que acontece no relógio
 
@@ -47,7 +66,7 @@ Depois da atualização o painel mostra o cartão "A memória de arquivos foi re
 
 ## Primeira instalação a partir do firmware original
 
-Continua igual: pela página do firmware original (*Firmware Upgrade*) envia-se o `.bin` (ou o `.bin.gz`, conforme o tamanho). A imagem cabe no espaço do original (mesma regra da transição acima). No primeiro início o LittleFS é formatado: **as fotos e GIFs do original não são mantidos**; salve-os antes pelo gerenciador de arquivos do original, se quiser, e reenvie pelo painel. O Wi-Fi salvo continua valendo (fica na área do SDK, que não muda).
+Continua igual: pela página do firmware original (*Firmware Upgrade*) envia-se o `.bin` (ou o `.bin.gz`, conforme o tamanho). A imagem precisa caber no espaço do original (mesma janela de 1 MB acima): a partir do original, instale uma versão que caiba (a ponte, no topo do `latest.json`). No primeiro início o LittleFS é formatado: **as fotos e GIFs do original não são mantidos**; salve-os antes pelo gerenciador de arquivos do original, se quiser, e reenvie pelo painel. O Wi-Fi salvo continua valendo (fica na área do SDK, que não muda).
 
 ## Voltar de 4M2M
 
@@ -55,4 +74,4 @@ Voltar para uma versão 4M3M (ou para o firmware original) mistura os endereços
 
 ## Publicação
 
-`scripts/publicar.sh` usa o layout padrão (4M2M) e grava `"layout":"4m2m"` no JSON do site; com `LAYOUT=4M3M` não grava. O ensaio (sem `--publicar`) passa pelo mesmo `compilar.sh`, então recusa o firmware que não caiba na janela de transição.
+`scripts/publicar.sh` usa o layout padrão (4M2M) e grava `"layout":"4m2m"` no JSON do site; com `LAYOUT=4M3M` não grava. Depois de compilar, ele confere se a versão cabe na janela antiga: se cabe, ela vira o topo (`"ponte": 1`); se não, vai para `l2` e para a pasta `l2/`, e só se o site já tiver uma ponte (veja acima). O ensaio (sem `--publicar`) mostra o JSON que seria gravado, com o topo e o `l2`.

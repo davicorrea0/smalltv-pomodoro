@@ -5,7 +5,8 @@
 // Uso: node scripts/site-seo.cjs <pasta do site>      (é idempotente: rodar de novo não muda nada)
 //
 // Fontes:
-//  - <site>/firmware/latest.json     versão estável e data (a mesma que o publicar.sh grava e o painel lê)
+//  - <site>/firmware/latest.json     versão estável e data (a mesma que o publicar.sh grava e o painel lê; com a
+//                                    ponte de layout, a do campo "l2" quando houver: é a mais nova, ver ponte.cjs)
 //  - <site>/catalog/index.json       mostradores instaláveis (galeria e contagem)
 //  - smalltv-pomodoro/faces_list.h   mostradores embutidos (a contagem e os nomes); scripts/site-faces.json
 //                                    guarda o que a lista não tem (nome e descrição em inglês, estilos do filtro)
@@ -23,7 +24,8 @@ const write = (f, s) => fs.writeFileSync(path.join(site, f), s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
 // ---------- fatos ----------
-const latest = JSON.parse(read('firmware/latest.json'));
+const latestJson = JSON.parse(read('firmware/latest.json'));
+const latest = latestJson.l2 && latestJson.l2.version ? latestJson.l2 : latestJson;
 if (!/^\d+\.\d+\.\d+$/.test(latest.version)) die('firmware/latest.json sem versão válida');
 const catalogo = JSON.parse(read('catalog/index.json'));
 const pacotes = (Array.isArray(catalogo) ? catalogo : catalogo.faces).filter(f => f && f.name && f.file);
