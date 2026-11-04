@@ -1,6 +1,6 @@
 // Exercita as funções reais de seleção de gama e de entrada no álbum com as telas reais do simulador.
 const fs = require('fs'), path = require('path');
-const source = fs.readFileSync(path.join(__dirname, '../smalltv-pomodoro/main.cpp'), 'utf8');
+const source = require('./fonte.cjs');
 function fn(signature) {
   const a = source.indexOf(signature + ' {'), b = source.indexOf('\n}', a);
   if (a < 0 || b < 0) throw Error('Função ausente: ' + signature);
