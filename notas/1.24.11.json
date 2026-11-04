@@ -1,0 +1,26 @@
+{
+  "pt": [
+    "Versão de teste: ícones do painel refeitos em pixel art 16x16, com contorno quando inativos e duas cores quando ativos",
+    "Engrenagem nova, seta do botão de zerar redesenhada e nova paleta no desenhar",
+    "Ajustes do painel agora com controles deslizantes",
+    "Versão de teste: libera 832 bytes de RAM do relógio; tabelas do QR code, do GIF/descompressor e do JPEG agora ficam na flash",
+    "Estado, histórico, fotos e mostradores agora são enviados em partes, reduzindo os picos e a fragmentação da memória",
+    "Foto sem memória deixou de aparecer como \"JPG inválido\": se faltar memória no momento, o relógio avisa \"Sem memória p/ foto\" e tenta de novo na próxima foto; só avisa arquivo inválido quando o arquivo está mesmo estragado"
+  ],
+  "en": [
+    "Test version: panel icons redrawn in 16x16 pixel art, outlined when inactive and two-colored when active",
+    "New gear icon, redesigned reset arrow and new palette in the drawing tool",
+    "Panel Settings now use sliders",
+    "Test version: frees 832 bytes of RAM on the clock; the QR code, GIF/decompressor and JPEG tables now live in flash",
+    "State, history, photos and faces are now sent in chunks, reducing memory peaks and fragmentation",
+    "A photo that fails for lack of memory no longer shows as \"Invalid JPG\": if memory is short at that moment the clock says \"No memory for photo\" and tries again on the next photo; it only reports an invalid file when the file is really damaged"
+  ],
+  "es": [
+    "Versión de prueba: iconos del panel rehechos en pixel art 16x16, con contorno cuando están inactivos y dos colores cuando están activos",
+    "Engranaje nuevo, flecha de reiniciar rediseñada y nueva paleta en el dibujo",
+    "Los Ajustes del panel ahora usan controles deslizantes",
+    "Versión de prueba: libera 832 bytes de RAM del reloj; las tablas del código QR, del GIF/descompresor y del JPEG ahora quedan en la flash",
+    "El estado, el historial, las fotos y las esferas ahora se envían en partes, reduciendo los picos y la fragmentación de memoria",
+    "Una foto que falla por falta de memoria ya no aparece como \"JPG invalido\": si falta memoria en ese momento, el reloj avisa \"Sin memoria p/ foto\" y lo intenta de nuevo con la siguiente foto; solo avisa archivo inválido cuando el archivo está realmente dañado"
+  ]
+}
