@@ -7,7 +7,7 @@ corrige.
 | Data | Decisão | Por quê | PR |
 |---|---|---|---|
 | 2026-11-04 | Agente `cto` + `PRINCIPIOS.md` + este registro; consultar o CTO antes de ideia nova, PR e release. | Várias sessões em paralelo sem um critério comum geravam inconsistência. | este PR |
-| 2026-11-04 | `main.cpp` dividido em `modulos/`, incluídos por `main.cpp` e compilados como **uma só unidade**. | O arduino-cli não compila subpastas fora de `src/`, e 11 `.cpp` separados custavam +1,8 KB; incluídos, o firmware ficou 672 bytes menor. | #55 (aberto) |
+| 2026-11-04 | `main.cpp` dividido em `modulos/`, incluídos por `main.cpp` e compilados como **uma só unidade**. | O arduino-cli não compila subpastas fora de `src/`, e 11 `.cpp` separados custavam +1,8 KB; incluídos, o firmware ficou 672 bytes menor. Módulo novo precisa de `#include` no `main.cpp`; nunca mover `modulos/` para `src/`. | #55 (aberto) |
 | 2026-11-04 | Fim da trava `RELOGIOS_4M3M` com a **ponte** no `latest.json`: o topo sempre cabe em 1 MB, o maior vai em `l2`. A estável que vira ponte precisa caber em 1 MB. | Deixar o firmware crescer além de 1 MB sem prender relógios no 4M3M. | #54 |
 | 2026-11-04 | Controles do timer em **contorno arredondado**; o resto dos ícones segue pixel art 16×16. Silkscreen só em destaques. | Os controles do timer pedem leitura imediata e área de toque; pixel art fica para a navegação. (motivo: a confirmar) | #53 |
 | 2026-11-04 | Ícones do painel em pixel art 16×16: contorno quando inativos, duas cores quando ativos. | Identidade visual única entre painel e relógio. | #50, #52 |
