@@ -71,21 +71,6 @@ const I = {
     for (const [kx, y] of kn) for (let x = 1; x <= 14; x++) if (x < kx - 1 || x > kx + 2) g.put('d', [[x, y], [x, y + 1]]);
     return g;
   },
-  zerar: () => {
-    const g = new G().add((x, y) => {
-      const dx = x - 8, dy = y - 8.6, r = Math.hypot(dx, dy);
-      if (r < 4.6 || r > 6.5) return false;
-      const a = Math.atan2(dy, dx) * 180 / Math.PI;
-      return !(a > -80 && a < -15);
-    });
-    const head = [];
-    for (let x = 8; x <= 13; x++) { const h = x <= 9 ? [1, 6] : x <= 11 ? [2, 5] : [3, 4]; for (let y = h[0]; y <= h[1]; y++) head.push([x, y]) }
-    g.add(inSet(head));
-    return g;
-  },
-  tocar: () => new G().add((x, y, X) => X >= 3 && X <= 12 && Math.abs(y - 8) <= (13.4 - x) * .68),
-  pausar: () => new G().add(or(box(3, 2, 5, 13), box(10, 2, 12, 13))),
-  pular: () => new G().add(or((x, y, X) => X >= 1 && X <= 9 && Math.abs(y - 8) <= (10.4 - x) * .6, box(11, 2, 13, 13))),
   ler: () => {
     const yt = X => [2, 2, 3, 3, 4, 4, 4][Math.min(X, 15 - X) - 1];
     const g = new G().add((x, y, X, Y) => { const k = Math.min(X, 15 - X); if (k < 1 || k > 6) return false; return Y >= yt(X) && Y <= yt(X) + 9 });
@@ -120,6 +105,17 @@ const I = {
 };
 const EXTRA = {};
 Object.assign(I, EXTRA);
+
+// Os três controles do timer (zerar, tocar, pausar, pular) são vetores em contorno arredondado, não pixel art:
+// viewBox 24, traço 2 (estilo no CSS, .vi). Desenhos próprios. a = área fechada preenchida (var --va).
+const AV = d => `<path class="a" d="${d}"/>`, LV = d => `<path d="${d}"/>`;
+const V = {
+  zerar: LV('M4.5 12a7.5 7.5 0 1 0 2.2-5.3L4.5 9') + LV('M4.5 4.5V9H9'),
+  tocar: AV('M8 5.5v13l10.5-6.5z'),
+  pausar: AV('M7.5 5h2a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z') + AV('M14.5 5h2a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z'),
+  pular: AV('M5.5 6.5v11l8.5-5.5z') + LV('M18.5 6v12'),
+};
+const vecSprite = `<svg width="0" height="0" style="position:absolute" aria-hidden="true">${Object.keys(V).map(k => `<symbol id="v-${k}" viewBox="0 0 24 24">${V[k]}</symbol>`).join('')}</svg>`;
 const ids = Object.keys(I).filter(k => !EXTRA[k]), sheetIds = Object.keys(I);
 function rects(rows, set) {
   const runs = [];
@@ -140,6 +136,9 @@ const f = path.join(__dirname, 'index.html');
 let h = fs.readFileSync(f, 'utf8');
 if (/\n<!--icons-->/.test(h)) h = h.replace(/\n<!--icons-->[\s\S]*?<!--\/icons-->/, () => '\n' + block);
 else h = h.replace('<nav>', () => block + '\n<nav>');
+const vb = '<!--vec-->\n' + vecSprite + '\n<!--/vec-->';
+if (/\n<!--vec-->/.test(h)) h = h.replace(/\n<!--vec-->[\s\S]*?<!--\/vec-->/, () => '\n' + vb);
+else h = h.replace('<!--icons-->', () => vb + '\n<!--icons-->');
 fs.writeFileSync(f, h);
 // folha de conferência: grande (4x) nos dois estados lado a lado e no tamanho real do painel (2x)
 const cell = (id, cls, px) => `<svg class="pi ${cls}" style="width:${px}px;height:${px}px"><use href="#i-${id}"/></svg>`;

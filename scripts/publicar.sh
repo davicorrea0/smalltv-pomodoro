@@ -49,7 +49,7 @@ echo "nada encontrado (desde $LAST)"
 
 say "simulador e painel"
 [ -d web/node_modules ] || (cd web && npm install --no-audit --no-fund)
-bash sim/build.sh | grep -E "troca|^pomodoro|painel:"
+bash sim/build.sh | grep -E "troca|^pomodoro|painel:|ponte:"
 git checkout -q -- faces/ docs/ 2>/dev/null || true
 git diff --quiet -- smalltv-pomodoro/web.h || die "o web.h gerado é diferente do commitado: commite o painel gerado"
 
@@ -66,12 +66,22 @@ else  # Windows: gera os .cpp com o node daqui e roda no WSL
 fi
 
 say "firmware"
-# Layout da flash (LAYOUT, padrão 4M2M; ver compilar.sh). Enquanto houver relógios no 4M3M (RELOGIOS_4M3M=1, o padrão) o
-# compilar.sh recusa firmware + .gz que não caibam no 1 MB do layout antigo: a primeira versão 4M2M é instalada por ele.
-sh compilar.sh | grep -E "firmware|caberia|RELOGIOS"
+# Layout da flash (LAYOUT, padrão 4M2M; ver compilar.sh). O teto é o do linker; para quem a versão vai, decide a ponte
+# (scripts/ponte.cjs): o que não cabe na janela de 1 MB do layout antigo só entra no "l2" do JSON (relógios 4M2M).
+sh compilar.sh | grep -E "firmware|caberia|RELOGIOS|janela"
 BIN=build/smalltv-pomodoro.ino.bin
 GZ=$BIN.gz
 grep -q "FW_VERSION" smalltv-pomodoro/app.h && grep -aq "$VER" "$BIN" || die "o binário não traz a versão $VER"
+# Cabe na janela do layout antigo (firmware + .gz <= 1 MB)? Se sim, vira o topo do JSON: a ponte, que todos os painéis
+# veem. Se não, vai para a pasta l2/ e para o campo "l2", sem tocar nos arquivos da ponte.
+CABE=$(node -p 'require("./scripts/ponte.cjs").cabeJanela(+process.argv[1],+process.argv[2])?1:0' "$(wc -c < "$BIN")" "$(wc -c < "$GZ")")
+if [ "$CABE" = 1 ]; then
+  echo "cabe na janela de 1 MB do layout antigo: vai para todos os relógios (topo do JSON, ponte)"
+else
+  [ "${LAYOUT:-4M2M}" = 4M2M ] || die "não cabe na janela de 1 MB e o layout é $LAYOUT"
+  DIR=$DIR/l2
+  echo "não cabe na janela de 1 MB do layout antigo: só para os relógios 4M2M (campo l2 do JSON, arquivos em $DIR/)"
+fi
 # Confere o .bin.gz do jeito que o eboot vai usá-lo (tamanho nos 4 últimos bytes, janela de 8 KB, nada depois do
 # gzip, magic 0xE9). Um .gz assinado por dentro apagou o gerenciador de boot na 1.20.0.
 node scripts/conferir-gz.cjs "$BIN" "$GZ" || die "o .bin.gz não é seguro para o eboot (veja acima)"
@@ -105,13 +115,18 @@ cp "$BIN" "$W/$DIR/smalltv-pomodoro.bin"
 cp "$GZ" "$W/$DIR/smalltv-pomodoro.bin.gz"
 cp "$BIN.sig" "$W/$DIR/smalltv-pomodoro.bin.sig"
 cp "$GZ.sig" "$W/$DIR/smalltv-pomodoro.bin.gz.sig"
-PREFIX=$([ $BETA = 1 ] && echo "beta/" || echo "")
+PREFIX=${DIR#firmware}/; PREFIX=${PREFIX#/}  # firmware → "", firmware/beta/l2 → "beta/l2/"
 node -e '
-const fs=require("fs"),[w,dir,json,ver,notas,prefix]=process.argv.slice(1),p=require("./web/out/panel.json");
+const fs=require("fs"),[w,dir,json,ver,notas,prefix,cabe]=process.argv.slice(1),p=require("./web/out/panel.json");
 const j={version:ver,date:new Date().toISOString().slice(0,10),file:prefix+"smalltv-pomodoro.bin",size:fs.statSync(w+"/"+dir+"/smalltv-pomodoro.bin").size,
  notes:require("./"+notas),gz:prefix+"smalltv-pomodoro.bin.gz",gzsize:fs.statSync(w+"/"+dir+"/smalltv-pomodoro.bin.gz").size,...(process.env.LAYOUT||"4M2M")=="4M2M"?{layout:"4m2m"}:{},panel:p.panel,psri:p.psri,
  sig:fs.readFileSync(w+"/"+dir+"/smalltv-pomodoro.bin.sig").toString("base64"),gzsig:fs.readFileSync(w+"/"+dir+"/smalltv-pomodoro.bin.gz.sig").toString("base64")};
-fs.writeFileSync(w+"/"+json,JSON.stringify(j,null,2)+"\n");console.log(json+":",JSON.stringify({version:j.version,size:j.size,gzsize:j.gzsize,panel:j.panel}))' "$W" "$DIR" "$JSON" "$VER" "$NOTAS" "$PREFIX"
+const ler=f=>fs.existsSync(w+"/"+f)?JSON.parse(fs.readFileSync(w+"/"+f,"utf8")):null;
+const out=require("./scripts/ponte.cjs").montar({atual:ler(json),reserva:json=="firmware/beta.json"?ler("firmware/latest.json"):null,nova:j,cabe:cabe=="1"});
+fs.writeFileSync(w+"/"+json,JSON.stringify(out,null,2)+"\n");const s=x=>JSON.stringify({version:x.version,size:x.size,gzsize:x.gzsize,file:x.file,panel:x.panel});
+console.log(json+":",s(out),out.ponte?"(ponte)":"");if(out.l2)console.log("  l2 (só relógios 4M2M):",s(out.l2))' "$W" "$DIR" "$JSON" "$VER" "$NOTAS" "$PREFIX" "$CABE" ||
+  die "a ponte não permite publicar esta versão (veja acima)"
+PONTE=$(node -p 'require(process.argv[1]).version' "$W/$JSON")
 # versão, contagens, galeria estática, SEO do <head> e sitemap.xml: tudo derivado dos JSON acima, do catalog/ e de faces_list.h
 node scripts/site-seo.cjs "$W"
 git -C "$W" add -A
@@ -135,13 +150,13 @@ cp "$GZ" "$R/smalltv-pomodoro-$TAG.bin.gz"
 cp "$BIN.sig" "$R/smalltv-pomodoro-$TAG.bin.sig"
 cp "$GZ.sig" "$R/smalltv-pomodoro-$TAG.bin.gz.sig"
 (cd "$R" && sha256sum smalltv-pomodoro-"$TAG".bin smalltv-pomodoro-"$TAG".bin.gz | sed 's/ \*/  /' > SHA256SUMS.txt)
-node -e 'const n=require("./'"$NOTAS"'");console.log(n.pt.map(x=>"- "+x).join("\n")+"\n\n## Como instalar\nPelo painel: \"Atualizar agora\". Pelo `/update`: envie o **`.bin.gz` sem descompactar** junto com o **`.bin.gz.sig`** (a assinatura; sem ela o relógio recusa). Confira os arquivos com `SHA256SUMS.txt`.")' > "$R/notas.md"
+node -e 'const n=require("./'"$NOTAS"'");console.log(n.pt.map(x=>"- "+x).join("\n")+"\n\n## Como instalar\nPelo painel: \"Atualizar agora\". Pelo `/update`: envie o **`.bin.gz` sem descompactar** junto com o **`.bin.gz.sig`** (a assinatura; sem ela o relógio recusa). Confira os arquivos com `SHA256SUMS.txt`."+(process.argv[1]=="1"?"":"\n\nEsta versão não cabe no layout antigo da flash: relógios na 1.23.x ou anterior (e quem ainda não passou pela "+process.argv[2]+") instalam antes a **"+process.argv[2]+"**, que o painel oferece sozinho; pelo `/update` ou pelo modo de recuperação, use o `.bin.gz` da "+process.argv[2]+". Um arquivo grande demais é recusado sem risco."))' "$CABE" "$PONTE" > "$R/notas.md"
 gh release create "$TAG" -R "$REPO" --target "$TARGET" $([ $BETA = 1 ] && echo --prerelease || echo --latest) \
   --title "Pomodoro $VER" --notes-file "$R/notas.md" "$R"/smalltv-pomodoro-"$TAG".bin "$R"/smalltv-pomodoro-"$TAG".bin.gz "$R"/smalltv-pomodoro-"$TAG".bin.sig "$R"/smalltv-pomodoro-"$TAG".bin.gz.sig "$R"/SHA256SUMS.txt
 
 say "conferindo no ar"
 for i in $(seq 1 40); do
-  v=$(curl -s "$SITE/$JSON?x=$RANDOM" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{console.log(JSON.parse(s).version)}catch(e){}})')
+  v=$(curl -s "$SITE/$JSON?x=$RANDOM" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);console.log(process.argv[1]=="1"?j.version:(j.l2||{}).version)}catch(e){}})' "$CABE")
   [ "$v" = "$VER" ] && break
   sleep 15
 done

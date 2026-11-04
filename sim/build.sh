@@ -27,5 +27,6 @@ node transicao_lcd.js
 node faces.js
 node catalog.js
 node painel_test.cjs
+node ponte_test.cjs || exit 1
 node ../web/build.js
 exit $r
