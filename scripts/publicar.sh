@@ -24,7 +24,7 @@ REPO=davicorrea0/smalltv-pomodoro
 SITE=https://davicorrea0.github.io/smalltv-pomodoro
 say() { printf '\n== %s\n' "$*"; }
 die() { echo "ERRO: $*" >&2; exit 1; }
-VER=$(grep -m1 -o 'FW_VERSION "[^"]*"' smalltv-pomodoro/main.cpp | cut -d'"' -f2)
+VER=$(grep -m1 -o 'FW_VERSION "[^"]*"' smalltv-pomodoro/app.h | cut -d'"' -f2)
 TAG="v$VER"
 NOTAS="notas/$VER.json"
 if [ $BETA = 1 ]; then KIND="teste (beta)"; DIR=firmware/beta; JSON=firmware/beta.json; else KIND=estável; DIR=firmware; JSON=firmware/latest.json; fi
@@ -71,7 +71,7 @@ say "firmware"
 sh compilar.sh | grep -E "firmware|caberia|RELOGIOS|janela"
 BIN=build/smalltv-pomodoro.ino.bin
 GZ=$BIN.gz
-grep -q "FW_VERSION" smalltv-pomodoro/main.cpp && grep -aq "$VER" "$BIN" || die "o binário não traz a versão $VER"
+grep -q "FW_VERSION" smalltv-pomodoro/app.h && grep -aq "$VER" "$BIN" || die "o binário não traz a versão $VER"
 # Cabe na janela do layout antigo (firmware + .gz <= 1 MB)? Se sim, vira o topo do JSON: a ponte, que todos os painéis
 # veem. Se não, vai para a pasta l2/ e para o campo "l2", sem tocar nos arquivos da ponte.
 CABE=$(node -p 'require("./scripts/ponte.cjs").cabeJanela(+process.argv[1],+process.argv[2])?1:0' "$(wc -c < "$BIN")" "$(wc -c < "$GZ")")

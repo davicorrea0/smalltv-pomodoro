@@ -7,7 +7,7 @@
 #include "../smalltv-pomodoro/bri_curva.h"
 
 const uint16_t BL_RANGE = 1023, BL_MIN = 10;
-// cópia da briDuty do main.cpp (sem float)
+// cópia da briDuty de modulos/backlight.cpp (sem float)
 static uint16_t briDuty(int b) {
   if (b <= 0) return 0;
   if (b > 100) b = 100;

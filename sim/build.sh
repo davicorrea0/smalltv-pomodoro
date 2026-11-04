@@ -2,6 +2,18 @@
 # Gera assets.h, compila e roda o simulador; gera out/*.png, out/folha.png e out/assets.png.
 # Requer: zig (https://ziglang.org), node e a biblioteca Adafruit GFX instalada pelo arduino-cli.
 cd "$(dirname "$0")"
+# módulos: todo modulos/*.cpp precisa de #include "modulos/x.cpp" no main.cpp (compila como um arquivo só) e vice-versa
+FW=../smalltv-pomodoro
+for f in "$FW"/modulos/*.cpp; do
+  grep -q "^#include \"modulos/$(basename "$f")\"" "$FW/main.cpp" || { echo "ERRO: modulos/$(basename "$f") não tem #include no main.cpp; o arquivo ficaria fora do firmware (acrescente a linha ao lado dos outros)"; exit 1; }
+done
+for m in $(sed -n 's/^#include "\(modulos\/[^"]*\.cpp\)".*/\1/p' "$FW/main.cpp"); do
+  [ -f "$FW/$m" ] || { echo "ERRO: main.cpp inclui $m, mas o arquivo não existe"; exit 1; }
+done
+# o arduino-cli compila src/ inteira (bibliotecas embutidas são ok): .cpp solto na raiz de src/ ou cópia de módulo em src/ seria compilado em dobro
+for f in "$FW"/src/*.cpp $(for g in "$FW"/modulos/*.cpp; do find "$FW/src" -name "$(basename "$g")"; done); do
+  [ -f "$f" ] && { echo "ERRO: $f em src/ seria compilado em dobro pelo arduino-cli (módulos ficam em modulos/, incluídos pelo main.cpp)"; exit 1; }
+done
 ZIG=$(command -v zig)
 if [ -z "$ZIG" ] && [ -n "$LOCALAPPDATA" ]; then  # Windows: zig instalado pelo winget fora do PATH do shell
   ZIG=$(ls "$(cygpath -u "$LOCALAPPDATA")"/Microsoft/WinGet/Packages/zig.zig*/zig-*/zig.exe 2>/dev/null | head -1)
@@ -9,7 +21,7 @@ fi
 [ -z "$ZIG" ] && ! command -v g++ >/dev/null && { echo "zig (ou g++ com multilib) não encontrado"; exit 1; }
 node ../assets/gerar.js || exit 1  # assets/*.txt -> smalltv-pomodoro/assets.h
 # o firmware é compilado sem printf/scanf de float (compilar.sh): %f e companhia não imprimiriam nada
-if grep -nE "%[-+ #0-9.]*[fFeEgG]|toFloat|atof|strtod|scanf" ../smalltv-pomodoro/*.cpp ../smalltv-pomodoro/*.h; then
+if grep -nE "%[-+ #0-9.]*[fFeEgG]|toFloat|atof|strtod|scanf" ../smalltv-pomodoro/*.cpp ../smalltv-pomodoro/modulos/*.cpp ../smalltv-pomodoro/*.h; then
   echo "use números inteiros ou String(x, casas) em vez de float no printf/scanf"; exit 1
 fi
 GFX="${GFX:-$HOME/Documents/Arduino/libraries/Adafruit_GFX_Library}"

@@ -1,9 +1,9 @@
-// Compila as funções reais do histórico (/stats.bin) de main.cpp com um LittleFS em memória que imita o
+// Compila as funções reais do histórico (/stats.bin) do firmware (sim/fonte.cjs) com um LittleFS em memória que imita o
 // do núcleo ESP8266 (seek além do fim falha, "w"/"w+" truncam, "r"/"r+" exigem o arquivo) e confere que o
 // histórico sobrevive a reinícios, que o anel dá a volta e que o arquivo curto das versões antigas é
-// recuperado. Uso: node sim/stats_test.cjs saida.cpp [main.cpp]; depois g++ -std=c++17 saida.cpp.
+// recuperado. Uso: node sim/stats_test.cjs saida.cpp [fonte.cpp]; depois g++ -std=c++17 saida.cpp.
 const fs = require('fs'), path = require('path');
-const source = fs.readFileSync(process.argv[3] || path.join(__dirname, '../smalltv-pomodoro/main.cpp'), 'utf8');
+const source = (process.argv[3] ? fs.readFileSync(process.argv[3], 'utf8') : require('./fonte.cjs'));
 function fn(sig) { const a = source.indexOf(sig), b = source.indexOf('\n}', a); if (a < 0 || b < 0) throw Error(sig); return source.slice(a, b + 2); }
 const out = process.argv[2];
 if (!out) throw Error('output.cpp required');
