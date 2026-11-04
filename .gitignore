@@ -13,7 +13,8 @@ fw/
 # carregador próprio ainda não testado no aparelho
 smalltv-loader/
 # configuração local do Claude Code
-.claude/
+.claude/*
+!.claude/agents/
 # painel: dependências do build e dicionário gerado para publicar no site
 web/node_modules/
 web/out/
