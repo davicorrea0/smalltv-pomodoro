@@ -1,39 +1,40 @@
 {
-  "version": "1.24.11",
+  "version": "1.24.12",
   "date": "2026-11-04",
   "file": "beta/smalltv-pomodoro.bin",
-  "size": 584096,
+  "size": 584112,
   "notes": {
     "pt": [
-      "Versão de teste: ícones do painel refeitos em pixel art 16x16, com contorno quando inativos e duas cores quando ativos",
-      "Engrenagem nova, seta do botão de zerar redesenhada e nova paleta no desenhar",
-      "Ajustes do painel agora com controles deslizantes",
-      "Libera 832 bytes de RAM do relógio; tabelas do QR code, do GIF/descompressor e do JPEG agora ficam na flash",
-      "Estado, histórico, fotos e mostradores agora são enviados em partes, reduzindo os picos e a fragmentação da memória",
-      "Foto sem memória deixou de aparecer como \"JPG inválido\": se faltar memória no momento, o relógio avisa \"Sem memória p/ foto\" e tenta de novo na próxima foto; só avisa arquivo inválido quando o arquivo está mesmo estragado"
+      "Versão de teste: controles do timer (zerar, tocar, pausar, pular) redesenhados em contorno arredondado",
+      "Ícones do painel em pixel art 16x16, nítidos também em telas com escala de 125% e 150%; logo, timer e títulos na fonte pixel Silkscreen",
+      "Ajustes do painel com controles deslizantes",
+      "Prepara o relógio para as próximas atualizações; relógios mais antigos atualizam em duas etapas, sozinhos",
+      "Mais memória livre no relógio: tabelas do QR code, GIF e JPEG na flash, e respostas do painel enviadas em partes",
+      "Foto que falha por falta de memória mostra \"Sem memória p/ foto\" e tenta de novo, em vez de \"JPG inválido\""
     ],
     "en": [
-      "Test version: panel icons redrawn in 16x16 pixel art, outlined when inactive and two-colored when active",
-      "New gear icon, redesigned reset arrow and new palette in the drawing tool",
-      "Panel Settings now use sliders",
-      "Frees 832 bytes of RAM on the clock; the QR code, GIF/decompressor and JPEG tables now live in flash",
-      "State, history, photos and faces are now sent in chunks, reducing memory peaks and fragmentation",
-      "A photo that fails for lack of memory no longer shows as \"Invalid JPG\": if memory is short at that moment the clock says \"No memory for photo\" and tries again on the next photo; it only reports an invalid file when the file is really damaged"
+      "Test version: timer controls (reset, play, pause, skip) redrawn as rounded outlines",
+      "Panel icons in 16x16 pixel art, sharp also at 125% and 150% display scaling; logo, timer and headings in the Silkscreen pixel font",
+      "Panel Settings use sliders",
+      "Prepares the clock for upcoming updates; older clocks update in two steps, on their own",
+      "More free memory on the clock: QR code, GIF and JPEG tables moved to flash, and panel responses sent in chunks",
+      "A photo that fails for lack of memory shows \"No memory for photo\" and retries, instead of \"Invalid JPG\""
     ],
     "es": [
-      "Versión de prueba: iconos del panel rehechos en pixel art 16x16, con contorno cuando están inactivos y dos colores cuando están activos",
-      "Engranaje nuevo, flecha de reiniciar rediseñada y nueva paleta en el dibujo",
-      "Los Ajustes del panel ahora usan controles deslizantes",
-      "Libera 832 bytes de RAM del reloj; las tablas del código QR, del GIF/descompresor y del JPEG ahora quedan en la flash",
-      "El estado, el historial, las fotos y las esferas ahora se envían en partes, reduciendo los picos y la fragmentación de memoria",
-      "Una foto que falla por falta de memoria ya no aparece como \"JPG invalido\": si falta memoria en ese momento, el reloj avisa \"Sin memoria p/ foto\" y lo intenta de nuevo con la siguiente foto; solo avisa archivo inválido cuando el archivo está realmente dañado"
+      "Versión de prueba: controles del temporizador (reiniciar, reproducir, pausar, saltar) rediseñados con contorno redondeado",
+      "Iconos del panel en pixel art 16x16, nítidos también con escalado de 125% y 150%; logo, temporizador y títulos en la fuente pixel Silkscreen",
+      "Los Ajustes del panel usan controles deslizantes",
+      "Prepara el reloj para las próximas actualizaciones; los relojes más antiguos se actualizan en dos pasos, solos",
+      "Más memoria libre en el reloj: tablas del código QR, GIF y JPEG en la flash, y respuestas del panel enviadas en partes",
+      "Una foto que falla por falta de memoria muestra \"Sin memoria p/ foto\" y lo intenta de nuevo, en lugar de \"JPG invalido\""
     ]
   },
   "gz": "beta/smalltv-pomodoro.bin.gz",
-  "gzsize": 430487,
+  "gzsize": 430474,
   "layout": "4m2m",
-  "panel": "panel-e94ca5e11af6c68ce9c798af.html.gz",
-  "psri": "sha256-6Uyl4Rr2xozpx5ivhtWmiUCKVsGFAwS8tcgnebFCVRY=",
-  "sig": "GJaQed176rP72BxCfiUJueLp0g+3xbS5CvDdJItVhNl4Ln0W4pg++Bjmn9HoQdtswSWOtGFMJdvtcJ9y+tmhtK6vxpldSYyaxuxMTBCzZu4hGoUS0iT0MtkIc2CUXqwMTFrlLB3aDg3fvERbMov3kyVvRRIkCmulxwDLl8kjMHEF05Vy2uPe/7TkkXzB31e2dUQtJn05w7n5R9m1L/YgddKl3YeBW3teSA43jQYKUIt/ikxSNlRyCsvgcsADc5V6AFfK1B1ArvbRDlSnfjbV0rs/AGler45SM1yP5kAHBOybBuBFAA+Jw46+32cP2sqDNUYHCEymVE0W8ykvBHKuYQ==",
-  "gzsig": "pNDxeNeU8OPpU0WTDWOTAPfvlrbcB8WNRTfXwNImSy9YoKrkWKoEkK8KPRpqWKEdeFElflDdRExSk0PZ2Kd0aphHHAmqc1TgdTnVKKtNnXM3JB2Gb3gGSNLnqyvgrHW/VEMnUZq+XSyrcSPRZmSDzJ45mqtqpfHZU8g6knUepQBUH6zkwGZ9eWYVVPsyaR+RIn8TdaqBboT0VzrWUjK8bLTVJIZIAJjIy8A1PUrkKRWBNg+XiYUUwQpTY8TD/TVoR0rKXUmNhCTiG5CYjqiV4V+iyJXqWH1jQ2AuIRB5zRow+zRmtbKbn46ibUAo3AlvHODUjo5n35oKFlQTRf2SJA=="
+  "panel": "panel-1193c99d0700ee4353415a82.html.gz",
+  "psri": "sha256-EZPJnQcA7kNTQVqC5xgMFKAxOwBd/Gr5e/dLBvIcJTI=",
+  "sig": "jDgKxKN+YBb4L81KoQwzJTDzUiqJ1tK6JNhU5x8pdn4OGPkNTbI54lM1FkieAc/bmxHnG0Ifup1E0/Pgpw+RK1pEYaI8mkGvYFJ1WK+yvfCF/2TbQdOzEtL2XQzc5HvPLl7Fc0HPvNLg5E1usvD2/+Q/TI59pdOpqGG9ouFkDdKi+TZg1q9Nwyb8P+VVrQfurBCYBoipUBOflqWcDrHDujUpkHaQUmbdV4DS6lSyRZ5RdlMjmAXwWNFC2zRWcf6VRr9dHSeHrKBDIVDdhQt0gHQ+MTMDuXGbGL+93GPUpe/u8nRw5W6yThC4XTvzGLf6UbksjzoaSEEv4KmWjHxAjg==",
+  "gzsig": "a+T1a5IsM3D4tpB5FCmahbFyBOv31VzmDs6n/PI9ZVa8am6JSm9o+jlAtlLyD3sMe2ZfqrJRKjo31enSUzDDhsTovB6bS7tkANiciONXR+iEDkpVLDrAyI9OuyAYQLrnAvPETHBLLeQ+C0TFra60A64Vx6+UDTxc26Fig+qFw10PB8Q9oWeULIn15+iL1DhZHoWc/qW3wmENiGbU6+SFENQ1HL3zx2K0Vq7wNuP9AckK/vLX1RTEzBJdmr2Bw0I0drTg7+/RqtLox+dI18RikJZdQ4iUD14Z0nGSuqhRRMhUNP2uoAjLzONk6AVzJaqt7mGjVgzGK+8B0Uy6XpwtWw==",
+  "ponte": 1
 }
