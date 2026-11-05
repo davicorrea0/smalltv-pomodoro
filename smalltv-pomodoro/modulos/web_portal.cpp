@@ -1163,12 +1163,13 @@ static void htmlEscapeAppend(String &o, const String &s) {
   }
 }
 
-// Idioma das páginas do portal e da recuperação: com o idioma dos ajustes no padrão (0, português) vale o do navegador
-// (Accept-Language), que serve a quem veio do firmware original e nunca escolheu; idioma escolhido (en, es) é respeitado.
-// Quem escolheu português de propósito com o navegador em outra língua vê a página na língua do navegador: custo aceito,
-// o portal só pede uma rede e uma senha. A tela do relógio não muda.
+// Idioma das páginas do portal e da recuperação: com o idioma dos ajustes em inglês (o padrão de fábrica) vale o do
+// navegador (Accept-Language), que serve a quem acabou de instalar e nunca escolheu; português e espanhol nos ajustes são
+// respeitados. Não há como saber se o inglês foi escolhido ou é o padrão (um campo novo na EEPROM não vale para duas
+// páginas): quem escolheu inglês com o navegador em outra língua vê a página na língua do navegador. A tela do relógio
+// não muda.
 uint8_t pageLang() {
-  if (cfg.lang != 0) return cfg.lang;
+  if (cfg.lang != 1) return cfg.lang;
   uint8_t l = langFromAccept(server.header("Accept-Language").c_str());
   return l == 255 ? cfg.lang : l;
 }

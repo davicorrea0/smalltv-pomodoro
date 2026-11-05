@@ -66,7 +66,7 @@ struct Settings {
   uint8_t dailyGoal;    // meta de focos por dia
   uint8_t activity;     // atividade do foco (UiActivity); campo novo no fim: unidades antigas leem lixo e caem no padrão
   char facePkg[24];     // pacote de mostrador ativo (/faces/<id>.json) quando theme == THEME_PACK; idem: lixo vira ""
-  uint8_t lang;         // idioma da tela e do painel: 0 português, 1 inglês, 2 espanhol; idem: lixo vira 0
+  uint8_t lang;         // idioma da tela e do painel: 0 português, 1 inglês, 2 espanhol; padrão de fábrica 1 (inglês); lixo vira 0 (quem já usa não muda)
   uint8_t nightSun;     // brilho noturno do pôr ao nascer do sol (Open-Meteo) em vez de nightStart/nightEnd
   uint8_t rotMin;       // rodízio de mostradores: minutos entre trocas (0 = desligado); lista em /rotation.txt
   uint8_t alexa;        // 1 = aparece para a Alexa como a lâmpada "Pomodoro"
