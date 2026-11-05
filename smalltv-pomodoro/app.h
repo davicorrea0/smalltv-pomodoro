@@ -32,7 +32,7 @@ extern "C" uint32_t _FS_start;
 void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);  // ui.cpp: recorta para a área suja; fora da tela, cai na faixa
 
 
-#define FW_VERSION "1.24.12"
+#define FW_VERSION "1.24.13"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 #define PIN_DC  0
@@ -66,7 +66,7 @@ struct Settings {
   uint8_t dailyGoal;    // meta de focos por dia
   uint8_t activity;     // atividade do foco (UiActivity); campo novo no fim: unidades antigas leem lixo e caem no padrão
   char facePkg[24];     // pacote de mostrador ativo (/faces/<id>.json) quando theme == THEME_PACK; idem: lixo vira ""
-  uint8_t lang;         // idioma da tela e do painel: 0 português, 1 inglês, 2 espanhol; idem: lixo vira 0
+  uint8_t lang;         // idioma da tela e do painel: 0 português, 1 inglês, 2 espanhol; padrão de fábrica 1 (inglês); lixo vira 0 (quem já usa não muda)
   uint8_t nightSun;     // brilho noturno do pôr ao nascer do sol (Open-Meteo) em vez de nightStart/nightEnd
   uint8_t rotMin;       // rodízio de mostradores: minutos entre trocas (0 = desligado); lista em /rotation.txt
   uint8_t alexa;        // 1 = aparece para a Alexa como a lâmpada "Pomodoro"
@@ -333,6 +333,13 @@ void bootAnim(uint8_t done);
 
 // ---------- pequenas, inline ----------
 inline bool formOk() { return formToken.length() && server.arg("csrf") == formToken; }
+// Idioma das páginas do portal de Wi-Fi e da recuperação (ver pageLang): troca só o uiLang durante a página
+uint8_t pageLang();
+struct PageLang {
+  uint8_t keep = uiLang;
+  PageLang() { uiLang = pageLang(); }
+  ~PageLang() { uiLang = keep; }
+};
 inline uint16_t clockColor() { return rgb(cfg.colR, cfg.colG, cfg.colB); }
 // ---------- tempo ----------
 inline bool timeValid() { return time(nullptr) > 1700000000; }

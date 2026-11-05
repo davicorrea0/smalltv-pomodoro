@@ -12,6 +12,18 @@ for(const name of ['handleUpload','handlePackUpload','handlePanelUpload'])
 }
 const recovery=fn('startRecovery');
 if(!recovery.includes('WiFi.mode(WIFI_AP);')||recovery.includes('WiFi.begin()'))throw Error('recovery must be AP-only');
+{ // portal de Wi-Fi (1.24.13): a estação para sem apagar a rede salva, a varredura não bloqueia e a rede nova volta com o padrão
+ const portal=fn('startPortal'),save=portal.slice(portal.indexOf('"/save"'),portal.indexOf('onNotFound'));
+ const stop=portal.indexOf('WiFi.disconnect(false, false);');
+ if(stop<0||stop>portal.indexOf('WiFi.softAP('))throw Error('startPortal must stop the station (disconnect(false, false)) before softAP');
+ if(/WiFi[.]disconnect[(](true|false)[)]/.test(portal)||portal.includes('eraseConfig'))throw Error('disconnect(wifioff) erases the saved network in core 3.1.2; use disconnect(false, false)');
+ if(!portal.includes('WiFi.setAutoReconnect(false);'))throw Error('startPortal must stop the station reconnect');
+ if(/scanNetworks[(][)]/.test(portal)||!portal.includes('scanNetworks(true)'))throw Error('portal scan must be async (a sync scan blocks the server ~3 s)');
+ const ar=save.indexOf('WiFi.setAutoReconnect(true);'),bg=save.indexOf('WiFi.begin(');
+ if(ar<0||bg<0||ar>bg||save.indexOf('WiFi.persistent(true);')>bg)throw Error('/save must restore auto-reconnect and persistence before WiFi.begin');
+ if(!save.includes('if (!formOk()) { deny(); return; }')||!save.includes('safeRestart();'))throw Error('/save must check the form token and restart');
+ if(!portal.includes('server.collectHeaders("Accept-Language")')||portal.includes('<datalist'))throw Error('portal: Accept-Language header and visible list required (no datalist)');
+}
 // eboot uses the staged file's last 4 bytes as the image size: trailing data (the 1.20.0 signature) erased the bootloader
 const gzv=source.slice(source.indexOf('bool otaVerifyGz() {'),source.indexOf('\n}',source.indexOf('bool otaVerifyGz() {')));
 if(!gzv.includes('cmd.args[2] - 4')||!gzv.includes('!= ota.got'))throw Error('otaVerifyGz must check the eboot size trailer');
@@ -32,7 +44,7 @@ if(!sigOk.includes('if (recoveryMode) return true;')||!sigOk.includes('stack_thu
  throw Error('otaSigOk: recovery escape, thunk stack and heap check are required');
 if(!update.includes('br_sha256_update(&otaHash, up.buf, up.currentSize);')||!update.includes('otaSigBegin();'))throw Error('upload must hash every byte');
 // collectHeaders replaces the list: the normal server (setupWeb) and recovery (startRecovery) each set theirs once
-for(const [name,hs] of [['setupWeb',['Origin','X-Firmware-Sig','Authorization','X-SmallTV']],['startRecovery',['Authorization','X-SmallTV']]]){
+for(const [name,hs] of [['setupWeb',['Origin','X-Firmware-Sig','Authorization','X-SmallTV']],['startRecovery',['Authorization','X-SmallTV','Accept-Language']]]){
  const ch=[...fn(name).matchAll(/server\.collectHeaders\(([^)]*)\)/g)];
  if(ch.length!==1||!hs.every(h=>ch[0][1].includes('"'+h+'"')))throw Error(name+': collectHeaders must be called once with '+hs);
 }
@@ -81,6 +93,8 @@ fs.writeFileSync(out,`#include "${header}"
 #include <cctype>
 #include <limits>
 #include <vector>
+#include <map>
+#include <algorithm>
 #define F(s) (s)
 #define PSTR(s) (s)
 struct String:std::string {
@@ -127,6 +141,42 @@ int main(){
  reset();send(handlePackUpload,UPLOAD_FILE_START);send(handlePackUpload,UPLOAD_FILE_WRITE);send(handlePackUpload,UPLOAD_FILE_END);assert(packFaceReady&&written==1);
  reset();send(handlePackUpload,UPLOAD_FILE_START);send(handlePackUpload,UPLOAD_FILE_ABORTED);assert(!packFaceReady);
  reset();event.name="unknown";send(handlePackUpload,UPLOAD_FILE_START);send(handlePackUpload,UPLOAD_FILE_WRITE);assert(!opens&&!writes);
+ { // Accept-Language: idioma das páginas do Wi-Fi e da recuperação
+  auto L=[](const char*h){return (int)langFromAccept(h);};
+  assert(L("pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7")==0);assert(L("en-US,en;q=0.9")==1);assert(L("es-419,es;q=0.9,en;q=0.5")==2);
+  assert(L("fr-FR,fr;q=0.9")==1);assert(L("de;q=0.9, es;q=0.8, en;q=0.1")==2);assert(L("en;q=0.5, pt;q=0.9")==0);
+  assert(L("pt;q=0, en")==1);assert(L("pt;q=0")==1);assert(L("PT-br")==0);assert(L("ptx")==1);assert(L("p")==1);assert(L("*")==1);
+  assert(L("en , pt")==1);assert(L("pt , en")==0);assert(L("pt;q=abc, es;q=0.2")==2);assert(L("es;q=0.123,pt;q=0.122")==2);
+  assert(L("")==255&&L(nullptr)==255);assert(L(";;;")==1);assert(L(",,,")==1);assert(L("pt;q=1.0000000")==0);assert(L("pt;")==0);assert(L("pt;q")==0);
+  std::string big(5000,',');big+="es";assert(L(big.c_str())==2);
+ }
+ { // lista de redes do portal: sem nomes vazios nem repetidos, o sinal mais forte primeiro
+  struct N{const char*s;int r;};
+  auto pick=[](const std::vector<N>&v,int cap,std::vector<int>&idx){uint8_t o[32];
+   int k=scanPick((int)v.size(),[&](int i,char*d){strcpy(d,v[i].s);},[&](int i){return v[i].r;},o,cap);idx.assign(o,o+k);return k;};
+  std::vector<int> o;
+  assert(pick({},12,o)==0);
+  assert(pick({{"",-40},{"",-50}},12,o)==0);
+  assert(pick({{"casa",-70},{"vizinho",-50},{"",-30},{"casa",-60},{"bar",-80}},12,o)==3&&o==std::vector<int>({1,3,4}));
+  assert(pick({{"a",-50},{"a",-70}},12,o)==1&&o[0]==0);
+  assert(pick({{"a",-70},{"a",-50}},12,o)==1&&o[0]==1);
+  assert(pick({{"a",-50},{"a",-50}},12,o)==1&&o[0]==0);
+  assert(pick({{"a",-60},{"b",-50},{"c",-70}},2,o)==2&&o==std::vector<int>({1,0}));
+  assert(pick({{"a",-60},{"b",-50},{"c",-40}},2,o)==2&&o==std::vector<int>({2,1}));
+  assert(pick({{"a",-60},{"b",-70},{"c",-80}},2,o)==2&&o==std::vector<int>({0,1}));
+  srand(7);  // contra a conta por força bruta: sinais distintos (sem empate), nomes repetidos e vazios, qualquer limite
+  const char*pool[]={"","casa","casa-5G","bar","loja","x","Y","wifi"};
+  for(int t=0;t<20000;t++){
+   int n=rand()%30,cap=1+rand()%14;std::vector<N> v;int perm[64];for(int i=0;i<64;i++)perm[i]=i;
+   for(int i=63;i>0;i--)std::swap(perm[i],perm[rand()%(i+1)]);
+   for(int i=0;i<n;i++)v.push_back({pool[rand()%8],-20-perm[i]});
+   std::map<std::string,int> best;for(auto&x:v)if(x.s[0]&&(!best.count(x.s)||best[x.s]<x.r))best[x.s]=x.r;
+   std::vector<std::pair<int,std::string>> want;for(auto&b:best)want.push_back({b.second,b.first});
+   std::sort(want.rbegin(),want.rend());if((int)want.size()>cap)want.resize(cap);
+   int k=pick(v,cap,o);assert(k==(int)want.size());
+   for(int i=0;i<k;i++)assert(v[o[i]].r==want[i].first&&want[i].second==v[o[i]].s);
+  }
+ }
  UploadGate gate;gate.begin(true,10);assert(gate.take(10));assert(!gate.take(1));assert(!gate.take(0));
  gate.begin(true,10);assert(!gate.take(std::numeric_limits<size_t>::max()));
  const char*good[]={"http://192.168.1.2/path?a=b","http://example.com:8080/hook","http://a/"};
