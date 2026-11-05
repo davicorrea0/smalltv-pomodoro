@@ -1,40 +1,37 @@
 {
-  "version": "1.24.12",
-  "date": "2026-11-04",
+  "version": "1.24.13",
+  "date": "2026-11-05",
   "file": "beta/smalltv-pomodoro.bin",
-  "size": 584112,
+  "size": 584176,
   "notes": {
     "pt": [
-      "Versão de teste: controles do timer (zerar, tocar, pausar, pular) redesenhados em contorno arredondado",
-      "Ícones do painel em pixel art 16x16, nítidos também em telas com escala de 125% e 150%; logo, timer e títulos na fonte pixel Silkscreen",
-      "Ajustes do painel com controles deslizantes",
-      "Prepara o relógio para as próximas atualizações; relógios mais antigos atualizam em duas etapas, sozinhos",
-      "Mais memória livre no relógio: tabelas do QR code, GIF e JPEG na flash, e respostas do painel enviadas em partes",
-      "Foto que falha por falta de memória mostra \"Sem memória p/ foto\" e tenta de novo, em vez de \"JPG inválido\""
+      "Versão de teste: configurar o Wi-Fi do relógio ficou mais fácil",
+      "A página de configuração mostra as redes encontradas na hora, sem precisar tocar em nada; \"Atualizar lista\" procura de novo",
+      "A rede SmallTV-Pomodoro fica estável enquanto você configura, em vez de sumir do celular",
+      "A página de configuração e o modo de recuperação abrem no idioma do seu navegador enquanto o relógio estiver em inglês",
+      "Relógios novos começam em inglês; quem já usa mantém o idioma"
     ],
     "en": [
-      "Test version: timer controls (reset, play, pause, skip) redrawn as rounded outlines",
-      "Panel icons in 16x16 pixel art, sharp also at 125% and 150% display scaling; logo, timer and headings in the Silkscreen pixel font",
-      "Panel Settings use sliders",
-      "Prepares the clock for upcoming updates; older clocks update in two steps, on their own",
-      "More free memory on the clock: QR code, GIF and JPEG tables moved to flash, and panel responses sent in chunks",
-      "A photo that fails for lack of memory shows \"No memory for photo\" and retries, instead of \"Invalid JPG\""
+      "Test version: setting up the clock's Wi-Fi is easier",
+      "The setup page shows the networks it found right away, with nothing to tap; \"Refresh list\" searches again",
+      "The SmallTV-Pomodoro network stays stable while you set up, instead of dropping off your phone",
+      "The setup page and recovery mode open in your browser's language while the clock is set to English",
+      "New clocks start in English; existing clocks keep their language"
     ],
     "es": [
-      "Versión de prueba: controles del temporizador (reiniciar, reproducir, pausar, saltar) rediseñados con contorno redondeado",
-      "Iconos del panel en pixel art 16x16, nítidos también con escalado de 125% y 150%; logo, temporizador y títulos en la fuente pixel Silkscreen",
-      "Los Ajustes del panel usan controles deslizantes",
-      "Prepara el reloj para las próximas actualizaciones; los relojes más antiguos se actualizan en dos pasos, solos",
-      "Más memoria libre en el reloj: tablas del código QR, GIF y JPEG en la flash, y respuestas del panel enviadas en partes",
-      "Una foto que falla por falta de memoria muestra \"Sin memoria p/ foto\" y lo intenta de nuevo, en lugar de \"JPG invalido\""
+      "Versión de prueba: configurar el Wi-Fi del reloj es más fácil",
+      "La página de configuración muestra las redes encontradas al instante, sin tocar nada; \"Actualizar lista\" busca de nuevo",
+      "La red SmallTV-Pomodoro se mantiene estable mientras configuras, en lugar de desaparecer del móvil",
+      "La página de configuración y el modo de recuperación se abren en el idioma de tu navegador mientras el reloj esté en inglés",
+      "Los relojes nuevos empiezan en inglés; los que ya se usan mantienen su idioma"
     ]
   },
   "gz": "beta/smalltv-pomodoro.bin.gz",
-  "gzsize": 430474,
+  "gzsize": 430726,
   "layout": "4m2m",
   "panel": "panel-1193c99d0700ee4353415a82.html.gz",
   "psri": "sha256-EZPJnQcA7kNTQVqC5xgMFKAxOwBd/Gr5e/dLBvIcJTI=",
-  "sig": "jDgKxKN+YBb4L81KoQwzJTDzUiqJ1tK6JNhU5x8pdn4OGPkNTbI54lM1FkieAc/bmxHnG0Ifup1E0/Pgpw+RK1pEYaI8mkGvYFJ1WK+yvfCF/2TbQdOzEtL2XQzc5HvPLl7Fc0HPvNLg5E1usvD2/+Q/TI59pdOpqGG9ouFkDdKi+TZg1q9Nwyb8P+VVrQfurBCYBoipUBOflqWcDrHDujUpkHaQUmbdV4DS6lSyRZ5RdlMjmAXwWNFC2zRWcf6VRr9dHSeHrKBDIVDdhQt0gHQ+MTMDuXGbGL+93GPUpe/u8nRw5W6yThC4XTvzGLf6UbksjzoaSEEv4KmWjHxAjg==",
-  "gzsig": "a+T1a5IsM3D4tpB5FCmahbFyBOv31VzmDs6n/PI9ZVa8am6JSm9o+jlAtlLyD3sMe2ZfqrJRKjo31enSUzDDhsTovB6bS7tkANiciONXR+iEDkpVLDrAyI9OuyAYQLrnAvPETHBLLeQ+C0TFra60A64Vx6+UDTxc26Fig+qFw10PB8Q9oWeULIn15+iL1DhZHoWc/qW3wmENiGbU6+SFENQ1HL3zx2K0Vq7wNuP9AckK/vLX1RTEzBJdmr2Bw0I0drTg7+/RqtLox+dI18RikJZdQ4iUD14Z0nGSuqhRRMhUNP2uoAjLzONk6AVzJaqt7mGjVgzGK+8B0Uy6XpwtWw==",
+  "sig": "LfMEK0qAmdB2bcD/YncbFmkvdp+Sts5Xsnlq8HTjIP+pF1AKfvwlosizXzCvsEJmuBaAr3FwCLahjaa6ig/1qjlsAao+QgmkE687ytTedVlQSbrwotURkDd0tZcoADu7bvi/h5eDNYSkGxCyK4hmgtH6nmNDUCe2bhrm3BmVVFAsolmLb3LwOUXaFahALfw+pE+a/1vo2p3qU2MJ5fqHPhqn2rz24Ks006Gwg7cCWA+vF4qiAxDjYP0JlAG38dKTA85PpcpflSDbXMnkjBtzLtOuBR2+sql2YV1zbBeNV4hFIo9/0s1VGNl/gYGs+e9zOE69jMsRqch5BGbNWJY5mw==",
+  "gzsig": "GJAkqVhC/R6cQP15s5vwg5vHAcJSzlSNRzMnehx0z4Mk0oclPs1J343rM+NblIwGKjLBuFiHAFA+ooE4DvqrXbJfu8XzllLQs3nQ3oZwVU+qnXfoQ4ganMNGuZnwFsHaEcVWSMYWPgFrzUSh8z3cbZlnqovl3uTCsv8dYViOV/4A+4bXT8aXFtT2hskvVO0GozFKm5xxGOMEe2mQ60x3faoMLfouBbBEK3xjcpY1Pb7z1QemtrqOXrO7Zfi6YoN8FEhl9i2Ky/JznUKQLv9HRHYqpcT9jAnndylCjadX56zHYyHv767E+ln6O20sUB3kUdRyrSD2dl06w3vBcPcJqg==",
   "ponte": 1
 }
