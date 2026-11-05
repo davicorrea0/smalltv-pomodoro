@@ -36,7 +36,7 @@ small{color:var(--mut)}
 label{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--line)}
 .card label:first-of-type{border-top:0}
 input,select{background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:9px;font:inherit;width:96px}
-select,input[type=text],input[type=search],input[type=password]{width:180px}label.stk{flex-direction:column;align-items:stretch;gap:6px}label.stk input{width:100%}input[type=range]{width:160px;padding:0;accent-color:var(--ac)}
+select,input[type=text],input[type=search],input[type=password]{width:180px}label.stk{flex-direction:column;align-items:stretch;gap:6px}label.stk input,label.stk select{width:100%}input[type=range]{width:160px;padding:0;accent-color:var(--ac)}
 input[type=checkbox]{width:44px;height:26px;appearance:none;-webkit-appearance:none;border-radius:13px;background:var(--line);position:relative;padding:0;border:0;transition:.2s;flex:none}
 input[type=checkbox]::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s}
 input[type=checkbox]:checked{background:var(--short)}input[type=checkbox]:checked::after{left:21px}
@@ -292,10 +292,12 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
  <div class="grp">
  <h2>Data e hora</h2>
  <div class="card">
-  <label>Fuso (POSIX TZ)<input data-k="tz" type="text" spellcheck="false"></label>
-  <small>Automático: ao escolher a cidade em Clima, o fuso (com horário de verão) vem junto. Manual: Brasília &lt;-03&gt;3 · Manaus &lt;-04&gt;4 · Lisboa WET0WEST,M3.5.0/1,M10.5.0</small>
+  <label class="stk">Fuso horário<select id="tzsel"></select></label>
   <small id="tzauto"></small>
-  <p id="tzfix" hidden><button class="btn" onclick="tzFix()">Ajustar o fuso pela cidade</button></p>
+  <details id="tzadv"><summary>Avançado: regra POSIX do fuso</summary>
+   <label>Fuso (POSIX TZ)<input data-k="tz" type="text" spellcheck="false"></label>
+   <small>Só se o seu fuso não estiver na lista. Brasília &lt;-03&gt;3 · Manaus &lt;-04&gt;4 · Lisboa WET0WEST,M3.5.0/1,M10.5.0</small>
+  </details>
  </div>
  </div>
  <div class="grp">
@@ -603,9 +605,35 @@ async function hookTest(e){await hooksSave();toast(t('Chamando o endereço...'))
  toast(c>=200&&c<300?t('Enviado ({0}): a Alexa deve falar em instantes',c):c==0?t('Sem endereço salvo para esse aviso'):t('O serviço respondeu {0}: confira o endereço',c))}
 // ---------- configurações (salva sozinho) ----------
 function save(o){return post('/api/settings',new URLSearchParams(o)).then(r=>r.json()).then(s=>{filled=false;load(s);return s})}
-// ---------- fuso pela cidade (tabela IANA -> POSIX do site, web/tz.json) ----------
-let TZ=null;function tzLoad(){return TZ?Promise.resolve(TZ):fetch(SITE+'panel/tz-'+TZV+'.json',{integrity:TZI}).then(r=>r.json()).then(j=>TZ=j)}
-function tzFix(){const z=st&&st.wx&&st.wx.tzn;if(!z)return;tzLoad().then(m=>{if(!m[z])throw z;return save({tz:m[z]})}).then(()=>toast(t('Fuso ajustado: {0}',z))).catch(()=>toast(t('Falha: ')+z))}
+// ---------- fuso: regra POSIX completa (com horário de verão) da tabela do site (web/tz.json, nome IANA -> POSIX) ----------
+// O relógio guarda só a regra; o nome do fuso vem do Open-Meteo (cidade do clima) ou da lista. Fuso fora da tabela
+// nunca vira um deslocamento fixo: não grava nada e avisa.
+let TZ=null,TZE=0;function tzLoad(){return TZ?Promise.resolve(TZ):fetch(SITE+'panel/tz-'+TZV+'.json',{integrity:TZI}).then(r=>r.json()).then(j=>TZ=j)}
+// {r:regra} do fuso IANA, ou {e:0} (fora da tabela) / {e:2} (sem a tabela: navegador sem internet)
+function tzRule(z){return tzLoad().then(m=>m[z]?{r:m[z]}:{e:0},()=>({e:2}))}
+const tzMsg=(e,z)=>[t('O fuso {0} não está na tabela do site: nada foi alterado. Escolha outro na lista ou digite a regra em Avançado.',z),t('O relógio não aceitou a regra do fuso {0}.',z),t('Sem a tabela de fusos (o navegador precisa de internet): o fuso não foi alterado.')][e]||t('Falha: ')+z;
+// grava a regra e confere que o relógio ficou com ela
+function tzSet(z){return tzRule(z).then(x=>{if(!x.r)throw x.e;return save({tz:x.r}).then(s=>{if(s.cfg.tz!==x.r)throw 1;try{localStorage.tzn=z}catch(e){}})})}
+// 1 = o deslocamento de agora é outro; 2 = o fuso do relógio é fixo mas o da cidade muda para o horário de verão; 0 = nada a avisar
+const tzDiff=(cur,rule,off,loff)=>off!=null&&loff!=null&&off!==loff?1:rule&&cur!=rule&&rule.includes(',')&&!cur.includes(',')?2:0;
+// fusos da lista por continente: [[continente,[[nome IANA,rótulo]...]]...]; Etc/ fica de fora (só nomes de cidade)
+function tzList(m){const g={};Object.keys(m).filter(k=>k[0]!='_'&&!k.startsWith('Etc/')).forEach(k=>{const i=k.indexOf('/');(g[k.slice(0,i)]=g[k.slice(0,i)]||[]).push([k,k.slice(i+1).replace(/_/g,' ')])});
+ return Object.keys(g).sort().map(c=>[c,g[c].sort((a,b)=>a[1].localeCompare(b[1]))])}
+// seletor: primeiro o fuso da cidade do clima, depois os fusos por nome; o campo POSIX (Avançado) fica para o resto
+function tzUi(force){const s=st,w=s.wx||{},z=w.tzn||'',cur=s.cfg.tz,sel=$('tzsel'),ua=$('tzauto');
+ if(!TZ){if(!TZE){TZE=1;tzLoad().then(()=>tzUi(1),()=>{TZE=2;tzUi(1)})}
+  sel._k='';sel.innerHTML='';sel.append(new Option(t('Fuso em uso: {0}',cur),''));ua.textContent=TZE==2?t('Sem a lista de fusos (o navegador precisa de internet). A regra POSIX em Avançado continua valendo.'):'';return}
+ const k=LG+'|'+z;if(sel._k!=k){sel._k=k;sel.innerHTML='';
+  const c=new Option(z?t('Fuso da cidade do clima: {0}',z):t('Fuso da cidade do clima (escolha a cidade em Clima)'),'');c.disabled=!TZ[z];sel.append(c);
+  tzList(TZ).forEach(([n,a])=>{const g=document.createElement('optgroup');g.label=n;a.forEach(([v,l])=>g.append(new Option(l,v)));sel.append(g)});
+  sel.append(new Option(t('Outro: regra manual (Avançado)'),'#'))}
+ if(force||document.activeElement!==sel){let mine='';try{mine=localStorage.tzn||''}catch(e){}
+  const cont=z.split('/')[0]+'/';  // regra compartilhada: só adivinha o nome se for do continente da cidade do clima (Paris não vira Ceuta)
+  sel.value=z&&TZ[z]==cur?'':TZ[mine]==cur?mine:Object.keys(TZ).find(n=>z&&n.startsWith(cont)&&TZ[n]==cur)||'#'}
+ const d=tzDiff(cur,TZ[z],w.ok&&z?w.off:null,w.ok&&z?w.loff:null);
+ ua.textContent=d==1?t('O fuso do relógio não bate com o da cidade ({0}).',z):d==2?t('O fuso do relógio não muda para o horário de verão, mas o da cidade ({0}) muda.',z):''}
+$('tzsel').onchange=e=>{const v=e.target.value;if(v=='#'){$('tzadv').open=true;return}
+ const z=v||(st.wx&&st.wx.tzn);tzSet(z).then(()=>toast(t('Fuso ajustado: {0}',z)),x=>{toast(tzMsg(x,z));tzUi(1)})}
 // ---------- diagnóstico ----------
 const RST=['ligado na tomada','travou (watchdog de hardware)','travou (erro {0} em {1})','travou (watchdog)','reiniciado pelo próprio relógio (atualização, ajuste ou comando)','saiu do modo de economia','reiniciado por fora'];
 function dur(x){const d=x/86400|0,h=x%86400/3600|0,m=x%3600/60|0;return d?d+' d '+h+' h':h?h+' h '+m+' min':m+' min'}
@@ -664,9 +692,7 @@ function load(s){if(s.cfg.lang!=null&&s.cfg.lang!=LG)setLang(s.cfg.lang);if(last
  const hm=m=>String(m/60|0).padStart(2,'0')+':'+String(m%60).padStart(2,'0'),sun=s.wx&&s.wx.rise>=0&&s.wx.set>s.wx.rise;
  $('suninfo').textContent=s.cfg.nsun?(sun?t('Pôr do sol {0} · nascer {1} em {2}',hm(s.wx.set),hm(s.wx.rise),s.cfg.city):t('Escolha a cidade em Clima para saber os horários do sol; até lá vale o horário fixo.')):'';
  document.querySelectorAll('.fixh').forEach(e=>e.style.display=s.cfg.nsun&&sun?'none':'')
- // fuso: o Open-Meteo diz o da cidade (e o deslocamento agora); se o do relógio for outro, oferece ajustar
- const w=s.wx||{},tzBad=!!(w.ok&&w.tzn&&w.loff!=null&&w.off!==w.loff);$('tzfix').hidden=!tzBad;
- $('tzauto').textContent=w.tzn?(tzBad?t('O fuso do relógio não bate com o da cidade ({0}).',w.tzn):t('Fuso da cidade: {0}',w.tzn)):'';
+ tzUi()  // fuso: lista por nome, o da cidade do clima (Open-Meteo) e o aviso se o do relógio for outro
  if(s.diag)diagShow(s)
  $('pvbar').style.display=s.pv?'block':'none';if(s.pv)$('pvbar').textContent=t('Prévia no relógio por mais {0} s · depois ele volta para {1}',s.pv,cf?cf.n:t('o mostrador salvo'));
  // clima
@@ -694,9 +720,9 @@ let qt;$('q').oninput=()=>{clearTimeout(qt);const q=$('q').value.trim();if(q.len
   const r=$('res');r.innerHTML='';(j.results||[]).forEach(p=>{const b=document.createElement('button');b.type='button';
    b.textContent=[p.name,p.admin1,p.country].filter(Boolean).join(', ');
    b.onclick=()=>{const name=p.name.normalize('NFD').replace(/[^\x20-\x7e]/g,'').replace(/["\\]/g,'').slice(0,31);
-    // o fuso da cidade (IANA, do geocoding) vira a regra POSIX que o relógio usa, pela tabela do site
-    tzLoad().then(m=>m[p.timezone]).catch(()=>null).then(tz=>save(Object.assign({lat:p.latitude,lon:p.longitude,city:name,won:1},tz?{tz}:{}))
-     .then(()=>toast(t('Cidade: ')+name+(tz?' · '+p.timezone:''))));r.innerHTML='';$('q').value=''};r.appendChild(b)});
+    // o fuso da cidade (IANA, do geocoding) vira a regra POSIX completa da tabela do site; sem ela, só a cidade é salva e o aviso diz isso
+    tzRule(p.timezone).then(x=>save(Object.assign({lat:p.latitude,lon:p.longitude,city:name,won:1},x.r?{tz:x.r}:{}))
+     .then(s=>toast(t('Cidade: ')+name+(x.r?s.cfg.tz===x.r?' · '+p.timezone:'. '+tzMsg(1,p.timezone):'. '+tzMsg(x.e,p.timezone)))));r.innerHTML='';$('q').value=''};r.appendChild(b)});
   if(!r.children.length)r.textContent=t('Nenhuma cidade encontrada')}).catch(()=>toast(t('Sem internet no navegador'))),400)};
 // ---------- fotos ----------
 // ---------- armazenamento: tudo o que ocupa a memória de arquivos (/api/storage) ----------
