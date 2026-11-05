@@ -75,19 +75,17 @@ Veja todos os mostradores na [galeria](https://davicorrea0.github.io/smalltv-pom
 
 Há mais de um bom jeito de usar este relógio. Escolha o que combina com você.
 
-| | Firmware da GeekMagic | [smalltv-mod](https://github.com/giovi321/smalltv-mod) | [ToyTool](https://toytool.work/smalltv/) | SmallTV Pomodoro |
-|---|---|---|---|---|
-| Foco | Relógio com clima, fotos e temas | Cotações de ações e cripto, medidor de uso do Claude, radar de aviões, telas do Home Assistant e temas | Mais de 80 mostradores caprichados com dados ao vivo: clima, cotações, YouTube, tarefas do Notion | Pomodoro com personagem e histórico de focos |
-| Aparelhos | Cada modelo tem o seu | 5: SmallTV, SmallTV Ultra, SmallTV Pro, um SmallTV ESP32-C2 e o NM-TV-154 | SmallTV Ultra | Só o SmallTV Ultra |
-| Instalação | Vem no relógio | Página de fábrica (em duas etapas com carregador no Ultra) ou USB, conforme o modelo | Página de fábrica, com um arquivo da sua conta | Página de fábrica, às vezes com o mesmo carregador do smalltv-mod; sem cabo |
-| Mostradores | Temas de fábrica | Temas (`.stheme`) e um editor visual no navegador | Uma loja de mostradores e um editor visual (Studio) | Embutidos e uma galeria de mostradores `.json` |
-| Dados | Serviço de clima de fábrica | Direto das fontes (Yahoo Finance e outras) ou do seu broker MQTT | Pela nuvem do ToyTool | Direto do Open-Meteo (clima) e de servidores de hora; sem nuvem própria |
-| Conta | — | Não | Obrigatória | Não |
-| Preço | Vem com o relógio | Grátis | US$ 3,99 por tela, US$ 9,99 com o Studio | Grátis |
-| Código | Fechado | Aberto (WTFPL) | Fechado | Aberto (GPL-3.0) |
+| | Firmware da GeekMagic | [smalltv-mod](https://github.com/giovi321/smalltv-mod) | SmallTV Pomodoro |
+|---|---|---|---|
+| Foco | Relógio com clima, fotos e temas | Cotações de ações e cripto, medidor de uso do Claude, radar de aviões, telas do Home Assistant e temas | Pomodoro com personagem e histórico de focos |
+| Aparelhos | Cada modelo tem o seu | 5: SmallTV, SmallTV Ultra, SmallTV Pro, um SmallTV ESP32-C2 e o NM-TV-154 | Só o SmallTV Ultra |
+| Instalação | Vem no relógio | Página de fábrica (em duas etapas com carregador no Ultra) ou USB, conforme o modelo | Página de fábrica, às vezes com o mesmo carregador do smalltv-mod; sem cabo |
+| Mostradores | Temas de fábrica | Temas (`.stheme`) e um editor visual no navegador | Embutidos e uma galeria de mostradores `.json` |
+| Dados | Serviço de clima de fábrica | Direto das fontes (Yahoo Finance e outras) ou do seu broker MQTT | Direto do Open-Meteo (clima) e de servidores de hora; sem nuvem própria |
+| Preço | Vem com o relógio | Grátis | Grátis |
+| Código | Fechado | Aberto (WTFPL) | Aberto (GPL-3.0) |
 
 - **smalltv-mod** é a melhor escolha para outro modelo ou para quem quer MQTT. O carregador dele é o que faz a nossa instalação funcionar em algumas unidades, e propusemos a ele um [formato de mostrador em comum](https://github.com/giovi321/smalltv-mod/issues/31).
-- **ToyTool** tem os mostradores mais caprichados e um editor visual, e mostra dados ao vivo de serviços como YouTube e Notion pela nuvem dele. Em novembro de 2026 o servidor saiu do ar depois de um ataque; [a página dele](https://toytool.work/smalltv/) explica como voltar ao firmware de fábrica ou rodá-lo em casa.
 - **O firmware de fábrica** não pede instalação nenhuma.
 - **Este projeto** é para quem quer um timer de foco na mesa: grátis, aberto, sem conta e sem nuvem.
 
