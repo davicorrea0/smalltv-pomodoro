@@ -3,18 +3,18 @@
     "Versão de teste: configurar o Wi-Fi do relógio ficou mais fácil",
     "A página de configuração mostra as redes encontradas na hora, sem precisar tocar em nada; \"Atualizar lista\" procura de novo",
     "A rede SmallTV-Pomodoro fica estável enquanto você configura, em vez de sumir do celular",
-    "A página de configuração e o modo de recuperação abrem no idioma do seu navegador quando o relógio ainda está com os ajustes de fábrica"
+    "A página de configuração e o modo de recuperação abrem no idioma do seu navegador enquanto o relógio estiver no idioma padrão"
   ],
   "en": [
     "Test version: setting up the clock's Wi-Fi is easier",
     "The setup page shows the networks it found right away, with nothing to tap; \"Refresh list\" searches again",
     "The SmallTV-Pomodoro network stays stable while you set up, instead of dropping off your phone",
-    "The setup page and recovery mode open in your browser's language while the clock still has its factory settings"
+    "The setup page and recovery mode open in your browser's language while the clock is set to its default language"
   ],
   "es": [
     "Versión de prueba: configurar el Wi-Fi del reloj es más fácil",
     "La página de configuración muestra las redes encontradas al instante, sin tocar nada; \"Actualizar lista\" busca de nuevo",
     "La red SmallTV-Pomodoro se mantiene estable mientras configuras, en lugar de desaparecer del móvil",
-    "La página de configuración y el modo de recuperación se abren en el idioma de tu navegador mientras el reloj tiene los ajustes de fábrica"
+    "La página de configuración y el modo de recuperación se abren en el idioma de tu navegador mientras el reloj esté en el idioma predeterminado"
   ]
 }

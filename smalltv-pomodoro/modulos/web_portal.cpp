@@ -1163,14 +1163,12 @@ static void htmlEscapeAppend(String &o, const String &s) {
   }
 }
 
-// Idioma das páginas do portal e da recuperação: o do navegador (Accept-Language) enquanto o relógio nunca conectou
-// com o Pomodoro (idioma ainda no padrão e sem a dica de Wi-Fi gravada: ajustes de fábrica, como quem veio do firmware
-// original); depois disso, o dos ajustes. A tela do relógio não muda.
+// Idioma das páginas do portal e da recuperação: com o idioma dos ajustes no padrão (0, português) vale o do navegador
+// (Accept-Language), que serve a quem veio do firmware original e nunca escolheu; idioma escolhido (en, es) é respeitado.
+// Quem escolheu português de propósito com o navegador em outra língua vê a página na língua do navegador: custo aceito,
+// o portal só pede uma rede e uma senha. A tela do relógio não muda.
 uint8_t pageLang() {
   if (cfg.lang != 0) return cfg.lang;
-  WifiHint h;
-  EEPROM.get(WIFIH_OFF, h);
-  if (h.magic == WIFI_MAGIC) return cfg.lang;
   uint8_t l = langFromAccept(server.header("Accept-Language").c_str());
   return l == 255 ? cfg.lang : l;
 }
