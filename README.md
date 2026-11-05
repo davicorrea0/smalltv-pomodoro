@@ -75,17 +75,21 @@ See every face in the [gallery](https://davicorrea0.github.io/smalltv-pomodoro/e
 
 There is more than one good way to use this clock. Pick what fits you.
 
-| | GeekMagic firmware | [smalltv-mod](https://github.com/giovi321/smalltv-mod) | SmallTV Pomodoro |
-|---|---|---|---|
-| Focus | A clock with weather, photos and themes | Stock and crypto ticker, Claude usage meter, plane radar, Home Assistant screens and themes, on many devices | A Pomodoro timer with a character and a focus history |
-| Devices | Each model has its own | 5: SmallTV, SmallTV Ultra, SmallTV Pro, an ESP32-C2 SmallTV and the NM-TV-154 | SmallTV Ultra only |
-| Install | Comes on the clock | Factory page (two steps with a loader on the Ultra) or USB, depending on the model | Factory page, sometimes with the same loader; no cable |
-| Faces | Factory themes | Themes (`.stheme`) and a visual editor in the browser | Built-in faces and a gallery of `.json` faces |
-| Smart home | — | Home Assistant screens over MQTT | Alexa on the local network |
-| Updates | From GeekMagic | Self-update over the network | One tap in the panel, signed and checked before the swap |
-| Source | Closed | Open (WTFPL) | Open (GPL-3.0) |
+| | GeekMagic firmware | [smalltv-mod](https://github.com/giovi321/smalltv-mod) | [ToyTool](https://toytool.work/smalltv/) | SmallTV Pomodoro |
+|---|---|---|---|---|
+| Focus | A clock with weather, photos and themes | Stock and crypto ticker, Claude usage meter, plane radar, Home Assistant screens and themes | 80+ polished watch faces with live data: weather, rates, YouTube, Notion tasks | A Pomodoro timer with a character and a focus history |
+| Devices | Each model has its own | 5: SmallTV, SmallTV Ultra, SmallTV Pro, an ESP32-C2 SmallTV and the NM-TV-154 | SmallTV Ultra | SmallTV Ultra only |
+| Install | Comes on the clock | Factory page (two steps with a loader on the Ultra) or USB, depending on the model | Factory page, with a file from your account | Factory page, sometimes with the same loader as smalltv-mod; no cable |
+| Faces | Factory themes | Themes (`.stheme`) and a visual editor in the browser | A store of faces and a visual editor (Studio) | Built-in faces and a gallery of `.json` faces |
+| Data | Factory weather service | Straight from the sources (Yahoo Finance and others) or your MQTT broker | Through ToyTool's cloud | Straight from Open-Meteo (weather) and time servers; no cloud of its own |
+| Account | — | No | Required | No |
+| Price | Comes with the clock | Free | US$3.99 per screen, US$9.99 with the Studio | Free |
+| Source | Closed | Open (WTFPL) | Closed | Open (GPL-3.0) |
 
-smalltv-mod is the best choice if you have another model or want MQTT; its loader is what makes our install work on some units, and we proposed a [shared face format](https://github.com/giovi321/smalltv-mod/issues/31) to it. The factory firmware needs nothing installed. This project is for people who want a focus timer on the desk.
+- **smalltv-mod** is the best choice if you have another model or want MQTT. Its loader is what makes our install work on some units, and we proposed a [shared face format](https://github.com/giovi321/smalltv-mod/issues/31) to it.
+- **ToyTool** has the most polished faces and a visual editor, and it shows live data from services like YouTube and Notion through its cloud. In November 2026 its server went offline after an attack; [its page](https://toytool.work/smalltv/) explains how to go back to the stock firmware or run it at home.
+- **The factory firmware** needs nothing installed.
+- **This project** is for people who want a focus timer on the desk: free, open, with no account and no cloud.
 
 ## FAQ
 
