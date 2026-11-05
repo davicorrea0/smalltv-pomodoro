@@ -204,6 +204,20 @@ int main() {
   setLcdView(true); int g1 = gamaCmds;
   for (int i = 0; i < 100; i++) { setLcdView(true); roda(1000); }
   CONFERE(g1 == 3 && gamaCmds == g1 && escritas == 0, "gama %d -> %d", g1, gamaCmds);
+  // 8b) A UI avisa a tela a cada desenho (notifyLcdView em uiRenderClock/uiRenderPomodoro...). Com o verde DESLIGADO,
+  // trocar entre mostrador LCD e outra tela 1x por segundo por 10 min, de dia e de noite com cor quente: zero gama
+  for (int noite : {0, 1}) {
+    cena = "verde desligado, troca de tela";
+    cfg = {}; cfg.brightness = 60; cfg.lcdGreen = 0; cfg.nightOn = 1; cfg.nightStart = 22; cfg.nightEnd = 7; cfg.warm = 70;
+    boot(noite ? 23 : 12, 0);
+    for (int i = 0; i < 600; i++) { setLcdView(i & 1); roda(1000); }
+    CONFERE(gamaCmds == 0 && escritas == 0, "%s: %d comandos de gama, %d escritas no pino em 10 min", noite ? "noite" : "dia", gamaCmds, escritas);
+  }
+  // 8c) Verde LIGADO e a mesma troca: só o que a troca pede (3 comandos para entrar no verde, 1 ou 3 para sair), nada a mais
+  cena = "verde ligado, troca de tela";
+  cfg = {}; cfg.brightness = 60; cfg.lcdGreen = 1; boot(12, 0);
+  for (int i = 0; i < 600; i++) { setLcdView(i & 1); setLcdView(i & 1); roda(1000); }  // dois desenhos por segundo
+  CONFERE(gamaCmds == 300 * 3 + 299, "%d comandos de gama (esperado %d: 300 entradas e 299 saídas)", gamaCmds, 300 * 3 + 299);
 
   if (falhas) { printf("brilho_loop: %d falha(s)\\n", falhas); return 1; }
   puts("brilho_loop: ok (dia, noite, troca por horário e pelo sol, prévia, salvar, slider, passagem por 100 % e verde LCD: sem vai e vem nem reescrita parada)");
