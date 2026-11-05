@@ -61,6 +61,8 @@ else  # Windows: gera os .cpp com o node daqui e roda no WSL
   node sim/security_test.cjs build/testes/sec.cpp
   node sim/stats_test.cjs build/testes/stats.cpp
   node sim/jpg_nomem_test.cjs build/testes/jpg_nomem.cpp
+  node sim/portal_test.cjs build/testes/portal.cpp
+  node sim/idioma_test.cjs build/testes/idioma.cpp
   L="/mnt/$(pwd -W | cut -c1 | tr 'A-Z' 'a-z')$(pwd -W | cut -c3-)"
   MSYS_NO_PATHCONV=1 wsl.exe -d Ubuntu -- bash -c "GEN=$L/build/testes bash $L/sim/testes.sh 2000"
 fi

@@ -5,7 +5,7 @@ Settings cfg;
 
 void defaultSettings() {
   cfg = Settings{SETTINGS_MAGIC, 25, 5, 15, 4, 80, 0, 0, "<-03>3", "", 0, -1,
-                 THEME_MATRIX, 0, 10, 0, 22, 7, 15, 1, 242, 242, 242, 0, 0, "", 0, 1, 0, 8, ACT_READ, "", 0, 0, 0, 1, "", UI_VCOM_DEFAULT, 0, 0, 1, 0, 0, 0, 1};
+                 THEME_MATRIX, 0, 10, 0, 22, 7, 15, 1, 242, 242, 242, 0, 0, "", 0, 1, 0, 8, ACT_READ, "", /*lang*/ 1, 0, 0, 1, "", UI_VCOM_DEFAULT, 0, 0, 1, 0, 0, 0, 1};
 }
 
 uint8_t bootCount = 0;

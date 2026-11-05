@@ -1073,7 +1073,6 @@ static void wifiUnpin() {
   String ssid = WiFi.SSID(), psk = WiFi.psk();
   WiFi.persistent(false);
   WiFi.begin(ssid.c_str(), psk.c_str());
-  WiFi.persistent(true);
   wifiPinned = false;
 }
 
@@ -1108,6 +1107,9 @@ static bool waitWifi(uint32_t ms) {
 // Rede salva no SDK. Com o canal e o BSSID do último roteador (EEPROM, ver wifiHintSave) o SDK não varre os 13
 // canais: conecta direto. Só na RAM (persistent desligado): o BSSID fixo não vai para a flash, que segue com a rede
 // de sempre. Se não conectar em poucos segundos, volta à varredura completa.
+// O persistent fica desligado (padrão do núcleo 3.1.2) desde o boot e só é ligado logo antes de uma gravação de
+// propósito (/save, /api/wifireset, /rec/wifi, /rec/wipe). Ligado, WiFi.mode() e softAP() gravam o modo e o AP na flash
+// do SDK: no ciclo "rede sumiu → portal → reinicia em 5 min" o modo padrão era regravado a cada volta (~288/dia).
 bool connectStored(uint32_t timeoutMs) {
   uint32_t t0 = millis();
   WiFi.mode(WIFI_STA);
@@ -1136,7 +1138,6 @@ bool connectStored(uint32_t timeoutMs) {
     uint32_t used = millis() - t0;
     ok = waitWifi(used < timeoutMs ? timeoutMs - used : 0);
   }
-  WiFi.persistent(true);
   return ok;
 }
 
@@ -1163,51 +1164,125 @@ static void htmlEscapeAppend(String &o, const String &s) {
   }
 }
 
+// Idioma das páginas do portal e da recuperação: com o idioma dos ajustes em inglês (o padrão de fábrica) vale o do
+// navegador (Accept-Language), que serve a quem acabou de instalar e nunca escolheu; português e espanhol nos ajustes são
+// respeitados. Não há como saber se o inglês foi escolhido ou é o padrão (um campo novo na EEPROM não vale para duas
+// páginas): quem escolheu inglês com o navegador em outra língua vê a página na língua do navegador. A tela do relógio
+// não muda.
+uint8_t pageLang() {
+  if (cfg.lang != 1) return cfg.lang;
+  uint8_t l = langFromAccept(server.header("Accept-Language").c_str());
+  return l == 255 ? cfg.lang : l;
+}
+
+// Texto longo no idioma da página (o tr() corta em 47 bytes)
+static void addTr(String &o, PGM_P pt, PGM_P en, PGM_P es) { o += FPSTR(uiLang == 1 ? en : uiLang == 2 ? es : pt); }
+
+#define ADD_TR(o, pt, en, es) addTr(o, PSTR(pt), PSTR(en), PSTR(es))
+
+static const char PORTAL_HEAD[] PROGMEM =
+    "<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'>"
+    "<title>SmallTV Wi-Fi</title><style>body{font:16px system-ui;background:#111;color:#eee;max-width:380px;margin:auto;padding:20px}"
+    "input,button{width:100%;box-sizing:border-box;padding:12px;margin:6px 0 14px;border-radius:10px;border:1px solid #333;background:#1c1c1c;color:#eee;font:inherit}"
+    "button{background:#ff5a47;border:0;font-weight:700}p{color:#aaa}a{color:#ff5a47}"
+    ".n{display:flex;align-items:center;padding:10px 12px;margin:6px 0;border:1px solid #333;border-radius:10px;background:#1c1c1c;word-break:break-all}"
+    ".n input{width:auto;margin:0 10px 0 0}</style><h2>SmallTV Wi-Fi</h2>";
+
+// Redes da lista: sem repetidas, as mais fortes primeiro
+static const int PORTAL_LIST_MAX = 12;
+
 void startPortal() {
   newFormToken();
   portalMode = true;
+  // A estação para de procurar a rede salva (pode ser a do firmware original, ou lixo): enquanto procura em outros
+  // canais, o ponto de acesso muda de canal junto (o celular cai) e a varredura falha. A rede continua gravada
+  // (disconnect com eraseCredentials = false; o disconnect(false) do núcleo apagaria). Os dois ajustes ficam só na
+  // RAM do SDK: o /save os refaz antes de gravar a rede nova.
+  WiFi.setAutoReconnect(false);
   WiFi.mode(WIFI_AP_STA);
+  WiFi.disconnect(false, false);
   WiFi.softAP(AP_NAME, cfg.apPass);
+  WiFi.scanNetworks(true);  // assíncrona: o servidor não espera os ~3 s da varredura; o GET / lê o resultado
   dns.start(53, "*", WiFi.softAPIP());
   setupQrShown = -1;
   setupQrScreen(false);
+  server.collectHeaders("Accept-Language");
   server.on("/", HTTP_GET, [] {
-    int n = WiFi.scanNetworks();
-    String opts;
-    opts.reserve(min(2048, max(0, n) * 48));
-    for (int i = 0; i < n; i++) {
-      opts += F("<option>");
-      htmlEscapeAppend(opts, WiFi.SSID(i));
-      opts += F("</option>");
+    PageLang lang;
+    int n = WiFi.scanComplete();  // WIFI_SCAN_RUNNING (-1), WIFI_SCAN_FAILED (-2) ou o número de redes
+    uint8_t pick[PORTAL_LIST_MAX];
+    int k = n > 0 ? scanPick(n, [](int i, char *d) { strlcpy(d, WiFi.SSID(i).c_str(), 33); },
+                             [](int i) { return (int)WiFi.RSSI(i); }, pick, PORTAL_LIST_MAX)
+                  : 0;
+    server.sendHeader(F("Cache-Control"), F("no-store"));
+    server.setContentLength(CONTENT_LENGTH_UNKNOWN);  // HTTP em partes: a página não é montada inteira no heap
+    server.send(200, "text/html", "");
+    String c;
+    c.reserve(800);
+    c = FPSTR(PORTAL_HEAD);
+    c += F("<p>");
+    if (n == WIFI_SCAN_RUNNING) ADD_TR(c, "Procurando redes&hellip;", "Looking for networks&hellip;", "Buscando redes&hellip;");
+    else if (k) ADD_TR(c, "Escolha a sua rede:", "Choose your network:", "Elige tu red:");
+    else ADD_TR(c, "Nenhuma rede encontrada. O rel&oacute;gio s&oacute; enxerga redes de 2,4 GHz: aproxime-o do roteador e toque em Atualizar lista.",
+                "No networks found. The clock only sees 2.4 GHz networks: move it closer to the router and tap Refresh list.",
+                "No se encontr&oacute; ninguna red. El reloj solo ve redes de 2,4 GHz: ac&eacute;rcalo al router y toca Actualizar lista.");
+    c += F("</p><form method=post action=/save>");
+    for (int j = 0; j < k; j++) {
+      String ssid = WiFi.SSID(pick[j]);
+      c += F("<label class=n><input type=radio name=s value=\"");
+      htmlEscapeAppend(c, ssid);
+      c += F("\">");
+      htmlEscapeAppend(c, ssid);
+      c += F("</label>");
+      if (c.length() > 480) {
+        server.sendContent(c);
+        c = "";
+      }
     }
-    String p;
-    p.reserve(900 + opts.length());
-    p = F("<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'>"
-          "<title>SmallTV Wi-Fi</title><style>body{font:16px system-ui;background:#111;color:#eee;max-width:380px;margin:auto;padding:20px}"
-          "input,button{width:100%;padding:12px;margin:6px 0 14px;border-radius:10px;border:1px solid #333;background:#1c1c1c;color:#eee;font:inherit}"
-          "button{background:#ff5a47;border:0;font-weight:700}</style><h2>SmallTV Wi-Fi</h2><form method=post action=/save>");
-    p += tr("Rede", "Network", "Red");
-    p += F("<input name=s list=l required><datalist id=l>");
-    p += opts;
-    p += F("</datalist>");
-    p += formTokenField();
-    p += tr("Senha", "Password", "Contrase&ntilde;a");
-    p += F("<input name=p type=password><button>");
-    p += tr("Conectar", "Connect", "Conectar");
-    p += F("</button></form>");
-    server.send(200, "text/html", p);
+    ADD_TR(c, "Nome da rede (se n&atilde;o estiver na lista)", "Network name (if not listed)", "Nombre de la red (si no aparece)");
+    c += F("<input name=h autocapitalize=none autocorrect=off spellcheck=false>");
+    c += formTokenField();
+    ADD_TR(c, "Senha", "Password", "Contrase&ntilde;a");
+    c += F("<input name=p type=password><button>");
+    ADD_TR(c, "Conectar", "Connect", "Conectar");
+    c += F("</button></form><p><a href=/scan>");
+    ADD_TR(c, "Atualizar lista", "Refresh list", "Actualizar lista");
+    c += F("</a></p>");
+    // varredura em andamento: tenta de novo em 3 s, sem apagar o que a pessoa já digitou
+    if (n == WIFI_SCAN_RUNNING)
+      c += F("<script>setTimeout(function(){var f=document.forms[0];if(!f.h.value&&!f.p.value)location.reload()},3000)</script>");
+    server.sendContent(c);
+    server.sendContent("");
+  });
+  server.on("/scan", HTTP_GET, [] {  // "Atualizar lista": recomeça a varredura (já em andamento: nada muda)
+    WiFi.scanNetworks(true);
+    server.sendHeader("Location", "/");
+    sendCode(302);
   });
   server.on("/save", HTTP_POST, [] {
     if (!formOk()) { deny(); return; }
-    String p = F("<meta charset=utf-8><body style='font:16px system-ui;background:#111;color:#eee;padding:20px'>");
-    PGM_P done[3] = {PSTR("Conectando... O rel&oacute;gio vai reiniciar e mostrar o endere&ccedil;o do painel na tela."),
-                     PSTR("Connecting... The clock will restart and show the panel address on screen."),
-                     PSTR("Conectando... El reloj se reiniciar&aacute; y mostrar&aacute; la direcci&oacute;n del panel en la pantalla.")};
-    p += FPSTR(done[cfg.lang]);  // longo demais para o buffer do tr()
+    PageLang lang;
+    String ssid = server.arg("h");  // nome digitado (rede oculta ou fora da lista) vale mais que a rede marcada
+    if (!ssid.length()) ssid = server.arg("s");
+    String p = F("<meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'>"
+                 "<body style='font:16px system-ui;background:#111;color:#eee;padding:20px'>");
+    if (!ssid.length() || ssid.length() > 32) {
+      ADD_TR(p, "Escolha uma rede da lista ou digite o nome dela.", "Pick a network from the list or type its name.",
+             "Elige una red de la lista o escribe su nombre.");
+      p += F("<p><a href=/ style=color:#ff5a47>");
+      ADD_TR(p, "Voltar", "Back", "Volver");
+      p += F("</a>");
+      server.send(400, "text/html", p);
+      return;
+    }
+    ADD_TR(p, "Conectando... O rel&oacute;gio vai reiniciar e mostrar o endere&ccedil;o do painel na tela.",
+           "Connecting... The clock will restart and show the panel address on screen.",
+           "Conectando... El reloj se reiniciar&aacute; y mostrar&aacute; la direcci&oacute;n del panel en la pantalla.");
     server.send(200, "text/html", p);
     delay(500);
+    WiFi.setAutoReconnect(true);  // desfaz a parada do startPortal antes de gravar a rede (se o SDK guardar a política junto, guarda a ligada)
     WiFi.persistent(true);
-    WiFi.begin(server.arg("s").c_str(), server.arg("p").c_str());
+    WiFi.begin(ssid.c_str(), server.arg("p").c_str());
     delay(1000);
     safeRestart();
   });

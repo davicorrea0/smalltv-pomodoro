@@ -475,3 +475,70 @@ struct DnsCache {
     x->st = ip ? 2 : 3;
   }
 };
+
+// Idioma do navegador (cabeçalho Accept-Language) para as páginas do Wi-Fi e da recuperação: 0 português, 1 inglês,
+// 2 espanhol; 255 = sem cabeçalho. Vale o de maior q entre pt, es e en (empate: o que vem primeiro); quem só pede
+// outros idiomas (fr, de...) recebe inglês.
+static uint8_t langFromAccept(const char *h) {
+  if (!h || !*h) return 255;
+  int best = 0;
+  uint8_t lang = 1;
+  while (*h) {
+    while (*h == ' ' || *h == ',') h++;
+    const char *t = h;
+    while (*h && *h != ',' && *h != ';') h++;
+    size_t n = h - t;
+    while (n && t[n - 1] == ' ') n--;
+    int q = 1000;
+    if (*h == ';') {
+      h++;
+      while (*h == ' ') h++;
+      if ((*h == 'q' || *h == 'Q') && h[1] == '=') {
+        const char *p = h + 2;
+        q = 0;
+        if (*p >= '0' && *p <= '9') {
+          q = (*p++ - '0') * 1000;
+          if (*p == '.') for (int d = 100, i = 0; ++p, i < 3 && *p >= '0' && *p <= '9'; d /= 10, i++) q += (*p - '0') * d;
+        }
+      }
+      while (*h && *h != ',') h++;
+    }
+    if (n >= 2 && (n == 2 || t[2] == '-') && q > best) {
+      char a = tolower((unsigned char)t[0]), b = tolower((unsigned char)t[1]);
+      if (a == 'p' && b == 't') { best = q; lang = 0; }
+      else if (a == 'e' && b == 's') { best = q; lang = 2; }
+      else if (a == 'e' && b == 'n') { best = q; lang = 1; }
+    }
+  }
+  return lang;
+}
+
+// Redes da lista do portal de Wi-Fi: sem nome vazio (rede oculta), sem nome repetido (fica o ponto mais forte:
+// repetidores e roteador de duas bandas), do sinal mais forte para o mais fraco, no máximo cap. Devolve os índices
+// em out. ssidOf(i, char[33]) copia o nome; rssiOf(i) devolve o sinal (maior = mais forte).
+template <class S, class R> static int scanPick(int n, S ssidOf, R rssiOf, uint8_t *out, int cap) {
+  int k = 0;
+  char a[33], b[33];
+  for (int i = 0; i < n; i++) {
+    ssidOf(i, a);
+    if (!a[0]) continue;
+    int r = rssiOf(i), same = -1;
+    for (int j = 0; j < k && same < 0; j++) {
+      ssidOf(out[j], b);
+      if (!strcmp(a, b)) same = j;
+    }
+    if (same >= 0) {
+      if (rssiOf(out[same]) >= r) continue;
+      for (int j = same; j < k - 1; j++) out[j] = out[j + 1];
+      k--;
+    }
+    int at = k;
+    while (at > 0 && rssiOf(out[at - 1]) < r) at--;
+    if (at >= cap) continue;  // mais fraca que as cap melhores
+    if (k == cap) k--;        // lista cheia: sai a última
+    for (int j = k; j > at; j--) out[j] = out[j - 1];
+    out[at] = (uint8_t)i;
+    k++;
+  }
+  return k;
+}
