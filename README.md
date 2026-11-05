@@ -73,8 +73,11 @@ Open the IP shown on the clock in any browser on the same network. Settings save
 
 1. Download the latest `.bin` from [Releases](../../releases).
 2. In the original firmware's web page, open **Firmware Upgrade** and upload the file.
-   - If you get `ERROR[4]: Not Enough Space`: the factory update space varies between units. First upload the loader [`smalltv-mod-loader.bin`](https://github.com/giovi321/smalltv-mod/releases/tag/v2.8.2) (giovi321/smalltv-mod v2.8.2), join the open network `SmallTV-Loader` and upload this firmware at `http://192.168.4.1/update`.
-3. If the clock does not join your network by itself, scan the QR on its screen with your phone and confirm joining `SmallTV-Pomodoro`. The QR includes the clock's temporary Wi-Fi password. Once connected, the screen switches to a second QR that opens `http://192.168.4.1/` if the captive portal does not open automatically. Choose your home Wi-Fi and enter its password (**2.4 GHz** networks only). The first screen also shows the network name and password, and the second one the local address, for manual setup.
+   - If you get `ERROR[4]: Not Enough Space`: the factory update space varies between units. First upload the loader [`smalltv-mod-loader.bin`](https://github.com/giovi321/smalltv-mod/releases/tag/v2.8.2) (giovi321/smalltv-mod v2.8.2) in the same **Firmware Upgrade**. Then:
+     - **The screen goes black with the loader, and that is normal.** The clock is on and waiting for the next step.
+     - Join the open network `SmallTV-Loader` (phone or computer), open `http://192.168.4.1/update` and upload this firmware's `.bin`.
+     - **Do not unplug it until the Pomodoro screen (the Wi-Fi QR code) appears.** The clock restarts by itself after the upload.
+3. If the clock does not join your network by itself, scan the QR on its screen with your phone and confirm joining `SmallTV-Pomodoro`. The QR includes the clock's temporary Wi-Fi password. Once connected, the screen switches to a second QR that opens `http://192.168.4.1/` if the captive portal does not open automatically. Choose your home Wi-Fi and enter its password (**2.4 GHz** networks only). The first screen also shows the network name and password, and the second one the local address, for manual setup. If the Wi-Fi does not connect, do not unplug the clock to try again: 3 restarts in a row, each under 30 s, open [recovery mode](#if-something-goes-wrong) (safe, but confusing).
 4. Open the IP shown on the screen to use the panel. Later updates: the panel offers them with one tap, or use *Settings → Update firmware*.
 
 ![QR setup and recovery: join the temporary Wi-Fi, then open the local panel](docs/configuracao-qr.png)
