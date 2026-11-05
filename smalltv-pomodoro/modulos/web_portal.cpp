@@ -1073,7 +1073,6 @@ static void wifiUnpin() {
   String ssid = WiFi.SSID(), psk = WiFi.psk();
   WiFi.persistent(false);
   WiFi.begin(ssid.c_str(), psk.c_str());
-  WiFi.persistent(true);
   wifiPinned = false;
 }
 
@@ -1108,6 +1107,9 @@ static bool waitWifi(uint32_t ms) {
 // Rede salva no SDK. Com o canal e o BSSID do último roteador (EEPROM, ver wifiHintSave) o SDK não varre os 13
 // canais: conecta direto. Só na RAM (persistent desligado): o BSSID fixo não vai para a flash, que segue com a rede
 // de sempre. Se não conectar em poucos segundos, volta à varredura completa.
+// O persistent fica desligado (padrão do núcleo 3.1.2) desde o boot e só é ligado logo antes de uma gravação de
+// propósito (/save, /api/wifireset, /rec/wifi, /rec/wipe). Ligado, WiFi.mode() e softAP() gravam o modo e o AP na flash
+// do SDK: no ciclo "rede sumiu → portal → reinicia em 5 min" o modo padrão era regravado a cada volta (~288/dia).
 bool connectStored(uint32_t timeoutMs) {
   uint32_t t0 = millis();
   WiFi.mode(WIFI_STA);
@@ -1136,7 +1138,6 @@ bool connectStored(uint32_t timeoutMs) {
     uint32_t used = millis() - t0;
     ok = waitWifi(used < timeoutMs ? timeoutMs - used : 0);
   }
-  WiFi.persistent(true);
   return ok;
 }
 
