@@ -32,7 +32,7 @@ extern "C" uint32_t _FS_start;
 void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);  // ui.cpp: recorta para a área suja; fora da tela, cai na faixa
 
 
-#define FW_VERSION "1.24.12"
+#define FW_VERSION "1.24.13"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 #define PIN_DC  0
@@ -333,6 +333,13 @@ void bootAnim(uint8_t done);
 
 // ---------- pequenas, inline ----------
 inline bool formOk() { return formToken.length() && server.arg("csrf") == formToken; }
+// Idioma das páginas do portal de Wi-Fi e da recuperação (ver pageLang): troca só o uiLang durante a página
+uint8_t pageLang();
+struct PageLang {
+  uint8_t keep = uiLang;
+  PageLang() { uiLang = pageLang(); }
+  ~PageLang() { uiLang = keep; }
+};
 inline uint16_t clockColor() { return rgb(cfg.colR, cfg.colG, cfg.colB); }
 // ---------- tempo ----------
 inline bool timeValid() { return time(nullptr) > 1700000000; }

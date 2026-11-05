@@ -273,6 +273,7 @@ void startRecovery() {
   setupQrShown = -1;
   setupQrScreen(true);
   server.on("/", HTTP_GET, [] {
+    PageLang lang;  // idioma do navegador enquanto os ajustes são os de fábrica (ver pageLang)
     String p = F("<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>SmallTV</title>"
                  "<style>body{font:16px system-ui;background:#111;color:#eee;max-width:420px;margin:auto;padding:20px}"
                  "button,a{display:block;width:100%;box-sizing:border-box;text-align:center;padding:12px;margin:8px 0;border-radius:10px;"
@@ -345,7 +346,7 @@ void startRecovery() {
     ESP.restart();
   });
   server.on("/api/stats", HTTP_GET, sendStats);
-  server.collectHeaders("X-SmallTV", "Authorization", "Content-Length", "X-Firmware-Sig");
+  server.collectHeaders("X-SmallTV", "Authorization", "Content-Length", "X-Firmware-Sig", "Accept-Language");
   setupUpdate();
   server.begin();
 }
