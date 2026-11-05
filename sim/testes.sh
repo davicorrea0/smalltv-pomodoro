@@ -30,6 +30,7 @@ g++ -std=c++17 -fsanitize=address,undefined -g -w warm_test.cpp -o "$T/warm"
 "$T/warm"
 g++ -std=c++17 -fsanitize=address,undefined -g -w -Ishim brilho_test.cpp -o "$T/brilho"
 "$T/brilho"
+[ -n "${GEN:-}" ] || node wifi_flash_test.cjs  # persistent do Wi-Fi só nas gravações de propósito (sem gravar a flash a cada ciclo)
 # saída completa em arquivo; um erro em qualquer um interrompe tudo (set -e) e mostra o fim do log
 for f in gif jpeg; do
   if ! bash "test-$f.sh" "$f-seeds" "$N" > "$T/$f.log" 2>&1; then
