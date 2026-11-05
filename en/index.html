@@ -282,10 +282,11 @@
           <summary>Got “ERROR[4]: Not Enough Space”?</summary>
           <p style="color:var(--muted)">The factory update space varies between units. In that case, go through a small loader first:</p>
           <ol>
-            <li>Download <a href="https://github.com/giovi321/smalltv-mod/releases/tag/v2.8.2"><code>smalltv-mod-loader.bin</code></a> (giovi321/smalltv-mod v2.8.2) and upload it in <strong>Firmware Upgrade</strong>.</li>
+            <li>Download <a href="https://github.com/giovi321/smalltv-mod/releases/tag/v2.8.2"><code>smalltv-mod-loader.bin</code></a> (giovi321/smalltv-mod v2.8.2) and upload it in <strong>Firmware Upgrade</strong>. <strong>The screen goes black with the loader, and that is normal:</strong> the clock is on and waiting for the next step.</li>
             <li>Connect your phone or computer to the open Wi-Fi network <code>SmallTV-Loader</code>.</li>
-            <li>Open <code>http://192.168.4.1/update</code> and upload the SmallTV Pomodoro firmware.</li>
+            <li>Open <code>http://192.168.4.1/update</code> and upload the SmallTV Pomodoro <code>.bin</code>. <strong>Do not unplug it during the upload.</strong> Afterwards the clock restarts by itself and shows the Pomodoro screen.</li>
           </ol>
+          <p style="color:var(--muted)">Do not turn it off and on again and again to “try again”: 3 times in a row open <a href="docs.html#recuperacao">recovery mode</a>, which is safe but can be confusing.</p>
         </details>
       </li>
       <li>

@@ -70,9 +70,10 @@
   <ol class="steps"><li><h3>Download the file</h3><p>Get the latest <code>.bin</code> from the <a href="https://github.com/davicorrea0/smalltv-pomodoro/releases">releases page</a> (or the download button on the <a href="./">home page</a>). Use the <strong>stable</strong> version.</p></li><li><h3>Open the factory clock's page</h3><p>In your browser, open the clock's address (the IP shown on its screen) and go to <strong>Firmware Upgrade</strong>.</p></li><li><h3>Upload the file</h3><p>Pick the <code>.bin</code>, upload it and wait for the clock to restart by itself. The Pomodoro screens appear next.</p></li></ol>
   <div class="note warn"><p><strong>Got ERROR[4]: Not Enough Space?</strong> The factory update space varies between units. Fix it in two steps:</p>
    <ol style="margin:6px 0 0;padding-left:20px;color:var(--muted)">
-    <li>First upload the loader <a href="https://github.com/giovi321/smalltv-mod/releases/tag/v2.8.2"><code>smalltv-mod-loader.bin</code></a> (giovi321/smalltv-mod v2.8.2) through the same <strong>Firmware Upgrade</strong>.</li>
-    <li>Join the open network <code>SmallTV-Loader</code> and upload the Pomodoro firmware at <code>http://192.168.4.1/update</code>.</li>
-   </ol></div>
+    <li>First upload the loader <a href="https://github.com/giovi321/smalltv-mod/releases/tag/v2.8.2"><code>smalltv-mod-loader.bin</code></a> (giovi321/smalltv-mod v2.8.2) through the same <strong>Firmware Upgrade</strong>. <strong>The screen goes black with the loader, and that is normal:</strong> the clock is on and waiting for the next step.</li>
+    <li>Join the open network <code>SmallTV-Loader</code> and upload the Pomodoro <code>.bin</code> at <code>http://192.168.4.1/update</code> (from your phone or computer). <strong>Do not unplug it during the upload.</strong> Afterwards the clock restarts by itself and shows the Pomodoro screen.</li>
+   </ol>
+   <p style="margin:8px 0 0">Do not turn it off and on again and again to “try again”: 3 times in a row open <a href="#recuperacao">recovery mode</a>, which is safe but can be confusing.</p></div>
   <div class="note"><p><strong>Photos and GIFs from the factory firmware:</strong> installing formats the file storage, so the original's photos are <strong>not kept</strong>. Settings and the saved Wi-Fi stay. Upload the photos again from the panel afterwards.</p></div>
 
   <h3 class="sub">Connect the clock to Wi-Fi</h3>

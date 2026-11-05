@@ -70,9 +70,10 @@
   <ol class="steps"><li><h3>Baixe o arquivo</h3><p>Pegue o <code>.bin</code> mais recente na <a href="https://github.com/davicorrea0/smalltv-pomodoro/releases">página de versões</a> (ou no botão de download da <a href="./">página inicial</a>). Use a versão <strong>estável</strong>.</p></li><li><h3>Abra a página do relógio de fábrica</h3><p>No navegador, entre no endereço do relógio (o IP que aparece na tela dele) e abra <strong>Firmware Upgrade</strong>.</p></li><li><h3>Envie o arquivo</h3><p>Escolha o <code>.bin</code>, envie e espere o relógio reiniciar sozinho. As telas do Pomodoro aparecem em seguida.</p></li></ol>
   <div class="note warn"><p><strong>Deu ERROR[4]: Not Enough Space?</strong> O espaço de atualização de fábrica varia de um relógio para outro. Resolva em dois passos:</p>
    <ol style="margin:6px 0 0;padding-left:20px;color:var(--muted)">
-    <li>Envie primeiro o carregador <a href="https://github.com/giovi321/smalltv-mod/releases/tag/v2.8.2"><code>smalltv-mod-loader.bin</code></a> (giovi321/smalltv-mod v2.8.2) pelo mesmo <strong>Firmware Upgrade</strong>.</li>
-    <li>Entre na rede aberta <code>SmallTV-Loader</code> e envie o firmware Pomodoro em <code>http://192.168.4.1/update</code>.</li>
-   </ol></div>
+    <li>Envie primeiro o carregador <a href="https://github.com/giovi321/smalltv-mod/releases/tag/v2.8.2"><code>smalltv-mod-loader.bin</code></a> (giovi321/smalltv-mod v2.8.2) pelo mesmo <strong>Firmware Upgrade</strong>. <strong>A tela fica preta com o carregador, e isso é normal:</strong> o relógio está ligado, esperando o próximo passo.</li>
+    <li>Entre na rede aberta <code>SmallTV-Loader</code> e envie o <code>.bin</code> do Pomodoro em <code>http://192.168.4.1/update</code> (pelo celular ou pelo computador). <strong>Não desligue durante o envio.</strong> Depois o relógio reinicia sozinho com a tela do Pomodoro.</li>
+   </ol>
+   <p style="margin:8px 0 0">Não ligue e desligue várias vezes para “tentar de novo”: 3 vezes seguidas abrem o <a href="#recuperacao">modo de recuperação</a>, que é seguro, mas confunde.</p></div>
   <div class="note"><p><strong>Fotos e GIFs do firmware de fábrica:</strong> a instalação formata a memória de arquivos, então as fotos do original <strong>não ficam</strong>. Os ajustes e o Wi-Fi salvo ficam. Envie as fotos de novo pelo painel depois.</p></div>
 
   <h3 class="sub">Conectar o relógio ao Wi-Fi</h3>
