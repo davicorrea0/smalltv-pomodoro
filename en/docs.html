@@ -71,14 +71,14 @@
   <div class="note warn"><p><strong>Got ERROR[4]: Not Enough Space?</strong> The factory update space varies between units. Fix it in two steps:</p>
    <ol style="margin:6px 0 0;padding-left:20px;color:var(--muted)">
     <li>First upload the loader <a href="https://github.com/giovi321/smalltv-mod/releases/tag/v2.8.2"><code>smalltv-mod-loader.bin</code></a> (giovi321/smalltv-mod v2.8.2) through the same <strong>Firmware Upgrade</strong>. <strong>The screen goes black with the loader, and that is normal:</strong> the clock is on and waiting for the next step.</li>
-    <li>Join the open network <code>SmallTV-Loader</code> and upload the Pomodoro <code>.bin</code> at <code>http://192.168.4.1/update</code> (from your phone or computer). <strong>Do not unplug it during the upload.</strong> Afterwards the clock restarts by itself and shows the Pomodoro screen.</li>
-   </ol>
-   <p style="margin:8px 0 0">Do not turn it off and on again and again to “try again”: 3 times in a row open <a href="#recuperacao">recovery mode</a>, which is safe but can be confusing.</p></div>
+    <li>Join the open network <code>SmallTV-Loader</code> and upload the Pomodoro <code>.bin</code> at <code>http://192.168.4.1/update</code> (from your phone or computer). <strong>Do not unplug it until the Pomodoro screen (the Wi-Fi QR code) appears.</strong> The clock restarts by itself after the upload.</li>
+   </ol></div>
   <div class="note"><p><strong>Photos and GIFs from the factory firmware:</strong> installing formats the file storage, so the original's photos are <strong>not kept</strong>. Settings and the saved Wi-Fi stay. Upload the photos again from the panel afterwards.</p></div>
 
   <h3 class="sub">Connect the clock to Wi-Fi</h3>
   <p>If the clock already had your home Wi-Fi saved by the factory firmware, it joins by itself and you can skip to <a href="#achar-painel">finding the panel</a>. If it did not:</p>
   <ol class="steps"><li><h3>Scan the QR on the screen</h3><p>The screen shows <strong>STEP 1/2</strong> with a QR. Point your phone's camera at it and confirm joining the <code>SmallTV-Pomodoro</code> network. The QR already carries that network's temporary password.</p><p class="m">No camera, or the QR did not scan? Join <code>SmallTV-Pomodoro</code> from your phone's Wi-Fi list and type the 8-character password shown on the screen.</p></li><li><h3>Open the portal</h3><p>Once your phone is connected, the screen changes to <strong>STEP 2/2</strong>. The portal usually opens by itself. If it does not, scan the second QR or open <code>http://192.168.4.1/</code>.</p></li><li><h3>Pick your home Wi-Fi</h3><p>Select your network and type its password. Only <strong>2.4 GHz</strong> networks work (the clock has no 5 GHz). The clock restarts and shows the panel's address.</p></li></ol>
+  <div class="note"><p>If the Wi-Fi does not connect, do not unplug the clock to try again: 3 restarts in a row, each under 30 s, open <a href="#recuperacao">recovery mode</a> (safe, but confusing).</p></div>
   <div class="row2">
    <figure class="lcd"><img class="px" src="../docs/img/qr-1.png" width="240" height="240" loading="lazy" alt="Screen with a QR and the SmallTV-Pomodoro network password"><figcaption>Step 1/2: join the clock's network</figcaption></figure>
    <figure class="lcd"><img class="px" src="../docs/img/qr-2.png" width="240" height="240" loading="lazy" alt="Screen with the QR that opens the setup portal"><figcaption>Step 2/2: open the portal</figcaption></figure>
