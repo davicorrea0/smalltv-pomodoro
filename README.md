@@ -1,11 +1,22 @@
-# SmallTV Pomodoro 🍅
+<p align="center">
+  <img src="docs/logo.svg" alt="SmallTV Pomodoro" width="96" />
+</p>
+
+<h1 align="center">SmallTV Pomodoro</h1>
+
+<p align="center">
+  <a href="https://github.com/davicorrea0/smalltv-pomodoro/actions/workflows/firmware.yml"><img src="https://github.com/davicorrea0/smalltv-pomodoro/actions/workflows/firmware.yml/badge.svg?branch=main&amp;event=push" alt="Build"></a>
+  <a href="https://github.com/davicorrea0/smalltv-pomodoro/releases/latest"><img src="https://img.shields.io/github/v/release/davicorrea0/smalltv-pomodoro?label=release&amp;color=ff5a47" alt="release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue.svg" alt="GPL-3.0"></a>
+  <img src="https://img.shields.io/badge/platform-ESP8266%20%7C%20SmallTV%20Ultra-informational" alt="ESP8266, SmallTV Ultra">
+</p>
+
+<p align="center">
+  <a href="https://github.com/davicorrea0/smalltv-pomodoro/releases/latest"><img src="https://img.shields.io/badge/Download-ff5a47?style=for-the-badge&amp;logo=github&amp;logoColor=white" alt="Download"></a>
+  <a href="https://davicorrea0.github.io/smalltv-pomodoro/en/docs.html"><img src="https://img.shields.io/badge/Read_the_docs-161a20?style=for-the-badge&amp;logo=readthedocs&amp;logoColor=white" alt="Read the docs"></a>
+</p>
 
 **A focus timer for your desk that isn't your phone.** Open-source firmware for the GeekMagic SmallTV Ultra (ESP8266): a Pomodoro timer with a pixel art tomato, clock faces, weather and a web panel. No account, no cloud, no cable to install.
-
-[![Latest release](https://img.shields.io/github/v/release/davicorrea0/smalltv-pomodoro?label=release&color=ff5a47)](https://github.com/davicorrea0/smalltv-pomodoro/releases/latest)
-[![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-60c454)](LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/davicorrea0/smalltv-pomodoro?style=flat&color=ffc43d)](https://github.com/davicorrea0/smalltv-pomodoro/stargazers)
-![Languages: English, Português, Español](https://img.shields.io/badge/languages-EN%20%C2%B7%20PT%20%C2%B7%20ES-3fc8ff)
 
 <!-- GIF here: replace docs/hero.gif with a ~6 s GIF cut from the video of the real clock (same file name, ~480 px wide, under 2 MB), and link the video below it. -->
 <p align="center"><img src="docs/hero.gif" width="360" alt="SmallTV Pomodoro screens in a loop: the tomato scene, a focus session with its progress ring, the end of a phase, rain on the way, the flip, neon, retro LCD and world faces"></p>
@@ -13,12 +24,14 @@
 <p align="center"><sub>Made from the project's simulator, which compiles the same drawing code as the firmware. A recording of a real clock is coming.</sub></p>
 
 <p align="center">
-  <a href="https://davicorrea0.github.io/smalltv-pomodoro/en/"><b>Website</b></a> ·
+  <a href="https://davicorrea0.github.io/smalltv-pomodoro/en/gallery.html"><img src="https://img.shields.io/badge/Browse_the_clock_faces-ff5a47?style=for-the-badge&amp;logo=probot&amp;logoColor=white" alt="Browse the clock faces"></a>
+</p>
+
+<p align="center"><sub>
   <a href="https://davicorrea0.github.io/smalltv-pomodoro/en/docs.html#primeiros-passos">Install guide</a> ·
-  <a href="https://davicorrea0.github.io/smalltv-pomodoro/en/gallery.html">Face gallery</a> ·
   <a href="https://davicorrea0.github.io/smalltv-pomodoro/en/releases.html">Releases</a> ·
   <a href="docs/README.pt.md">Em português</a>
-</p>
+</sub></p>
 
 ## Why
 

@@ -1,11 +1,22 @@
-# SmallTV Pomodoro 🍅
+<p align="center">
+  <img src="logo.svg" alt="SmallTV Pomodoro" width="96" />
+</p>
+
+<h1 align="center">SmallTV Pomodoro</h1>
+
+<p align="center">
+  <a href="https://github.com/davicorrea0/smalltv-pomodoro/actions/workflows/firmware.yml"><img src="https://github.com/davicorrea0/smalltv-pomodoro/actions/workflows/firmware.yml/badge.svg?branch=main&amp;event=push" alt="Build"></a>
+  <a href="https://github.com/davicorrea0/smalltv-pomodoro/releases/latest"><img src="https://img.shields.io/github/v/release/davicorrea0/smalltv-pomodoro?label=vers%C3%A3o&amp;color=ff5a47" alt="versão"></a>
+  <a href="../LICENSE"><img src="https://img.shields.io/badge/licen%C3%A7a-GPL--3.0-blue.svg" alt="GPL-3.0"></a>
+  <img src="https://img.shields.io/badge/plataforma-ESP8266%20%7C%20SmallTV%20Ultra-informational" alt="ESP8266, SmallTV Ultra">
+</p>
+
+<p align="center">
+  <a href="https://github.com/davicorrea0/smalltv-pomodoro/releases/latest"><img src="https://img.shields.io/badge/Baixar-ff5a47?style=for-the-badge&amp;logo=github&amp;logoColor=white" alt="Baixar"></a>
+  <a href="https://davicorrea0.github.io/smalltv-pomodoro/docs.html"><img src="https://img.shields.io/badge/Ler_a_documenta%C3%A7%C3%A3o-161a20?style=for-the-badge&amp;logo=readthedocs&amp;logoColor=white" alt="Ler a documentação"></a>
+</p>
 
 **Um timer de foco na mesa que não é o celular.** Firmware de código aberto para o GeekMagic SmallTV Ultra (ESP8266): Pomodoro com um tomate em pixel art, mostradores, clima e um painel web. Sem conta, sem nuvem e sem cabo para instalar.
-
-[![Versão](https://img.shields.io/github/v/release/davicorrea0/smalltv-pomodoro?label=vers%C3%A3o&color=ff5a47)](https://github.com/davicorrea0/smalltv-pomodoro/releases/latest)
-[![Licença: GPL-3.0](https://img.shields.io/badge/licen%C3%A7a-GPL--3.0-60c454)](../LICENSE)
-[![Estrelas](https://img.shields.io/github/stars/davicorrea0/smalltv-pomodoro?style=flat&label=estrelas&color=ffc43d)](https://github.com/davicorrea0/smalltv-pomodoro/stargazers)
-![Idiomas: português, inglês e espanhol](https://img.shields.io/badge/idiomas-PT%20%C2%B7%20EN%20%C2%B7%20ES-3fc8ff)
 
 <!-- GIF aqui: o mesmo docs/hero.gif do README em inglês (troque pelo GIF do relógio real com o mesmo nome). -->
 <p align="center"><img src="hero.gif" width="360" alt="Telas do SmallTV Pomodoro em sequência: a cena do tomate, um foco com o anel de progresso, o fim de uma fase, chuva chegando e os mostradores Flip, Neon, LCD retrô e Mundo"></p>
@@ -13,12 +24,14 @@
 <p align="center"><sub>Feito com o simulador do projeto, que compila o mesmo código de desenho do firmware. Uma gravação do relógio de verdade vem em breve.</sub></p>
 
 <p align="center">
-  <a href="https://davicorrea0.github.io/smalltv-pomodoro/"><b>Site</b></a> ·
+  <a href="https://davicorrea0.github.io/smalltv-pomodoro/galeria.html"><img src="https://img.shields.io/badge/Ver_os_mostradores-ff5a47?style=for-the-badge&amp;logo=probot&amp;logoColor=white" alt="Ver os mostradores"></a>
+</p>
+
+<p align="center"><sub>
   <a href="https://davicorrea0.github.io/smalltv-pomodoro/docs.html#primeiros-passos">Guia de instalação</a> ·
-  <a href="https://davicorrea0.github.io/smalltv-pomodoro/galeria.html">Galeria</a> ·
   <a href="https://davicorrea0.github.io/smalltv-pomodoro/versoes.html">Versões</a> ·
   <a href="../README.md">In English</a>
-</p>
+</sub></p>
 
 ## Por quê
 
