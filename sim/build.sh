@@ -39,6 +39,7 @@ node transicao_lcd.js
 node faces.js
 node catalog.js
 $CXX -O1 -std=c++17 -w -Ishim brilho_test.cpp -o "out/brilho_$BIN" && "./out/brilho_$BIN" || exit 1
+node brilho_loop_test.cjs out/brilho_loop.cpp && $CXX -O1 -std=c++17 -w out/brilho_loop.cpp -o "out/brilho_loop_$BIN" && "./out/brilho_loop_$BIN" || exit 1
 node painel_test.cjs
 node ponte_test.cjs || exit 1
 node fuso_test.cjs || exit 1

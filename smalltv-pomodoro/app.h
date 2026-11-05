@@ -18,6 +18,7 @@
 #include "security.h"
 #include "warm.h"
 #include "bri_curva.h"  // curva de brilho em tabela (sim/gerar_brilho.js)
+#include <sigma_delta.h>  // backlight por sigma-delta em hardware (modulos/backlight.cpp)
 #include <new>
 #include <vector>
 #include <time.h>
@@ -120,11 +121,15 @@ const uint32_t RTC_CRASH_BLOCK = 32;  // 2 blocos: marca e segundos ligado
 // Volta como hora de reserva: aparece na hora, mas só o SNTP junto do clima a confirma.
 const uint32_t RTC_CLOCK_BLOCK = 40;
 // ---------- brilho (com horário noturno) ----------
-// PWM a 20 kHz (fora da faixa audível e de piscar) com 1023 degraus; pino invertido (0 = aceso no máximo).
-// Curva gama 2.2 (perceptual) sobre o 0-100 do cfg; 1 % já sai com ~1 % de duty, para não apagar.
-const uint16_t BL_RANGE = 1023;
-const uint32_t BL_HZ = 20000;
-const uint16_t BL_MIN = 10;      // duty mínimo para qualquer brilho > 0
+// Sigma-delta em HARDWARE do ESP8266 no pino do backlight (pino invertido: alto = apagado), em 1/256. O analogWrite do
+// core 3.1.2 é PWM por software numa NMI: cada atraso da interrupção esticava o trecho aceso ou apagado, e o brilho
+// médio oscilava de leve com a carga (Wi-Fi, desenho). O sigma-delta não usa CPU nem interrupção.
+// Nos extremos (0 e 100%) o pino fica em nível fixo (DC). Curva gama 2.2 (perceptual) sobre o 0-100 do cfg; 1 % sai com 3/256 (1,17 %).
+const uint16_t BL_FULL = 256;     // aceso o tempo todo (100 %)
+const uint8_t BL_MIN = 3;         // mínimo para qualquer brilho > 0 (não apaga; não fica mais escuro que o 10/1023 antigo)
+// Divisor do relógio de 80 MHz do sigma-delta: 255 = pulso de 3,2 µs (o mais lento, o mais linear para o transistor).
+// Nos brilhos mínimos (3/256) a modulação fica em ~3,7 kHz; se chiar, testar um valor menor no relógio.
+const uint8_t BL_SD_PRESCALER = 255;
 const uint16_t BL_FADE_MS = 400;  // rampa entre dois níveis (dia/noite, slider)
 // ---------- Pomodoro ----------
 enum Phase : uint8_t { IDLE, WORK, SHORT_BREAK, LONG_BREAK };

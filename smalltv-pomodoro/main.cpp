@@ -290,8 +290,8 @@ static void bootConnectedScreen() {
 void setup() {
   snprintf(netName, sizeof netName, HOSTNAME "-%04x", (unsigned)(ESP.getChipId() & 0xFFFF));
   pinMode(PIN_BL, OUTPUT);
-  analogWriteRange(BL_RANGE);
-  analogWriteFreq(BL_HZ);
+  sigmaDeltaEnable();  // backlight: sigma-delta em hardware (modulos/backlight.cpp), pronto antes do updateBrightness
+  sigmaDeltaSetPrescaler(BL_SD_PRESCALER);
   loadSettings();
   BootCount bc;
   EEPROM.get(BOOT_OFF, bc);
