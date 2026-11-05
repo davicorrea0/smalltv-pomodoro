@@ -538,3 +538,10 @@ footer .links { display: flex; gap: 16px; flex-wrap: wrap; margin-left: auto; }
 }
 #mexer .foot-grid, #hack .foot-grid { margin: 0; color: var(--muted); font-size: 15px; }
 @media (max-width: 520px) { .foot-brand .brand span { display: inline; } }
+
+/* Perguntas na página inicial */
+.faq-home { display: grid; gap: 10px; align-items: start; }
+@media (min-width: 760px) { .faq-home { grid-template-columns: 1fr 1fr; } }
+.faq-home details.note { margin: 0; background: var(--card); border-color: var(--line); }
+.faq-home details.note[open] { border-color: rgba(255, 90, 71, 0.35); }
+.faq-home details.note p { margin: 0; color: var(--muted); }
