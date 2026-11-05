@@ -32,7 +32,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Silkscreen&display=swap">
-<link rel="stylesheet" href="../style.css?v=18">
+<link rel="stylesheet" href="../style.css?v=19">
 </head>
 <body>
 
@@ -56,17 +56,17 @@
 <div class="hero">
   <div class="wrap">
     <div>
-      <div class="eyebrow">Alternative firmware · open source</div>
-      <h1>Your SmallTV Ultra with <em>Pomodoro</em>, new clock faces and a tomato.</h1>
-      <p class="lead">New firmware for the GeekMagic SmallTV Ultra desk clock: hand-drawn clock faces, a Pomodoro timer with a pixel art mascot, weather with no API key and a simple web panel for your phone.</p>
+      <div class="eyebrow">Open firmware for the GeekMagic SmallTV Ultra</div>
+      <h1>Focus on your desk.<br><em>Not on your phone.</em></h1>
+      <p class="lead">A Pomodoro timer with a pixel art tomato, <!--g:builtin-->13<!--/g--> clock faces, weather and a web panel on your phone, running on your SmallTV Ultra. No account, no cloud and no cable to install.</p>
       <div class="btns">
-        <a class="btn primary" href="#downloads">Download firmware</a>
-        <a class="btn" href="gallery.html">See the clock faces</a>
+        <a class="btn primary" href="#install"><img class="px" src="../img/icons/download.svg" alt="">Install</a>
+        <a class="btn" href="gallery.html">See the faces</a>
       </div>
-      <p class="meta">Free · installs from the clock's own web panel, no cable · you can go back to the original</p>
+      <p class="meta">Free and open (GPL-3.0) · English, Portuguese and Spanish · <a href="#device">is this my device?</a></p>
     </div>
     <div>
-      <div class="device" aria-label="Clock preview cycling through faces">
+      <div class="device" aria-label="Preview of the clock switching faces">
         <div class="screen" id="screen">
           <img class="px on" src="../img/faces/face-1.png" alt="Tomato face" width="240" height="240">
         </div>
@@ -76,33 +76,110 @@
   </div>
 </div>
 
-<section id="what">
+<div class="stats" id="what">
   <div class="wrap">
-    <h2>What it is</h2>
-    <div class="grid two">
-      <div class="card">
-        <h3>The clock: GeekMagic SmallTV Ultra</h3>
-        <p style="color:var(--muted);margin:0">A tiny Wi-Fi desk cube with a 240×240 color screen. Inside there is an <strong>ESP8266</strong> (the same chip found in many home automation projects) and an <strong>ST7789</strong> display. Out of the box it shows time, weather and photos, running GeekMagic's closed firmware.</p>
-      </div>
-      <div class="card">
-        <h3>The firmware: SmallTV Pomodoro</h3>
-        <p style="color:var(--muted);margin:0">A new program for the same device, written from scratch and open on GitHub. You flash it from the clock's own web panel, like a regular update, and it gets new clock faces, a Pomodoro timer and a tomato mascot. Photos already stored on it stay there.</p>
-      </div>
+    <dl>
+      <div><dt><!--g:builtin-->13<!--/g--></dt><dd>built-in clock faces</dd></div>
+      <div><dt><!--g:catalog-->41<!--/g--></dt><dd>more in the gallery</dd></div>
+      <div><dt>1 year</dt><dd>of focus sessions kept on the clock</dd></div>
+      <div><dt>3</dt><dd>languages on the panel and screen</dd></div>
+      <div><dt>0</dt><dd>accounts, clouds or cables</dd></div>
+    </dl>
+  </div>
+</div>
+
+<section id="video">
+  <div class="wrap split-media">
+    <div>
+      <div class="eyebrow">See it run</div>
+      <h2>A timer you catch from the corner of your eye</h2>
+      <p class="section-lead">A ring fills up until the end of the focus, the end time stays on screen and the tomato keeps you company: focused while you work, a coffee on the break, napping when you pause and jumping when a phase ends.</p>
+      <p class="fine-print">Animation made with the project's simulator, which compiles the same drawing code as the firmware. A video of the real clock is coming.</p>
     </div>
-    <figure class="shot" style="margin-top:14px">
-      <img class="px" src="../img/mostradores.png" alt="Built-in faces: Matrix, Tomato, Analog, Weather, Neon, Flip, Retro LCD, Words, Forecast, Forecast cards and Forecast LCD" width="1160" height="950" loading="lazy">
-      <figcaption>Some of the <!--g:builtin-->13<!--/g--> built-in faces. Images rendered by the project's simulator, which compiles the same drawing code as the firmware.</figcaption>
+    <!-- video here: swap the <img> for <video src="../img/relogio.mp4" poster="../img/relogio.jpg" autoplay muted loop playsinline width="480" height="480"></video> once the video of the real clock is ready -->
+    <figure class="clip">
+      <img class="px" src="../img/hero-sim.gif" alt="SmallTV Pomodoro screens in a loop: the tomato scene, a focus session with its progress ring, the end of a phase, rain on the way, and the Flip, Neon, Retro LCD and World faces" width="480" height="480" loading="lazy">
     </figure>
+  </div>
+</section>
+
+<section id="why">
+  <div class="wrap">
+    <div class="eyebrow">Why use it</div>
+    <h2>The clock you already have, made for focus</h2>
+    <div class="grid two">
+      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/focado.svg" alt=""></span>The timer is the point</h3><p>Focus, short and long breaks, a daily goal and the activity you are doing. The clock keeps a year of sessions, and a plant grows with your streak up to a golden tomato.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/download.svg" alt=""></span>Installs without a cable</h3><p>You upload the file on the clock's own factory web page, like a normal update. Some units need a small loader first; the <a href="docs.html#primeiros-passos">guide</a> shows how.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/seta.svg" alt=""></span>Checked updates</h3><p>New versions arrive with one tap in the panel, signed, and the clock checks the whole file before switching. If something goes wrong, recovery mode opens with no button: power-cycle it 3 times.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/grade.svg" alt=""></span>Faces without reflashing</h3><p><!--g:builtin-->13<!--/g--> built-in faces and <!--g:catalog-->41<!--/g--> more in the gallery, each one a small file the panel installs without updating the firmware.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="up-close">
+  <div class="wrap">
+    <h2>Up close</h2>
+    <p class="section-lead">The clock's screens, rendered by the project's simulator with the same code as the firmware.</p>
+    <div class="viewer" id="viewer">
+      <div class="tabs" role="tablist" aria-label="Screens">
+        <button type="button" role="tab" data-shot="1" aria-selected="true" aria-pressed="true">Pomodoro</button>
+        <button type="button" role="tab" data-shot="0" aria-selected="false" aria-pressed="false">Tomato</button>
+        <button type="button" role="tab" data-shot="3" aria-selected="false" aria-pressed="false">Game</button>
+        <button type="button" role="tab" data-shot="4" aria-selected="false" aria-pressed="false">Drawings</button>
+      </div>
+      <figure class="shot one pomo" role="tabpanel" data-shot="1">
+        <div class="anim" id="pomo-anim" role="img" aria-label="Animated Pomodoro screen" data-src="../img/pomodoro/en-" style="background-image:url(../img/pomodoro/en-foco.png);background-size:1200% 100%"></div>
+        <figcaption>
+          <div class="tabs states" role="group">
+            <button type="button" data-state="foco" data-n="12" data-ms="350" data-cap="Focus: the red ring fills up until the end of the phase, with the countdown and the end time. The tomato concentrates next to the activity's object." data-sub="sped up" aria-pressed="true">Focus</button>
+            <button type="button" data-state="pausa" data-n="12" data-ms="350" data-cap="Short break: a green ring and the tomato relaxing with a coffee." data-sub="sped up" aria-pressed="false">Break</button>
+            <button type="button" data-state="longa" data-n="12" data-ms="350" data-cap="Long break: a blue ring, after finishing the cycle of focus sessions (the dots)." data-sub="sped up" aria-pressed="false">Long break</button>
+            <button type="button" data-state="pausado" data-n="2" data-ms="1000" data-cap="Paused: the time blinks every second and the tomato naps until you resume." aria-pressed="false">Paused</button>
+            <button type="button" data-state="fim" data-n="6" data-ms="160" data-cap="Phase done: the tomato jumps for joy and the next phase shows up." aria-pressed="false">Phase done</button>
+          </div>
+          <p id="pomo-cap">Focus: the red ring fills up until the end of the phase, with the countdown and the end time. The tomato concentrates next to the activity's object. <span class="sub">(sped up)</span></p>
+          <p class="act-lead">In the panel you pick the focus activity, and its object shows up next to the tomato:</p>
+          <span class="acts"><span><img class="px" src="../img/icons/livro.svg" alt="">Read</span><span><img class="px" src="../img/icons/caderno.svg" alt="">Study</span><span><img class="px" src="../img/icons/notebook.svg" alt="">Code</span><span><img class="px" src="../img/icons/prancheta.svg" alt="">Tasks</span><span><img class="px" src="../img/icons/paleta.svg" alt="">Draw</span></span>
+        </figcaption>
+      </figure>
+      <figure class="shot" role="tabpanel" data-shot="0" hidden>
+        <img class="px" src="../img/tomate.png" alt="Tomato scene: day, night, rain, snow, heat and goal reached" width="1480" height="990" loading="lazy">
+        <figcaption>Tomato face: day, night, rain, cold, heat and the daily goal reached. The tomato opens its umbrella when rain is about to start.</figcaption>
+      </figure>
+      <figure class="shot one" role="tabpanel" data-shot="3" hidden>
+        <img class="px" src="../img/jogo/tomate-7.png" alt="Tomato face with the golden plant and a 7-day streak" width="240" height="240" loading="lazy">
+        <figcaption>Every day in a row with the goal reached grows the plant, up to the golden tomato. <a href="game.html">Meet the game</a>.</figcaption>
+      </figure>
+      <figure class="shot" role="tabpanel" data-shot="4" hidden>
+        <img class="px" src="../img/assets.png" alt="Sheet with every pixel art drawing in the firmware" width="752" height="568" loading="lazy">
+        <figcaption>Every pixel art drawing is a text file in the repository, easy to edit.</figcaption>
+      </figure>
+    </div>
   </div>
 </section>
 
 <section id="new-gallery">
   <div class="wrap">
-    <div class="eyebrow">New gallery</div>
+    <div class="eyebrow">Gallery</div>
     <h2>New clock faces to install</h2>
-    <p class="section-lead">Besides the <!--g:builtin-->13<!--/g--> built-in faces, there is a gallery of faces that don't ship with the firmware: Bento, Synthwave, Terminal, Aquarium, Station and more. Each one is a small file the clock installs without reflashing.</p>
+    <p class="section-lead">Besides the <!--g:builtin-->13<!--/g--> built-in faces, the gallery has faces that don't ship with the firmware: Bento, Synthwave, Terminal, Aquarium, Station and more. The panel installs each one without reflashing, and “Show on clock” tries it for 15 s without saving.</p>
     <div class="shelf" id="shelf"><div class="ph"></div><div class="ph"></div><div class="ph"></div><div class="ph"></div></div>
-    <a class="btn primary" href="gallery.html">Open the gallery (<span id="shelf-count"><!--g:catalog-->41<!--/g--></span> new)</a>
+    <a class="btn primary" href="gallery.html">See the gallery (<span id="shelf-count"><!--g:catalog-->41<!--/g--></span> new)</a>
+  </div>
+</section>
+
+<section id="features">
+  <div class="wrap">
+    <h2>Everything else that comes with it</h2>
+    <p class="section-lead">It runs on the clock itself. With internet, the clock gets the time and the weather (Open-Meteo), and the panel gets updates from this website. No account, no cloud.</p>
+    <div class="grid three">
+      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/sol.svg" alt=""></span>Weather</h3><p>From <a href="https://open-meteo.com/">Open-Meteo</a>, no sign-up or API key. A 5-day forecast, °C or °F, and a warning when rain starts within the hour.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/jogo/planta/dourada.svg" alt=""></span>Focus game</h3><p>Day streaks, a yearly garden, 10 achievements and a day card to share. <a href="game.html">See the game</a>.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/foto.svg" alt=""></span>Photos and GIFs</h3><p>Upload them from the panel; the browser crops them to 240×240. The clock checks every GIF before showing it.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/lua.svg" alt=""></span>Night brightness</h3><p>The screen dims from sunset to sunrise, or on a schedule you pick.</p></div>
+      <div class="card feature" id="alexa"><h3><span class="ico"><img class="px" src="../img/icons/alexa.svg" alt=""></span>Alexa</h3><p>“Alexa, turn on Pomodoro”: start, pause and stop the timer by voice on your local network, with no account or skill. <a href="docs.html#alexa">How to set it up</a>.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/celular.svg" alt=""></span>Web panel</h3><p>On your phone or computer, in English, Portuguese or Spanish. Optional password, backup and restore, diagnostics, and screen colour and rotation settings.</p></div>
+    </div>
   </div>
 </section>
 
@@ -113,14 +190,9 @@
     <div class="compare">
       <div class="head"><span></span><span>GeekMagic firmware</span><span>SmallTV Pomodoro</span></div>
       <div class="row">
-        <div class="topic">Clock faces</div>
-        <div class="was">Factory themes</div>
-        <div class="now"><!--g:builtin-->13<!--/g--> built-in faces plus a <a href="gallery.html">gallery of new ones</a> to install; previews in the panel, and "Ver no relógio" (show on clock) tries one for 15 s without saving</div>
-      </div>
-      <div class="row">
         <div class="topic">Focus</div>
         <div class="was">None</div>
-        <div class="now">Pomodoro with a progress ring, end time, activity picker and a daily focus goal</div>
+        <div class="now">Pomodoro with a progress ring, end time, activity, daily goal and a year of history</div>
       </div>
       <div class="row">
         <div class="topic">Character</div>
@@ -128,125 +200,43 @@
         <div class="now">A pixel art tomato that reacts to the time, the weather and your focus</div>
       </div>
       <div class="row">
-        <div class="topic">Weather</div>
-        <div class="was">Factory weather service setup</div>
-        <div class="now">Open-Meteo, no API key; search your city by name in the panel</div>
+        <div class="topic">Clock faces</div>
+        <div class="was">Factory themes</div>
+        <div class="now"><!--g:builtin-->13<!--/g--> built in and <!--g:catalog-->41<!--/g--> in the <a href="gallery.html">gallery</a>, with previews in the panel</div>
       </div>
       <div class="row">
-        <div class="topic">Photos and GIFs</div>
-        <div class="was">Factory album</div>
-        <div class="now">Reads the files already stored; upload from the panel with automatic 240×240 cropping</div>
+        <div class="topic">Weather</div>
+        <div class="was">Factory weather service</div>
+        <div class="now">Open-Meteo, no API key; search your city by name in the panel</div>
       </div>
       <div class="row">
         <div class="topic">Web panel</div>
         <div class="was">Factory panel</div>
-        <div class="now">4 phone-friendly tabs (Clock, Focus, Photos, Settings); settings save on their own</div>
+        <div class="now">4 tabs made for phones, in 3 languages; settings save as you change them</div>
       </div>
       <div class="row">
-        <div class="topic">Voice</div>
-        <div class="was">None</div>
-        <div class="now">Alexa starts, pauses and stops the Pomodoro, locally on your network, and announces when a phase ends</div>
+        <div class="topic">Updates</div>
+        <div class="was">From GeekMagic</div>
+        <div class="now">One tap in the panel, signed and checked before the swap, with a recovery mode that needs no button</div>
       </div>
       <div class="row">
         <div class="topic">Code</div>
         <div class="was">Closed</div>
-        <div class="now">Open: you can make new faces and drawings</div>
+        <div class="now">Open (GPL-3.0): you can make new faces and drawings</div>
       </div>
     </div>
+    <p class="fine-print">Have another model, or want MQTT and Home Assistant? <a href="https://github.com/giovi321/smalltv-mod">smalltv-mod</a> runs on more devices and is a great neighbour project.</p>
   </div>
 </section>
 
-<section id="features">
+<section id="device">
   <div class="wrap">
-    <h2>Features</h2>
-    <p class="section-lead">It all fits in about 520 KB (390 KB compressed) and runs on the clock itself. Screens and panel in Portuguese, English or Spanish.</p>
-    <div class="grid three">
-      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/relogio.svg" alt=""></span><!--g:builtin-->13<!--/g--> clock faces</h3><p>Matrix, Tomato, Analog, Weather, Neon, Flip (with a real flipping animation), Retro LCD, Words (the time spelled out) Forecast (the next 5 days), Forecast cards, Forecast LCD, World (a world map with day and night) and World watch.</p></div>
-      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/focado.svg" alt=""></span>Pomodoro with a mascot</h3><p>The tomato focuses, relaxes with a coffee on breaks, sleeps while the timer is paused and jumps for joy when a phase ends.</p></div>
-      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/livro.svg" alt=""></span>Focus activity</h3><p>Pick what you're doing in the panel: reading, studying, coding, chores or drawing. The screen shows the activity's object next to the tomato.</p></div>
-      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/sol.svg" alt=""></span>Weather</h3><p>From <a href="https://open-meteo.com/">Open-Meteo</a>, no sign-up or API key. In °C or °F. Warns you when rain is about to start within the hour. In the rain the tomato opens an umbrella; in the cold it wears a scarf; in the heat, sunglasses.</p></div>
-      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/foto.svg" alt=""></span>Photos and GIFs</h3><p>Uses the album already on the clock. New photos go through the panel and are cropped to 240×240 automatically.</p></div>
-      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/lua.svg" alt=""></span>Night brightness</h3><p>Set a schedule to dim the screen at night so it doesn't light up the bedroom.</p></div>
-      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/celular.svg" alt=""></span>Web panel</h3><p>Open the IP shown on the screen from your phone or computer: faces, Pomodoro, photos and settings, including screen color and rotation. In Portuguese, English or Spanish.</p></div>
-      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/jogo/planta/dourada.svg" alt=""></span>Focus game</h3><p>Day streaks with the goal reached, a plant that grows into the golden tomato, a yearly garden, 10 achievements and a shareable day card. <a href="game.html">See the game</a>.</p></div>
-      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/seta.svg" alt=""></span>One-tap updates</h3><p>When a new version is out, the panel tells you and updates the clock with one tap (from v1.8). You can also upload the file at <code>/update</code> (the <code>.bin.gz</code>, without unzipping it) and go back to the original firmware.</p></div>
-    </div>
-  </div>
-</section>
-
-<section id="new">
-  <div class="wrap">
-    <div class="eyebrow">New in v1.19 (current: v<!--g:version-->1.24.9<!--/g-->)</div>
-    <h2><span class="h-ico"><img class="px" src="../img/icons/nuvem.svg" alt=""></span>Rain warning, °F and more security</h2>
-    <div class="grid three">
-      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/nuvem.svg" alt=""></span>Rain is coming</h3><p>When rain should start within the next hour, the screen shows “rain 15 min” and the tomato opens its umbrella. It uses Open-Meteo's 15-minute forecast. Turn it on or off in <strong>Settings → Weather</strong>.</p></div>
-      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/sol.svg" alt=""></span>Temperature in °F</h3><p>One switch in <strong>Settings → Weather</strong>. The faces and the face packages (<code>{UNIT}</code>, <code>{RAIN}</code>) switch to °F, with three digits on hot days.</p></div>
-      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/seta.svg" alt=""></span>Lighter and safer</h3><p>The panel moved out of the program memory into the file storage, checked by SHA-256: an 11 KB smaller firmware. Uploads need the right password, JPEG and face packages are protected against forged files, and the focus history is no longer lost on restart.</p></div>
-    </div>
-    <p style="color:var(--muted);font-size:14px;margin-top:14px">After updating, the first time you open the panel it downloads the new panel from this website (the browser needs internet). At <code>/update</code>, upload the <code>.bin.gz</code> without unzipping it.</p>
-  </div>
-</section>
-
-<section id="alexa">
-  <div class="wrap">
-    <div class="eyebrow">New in v1.13</div>
-    <h2><span class="h-ico"><img class="px" src="../img/icons/alexa.svg" alt=""></span>Alexa voice control</h2>
-    <p class="section-lead">Start, pause and stop the Pomodoro by voice. The clock shows up to an Echo as three lights on your network: no account, no skill and no cloud. Turning them on and off drives the timer, and the percentage becomes minutes.</p>
-    <div class="voice">
-      <div><b>“Alexa, turn on Pomodoro”</b><span>starts a focus session (or resumes it if paused) and the screen switches to the timer</span></div>
-      <div><b>“Alexa, turn off Pomodoro”</b><span>pauses; say it again to stop</span></div>
-      <div><b>“Alexa, set Pomodoro to 40%”</b><span>a 40 minute focus session</span></div>
-      <div><b>“Alexa, turn on Break”</b><span>starts a short break; “set Break to 10%” makes it 10 minutes</span></div>
-      <div><b>“Alexa, turn on Long break”</b><span>starts a long break</span></div>
-      <div><b>“Alexa, turn off Break”</b><span>goes back to focus</span></div>
-    </div>
-    <div class="grid three" style="margin-top:14px">
-      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/celular.svg" alt=""></span>Turning it on</h3><p>In the panel, under <strong>Settings → Alexa</strong>, enable <strong>Control with Alexa</strong>. With an Echo on the same Wi-Fi, say “Alexa, discover devices”. The panel shows when the Echo connected and its last command.</p></div>
-      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/jogo/conquistas/ic_calendario.svg" alt=""></span>Routines</h3><p>In the Alexa app, create routines with your own phrases, like “Alexa, focus time”. The lit light shows the current phase: Pomodoro, Break or Long break.</p></div>
-      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/alexa.svg" alt=""></span>Alexa announces the end</h3><p>Paste a trigger URL from <a href="https://www.virtualsmarthome.xyz/">Virtual Smart Home</a>, Voice Monkey or IFTTT in the panel. When a focus session or a break ends, the clock calls it and a routine makes Alexa say “Pomodoro done”.</p></div>
-    </div>
-    <p style="color:var(--muted);font-size:14px;margin-top:14px">Requires firmware v1.13.0 or newer. The light names follow the clock's language (with the clock in Portuguese they are Pomodoro, Pausa and Pausa longa). After updating, say “Alexa, discover devices” again.</p>
-  </div>
-</section>
-
-<section id="up-close">
-  <div class="wrap">
-    <h2>Up close</h2>
-    <p class="section-lead">The clock's screens, rendered by the project's simulator with the same code as the firmware.</p>
-    <div class="viewer" id="viewer">
-      <div class="tabs" role="tablist" aria-label="Screens">
-        <button type="button" role="tab" data-shot="0" aria-selected="true" aria-pressed="true">Tomato</button>
-        <button type="button" role="tab" data-shot="1" aria-selected="false" aria-pressed="false">Pomodoro</button>
-        <button type="button" role="tab" data-shot="3" aria-selected="false" aria-pressed="false">Game</button>
-        <button type="button" role="tab" data-shot="4" aria-selected="false" aria-pressed="false">Drawings</button>
-      </div>
-      <figure class="shot" role="tabpanel" data-shot="0">
-        <img class="px" src="../img/tomate.png" alt="Tomato scene: day, night, rain, snow, heat and goal reached" width="1480" height="990">
-        <figcaption>Tomato face: day, night, rain, cold, heat and daily goal reached.</figcaption>
-      </figure>
-      <figure class="shot one pomo" role="tabpanel" data-shot="1" hidden>
-        <div class="anim" id="pomo-anim" role="img" aria-label="Animated Pomodoro screen" data-src="../img/pomodoro/en-" style="background-image:url(../img/pomodoro/en-foco.png);background-size:1200% 100%"></div>
-        <figcaption>
-          <div class="tabs states" role="group">
-            <button type="button" data-state="foco" data-n="12" data-ms="350" data-cap="Focus: the red ring fills up until the end of the phase, with the countdown and the end time. The tomato concentrates next to the activity's object." data-sub="sped up" aria-pressed="true">Focus</button>
-            <button type="button" data-state="pausa" data-n="12" data-ms="350" data-cap="Short break: green ring and the tomato relaxing with a coffee." data-sub="sped up" aria-pressed="false">Break</button>
-            <button type="button" data-state="longa" data-n="12" data-ms="350" data-cap="Long break: blue ring, after finishing the cycle of sessions (the dots)." data-sub="sped up" aria-pressed="false">Long break</button>
-            <button type="button" data-state="pausado" data-n="2" data-ms="1000" data-cap="Paused: the time blinks every second and the tomato naps until you resume." aria-pressed="false">Paused</button>
-            <button type="button" data-state="fim" data-n="6" data-ms="160" data-cap="Phase end: the tomato jumps for joy and the next phase shows up." aria-pressed="false">Phase end</button>
-          </div>
-          <p id="pomo-cap">Focus: the red ring fills up until the end of the phase, with the countdown and the end time. The tomato concentrates next to the activity's object. <span class="sub">(sped up)</span></p>
-          <p class="act-lead">In the panel you pick the focus activity, and its object shows up next to the tomato:</p>
-          <span class="acts"><span><img class="px" src="../img/icons/livro.svg" alt="">Read</span><span><img class="px" src="../img/icons/caderno.svg" alt="">Study</span><span><img class="px" src="../img/icons/notebook.svg" alt="">Code</span><span><img class="px" src="../img/icons/prancheta.svg" alt="">Chores</span><span><img class="px" src="../img/icons/paleta.svg" alt="">Draw</span></span>
-        </figcaption>
-      </figure>
-      <figure class="shot one" role="tabpanel" data-shot="3" hidden>
-        <img class="px" src="../img/jogo/tomate-7.png" alt="Tomato face with the golden plant and a 7 day streak" width="240" height="240">
-        <figcaption>Every day in a row with the goal reached grows the plant, up to the golden tomato. <a href="game.html">Meet the game</a>.</figcaption>
-      </figure>
-      <figure class="shot" role="tabpanel" data-shot="4" hidden>
-        <img class="px" src="../img/assets.png" alt="Sheet with every pixel art drawing in the firmware" width="752" height="568">
-        <figcaption>Every pixel art drawing is a text file in the repository, easy to edit.</figcaption>
-      </figure>
+    <h2>Is this my device?</h2>
+    <p class="section-lead">The firmware is made and tested on the <strong>SmallTV Ultra</strong>. On the Ultra, the factory firmware is branded <em>Ultra</em> (its web page shows a version like <code>Ultra-V9.0.x</code>).</p>
+    <div class="fit">
+      <div class="yes"><b>GeekMagic SmallTV Ultra</b><span>ESP8266</span><em>Works</em></div>
+      <div class="maybe"><b>Original SmallTV (not Ultra)</b><span>ESP8266</span><em>Not tested</em></div>
+      <div class="no"><b>SmallTV Pro and other ESP32 / ESP32-C2</b><span>ESP32</span><em>Do not flash</em></div>
     </div>
   </div>
 </section>
@@ -254,21 +244,19 @@
 <section id="install">
   <div class="wrap">
     <h2>How to install</h2>
-    <p class="section-lead">It takes about 5 minutes, with no cable and no software on your computer: everything happens in the browser.</p>
+    <p class="section-lead">No cable and no software on your computer: everything happens in the browser. You need a <strong>2.4 GHz</strong> Wi-Fi network.</p>
 
     <div class="download" id="downloads">
       <div>
-        <div class="ver" id="rel-ver">Latest version</div>
+        <div class="ver" id="rel-ver">Latest stable version</div>
         <h3 id="rel-name">SmallTV Pomodoro</h3>
-        <p id="rel-info"><code>.bin</code> file to upload from the clock's panel.</p>
+        <p id="rel-info"><code>.bin</code> file to upload on the clock's page.</p>
       </div>
       <div class="btns">
         <a class="btn primary" id="rel-bin" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/latest"><img class="px" src="../img/icons/download.svg" alt="">Download .bin</a>
-        <a class="btn" href="releases.html">All versions</a>
+        <a class="btn" href="releases.html">All releases</a>
       </div>
     </div>
-
-    <div class="note warn" style="margin:14px 0">Only for the <strong>SmallTV Ultra</strong> (ESP8266). Do not flash it on the SmallTV Pro (ESP32) or other models.</div>
 
     <ol class="steps">
       <li>
@@ -276,50 +264,50 @@
         <p>Get the <code>.bin</code> file from the button above.</p>
       </li>
       <li>
-        <h3>Upload it from the factory panel</h3>
-        <p>Open the IP shown on the clock in your browser, go to <strong>Firmware Upgrade</strong>, pick the file and upload it. The clock restarts by itself.</p>
+        <h3>Upload it on the factory page</h3>
+        <p>Open the IP the clock shows in your browser, go to <strong>Firmware Upgrade</strong>, pick the file and upload it. The clock restarts by itself.</p>
         <details class="note">
           <summary>Got “ERROR[4]: Not Enough Space”?</summary>
           <p style="color:var(--muted)">The factory update space varies between units. In that case, go through a small loader first:</p>
           <ol>
-            <li>Download <a href="https://github.com/giovi321/smalltv-mod/releases/tag/v2.8.2"><code>smalltv-mod-loader.bin</code></a> (giovi321/smalltv-mod v2.8.2) and upload it in <strong>Firmware Upgrade</strong>.</li>
-            <li>Connect your phone or computer to the open Wi-Fi network <code>SmallTV-Loader</code>.</li>
+            <li>Download <a href="https://github.com/giovi321/smalltv-mod/releases/tag/v2.8.2"><code>smalltv-mod-loader.bin</code></a> (giovi321/smalltv-mod v2.8.2) and upload it under <strong>Firmware Upgrade</strong>.</li>
+            <li>Join the open Wi-Fi network <code>SmallTV-Loader</code> from your phone or computer.</li>
             <li>Open <code>http://192.168.4.1/update</code> and upload the SmallTV Pomodoro firmware.</li>
           </ol>
         </details>
       </li>
       <li>
-        <h3>Connect to Wi-Fi</h3>
-        <p>If the clock doesn't join your network by itself, connect to the <code>SmallTV-Pomodoro</code> network and open <code>http://192.168.4.1</code> to choose yours.</p>
-        <p><strong>2.4 GHz</strong> networks only.</p>
+        <h3>Connect it to Wi-Fi</h3>
+        <p>If the clock does not join your network by itself, scan the QR on its screen with your phone, confirm the <code>SmallTV-Pomodoro</code> network and pick yours.</p>
       </li>
       <li>
         <h3>Open the panel</h3>
-        <p>Type the IP shown on the clock's screen into your browser. Pick a face, set your weather city and start a focus session.</p>
-        <p>Later updates: the panel tells you when a new version is out; or upload the file in <strong>Settings → Update firmware</strong>.</p>
+        <p>Type the IP shown on the screen in your browser (or <code>http://smalltv.local/</code>). Pick a face and your weather city, and start a focus session. New versions arrive with one tap in the panel.</p>
       </li>
     </ol>
 
+    <div class="note warn" style="margin-top:14px">Installing formats the clock's file storage: <strong>photos from the factory firmware are not kept</strong>. The saved Wi-Fi stays; settings start from scratch. Upload your photos again from the panel.</div>
+
+    <p class="more">Pictures of every step, how to find the panel and what to do if something fails: <a href="docs.html#primeiros-passos">full guide</a>.</p>
+
     <details class="note" id="revert" style="margin-top:14px">
       <summary>Going back to the original firmware</summary>
-      <p style="color:var(--muted)">Download the official <code>.bin</code> from <a href="https://github.com/GeekMagicClock/smalltv-ultra">GeekMagicClock/smalltv-ultra</a> and upload it in the SmallTV Pomodoro panel under <strong>Settings → Update firmware</strong> (or at <code>/update</code>, user <code>admin</code>).</p>
-      <p style="color:var(--muted);margin:0">This works because SmallTV Pomodoro uses the same flash layout as the original and stays under the size limit (about 530 KB). The file system is mounted without automatic formatting: your photos are not erased.</p>
+      <p style="color:var(--muted)">Download GeekMagic's <code>.bin</code> from <a href="https://github.com/GeekMagicClock/smalltv-ultra">GeekMagicClock/smalltv-ultra</a>, open <strong>recovery mode</strong> (unplug it and plug it back in 3 times in a row, less than 30 s each; the network password is on the screen) and upload the file there. <strong>Settings → Update firmware</strong> won't do: it only accepts firmware signed by this project.</p>
+      <p style="color:var(--muted);margin:0">Save a backup in the panel first: the original firmware splits the memory differently, and photos and downloaded faces may not stay. <a href="docs.html#voltar-original">More details</a>.</p>
     </details>
   </div>
 </section>
 
-</main>
-
-<footer>
+<section id="hack">
   <div class="wrap">
     <div class="foot-grid">
-      <div id="hack">
+      <div>
         <h3>For tinkerers</h3>
         <ul>
           <li><a href="https://github.com/davicorrea0/smalltv-pomodoro/blob/main/docs/PACOTES.md">Make a clock face in JSON</a>, no compiling (guide in Portuguese)</li>
           <li><a href="https://github.com/davicorrea0/smalltv-pomodoro/blob/main/docs/CRIAR_MOSTRADOR.md">Make a face in the firmware</a> (C++)</li>
-          <li><a href="https://github.com/davicorrea0/smalltv-pomodoro#biblioteca-de-assets">Draw pixel art</a>: one <code>.txt</code> per sprite</li>
-          <li><a href="https://github.com/davicorrea0/smalltv-pomodoro#simulador-das-telas">PC simulator</a>, no flashing needed</li>
+          <li><a href="https://github.com/davicorrea0/smalltv-pomodoro/blob/main/docs/TECHNICAL.md#asset-library">Draw pixel art</a>: one <code>.txt</code> per sprite</li>
+          <li><a href="https://github.com/davicorrea0/smalltv-pomodoro/blob/main/docs/TECHNICAL.md#screen-simulator">PC simulator</a>, no flashing needed</li>
         </ul>
       </div>
       <div id="credits">
@@ -328,24 +316,41 @@
           <li>Code, pixel art and clock faces under the <a href="https://github.com/davicorrea0/smalltv-pomodoro/blob/main/LICENSE">GPL v3 license</a>: use, study, change and share them; modified versions you distribute must also be GPL, with their source code</li>
           <li>Pinout: <a href="https://devices.esphome.io/devices/geekmagic-ultra/">ESPHome devices</a></li>
           <li>Color order and loader: <a href="https://github.com/giovi321/smalltv-mod">giovi321/smalltv-mod</a></li>
-          <li><a href="https://github.com/keshikan/DSEG">DSEG7 Classic</a> (keshikan) and <a href="https://github.com/dharmatype/Bebas-Neue">Bebas Neue</a> (Dharma Type), SIL Open Font License 1.1 (<a href="https://github.com/davicorrea0/smalltv-pomodoro/tree/main/licenses">licenses</a>), converted to polygons</li>
+          <li><a href="https://github.com/keshikan/DSEG">DSEG7 Classic</a> (keshikan), <a href="https://github.com/dharmatype/Bebas-Neue">Bebas Neue</a> (Dharma Type), Outfit and Righteous, SIL Open Font License 1.1 (<a href="https://github.com/davicorrea0/smalltv-pomodoro/tree/main/licenses">licenses</a>), converted to polygons</li>
           <li>Weather: <a href="https://open-meteo.com/">Open-Meteo</a></li>
-          <li>Adafruit GFX and ST7789, ArduinoJson, JPEGDEC and AnimatedGIF (bitbank2)</li>
+          <li>Adafruit GFX and ST7789, ArduinoJson, JPEGDEC and AnimatedGIF (bitbank2), uzlib and Project Nayuki's QR generator</li>
         </ul>
       </div>
     </div>
-    <p class="fine">GeekMagic and SmallTV are trademarks of their owners. This is an independent project, not affiliated with GeekMagic. Flashing other firmware is at your own risk.</p>
-    <div class="foot-bottom">
-      <img class="px" src="../img/tomate.svg" alt="">
-      <span>SmallTV Pomodoro · made by Davi Mattos</span>
-      <div class="links">
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-main">
+      <div class="foot-brand">
+        <a class="brand" href="./"><img class="px" src="../img/tomate.svg" alt=""><span>SmallTV Pomodoro</span></a>
+        <p>Open-source firmware for the GeekMagic SmallTV Ultra. Made by Davi Mattos.</p>
+      </div>
+      <nav class="foot-nav" aria-label="Site">
+        <h3>Site</h3>
+        <a href="./">Home</a>
         <a href="gallery.html">Gallery</a>
-        <a href="https://github.com/davicorrea0/smalltv-pomodoro"><span class="gh" aria-hidden="true"></span>Code on GitHub</a>
         <a href="docs.html">Docs</a>
         <a href="releases.html">Releases</a>
-        <a href="../" hreflang="pt-BR">Português</a>
-      </div>
+        <a href="game.html">Game</a>
+      </nav>
+      <nav class="foot-nav" aria-label="Project">
+        <h3>Project</h3>
+        <a href="https://github.com/davicorrea0/smalltv-pomodoro"><span class="gh" aria-hidden="true"></span>Code on GitHub</a>
+        <a href="https://github.com/davicorrea0/smalltv-pomodoro/issues">Report a problem</a>
+        <a href="https://github.com/davicorrea0/smalltv-pomodoro/blob/main/LICENSE">GPL v3 license</a>
+        <a href="../" hreflang="pt-BR" lang="pt-BR">Português</a>
+      </nav>
     </div>
+    <p class="fine">GeekMagic and SmallTV are trademarks of their owners. This is an independent project, not affiliated with GeekMagic. Flashing other firmware is at your own risk.</p>
   </div>
 </footer>
 

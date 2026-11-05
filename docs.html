@@ -31,7 +31,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Silkscreen&display=swap">
-<link rel="stylesheet" href="style.css?v=16">
+<link rel="stylesheet" href="style.css?v=19">
 </head>
 <body>
 
@@ -73,7 +73,7 @@
     <li>Envie primeiro o carregador <a href="https://github.com/giovi321/smalltv-mod/releases/tag/v2.8.2"><code>smalltv-mod-loader.bin</code></a> (giovi321/smalltv-mod v2.8.2) pelo mesmo <strong>Firmware Upgrade</strong>.</li>
     <li>Entre na rede aberta <code>SmallTV-Loader</code> e envie o firmware Pomodoro em <code>http://192.168.4.1/update</code>.</li>
    </ol></div>
-  <div class="note"><p><strong>Fotos e GIFs do firmware de fábrica:</strong> a instalação formata a memória de arquivos, então as fotos do original <strong>não ficam</strong>. Os ajustes e o Wi-Fi salvo ficam. Envie as fotos de novo pelo painel depois.</p></div>
+  <div class="note"><p><strong>Fotos e GIFs do firmware de fábrica:</strong> a instalação formata a memória de arquivos, então as fotos do original <strong>não ficam</strong>. O Wi-Fi salvo fica; os ajustes começam do zero. Envie as fotos de novo pelo painel depois.</p></div>
 
   <h3 class="sub">Conectar o relógio ao Wi-Fi</h3>
   <p>Se o relógio já tinha o Wi-Fi de casa salvo pelo firmware de fábrica, ele entra sozinho e você pode pular para <a href="#achar-painel">achar o painel</a>. Se não entrou:</p>
@@ -227,16 +227,28 @@
 
 <footer>
   <div class="wrap">
-    <div class="foot-bottom">
-      <img class="px" src="img/tomate.svg" alt="">
-      <span>SmallTV Pomodoro · feito por Davi Mattos</span>
-      <div class="links">
-        <a href="./">Início</a>
-        <a href="https://github.com/davicorrea0/smalltv-pomodoro"><span class="gh" aria-hidden="true"></span>Código no GitHub</a>
-        <a href="versoes.html">Versões</a>
-        <a href="en/docs.html" hreflang="en">English</a>
+    <div class="foot-main">
+      <div class="foot-brand">
+        <a class="brand" href="./"><img class="px" src="img/tomate.svg" alt=""><span>SmallTV Pomodoro</span></a>
+        <p>Firmware de código aberto para o GeekMagic SmallTV Ultra. Feito por Davi Mattos.</p>
       </div>
+      <nav class="foot-nav" aria-label="Site">
+        <h3>Site</h3>
+        <a href="./">Início</a>
+        <a href="galeria.html">Galeria</a>
+        <a href="docs.html">Docs</a>
+        <a href="versoes.html">Versões</a>
+        <a href="jogo.html">Jogo</a>
+      </nav>
+      <nav class="foot-nav" aria-label="Projeto">
+        <h3>Projeto</h3>
+        <a href="https://github.com/davicorrea0/smalltv-pomodoro"><span class="gh" aria-hidden="true"></span>Código no GitHub</a>
+        <a href="https://github.com/davicorrea0/smalltv-pomodoro/issues">Relatar um problema</a>
+        <a href="https://github.com/davicorrea0/smalltv-pomodoro/blob/main/LICENSE">Licença GPL v3</a>
+        <a href="en/docs.html" hreflang="en" lang="en">English</a>
+      </nav>
     </div>
+    <p class="fine">GeekMagic e SmallTV são marcas dos seus donos. Este é um projeto independente, sem ligação com a GeekMagic. Gravar outro firmware é por sua conta e risco.</p>
   </div>
 </footer>
 

@@ -9,6 +9,8 @@ rodado pelo `scripts/publicar.sh`; `scripts/releases-page.cjs` gera as páginas 
 `<!-- seo: ... -->` do `<head>` de todas as páginas (title, description, canonical, hreflang, Open Graph, Twitter, JSON-LD) e o que
 estiver entre `<!--g:NOME-->` e `<!--/g-->` (versão, contagens e os cartões estáticos da galeria). Não edite essas partes à mão: a próxima publicação as reescreve.
 
+O `<footer>` é o mesmo em todas as páginas e vem de `scripts/site-rodape.cjs` (a página de versões já nasce com ele). Para mudar o rodapé, mude o script no `main` e rode `node scripts/site-rodape.cjs --aplicar <pasta do site>`.
+
 | Arquivo | Conteúdo |
 |---|---|
 | `index.html`, `en/index.html` | Explicação, instalação, downloads e créditos (PT e EN) |
@@ -19,7 +21,7 @@ estiver entre `<!--g:NOME-->` e `<!--/g-->` (versão, contagens e os cartões es
 | `sitemap.xml` | Páginas em PT e EN para os buscadores (gerado; enviar no Google Search Console) |
 | `catalog/` | Pacotes de mostradores instaláveis e `index.json` (formato em `catalog/README.md`) |
 | `firmware/` | `latest.json` + `smalltv-pomodoro.bin`: o painel do relógio (v1.8.0+) lê daqui para avisar e instalar atualizações. Formato em `firmware/README.md` |
-| `img/` | Imagens copiadas de `docs/` da `main`; `img/icons/` são ícones em pixel art (SVG) feitos dos sprites de `assets/` |
+| `img/` | Imagens copiadas de `docs/` da `main` (`img/hero-sim.gif` = `docs/hero.gif`, provisório até o vídeo do relógio real); `img/icons/` são ícones em pixel art (SVG) feitos dos sprites de `assets/` |
 
 As páginas em `en/` declaram `<html lang="en" data-root="../">`; os scripts usam isso para
 achar imagens e o catálogo e para escolher o idioma.
