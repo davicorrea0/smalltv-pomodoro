@@ -713,7 +713,7 @@ static bool lcdFade(const UiState &s, uint8_t from, uint8_t t) {
   const int32_t HALF = 180, INK_END = 360, END = 450, INK_MIN = 88;  // ms; tinta mínima 88/256 (34 por cento)
   LcdCtx c = {{&s, from}, &s, 256, 0, 240, lcdKind(from), lcdKind(t)};
   uint32_t t0 = slideNow();
-  int16_t drawnA = -1, drawnP = -1;  // tinta e posição dos rótulos já na tela (-1 = nada desenhado ainda)
+  int16_t drawnA = 256, drawnP = 0;  // tinta e posição dos rótulos na tela: no início, o mostrador antigo inteiro (já desenhado)
   for (;;) {
     int32_t e = slideNow() - t0;
     if (e > END) e = END;
