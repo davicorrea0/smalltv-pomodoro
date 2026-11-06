@@ -119,13 +119,13 @@ struct{bool exists(const String&){return true;}void mkdir(const char*){}File ope
  void info(FSInfo&){}void remove(const String&){deletes++;}}LittleFS;
 bool isJpg(String s){s.toLowerCase();return s.endsWith(".jpg")||s.endsWith(".jpeg");}
 bool isGif(String s){s.toLowerCase();return s.endsWith(".gif");}
-bool validGif(const String&){return true;}enum JpgResult:uint8_t{JPG_OK,JPG_BAD,JPG_NOMEM};JpgResult validJpg(const String&){return JPG_OK;}void rebuildAlbum(){rebuilds++;}
+bool validGif(const String&){return true;}enum JpgResult:uint8_t{JPG_OK,JPG_BAD,JPG_NOMEM};static JpgResult jpgRes=JPG_OK;JpgResult validJpg(const String&){return jpgRes;}void rebuildAlbum(){rebuilds++;}
 const char*tr(const char*a,const char*,const char*){return a;}
 File uploadFile,packUpload;String uploadPath,uploadError,packUploadError;
 UploadGate photoGate,packGate;bool packFaceReady=false;
 ${fn('handleUpload')}
 ${fn('handlePackUpload')}
-void reset(){allowed=password=true;opens=writes=deletes=rebuilds=0;written=0;uploadFile={};packUpload={};uploadPath="";uploadError="";packUploadError="";packFaceReady=false;photoGate={};packGate={};event={};}
+void reset(){jpgRes=JPG_OK;allowed=password=true;opens=writes=deletes=rebuilds=0;written=0;uploadFile={};packUpload={};uploadPath="";uploadError="";packUploadError="";packFaceReady=false;photoGate={};packGate={};event={};}
 void send(void(*handler)(),int status){event.status=status;handler();}
 int main(){
  for(bool panel:{false,true}){reset();allowed=panel;password=false;
@@ -135,6 +135,10 @@ int main(){
   assert(!opens&&!writes&&!deletes&&!packFaceReady);
  }
  reset();send(handleUpload,UPLOAD_FILE_START);send(handleUpload,UPLOAD_FILE_WRITE);send(handleUpload,UPLOAD_FILE_END);assert(opens==1&&writes==1&&written==1);
+ // foto sem memória para conferir: fica salva e o envio avisa; arquivo recusado pelo decodificador: apagado
+ reset();jpgRes=JPG_NOMEM;send(handleUpload,UPLOAD_FILE_START);send(handleUpload,UPLOAD_FILE_WRITE);send(handleUpload,UPLOAD_FILE_END);assert(deletes==0&&uploadError.length()&&uploadError!="JPG fora do padrao"&&rebuilds==1);
+ reset();jpgRes=JPG_BAD;send(handleUpload,UPLOAD_FILE_START);send(handleUpload,UPLOAD_FILE_WRITE);send(handleUpload,UPLOAD_FILE_END);assert(deletes==1&&uploadError=="JPG fora do padrao");
+ reset();jpgRes=JPG_OK;send(handleUpload,UPLOAD_FILE_START);send(handleUpload,UPLOAD_FILE_WRITE);send(handleUpload,UPLOAD_FILE_END);assert(deletes==0&&!uploadError.length());
  reset();event.filename="a..b.jpg";send(handleUpload,UPLOAD_FILE_START);assert(uploadPath=="/image/a.b.jpg");
  reset();send(handleUpload,UPLOAD_FILE_START);event.currentSize=3*1024*1024+1;send(handleUpload,UPLOAD_FILE_WRITE);assert(!writes&&deletes==1&&!photoGate.active);
  reset();send(handlePackUpload,UPLOAD_FILE_START);event.currentSize=16385;send(handlePackUpload,UPLOAD_FILE_WRITE);send(handlePackUpload,UPLOAD_FILE_END);assert(!writes&&!packFaceReady&&!packGate.active);

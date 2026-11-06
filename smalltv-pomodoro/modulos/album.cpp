@@ -132,9 +132,10 @@ JpgResult validJpg(const String &path) {
     jpg->setPixelType(RGB565_LITTLE_ENDIAN);
     ok = jpg->decode(0, 0, opt);
   }
+  bool noMem = !ok && jpg->getLastError() == JPEG_ERROR_MEMORY;  // as tabelas do decodificador não couberam
   jpg->close();
   delete jpg;
-  return ok ? JPG_OK : JPG_BAD;
+  return ok ? JPG_OK : noMem ? JPG_NOMEM : JPG_BAD;
 }
 
 // Camada "image" dos pacotes: JPEG em /faces/<arquivo>, no ponto (x, y), sem escala.
@@ -164,9 +165,10 @@ static JpgResult drawJpg(const String &f) {
     jpg->setPixelType(RGB565_LITTLE_ENDIAN);
     ok = jpg->decode(max(0, (240 - w / sc) / 2), max(0, (240 - h / sc) / 2), opt);
   }
+  bool noMem = !ok && jpg->getLastError() == JPEG_ERROR_MEMORY;
   jpg->close();
   delete jpg;
-  return ok ? JPG_OK : JPG_BAD;
+  return ok ? JPG_OK : noMem ? JPG_NOMEM : JPG_BAD;
 }
 
 static int32_t gifRead(GIFFILE *f, uint8_t *buf, int32_t len) {

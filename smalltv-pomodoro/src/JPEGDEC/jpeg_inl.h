@@ -5016,7 +5016,7 @@ static int DecodeJPEGBody(JPEGIMAGE *pJPEG)
 static int DecodeJPEG(JPEGIMAGE *pJPEG)
 {
     if (!jpegTablesBegin()) {
-        pJPEG->iError = JPEG_DECODE_ERROR;
+        pJPEG->iError = JPEG_ERROR_MEMORY;  // falta de RAM, não arquivo estragado: quem chama não deve condenar a foto
         return 0;
     }
     int r = DecodeJPEGBody(pJPEG);

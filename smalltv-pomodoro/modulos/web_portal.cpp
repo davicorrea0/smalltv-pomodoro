@@ -396,9 +396,11 @@ static void handleUpload() {
       uploadError = tr("GIF fora do padrao", "Unsupported GIF", "GIF fuera de norma");
     } else if (up.status == UPLOAD_FILE_END && !uploadError.length() && isJpg(uploadPath)) {
       JpgResult r = validJpg(uploadPath);
-      if (r != JPG_OK) {
+      if (r == JPG_NOMEM) {  // falta de RAM não prova nada sobre o arquivo: a foto fica e o álbum a confere ao desenhar
+        uploadError = tr("Foto salva, mas sem memoria para conferir agora", "Photo saved, but no memory to check it now", "Foto guardada, pero sin memoria para comprobarla ahora");
+      } else if (r != JPG_OK) {
         LittleFS.remove(uploadPath);
-        uploadError = r == JPG_NOMEM ? tr("Sem memoria p/ foto", "No memory for photo", "Sin memoria p/ foto") : tr("JPG fora do padrao", "Unsupported JPG", "JPG fuera de norma");
+        uploadError = tr("JPG fora do padrao", "Unsupported JPG", "JPG fuera de norma");
       }
     }
     rebuildAlbum();
