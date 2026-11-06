@@ -215,6 +215,7 @@ struct DrawProbe {
 };
 
 static void renderClock() {
+  packEnsureLoaded();  // o álbum ou o OTA podem ter tirado o pacote da RAM (modulos/album.cpp)
   DrawProbe probe;
   UiState s = makeState();
   if (!s.timeOk) {  // sem hora ainda: nunca parece travado

@@ -71,6 +71,8 @@ static bool isGif(const String &s) { return s.find(".gif") != String::npos; }
 static bool validGif(const String &) { return true; }
 enum JpgResult : uint8_t { JPG_OK, JPG_BAD, JPG_NOMEM };
 static JpgResult drawJpg(const String &) { G->drawPixel(0, 0, TEXT); return JPG_OK; }
+struct JPEGDEC {};
+static void albumMakeRoom(uint32_t) {}  // o pacote na RAM não faz parte deste teste de cor
 ${fn('bool showAlbumItem(const String &f)')}
 ${qrFixture}
 

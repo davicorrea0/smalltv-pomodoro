@@ -249,6 +249,13 @@ void stopAlbum() {
   uiInvalidate();  // o relógio redesenha tudo ao voltar
 }
 
+// O pacote de mostrador ativo (até ~6,6 KB) disputa o heap com o GIF (~24 KB contíguos) e o JPEG (~19 KB + as
+// tabelas). Só sai da RAM quando falta bloco contíguo para o item; volta sozinho em packEnsureLoaded(), quando o
+// relógio é desenhado de novo. Sem pressão ele fica, para o modo "alternado" não reler o pacote a cada item.
+static void albumMakeRoom(uint32_t need) {
+  if (facePackLoaded() && ESP.getMaxFreeBlockSize() < need) facePackUnload();
+}
+
 bool showAlbumItem(const String &f) {
   stopAlbum();
   if (!LittleFS.exists(f)) return false;
@@ -262,6 +269,7 @@ bool showAlbumItem(const String &f) {
       uiError(tr("GIF fora do padrao", "Unsupported GIF", "GIF fuera de norma"));
       return false;
     }
+    albumMakeRoom(sizeof(AnimatedGIF) + 1024);
     gif = new (std::nothrow) AnimatedGIF();  // ~24 KB contíguos de RAM
     if (!gif) {
       uiError(tr("Sem memoria p/ GIF", "No memory for GIF", "Sin memoria p/ GIF"));
@@ -279,6 +287,7 @@ bool showAlbumItem(const String &f) {
     gifOffY = max(0, (240 - gif->getCanvasHeight()) / 2);
     nextFrameAt = 0;
   } else {
+    albumMakeRoom(sizeof(JPEGDEC) + 1024 + 8192);  // o decodificador e, depois, as tabelas de ~7,7 KB
     JpgResult r = drawJpg(f);
     if (r == JPG_NOMEM) uiError(tr("Sem memoria p/ foto", "No memory for photo", "Sin memoria p/ foto"));  // o próximo item tenta de novo
     else if (r == JPG_BAD) uiError(tr("JPG invalido", "Invalid JPG", "JPG invalido"));
@@ -354,6 +363,17 @@ void restoreActivePack() {
   facePackUnload();
   if (cfg.theme == THEME_PACK) cfg.theme = THEME_MATRIX;
   uiInvalidate();
+}
+
+// Recarrega o pacote ativo que o álbum ou o OTA tiraram da RAM (só o relógio precisa dele). Diferente de
+// restoreActivePack(), nunca mexe em cfg.theme: se faltar memória agora, tenta de novo em 2 s e a tela mostra
+// "Pacote ausente" até lá. Pacote apagado de verdade já é tratado na hora da remoção (/api/facedelete).
+static uint32_t packRetryAt;
+
+void packEnsureLoaded() {
+  if (cfg.theme != THEME_PACK || previewActive() || facePackLoaded()) return;
+  if ((int32_t)(millis() - packRetryAt) < 0) return;
+  if (!loadPack(cfg.facePkg)) packRetryAt = millis() + 2000;
 }
 
 File packUpload;

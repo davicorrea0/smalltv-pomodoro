@@ -296,6 +296,7 @@ bool idOk(const String &id);
 bool loadPackFile(const String &path, String &msg);
 bool loadPack(const String &id);
 void restoreActivePack();
+void packEnsureLoaded();
 void handlePackUpload();
 void rotSet(const String &v);
 void rotLoop();
