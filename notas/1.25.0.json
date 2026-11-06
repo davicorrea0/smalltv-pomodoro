@@ -1,0 +1,26 @@
+{
+  "pt": [
+    "Versão de teste: fuso horário escolhido pelo nome e diagnóstico com gráficos",
+    "Fuso horário: escolha a sua cidade numa lista por nome; a regra técnica (POSIX) fica em \"Avançado\", e o painel avisa quando o relógio não vai mudar para o horário de verão da sua cidade",
+    "Fotos: quando falta memória para mostrar uma foto, o relógio avisa \"Sem memoria p/ foto\" e não apaga mais a foto enviada",
+    "Mostradores de pacote liberam a memória quando o álbum ou a atualização precisam dela e voltam sozinhos depois",
+    "Instalar de novo um mostrador que já existe não corre mais o risco de perdê-lo se o relógio desligar no meio",
+    "Ajustes → Sistema: gráficos de memória e de sinal do Wi-Fi, barra de uso da RAM e o botão \"Copiar diagnóstico\", que copia só dados técnicos, sem nome, rede, IP nem cidade"
+  ],
+  "en": [
+    "Test version: pick your time zone by name, and diagnostics with charts",
+    "Time zone: choose your city from a list by name; the technical rule (POSIX) moves to \"Advanced\", and the panel warns when the clock won't switch to your city's daylight saving time",
+    "Photos: when there isn't enough memory to show a photo, the clock says \"No memory for photo\" and no longer deletes the photo you uploaded",
+    "Face packs free their memory when the album or an update needs it, and come back on their own afterwards",
+    "Reinstalling a face that already exists no longer risks losing it if the clock powers off midway",
+    "Settings → System: memory and Wi-Fi signal charts, a RAM usage bar and a \"Copy diagnostics\" button that copies technical data only, without name, network, IP or city"
+  ],
+  "es": [
+    "Versión de prueba: huso horario elegido por nombre y diagnóstico con gráficos",
+    "Huso horario: elige tu ciudad en una lista por nombre; la regla técnica (POSIX) pasa a \"Avanzado\", y el panel avisa cuando el reloj no va a cambiar al horario de verano de tu ciudad",
+    "Fotos: cuando falta memoria para mostrar una foto, el reloj avisa \"Sin memoria p/ foto\" y ya no borra la foto enviada",
+    "Las esferas de paquete liberan la memoria cuando el álbum o la actualización la necesitan y vuelven solas después",
+    "Reinstalar una esfera que ya existe ya no corre el riesgo de perderla si el reloj se apaga a mitad",
+    "Ajustes → Sistema: gráficos de memoria y de señal del Wi-Fi, barra de uso de la RAM y el botón \"Copiar diagnóstico\", que copia solo datos técnicos, sin nombre, red, IP ni ciudad"
+  ]
+}
