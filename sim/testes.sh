@@ -9,6 +9,7 @@
 #  - ETag do painel no GET /: 304 só com o painel desta versão, carregador sem ETag, login antes (painel_etag_test.cjs);
 #  - cor quente (warm.h): os comandos do gama digital de dia, de noite e na prévia;
 #  - curva de brilho (bri_curva.h) contra a fórmula antiga com powf, em todas as entradas;
+#  - sinf/cosf próprios (trig.cpp) iguais bit a bit aos do newlib (trig_test.cpp);
 #  - GIF e JPEG: as amostras válidas precisam decodificar e o fuzzing não pode achar erro de memória.
 # Uso: sim/testes.sh [casos de fuzzing por formato, padrão 5000]
 # Os .cpp dos testes são gerados com node; sem node (WSL), passe a pasta já gerada em GEN.
@@ -36,6 +37,9 @@ g++ -std=c++17 -fsanitize=address,undefined -g -w warm_test.cpp -o "$T/warm"
 [ -n "${GEN:-}" ] || node pacote_ram_test.cjs  # pacote de mostrador × álbum e OTA: ligação entre as peças
 g++ -std=c++17 -fsanitize=address,undefined -g -w -Ishim brilho_test.cpp -o "$T/brilho"
 "$T/brilho"
+# sinf/cosf próprios (trig.cpp) contra o newlib, 1 float a cada 97 (todos: "$T/trig todos"); -O2 pelo tempo
+g++ -std=c++17 -O2 -pthread -fsanitize=undefined,float-cast-overflow -fno-sanitize-recover -w trig_test.cpp -o "$T/trig"
+"$T/trig"
 [ -n "${GEN:-}" ] || node ip_cache_test.cjs  # makeState sem toString() do IP a cada desenho
 [ -n "${GEN:-}" ] || node wifi_flash_test.cjs  # persistent do Wi-Fi só nas gravações de propósito (sem gravar a flash a cada ciclo)
 [ -n "${GEN:-}" ] || node faceinstall_test.cjs  # instalar mostrador por cima de outro: sem remove antes do rename

@@ -21,6 +21,11 @@
  *   Software.
  */
 
+// SmallTV: no relógio, os 53 assert() saem do código (−4,2 KB de flash, 0 de RAM). A entrada é fixa (versão 1–4,
+// ECC média, máscara automática) e o "não coube" já volta como false para o ui.cpp; o simulador mantém os asserts.
+#if defined(ARDUINO_ARCH_ESP8266) && !defined(NDEBUG)
+#define NDEBUG
+#endif
 #include <assert.h>
 #include <limits.h>
 #include <stdlib.h>
