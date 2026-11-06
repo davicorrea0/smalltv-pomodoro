@@ -2,7 +2,7 @@
 // LittleFS (núcleo 3.1.2, lfs_rename) já substitui o destino de forma atômica, e um LittleFS.remove() do .json
 // antes dele deixaria o relógio sem o mostrador se a energia caísse entre os dois. Confere o /api/faceinstall real.
 const source = require('./fonte.cjs');
-const a = source.indexOf('server.on("/api/faceinstall"'), b = source.indexOf('server.on(', a + 10);  // até o próximo handler (o de remoção apaga o .json de propósito)
+const a = source.indexOf('server.on(F("/api/faceinstall")'), b = source.indexOf('server.on(', a + 10);  // até o próximo handler (o de remoção apaga o .json de propósito)
 if (a < 0 || b < 0) throw Error('não achei o /api/faceinstall');
 const h = source.slice(a, b);
 const ren = h.indexOf('LittleFS.rename("/faces/_novo.json", "/faces/" + id + ".json")');

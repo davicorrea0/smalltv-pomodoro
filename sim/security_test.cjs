@@ -5,7 +5,7 @@ function fn(name){const a=source.indexOf(`void ${name}() {`),b=source.indexOf('\
 for(const name of ['handleUpload','handlePackUpload','handlePanelUpload'])
  if(!fn(name).includes('uploadAuthed()'))throw Error(`${name} bypasses upload throttle`);
 { // /api/crash (Limpar da última queda) é ação: POST com guard(), e a gravação só acontece em reinício anormal
- const i=source.indexOf('server.on("/api/crash", HTTP_POST'),blk=source.slice(i,source.indexOf('});',i));
+ const i=source.indexOf('server.on(F("/api/crash"), HTTP_POST'),blk=source.slice(i,source.indexOf('});',i));
  if(i<0||!blk.includes('if (!guard()) return;'))throw Error('/api/crash must be a guarded POST');
  const cl=fn('crashLoad');
  if(!cl.includes('REASON_EXCEPTION_RST')||!cl.includes('return;')||cl.indexOf('return;')>cl.indexOf('EEPROM.put'))throw Error('crashLoad must only write after an abnormal reset');
