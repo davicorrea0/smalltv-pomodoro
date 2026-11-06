@@ -42,6 +42,8 @@ void newFormToken() {
 
 String formTokenField() { return "<input type=hidden name=csrf value=\"" + formToken + "\">"; }
 
+extern "C" char _heap_start[];  // fim do BSS (linker): daqui até o fim da DRAM (0x3FFFC000) é o heap
+
 uint8_t diagWhere = 0;  // o que o laço está fazendo de demorado: 1 clima, 2 aviso (diag.stallAt); 0 = outro
 
 static uint32_t diagStall = 0;  // maior intervalo entre dois laços desde que ligou (ms)
@@ -66,8 +68,18 @@ static uint32_t diagMinHeap = 0xFFFFFFFF, diagLastMs = 0;
 
 static uint16_t diagWraps = 0;  // millis() volta a zero a cada ~49,7 dias
 
+// Voltas do laço por segundo (diag.lps): só um número para o "Copiar diagnóstico", sem % nem gráfico. O loop() não tem
+// ocioso, então isto mede o quanto ele desenha e atende, não "carga de CPU".
+static uint32_t diagLoops = 0, diagLps = 0, diagLpsAt = 0;
+
 void diagLoop() {
   uint32_t now = millis(), h = ESP.getFreeHeap();
+  diagLoops++;
+  if (now - diagLpsAt >= 1000) {
+    diagLps = diagLoops * 1000UL / (now - diagLpsAt);
+    diagLoops = 0;
+    diagLpsAt = now;
+  }
   if (now < diagLastMs) diagWraps++;
   else if (diagLastMs && now - diagLastMs > diagStall) {
     diagStall = now - diagLastMs;
@@ -78,7 +90,34 @@ void diagLoop() {
   if (h < diagMinHeap) diagMinHeap = h;
 }
 
-static void diagJson(String &j) {
+// Menor "maior bloco livre" visto desde que ligou. ESP.getHeapStats()/getMaxFreeBlockSize() percorrem o heap com as
+// interrupções desligadas (atrapalham o Wi-Fi), então só rodam no /api/state (uma passada por pedido) e em amostras
+// pontuais antes de gastar blocos grandes (foto, GIF, pacote, OTA). NUNCA no diagLoop nem a cada volta do laço.
+static uint32_t diagMinBlk = 0xFFFFFFFF;
+
+void diagBlkSample() {
+  uint32_t m = ESP.getMaxFreeBlockSize();
+  if (m < diagMinBlk) diagMinBlk = m;
+}
+
+// Faltas de memória que viraram aviso na tela: foto, GIF (a faixa do uiOffscreen é contada no ui.cpp). Satura em 255.
+static uint8_t diagNoMemN[2];
+
+void diagNoMem(uint8_t what) {
+  if (what < 2 && diagNoMemN[what] < 255) diagNoMemN[what]++;
+}
+
+// Uma única varredura do heap por pedido: alimenta heap, blk, frag e o minblk.
+static void diagHeap(uint32_t &heapFree, uint32_t &blk, uint8_t &frag) {
+  ESP.getHeapStats(&heapFree, &blk, &frag);
+  if (blk < diagMinBlk) diagMinBlk = blk;
+}
+
+// RAM fixa (DATA + RODATA + BSS): constante do build, do início da DRAM (0x3FFE8000) até o início do heap. O painel
+// calcula o resto da DRAM de 80 KB (81920 B): heap total = 81920 - ramfix. A pilha do laço fica fora (pilha do sistema).
+static uint32_t ramFixed() { return (uint32_t)(uintptr_t)_heap_start - 0x3FFE8000u; }
+
+static void diagJson(String &j, uint8_t frag) {
   const rst_info *r = ESP.getResetInfoPtr();
   char epc[12];
   snprintf(epc, sizeof epc, "%08x", r ? (unsigned)r->epc1 : 0u);
@@ -93,7 +132,7 @@ static void diagJson(String &j) {
   j += F(",\"minheap\":");
   j += diagMinHeap;
   j += F(",\"frag\":");
-  j += ESP.getHeapFragmentation();
+  j += frag;
   j += F(",\"up\":");
   j += (uint32_t)((((uint64_t)diagWraps << 32) | millis()) / 1000);
   j += F(",\"draw\":");  // ms do último desenho que trocou a tela inteira (0 = ainda nenhum)
@@ -102,7 +141,23 @@ static void diagJson(String &j) {
   j += diagStall;
   j += F(",\"stallAt\":");
   j += diagStallAt;
-  j += F(",\"boot\":{\"scr\":");  // ms desde que ligou até cada etapa do último início (0 = ainda não)
+  j += F(",\"minblk\":");  // menor maior bloco livre desde que ligou (bytes)
+  j += diagMinBlk;
+  j += F(",\"stack\":");  // menor folga da pilha do laço desde que ligou (bytes)
+  j += ESP.getFreeContStack();
+  j += F(",\"ramfix\":");  // RAM fixa do build em bytes (o painel desenha a barra fixa / em uso / livre)
+  j += ramFixed();
+  j += F(",\"lps\":");  // voltas do laço por segundo (só no texto copiado do painel)
+  j += diagLps;
+  j += F(",\"pack\":");  // ms da última carga de pacote de mostrador (0 = nenhuma)
+  j += packLoadMs;
+  j += F(",\"nomem\":{\"jpg\":");  // faltas de memória: foto, GIF e faixa de desenho recusada
+  j += diagNoMemN[0];
+  j += F(",\"gif\":");
+  j += diagNoMemN[1];
+  j += F(",\"strip\":");
+  j += uiOffscreenFail;
+  j += F("},\"boot\":{\"scr\":");  // ms desde que ligou até cada etapa do último início (0 = ainda não)
   j += bootScreenMs;
   j += F(",\"wifi\":");
   j += bootWifiMs;
@@ -298,17 +353,20 @@ static void sendState() {
   j += previewActive() ? (previewUntil - millis()) / 1000 + 1 : 0;
   j += F(",\"name\":\"");
   j += lanName[0] ? lanName : netName;
+  uint32_t heapFree, blk;
+  uint8_t frag;
+  diagHeap(heapFree, blk, frag);
   j += F("\",\"heap\":");
-  j += ESP.getFreeHeap();
+  j += heapFree;
   j += F(",\"blk\":");
-  j += ESP.getMaxFreeBlockSize();
+  j += blk;
   j += F(",\"pdraw\":");  // ms que a tela levou para desenhar o Pomodoro (0 = ainda não mediu)
   j += pomoDrawMs;
   j += F(",\"pseq\":");  // fase atual e a última que a tela já mostrou com os números (iguais = na tela)
   j += phaseSeq;
   j += F(",\"pshown\":");
   j += shownSeq;
-  diagJson(j);
+  diagJson(j, frag);
   crashJson(j);
   j += F(",\"ver\":\"" FW_VERSION "\"}");
   jsonEnd(j);

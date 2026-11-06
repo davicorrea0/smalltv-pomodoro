@@ -215,6 +215,7 @@ void setupUpdate() {
         otaSigBegin();
         if (!ota.authOk) ota.err = F("senha");
         else {
+          diagBlkSample();  // minblk: o maior bloco antes de o OTA soltar o álbum e o pacote
           if (inAlbum) stopAlbum();  // libera RAM e o LittleFS durante a gravação
           facePackUnload();  // dicionário de 8 KB do .gz e RSA (7,5 KB contíguos) precisam do heap; o relógio recarrega o pacote se o OTA falhar
         }

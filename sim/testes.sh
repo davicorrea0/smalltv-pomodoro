@@ -4,6 +4,8 @@
 #  - foto sem memória × foto estragada (jpg_nomem_test.cjs);
 #  - portal de Wi-Fi: o HTML e a gravação da rede dos handlers reais (portal_test.cjs);
 #  - idioma padrão (inglês) e relógios já instalados que não mudam de idioma (idioma_test.cjs);
+#  - telemetria do /api/state (campos aditivos, uma varredura do heap por pedido, tamanho do último pedaço) e a lista branca
+#    do "Copiar diagnóstico" do painel (telemetria_test.cjs);
 #  - cor quente (warm.h): os comandos do gama digital de dia, de noite e na prévia;
 #  - curva de brilho (bri_curva.h) contra a fórmula antiga com powf, em todas as entradas;
 #  - GIF e JPEG: as amostras válidas precisam decodificar e o fuzzing não pode achar erro de memória.
@@ -20,9 +22,10 @@ if [ -z "${GEN:-}" ]; then
   node jpg_nomem_test.cjs "$G/jpg_nomem.cpp"
   node portal_test.cjs "$G/portal.cpp"
   node idioma_test.cjs "$G/idioma.cpp"
+  node telemetria_test.cjs "$G/telemetria.cpp"
 fi
 export ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1
-for t in sec stats jpg_nomem portal idioma; do
+for t in sec stats jpg_nomem portal idioma telemetria; do
   g++ -std=c++17 -fsanitize=address,undefined -g -w "$G/$t.cpp" -o "$T/$t"
   "$T/$t"
 done

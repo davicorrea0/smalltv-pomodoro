@@ -24,6 +24,9 @@ static int g_decodes = 0, g_unloads = 0, g_loads = 0; static bool g_packLoaded =
 static uint32_t g_now = 0;
 uint32_t millis() { return g_now; }
 bool previewActive() { return g_preview; }
+static int g_samples = 0, g_nomem[2] = {0, 0};
+void diagBlkSample() { g_samples++; }
+void diagNoMem(uint8_t what) { g_nomem[what]++; }
 enum { THEME_MATRIX = 0, THEME_PACK = 200 };
 struct { int theme = THEME_MATRIX; char facePkg[24] = "koi"; } cfg;
 bool facePackLoaded() { return g_packLoaded; }
@@ -110,6 +113,12 @@ int main() {
   g_now += 1999; packEnsureLoaded(); CHECK(g_loads == 1);                                                      // antes de 2 s não tenta de novo
   g_now += 1; g_loadOk = true; packEnsureLoaded(); CHECK(g_loads == 2 && g_packLoaded && cfg.theme == THEME_PACK);
   packEnsureLoaded(); CHECK(g_loads == 2);                                                                     // já carregado: não relê
+  // ---- telemetria (diag.minblk, diag.nomem): amostra o maior bloco ANTES de gastá-lo e conta só a falta de memória ----
+  reset(); g_samples = g_nomem[0] = g_nomem[1] = 0; g_alloc = false; showAlbumItem("/a.jpg"); CHECK(g_samples == 1 && g_nomem[0] == 1 && g_nomem[1] == 0);
+  reset(); g_samples = g_nomem[0] = g_nomem[1] = 0; g_isGif = true; g_maxBlock = 100; showAlbumItem("/a.gif"); CHECK(g_samples == 1 && g_nomem[1] == 1 && g_nomem[0] == 0);
+  reset(); g_samples = g_nomem[0] = g_nomem[1] = 0; showAlbumItem("/a.jpg"); CHECK(g_samples == 1 && g_nomem[0] == 0 && g_nomem[1] == 0);  // com memória: nada contado
+  reset(); g_samples = g_nomem[0] = g_nomem[1] = 0; g_open = false; showAlbumItem("/b.jpg"); CHECK(g_nomem[0] == 0);  // arquivo ruim não é falta de memória
+  reset(); g_samples = 0; validJpg("/a.jpg"); CHECK(g_samples == 1);
   puts("jpg_nomem: ok"); return 0;
 }
 `);
