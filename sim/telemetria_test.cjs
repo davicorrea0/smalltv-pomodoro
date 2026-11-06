@@ -101,6 +101,8 @@ fs.writeFileSync(out, `#include <cstdint>
 #include <string>
 #include <algorithm>
 #define F(s) (s)
+#define PSTR(s) (s)
+#define snprintf_P snprintf
 #define FW_VERSION "1.25.0"
 using std::min;
 struct String {  // como o do Arduino: += de um byte sem sinal acrescenta o NÚMERO, de char acrescenta o caractere
