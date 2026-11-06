@@ -19,9 +19,10 @@ fs.writeFileSync(out, `#include <cstdint>
 using std::max;
 using String = std::string;
 #define tr(pt, en, es) (pt)
-static bool g_alloc = true, g_open = true, g_decode = true; static uint32_t g_maxBlock = 100000;
+static bool g_alloc = true, g_open = true, g_decode = true; static int g_err = 0; static uint32_t g_maxBlock = 100000;
 static int g_decodes = 0;
 struct { uint32_t getMaxFreeBlockSize() { return g_maxBlock; } } ESP;
+enum { JPEG_ERROR_MEMORY = 5, JPEG_DECODE_ERROR = 2 };
 enum { RGB565_LITTLE_ENDIAN = 1, JPEG_SCALE_HALF = 2, JPEG_SCALE_QUARTER = 4, JPEG_SCALE_EIGHTH = 8 };
 struct JPEGDEC {
   uint8_t pad[18000];
@@ -31,6 +32,7 @@ struct JPEGDEC {
   int getWidth() { return 100; } int getHeight() { return 100; }
   void setPixelType(int) {}
   bool decode(int, int, int) { g_decodes++; return g_decode; }
+  int getLastError() { return g_decode ? 0 : g_err; }
   void close() {}
 };
 struct JPEGDRAW; int mediaOpen, mediaClose, jpgRead, jpgSeek, jpgDraw;
@@ -50,11 +52,13 @@ bool isGif(const String &) { return false; }
 bool validGif(const String &) { return true; }
 const int MAX_JPEG_DIM = 1920;
 ${fn('bool jpgDimensionsOk(')}
+static int jpgCheckDraw(JPEGDRAW *) { return 1; }
 ${enumLine}${fn('JPEGDEC *jpgAlloc() {')}
+${fn('JpgResult validJpg(')}
 ${fn('JpgResult drawJpg(')}
 ${fn('bool showAlbumItem(')}
 #define CHECK(c) do { if (!(c)) { printf("FALHA linha %d: %s (msg='%s')\\n", __LINE__, #c, lastErr.c_str()); return 1; } } while (0)
-static void reset() { g_alloc = g_open = g_decode = true; g_maxBlock = 100000; lastErr.clear(); g_decodes = 0; }
+static void reset() { g_err = 0; g_alloc = g_open = g_decode = true; g_maxBlock = 100000; lastErr.clear(); g_decodes = 0; }
 int main() {
   reset(); CHECK(showAlbumItem("/a.jpg") && lastErr.empty() && g_decodes == 1);                    // arquivo bom: sem aviso
   reset(); g_alloc = false; CHECK(drawJpg("/a.jpg") == JPG_NOMEM);                                // new nothrow nulo
@@ -66,6 +70,13 @@ int main() {
   reset(); g_open = false; CHECK(drawJpg("/b.jpg") == JPG_BAD);                                   // arquivo recusado ao abrir
   reset(); g_open = false; CHECK(showAlbumItem("/b.jpg") && lastErr == "JPG invalido");
   reset(); g_decode = false; CHECK(showAlbumItem("/b.jpg") && lastErr == "JPG invalido");         // recusado ao decodificar
+  // tabelas do decodificador sem memória (DecodeJPEG devolve JPEG_ERROR_MEMORY): é falta de RAM, não arquivo ruim
+  reset(); g_decode = false; g_err = JPEG_ERROR_MEMORY; CHECK(drawJpg("/a.jpg") == JPG_NOMEM && validJpg("/a.jpg") == JPG_NOMEM);
+  reset(); g_decode = false; g_err = JPEG_ERROR_MEMORY; CHECK(showAlbumItem("/a.jpg") && lastErr == "Sem memoria p/ foto");
+  reset(); g_decode = false; g_err = JPEG_DECODE_ERROR; CHECK(drawJpg("/b.jpg") == JPG_BAD && validJpg("/b.jpg") == JPG_BAD);  // estragado continua BAD
+  reset(); CHECK(validJpg("/a.jpg") == JPG_OK);
+  reset(); g_open = false; CHECK(validJpg("/b.jpg") == JPG_BAD);
+  reset(); g_alloc = false; CHECK(validJpg("/a.jpg") == JPG_NOMEM);
   // a falta de memória some sozinha: o próximo item, com memória, mostra a foto sem nenhum aviso
   reset(); g_alloc = false; showAlbumItem("/a.jpg"); lastErr.clear(); g_alloc = true;
   CHECK(showAlbumItem("/a.jpg") && lastErr.empty() && g_decodes == 1);
