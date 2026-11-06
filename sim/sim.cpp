@@ -498,6 +498,181 @@ static int testSpriteLimits() {
     if (ok != t.ok) { printf("sprite %-20s FALHOU (%s)\n", t.nome, ok ? "aceito" : err); fails++; }
     else printf("sprite %-20s ok%s%s\n",t.nome, ok ? "" : ": ", ok ? "" : err);
   }
+  // Fronteira do teto público (tamanho cru: 4 + 15 cores x 2 + quadros x (w x h + 1) / 2 por sprite): 6.144 B
+  // passam, 6.145 B não. Três sprites com o total exato, achados por busca (com dois, 6.145 não tem combinação).
+  static int quadros[4097][3];  // bytes dos quadros (nf x (w x h + 1) / 2) -> um nf, w, h que dá esse valor
+  for (int nf = 1; nf <= 8; nf++)
+    for (int h = 1; h <= 32; h++)
+      for (int w = 1; w <= 32; w++) {
+        int *q = quadros[nf * ((w * h + 1) / 2)];
+        if (!q[0]) q[0] = nf, q[1] = w, q[2] = h;
+      }
+  auto um = [&](const char *nome, int b) { return sp(nome, frames(quadros[b][0], quadros[b][1], quadros[b][2])); };
+  for (int alvo : {6144, 6145}) {
+    std::string achado;
+    for (int a = 4096; a >= 1 && achado.empty(); a--)
+      for (int b = 1; b <= 4096 && quadros[a][0] && achado.empty(); b++) {
+        int c = alvo - 3 * 34 - a - b;
+        if (quadros[b][0] && c >= 1 && c <= 4096 && quadros[c][0]) achado = pack(um("a", a) + "," + um("b", b) + "," + um("c", c));
+      }
+    char err[96] = "";
+    bool ok = !achado.empty() && facePackLoad((char *)achado.c_str(), achado.size(), err, sizeof err);
+    if (ok) facePackUnload();
+    if (achado.empty() || ok != (alvo == 6144)) { printf("sprite teto %d B          FALHOU (%s)\n", alvo, achado.empty() ? "sem combinacao" : ok ? "aceito" : err); fails++; }
+    else printf("sprite teto %d B          ok%s%s\n", alvo, ok ? "" : ": ", ok ? "" : err);
+  }
+  return fails;
+}
+
+// Oráculo dos sprites: pacotes aleatórios (semente fixa) com 1 a 3 sprites, quadros variados (ruído, vazio, repetido,
+// só um canto, cheio), paletas de 1 a 15 letras e linhas mais curtas ou mais longas que a largura. Cada quadro de cada
+// sprite é desenhado pelo motor (facePackRender) e comparado pixel a pixel com o JSON plotado direto, letra por letra.
+// Pacote acima do teto cru precisa ser recusado; abaixo, aceito. Prova que a forma de guardar os sprites na RAM não muda
+// o que aparece na tela.
+class FastFrame : public Frame {  // o mesmo Frame, com retângulos preenchidos direto na memória (o oráculo desenha muito)
+ public:
+  void fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t c) override {
+    int x0 = x < 0 ? 0 : x, y0 = y < 0 ? 0 : y, x1 = x + w > 240 ? 240 : x + w, y1 = y + h > 240 ? 240 : y + h;
+    for (int yy = y0; yy < y1; yy++)
+      for (int xx = x0; xx < x1; xx++) px[yy * 240 + xx] = c;
+  }
+  void fillScreen(uint16_t c) override { fillRect(0, 0, 240, 240, c); }
+};
+
+static int testSpriteOracle(int nPacks, int maxFrames, int maxFps) {
+  uint32_t seed = 0x5EED2026u;
+  auto rnd = [&](int n) { seed ^= seed << 13; seed ^= seed >> 17; seed ^= seed << 5; return (int)(seed % (uint32_t)n); };
+  static const char LETRAS[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  static const char VAZIO[] = ". #-";  // fora da paleta = transparente
+  struct Spr { int w, h, nf, fps, n; char keys[16]; uint16_t pal[15]; std::vector<std::vector<std::string>> fr; };
+  struct Lay { int s, x, y, size; };
+  FastFrame *f = new FastFrame();
+  std::vector<uint16_t> ref(240 * 240);
+  int fails = 0, aceitos = 0, recusados = 0, quadros = 0;
+  long somaRaw = 0, somaRam = 0;
+  for (int pk = 0; pk < nPacks; pk++) {
+    std::vector<Spr> S(1 + rnd(3));
+    long raw = 0, nq = 0;
+    for (Spr &s : S) {
+      bool grande = rnd(3) == 0;
+      s.w = grande ? 20 + rnd(13) : 1 + rnd(32);
+      s.h = grande ? 20 + rnd(13) : 1 + rnd(32);
+      s.nf = 1 + rnd(maxFrames);
+      s.fps = 1 + rnd(maxFps);
+      s.n = rnd(4) == 0 ? 1 + rnd(3) : 1 + rnd(15);  // paletas pequenas (1 e 2 bits por pixel) aparecem bastante
+      std::string used;
+      for (int i = 0; i < s.n; i++) {
+        char c;
+        do c = LETRAS[rnd(sizeof LETRAS - 1)]; while (used.find(c) != std::string::npos);
+        used += c;
+        s.keys[i] = c;
+        s.pal[i] = uiRgb(rnd(256), rnd(256), rnd(256));
+      }
+      for (int k = 0; k < s.nf; k++) {
+        std::vector<std::string> q;
+        int modo = rnd(6);
+        if (modo == 0 && k) { s.fr.push_back(s.fr[rnd(k)]); continue; }  // quadro repetido
+        int cx0 = rnd(s.w), cy0 = rnd(s.h), cx1 = cx0 + rnd(s.w - cx0 + 1), cy1 = cy0 + rnd(s.h - cy0 + 1);  // só um canto
+        int dens = rnd(101);
+        for (int r = 0; r < s.h; r++) {
+          std::string row;
+          for (int c = 0; c < s.w; c++) {
+            bool cheio = modo == 1 ? false : modo == 2 ? (c >= cx0 && c < cx1 && r >= cy0 && r < cy1 && rnd(100) < 80)
+                       : modo == 3 ? true : rnd(100) < dens;
+            row += cheio ? s.keys[rnd(s.n)] : VAZIO[rnd(sizeof VAZIO - 1)];
+          }
+          if (r && rnd(12) == 0) row = row.substr(0, rnd(s.w + 1));  // linha curta: o resto é transparente
+          else if (r && rnd(12) == 0) row += std::string(1 + rnd(4), s.keys[0]);  // linha longa: o excesso é ignorado
+          q.push_back(row);
+        }
+        s.fr.push_back(q);
+      }
+      raw += 4 + 15 * 2 + (long)s.nf * ((s.w * s.h + 1) / 2);
+      nq += s.nf;
+    }
+    std::vector<Lay> L(S.size() + rnd(2));
+    for (size_t i = 0; i < L.size(); i++) L[i] = {i < S.size() ? (int)i : rnd(S.size()), -20 + rnd(250), -20 + rnd(250), 1 + rnd(3)};
+    uint16_t bg = uiRgb(rnd(256), rnd(256), rnd(256));
+    // JSON
+    char hex[8];
+    auto cor = [&](uint16_t c) { snprintf(hex, sizeof hex, "#%02x%02x%02x", (c >> 11) << 3, ((c >> 5) & 63) << 2, (c & 31) << 3); return std::string(hex); };
+    std::string js = "{\"format\":1,\"bg\":\"" + cor(bg) + "\",\"sprites\":{";
+    for (size_t i = 0; i < S.size(); i++) {
+      Spr &s = S[i];
+      js += (i ? ",\"s" : "\"s") + std::to_string(i) + "\":{\"pal\":{";
+      for (int c = 0; c < s.n; c++) js += (c ? ",\"" : "\"") + std::string(1, s.keys[c]) + "\":\"" + cor(s.pal[c]) + "\"";
+      js += "},\"fps\":" + std::to_string(s.fps);
+      bool soPx = s.nf == 1 && rnd(2);
+      js += soPx ? ",\"px\":" : ",\"frames\":[";
+      for (int k = 0; k < s.nf; k++) {
+        js += k ? ",[" : "[";
+        for (int r = 0; r < s.h; r++) js += (r ? ",\"" : "\"") + s.fr[k][r] + "\"";
+        js += "]";
+      }
+      js += soPx ? "}" : "]}";
+    }
+    js += "},\"layers\":[";
+    for (size_t i = 0; i < L.size(); i++)
+      js += std::string(i ? "," : "") + "{\"type\":\"sprite\",\"sprite\":\"s" + std::to_string(L[i].s) + "\",\"x\":" + std::to_string(L[i].x) +
+            ",\"y\":" + std::to_string(L[i].y) + ",\"size\":" + std::to_string(L[i].size) + "}";
+    js += "]}";
+    char err[96] = "";
+    bool ok = facePackLoad((char *)js.c_str(), js.size(), err, sizeof err);
+    if (ok != (raw <= 6144)) {
+      if (fails++ < 5) printf("oraculo: pacote %d %s com %ld B crus (%s)\n", pk, ok ? "aceito" : "recusado", raw, err);
+      if (ok) facePackUnload();
+      continue;
+    }
+    if (!ok) { recusados++; continue; }
+    aceitos++;
+    // pior caso do formato na RAM: a conta crua + 6 B por quadro (ver sprEncode)
+    long ram = facePackSpriteBytes();
+    somaRaw += raw;
+    somaRam += ram;
+    if (ram > raw + 6 * nq) {
+      if (fails++ < 5) printf("oraculo: pacote %d com %ld B na RAM, acima de %ld crus + 6 x %ld quadros\n", pk, ram, raw, nq);
+      facePackUnload();
+      continue;
+    }
+    // cada quadro de cada sprite, no instante em que o sprite s mostra o quadro k
+    bool erro = false;
+    for (size_t si = 0; si < S.size() && !erro; si++)
+      for (int k = 0; k < S[si].nf && !erro; k++) {
+        uint32_t ms = (uint32_t)((k * 1000 + S[si].fps - 1) / S[si].fps) + 1000 * rnd(3);
+        UiState st = base(14, 37, 24);
+        st.theme = THEME_PACK;
+        st.ms = ms;
+        uiBegin(f);
+        facePackRender(st, true);
+        for (uint16_t &p : ref) p = bg;
+        for (const Lay &l : L) {
+          const Spr &s = S[l.s];
+          int q = s.nf > 1 ? (int)((uint64_t)ms * s.fps / 1000 % s.nf) : 0;
+          for (int r = 0; r < s.h; r++) {
+            const std::string &row = s.fr[q][r];
+            for (int c = 0; c < s.w && c < (int)row.size(); c++) {
+              int v = 0;
+              for (int i = 0; i < s.n; i++) if (s.keys[i] == row[c]) v = i + 1;
+              if (!v) continue;
+              for (int yy = l.y + r * l.size; yy < l.y + (r + 1) * l.size; yy++)
+                for (int xx = l.x + c * l.size; xx < l.x + (c + 1) * l.size; xx++)
+                  if (xx >= 0 && yy >= 0 && xx < 240 && yy < 240) ref[yy * 240 + xx] = s.pal[v - 1];
+            }
+          }
+        }
+        quadros++;
+        for (int i = 0; i < 240 * 240 && !erro; i++)
+          if (f->px[i] != ref[i]) {
+            erro = true;
+            if (fails < 5) printf("oraculo: pacote %d, sprite %d, quadro %d: pixel (%d,%d) %04x, esperado %04x\n", pk, (int)si, k, i % 240, i / 240, f->px[i], ref[i]);
+          }
+      }
+    fails += erro;
+    facePackUnload();
+  }
+  delete f;
+  printf("oraculo dos sprites: %d pacotes (%d aceitos, %d recusados pelo teto), %d quadros comparados pixel a pixel, %d falhas; sprites na RAM %ld B contra %ld B crus\n",
+         nPacks, aceitos, recusados, quadros, fails, somaRam, somaRaw);
   return fails;
 }
 
@@ -699,6 +874,7 @@ int main() {
   checkWorldCost();
   fails += testPackages(p);
   fails += testSpriteLimits();
+  fails += testSpriteOracle(2000, 8, 10);
   fails += TintTest::run();
   return fails;
 }

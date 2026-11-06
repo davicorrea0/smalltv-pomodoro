@@ -15,6 +15,7 @@ bool facePackLoadFile(File &f, char *err, size_t errLen);
 #endif
 void facePackUnload();
 bool facePackLoaded();
+uint16_t facePackSpriteBytes();  // bytes dos sprites na RAM (compactados), para testes e diagnóstico
 const char *facePackId();
 const char *facePackName();
 const char *facePackDesc();

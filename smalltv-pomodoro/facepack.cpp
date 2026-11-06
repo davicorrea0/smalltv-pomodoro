@@ -1,10 +1,10 @@
 // facepack.cpp — motor dos mostradores instaláveis (pacotes JSON). Formato: docs/PACOTES.md
 //
-// Ao carregar, o JSON vira estruturas compactas na RAM (≈40 bytes por camada + sprites em
-// 4 bits por pixel) e é descartado. A cada quadro, cada camada calcula uma "assinatura" do
-// que mostraria (texto resolvido, ângulo, largura da barra...). Só as camadas cuja
-// assinatura mudou marcam áreas sujas; essas áreas são repintadas com recorte (uiClip),
-// redesenhando por cima todas as camadas que as tocam, na ordem — sem piscar a tela toda.
+// Ao carregar, o JSON vira estruturas compactas na RAM (≈40 bytes por camada + sprites em 1, 2 ou
+// 4 bits por pixel, só com o recorte visível de cada quadro) e é descartado. A cada quadro, cada camada
+// calcula uma "assinatura" do que mostraria (texto resolvido, ângulo, largura da barra...). Só as camadas
+// cuja assinatura mudou marcam áreas sujas; essas áreas são repintadas com recorte (uiClip), redesenhando
+// por cima todas as camadas que as tocam, na ordem — sem piscar a tela toda.
 
 #include "facepack.h"
 #include "ui_kit.h"
@@ -51,6 +51,7 @@ static uint16_t bgColor = 0;
 static char pkId[24], pkName[32], pkDesc[64], pkAuthor[32];
 
 bool facePackLoaded() { return lay != nullptr; }
+uint16_t facePackSpriteBytes() { return sprUsed; }
 const char *facePackId() { return pkId; }
 const char *facePackName() { return pkName; }
 const char *facePackDesc() { return pkDesc; }
@@ -125,6 +126,92 @@ struct MemIn {
   }
 };
 
+// ---------- sprites compactados na RAM ----------
+// Cada sprite em `spr`:
+//   [0] w  [1] h  [2] n (cores)  [3] fps << 4 | quadros
+//   [4 ..] paleta: n x RGB565 (alto, baixo)
+//   tabela: um uint16 por quadro (alto, baixo) = posição do quadro, contada do início do sprite
+//   quadro: [x0][y0][cw][ch] = recorte só com os pixels visíveis (cw = 0: quadro vazio) e os pixels do recorte,
+//           linha a linha, em 1, 2 ou 4 bits (pelo número de cores: 1, até 3, até 15; 0 = transparente).
+// Quadros com as mesmas linhas no JSON são guardados uma vez só (a tabela aponta para o mesmo lugar).
+// Pior caso (quadros cheios, mais de 3 cores, nenhum repetido): a conta crua + 6 B por quadro (4 do recorte e 2 da
+// tabela), ou seja, até ~576 B acima do teto público com 12 sprites de 8 quadros. O oráculo do sim confere esse limite.
+static uint8_t sprBits(uint8_t n) { return n <= 1 ? 1 : n <= 3 ? 2 : 4; }
+
+// valor (0 = transparente, 1..n = cor) da letra `c` da linha; como sempre, vale a última letra igual da paleta
+static uint8_t sprKey(const char *keys, uint8_t n, char c) {
+  uint8_t v = 0;
+  for (uint8_t i = 0; i < n; i++)
+    if (keys[i] == c) v = i + 1;
+  return v;
+}
+
+// Mede (out = nullptr) ou escreve (out = destino zerado) o sprite e devolve o tamanho em bytes. As duas coisas
+// passam pelo mesmo código, e quem chama confere que o escrito tem o tamanho medido.
+static size_t sprEncode(JsonArrayConst fr, JsonArrayConst px1, uint8_t w, uint8_t h, uint8_t nf, uint8_t fps,
+                        const char *keys, const uint16_t *colors, uint8_t n, uint8_t *out) {
+  const uint8_t bits = sprBits(n);
+  size_t at = 4 + n * 2 + nf * 2;
+  if (out) {
+    out[0] = w;
+    out[1] = h;
+    out[2] = n;
+    out[3] = fps << 4 | nf;
+    for (uint8_t i = 0; i < n; i++) {
+      out[4 + i * 2] = colors[i] >> 8;
+      out[5 + i * 2] = colors[i] & 255;
+    }
+  }
+  for (uint8_t k = 0; k < nf; k++) {
+    JsonArrayConst px = fr.isNull() ? px1 : fr[k].as<JsonArrayConst>();
+    uint8_t same = k;  // quadro anterior com as mesmas linhas
+    for (uint8_t j = 0; j < k && same == k; j++) {
+      JsonArrayConst pj = fr[j];
+      uint8_t r = 0;
+      while (r < h && !strcmp(px[r] | "", pj[r] | "")) r++;
+      if (r == h) same = j;
+    }
+    size_t pos = at;
+    if (same < k) pos = out ? (out[4 + n * 2 + same * 2] << 8 | out[5 + n * 2 + same * 2]) : 0;
+    else {
+      int x0 = w, y0 = h, x1 = -1, y1 = -1;  // recorte
+      for (uint8_t r = 0; r < h; r++) {
+        const char *row = px[r] | "";
+        for (uint8_t c = 0; c < w && row[c]; c++)
+          if (sprKey(keys, n, row[c])) {
+            if (c < x0) x0 = c;
+            if (c > x1) x1 = c;
+            if (r < y0) y0 = r;
+            if (r > y1) y1 = r;
+          }
+      }
+      uint8_t cw = x1 < 0 ? 0 : x1 - x0 + 1, ch = x1 < 0 ? 0 : y1 - y0 + 1;
+      if (out) {
+        uint8_t *q = out + at;
+        q[0] = cw ? x0 : 0;
+        q[1] = cw ? y0 : 0;
+        q[2] = cw;
+        q[3] = ch;
+        uint16_t i = 0;
+        for (uint8_t r = 0; r < ch; r++) {
+          const char *row = px[y0 + r] | "";
+          size_t len = strlen(row);
+          for (uint8_t c = 0; c < cw; c++, i++) {
+            uint8_t v = (size_t)(x0 + c) < len ? sprKey(keys, n, row[x0 + c]) : 0;
+            q[4 + i * bits / 8] |= v << (8 - bits - i * bits % 8);
+          }
+        }
+      }
+      at += 4 + (cw * ch * bits + 7) / 8;
+    }
+    if (out) {
+      out[4 + n * 2 + k * 2] = pos >> 8;
+      out[5 + n * 2 + k * 2] = pos & 255;
+    }
+  }
+  return at;
+}
+
 // Lê o pacote em passadas com filtro, direto da fonte (arquivo ou memória), em vez de montar a árvore do
 // arquivo inteiro: com ~31 KB de heap livre, um JSON acima de ~10 KB dava "NoMemory". O pico de memória da
 // carga é a maior árvore viva somada ao que já foi alocado, então a ordem importa:
@@ -165,7 +252,7 @@ static bool loadFrom(In &in, Rew rewind, char *err, size_t errLen) {
     }
   }
 
-  // sprites, um por vez: [w][h][n][paleta n x RGB565][pixels 4 bits; 0 = transparente]
+  // sprites, um por vez, compactados (ver sprEncode)
   for (uint8_t si = 0; si < ns; si++) {
     JsonDocument sd;
     {
@@ -222,41 +309,24 @@ static bool loadFrom(In &in, Rew rewind, char *err, size_t errLen) {
       int32_t col = parseColor(c.value().as<const char *>(), 0);
       colors[n++] = col < 0 ? 0 : col;
     }
-    const int fsz = (w * h + 1) / 2;
-    // alocação exata: só as n cores usadas (a árvore da passada das camadas, mais adiante, aproveita o resto)
-    uint8_t *ns_ = (uint8_t *)realloc(spr, sprUsed + 4 + n * 2 + fsz * nf);
+    // alocação exata, já compactada (a árvore da passada das camadas, mais adiante, aproveita o resto)
+    JsonArrayConst px1 = sp["px"];
+    size_t sz = sprEncode(fr, px1, w, h, nf, fps, keys, colors, n, nullptr);
+    uint8_t *ns_ = sprUsed + sz <= 0xFFFF ? (uint8_t *)realloc(spr, sprUsed + sz) : nullptr;
     if (!ns_) {
       facePackUnload();
       snprintf_P(err, errLen, PSTR("sem memoria para o pacote"));
       return false;
     }
     spr = ns_;
-    uint8_t *p = spr + sprUsed;
     sprOff[si] = sprUsed;
-    p[0] = w;
-    p[1] = h;
-    p[2] = n;
-    p[3] = fps << 4 | nf;  // fps (1-10) e quadros (1-8), um quadro depois do outro
-    for (uint8_t i = 0; i < n; i++) {
-      p[4 + i * 2] = colors[i] >> 8;
-      p[5 + i * 2] = colors[i] & 255;
+    memset(spr + sprUsed, 0, sz);
+    if (sprEncode(fr, px1, w, h, nf, fps, keys, colors, n, spr + sprUsed) != sz) {  // medida e escrita divergiram
+      facePackUnload();
+      snprintf_P(err, errLen, PSTR("sprite \"%s\": erro interno ao compactar"), sprName[si]);
+      return false;
     }
-    uint8_t *pix = p + 4 + n * 2;
-    memset(pix, 0, fsz * nf);
-    for (uint8_t k = 0; k < nf; k++) {
-      JsonArrayConst px = fr.isNull() ? sp["px"] : fr[k];
-      for (uint8_t r = 0; r < h; r++) {
-        const char *row = px[r] | "";
-        for (uint8_t c = 0; c < w && row[c]; c++) {
-          uint8_t v = 0;
-          for (uint8_t i = 0; i < n; i++)
-            if (keys[i] == row[c]) v = i + 1;
-          int idx = r * w + c;
-          pix[k * fsz + idx / 2] |= idx & 1 ? v : v << 4;
-        }
-      }
-    }
-    sprUsed += 4 + n * 2 + fsz * nf;
+    sprUsed += sz;
   }
 
   // camadas e metadados
@@ -666,6 +736,12 @@ static uint16_t mix565(uint16_t a, uint16_t b, int k) {
   return r << 11 | g << 5 | bl;
 }
 
+// i-ésimo pixel (0 = transparente, 1..n = cor) dos pixels de um quadro compactado (ver sprEncode)
+static inline uint8_t sprPixel(const uint8_t *px, uint8_t bits, int i) {
+  int b = i * bits;
+  return px[b >> 3] >> (8 - bits - (b & 7)) & ((1 << bits) - 1);
+}
+
 // quadro do sprite no instante s.ms (1 quadro = parado)
 static uint8_t sprFrame(const Layer &L, const UiState &s) {
   uint8_t nf = spr[L.str + 3] & 15;
@@ -759,20 +835,16 @@ static void drawLayer(const Layer &L, const UiState &s, const char *txt) {
       break;
     }
     case L_SPRITE: {
-      const uint8_t *p = spr + L.str;
-      uint8_t w = p[0], h = p[1], n = p[2];
-      const uint8_t *pix = p + 4 + n * 2 + sprFrame(L, s) * ((w * h + 1) / 2);
-      for (int r = 0; r < h; r++)
-        for (int c = 0; c < w;) {
-          int i = r * w + c;
-          uint8_t v = i & 1 ? pix[i / 2] & 15 : pix[i / 2] >> 4, run = 1;
-          while (c + run < w) {
-            int k = i + run;
-            if ((k & 1 ? pix[k / 2] & 15 : pix[k / 2] >> 4) != v) break;
-            run++;
-          }
-          if (v) G->fillRect(L.x + c * L.size, L.y + r * L.size, run * L.size, L.size, (p[2 + v * 2] << 8) | p[3 + v * 2]);
+      const uint8_t *p = spr + L.str, n = p[2], bits = sprBits(n), *pal = p + 4;
+      uint8_t f = sprFrame(L, s);
+      const uint8_t *q = p + (p[4 + n * 2 + f * 2] << 8 | p[5 + n * 2 + f * 2]), x0 = q[0], y0 = q[1], cw = q[2], ch = q[3];
+      for (int r = 0, i = 0; r < ch; r++)
+        for (int c = 0; c < cw;) {
+          uint8_t v = sprPixel(q + 4, bits, i), run = 1;
+          while (c + run < cw && sprPixel(q + 4, bits, i + run) == v) run++;
+          if (v) G->fillRect(L.x + (x0 + c) * L.size, L.y + (y0 + r) * L.size, run * L.size, L.size, pal[v * 2 - 2] << 8 | pal[v * 2 - 1]);
           c += run;
+          i += run;
         }
       break;
     }
