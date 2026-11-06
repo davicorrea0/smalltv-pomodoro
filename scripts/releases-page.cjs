@@ -11,6 +11,7 @@
 // Versões de teste (pré-lançamento) seguidas da mesma série x.y viram uma entrada só, com as novidades somadas.
 const fs = require('fs'), path = require('path'), { execFileSync } = require('child_process');
 const REPO = 'davicorrea0/smalltv-pomodoro', ROOT = path.join(__dirname, '..');
+const { rodape } = require('./site-rodape.cjs');  // o mesmo rodapé das outras páginas
 
 const args = process.argv.slice(2);
 const site = args.find(a => !a.startsWith('--') && args[args.indexOf(a) - 1] !== '--releases');
@@ -57,7 +58,7 @@ const L = {
     files: 'Arquivos', gh: 'Ver no GitHub', sig: 'assinatura', sums: 'SHA256SUMS',
     help: 'Pelo <code>/update</code>, envie o <code>.bin.gz</code> sem descompactar; a partir da 1.20.1 envie junto o <code>.bin.gz.sig</code> (a assinatura). O <code>.bin</code> sem compressão serve para gravar pelo cabo USB-TTL. <code>SHA256SUMS.txt</code> confere os arquivos.',
     count: n => `${n} versões`, nav: ['Início', 'Galeria', 'Docs', 'Versões', 'Jogo'], navHref: ['./', 'galeria.html', 'docs.html', 'versoes.html', 'jogo.html'],
-    other: 'en/releases.html', otherLang: 'EN', foot: 'English',
+    other: 'en/releases.html', otherLang: 'EN',
     date: { locale: 'pt-BR', opt: { day: 'numeric', month: 'short', year: 'numeric' } },
   },
   en: {
@@ -70,7 +71,7 @@ const L = {
     files: 'Files', gh: 'View on GitHub', sig: 'signature', sums: 'SHA256SUMS',
     help: 'Through <code>/update</code>, send the <code>.bin.gz</code> without unpacking it; from 1.20.1 on, send the <code>.bin.gz.sig</code> (the signature) with it. The uncompressed <code>.bin</code> is for flashing over a USB-TTL cable. <code>SHA256SUMS.txt</code> checks the files.',
     count: n => `${n} releases`, nav: ['Home', 'Gallery', 'Docs', 'Releases', 'Game'], navHref: ['./', 'gallery.html', 'docs.html', 'releases.html', 'game.html'],
-    other: 'versoes.html', otherLang: 'PT', foot: 'Português',
+    other: 'versoes.html', otherLang: 'PT',
     date: { locale: 'en-US', opt: { day: 'numeric', month: 'short', year: 'numeric' } },
   },
 };
@@ -171,7 +172,7 @@ function page(t, code) {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Silkscreen&display=swap">
-<link rel="stylesheet" href="${t.root}style.css?v=18">
+<link rel="stylesheet" href="${t.root}style.css?v=19">
 </head>
 <body>
 <!-- gerado por scripts/releases-page.cjs (repositório principal); não edite à mão -->
@@ -205,19 +206,7 @@ ${entries.map(e => e.length > 1 ? serie(e, t) : item(e[0], t)).join('\n')}
   </section>
 </main>
 
-<footer>
-  <div class="wrap">
-    <div class="foot-bottom">
-      <img class="px" src="${t.root}img/tomate.svg" alt="">
-      <span>SmallTV Pomodoro · feito por Davi Mattos</span>
-      <div class="links">
-        <a href="./">${t.nav[0]}</a>
-        <a href="https://github.com/${REPO}"><span class="gh" aria-hidden="true"></span>GitHub</a>
-        <a href="${code === 'en' ? '../' : ''}${t.other}" hreflang="${code === 'en' ? 'pt-BR' : 'en'}">${t.foot}</a>
-      </div>
-    </div>
-  </div>
-</footer>
+${rodape(code, (code === 'en' ? '../' : '') + t.other)}
 
 </body>
 </html>
