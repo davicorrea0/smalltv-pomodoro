@@ -618,21 +618,28 @@ static void handlePanelUpload() {
   }
 }
 
+// ETag = PANEL_HASH: o navegador revalida sempre (no-cache) e, com o painel desta versão em cache, recebe 304 sem
+// corpo em vez dos ~30 KB. Depois de um OTA o hash é outro, então o If-None-Match antigo não bate e vem o painel
+// novo. O 304 só sai depois do login (readOk) e só com /www/<hash>.gz presente: o carregador não leva ETag.
+static void sendPanel() {
+  if (!readOk()) return;  // com senha, o navegador pede o login já ao abrir o painel
+  server.sendHeader("Cache-Control", "no-cache");  // depois de atualizar o firmware, o navegador busca o painel novo
+  File f = fsOk ? LittleFS.open("/www/" PANEL_HASH ".gz", "r") : File();
+  if (f) {
+    server.sendHeader(F("ETag"), F("\"" PANEL_HASH "\""));
+    if (!strcmp_P(server.header(F("If-None-Match")).c_str(), PSTR("\"" PANEL_HASH "\""))) server.send(304);
+    else server.streamFile(f, "text/html");  // .gz: o servidor manda "Content-Encoding: gzip"
+    f.close();
+    return;
+  }
+  server.sendHeader("Content-Encoding", "gzip");
+  server.send_P(200, "text/html", (PGM_P)LOADER_HTML_GZ, sizeof(LOADER_HTML_GZ));
+}
+
 void setupWeb() {
   server.collectHeaders("X-SmallTV", "Content-Length", "Authorization", "Origin", "X-Firmware-Sig");
   // painel: o desta versão na memória de arquivos ou, sem ele, o carregador que o instala
-  server.on("/", HTTP_GET, [] {
-    if (!readOk()) return;  // com senha, o navegador pede o login já ao abrir o painel
-    server.sendHeader("Cache-Control", "no-cache");  // depois de atualizar o firmware, o navegador busca o painel novo
-    File f = fsOk ? LittleFS.open("/www/" PANEL_HASH ".gz", "r") : File();
-    if (f) {
-      server.streamFile(f, "text/html");  // .gz: o servidor manda "Content-Encoding: gzip"
-      f.close();
-      return;
-    }
-    server.sendHeader("Content-Encoding", "gzip");
-    server.send_P(200, "text/html", (PGM_P)LOADER_HTML_GZ, sizeof(LOADER_HTML_GZ));
-  });
+  server.on("/", HTTP_GET, sendPanel);
   server.on("/api/panel", HTTP_POST, [] {
     if (!guard()) return;
     if (!panelResult.length()) server.send_P(400, PSTR("text/plain"), PSTR("Painel invalido"));
