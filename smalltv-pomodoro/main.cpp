@@ -145,6 +145,20 @@ String hhmm(const struct tm &t) {
 }
 
 static char ipText[16];
+static uint32_t ipLast;
+static bool ipHave;
+
+// O texto do IP só é refeito quando o endereço muda: WiFi.localIP().toString() fazia um malloc/free a cada
+// desenho (100 ms) só para repetir a mesma string.
+static const char *ipString() {
+  uint32_t ip = (uint32_t)WiFi.localIP();
+  if (!ipHave || ip != ipLast) {
+    ipHave = true;
+    ipLast = ip;
+    snprintf_P(ipText, sizeof ipText, PSTR("%u.%u.%u.%u"), (unsigned)(ip & 255), (unsigned)((ip >> 8) & 255), (unsigned)((ip >> 16) & 255), (unsigned)(ip >> 24));
+  }
+  return ipText;
+}
 
 static UiState makeState() {
   UiState s;
@@ -183,8 +197,7 @@ static UiState makeState() {
   s.hasLoc = cfg.city[0];
   s.theme = previewActive() ? previewTheme : cfg.theme;
   s.accent = clockColor();
-  strlcpy(ipText, WiFi.localIP().toString().c_str(), sizeof ipText);
-  s.ip = ipText;
+  s.ip = ipString();
   s.ms = millis();
   s.celebrate = alertUntil != 0;  // fase acabou de terminar: animação de fim no Pomodoro
   return s;
