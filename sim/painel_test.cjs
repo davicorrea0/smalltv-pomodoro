@@ -45,3 +45,41 @@ const i = html.indexOf('async function runSteps('), runSteps = new Function('ret
     assert(dict[k] && dict[k].length == 2 && dict[k].every(x => x), 'sem tradução: ' + k);
   console.log('painel: filtro dos mostradores com estilos para os ' + ids.length + ' nativos, só o Flip animado e textos traduzidos');
 }
+// Rodízio (web/index.html): selecionar vários mostradores e incluir de uma vez (sem duplicar, na ordem do toque, uma
+// gravação só), recusar lista acima de 300 letras sem gravar e "tirar todos" gravar a lista vazia.
+(async () => {
+  const src = html.slice(html.indexOf('var SEL=null'), html.indexOf('function rotToggle('));
+  const rk = html.match(/const rotKeys=(\(\)=>[^\n]*)/)[1];
+  const env = { st: { cfg: { rot: 't:10,t:6' } }, saves: [], toasts: [], ok: true };
+  const els = { selbar: { hidden: true }, selbtn: { hidden: false }, selcnt: { textContent: '' } };
+  const mk = new Function('env', 'els', `
+    let st=env.st;const $=id=>els[id],t=(s,...a)=>s.split("{0}").join(a[0]),toast=m=>env.toasts.push(m),fkey=f=>f.k;
+    const document={querySelectorAll:()=>[]},confirm=()=>env.ok;
+    const save=o=>{env.saves.push(o.rot);st.cfg.rot=o.rot;return Promise.resolve()};
+    const rotKeys=${rk};
+    ${src}
+    return {selMode,selTap,selAdd,rotClear,get SEL(){return SEL}};`);
+  const p = mk(env, els), tick = () => new Promise(r => setTimeout(r, 0));
+  p.selMode(1); assert.deepStrictEqual(p.SEL, []); assert(!els.selbar.hidden && els.selbtn.hidden);
+  for (const k of ['p:koi', 't:6', 't:3']) p.selTap({ k });
+  p.selTap({ k: 't:3' }); p.selTap({ k: 't:3' });   // desmarca e marca de novo: vai para o fim
+  assert.deepStrictEqual(p.SEL, ['p:koi', 't:6', 't:3']);
+  assert.strictEqual(els.selcnt.textContent, '3 selecionado(s)');
+  p.selAdd(); await tick();
+  assert.deepStrictEqual(env.saves, ['t:10,t:6,p:koi,t:3']);   // t:6 já estava: não duplica; uma gravação só
+  assert.strictEqual(p.SEL, null); assert(els.selbar.hidden);
+  p.selMode(1); p.selTap({ k: 't:6' }); p.selAdd(); await tick();
+  assert.strictEqual(env.saves.length, 1, 'todos já no rodízio: não grava');
+  p.selMode(1); for (let i = 0; i < 12; i++) p.selTap({ k: 'p:mostrador-de-nome-longo-' + i }); p.selAdd(); await tick();
+  assert.strictEqual(env.saves.length, 1, 'acima de 300 letras: não grava nada');
+  assert(env.toasts.includes('Rodízio cheio: tire algum mostrador antes.'));
+  assert(p.SEL && p.SEL.length == 12, 'a seleção continua para o usuário tirar alguns');
+  env.ok = false; p.rotClear(); await tick(); assert.strictEqual(env.saves.length, 1, 'cancelou a confirmação');
+  env.ok = true; p.rotClear(); await tick(); assert.strictEqual(env.saves.at(-1), '');
+  const dict = JSON.parse(fs.readFileSync(path.join(__dirname, '../web/i18n.json'), 'utf8')).dict;
+  for (const k of ['Selecionar vários', '{0} selecionado(s)', 'Tirar todos do rodízio', 'Rodízio cheio: tire algum mostrador antes.',
+    'Toque nos mostradores para selecionar', 'Já estavam no rodízio', '{0} incluído(s) no rodízio',
+    'Tirar todos os mostradores do rodízio? O relógio fica no mostrador atual.', 'Rodízio vazio', 'Cancelar', 'Incluir no rodízio'])
+    assert(dict[k] && dict[k].length == 2 && dict[k].every(x => x), 'sem tradução: ' + k);
+  console.log('painel: rodízio com seleção de vários (sem duplicar, ordem do toque, uma gravação, limite de 300) e "tirar todos"');
+})().catch(e => { console.error(e); process.exit(1); });
