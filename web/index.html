@@ -29,6 +29,7 @@ small{color:var(--mut)}
 .faces{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
 .face{text-align:left;padding:0}.face .scr{border-width:5px}.face span{display:block;padding:8px 4px 0;font-weight:600}
 .face.cur .scr{border-color:var(--ac)}.face.rot span::before{content:'↻ ';color:var(--mut)}.face.cur span::after{content:var(--inuse,' · em uso');color:var(--ac);font-weight:400;font-size:13px}
+.face.sel .scr{border-color:var(--short)}.face.sel span::before{content:'✓ ';color:var(--short)}#selbar{position:sticky;top:0;z-index:2;background:var(--bg);padding:8px 0;align-items:center}#selbar b{flex:1}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 2px}.chip{padding:6px 12px;border-radius:999px;background:var(--card2);border:1px solid var(--line);color:var(--mut);font-size:13px}.chip.on{background:var(--ac);border-color:transparent;color:#fff;font-weight:600}
 .noimg{aspect-ratio:1;display:flex;align-items:center;justify-content:center;color:var(--mut);font-size:13px}
 #pvbar{display:none;margin-bottom:12px;padding:10px 14px;border-radius:12px;background:#1d2a44;color:#bcd3ff}
@@ -156,6 +157,8 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
  </div>
  <div class="body">
  <div class="chips" id="fchips"></div>
+ <p><button class="btn" id="selbtn" onclick="selMode(1)">Selecionar vários</button></p>
+ <div class="row" id="selbar" hidden><b id="selcnt"></b><button class="btn" onclick="selMode(0)">Cancelar</button><button class="btn p" onclick="selAdd()">Incluir no rodízio</button></div>
  <h2 id="hnat">Nativos</h2>
  <div class="faces" id="faces"></div>
  <h2 id="hdl">Baixados</h2>
@@ -179,6 +182,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
   <label>Segundos por item<input data-k="delay" type="number" min="3" max="255"></label>
   <label>Trocar de mostrador<select data-k="rotmin"><option value="0">Nunca</option><option value="1">A cada 1 min</option><option value="5">A cada 5 min</option><option value="15">A cada 15 min</option><option value="30">A cada 30 min</option><option value="60">A cada 1 h</option></select></label>
   <small id="rotinfo"></small>
+  <p id="rotclr" hidden><button class="btn" onclick="rotClear()">Tirar todos do rodízio</button></p>
  </div>
  </div>
 </section>
@@ -450,9 +454,19 @@ function fchips(){const k=fcur(),c=$('fchips');c.innerHTML='';
  $('hnat').hidden=!any('faces');$('hdl').hidden=!(any('dl')||!pk&&all);$('dlnone').hidden=pk||!all;
  const none=!cards.some(b=>!b.hidden);$('fnone').hidden=!none;if(none)$('fnone').textContent=t($('cat').children.length?'Nenhum mostrador neste filtro.':'Nenhum mostrador neste filtro ainda. Abra a galeria online logo abaixo para ver mais.')}
 function buildFaces(){FACES.forEach(f=>{const b=f.pkg==null&&LG&&BUILTIN[f.t];f.n=b?b[LG-1][0]:f.n0;f.d=b?b[LG-1][1]:f.d0});const g=$('faces'),d=$('dl');g.innerHTML='';d.innerHTML='';FACES.forEach(f=>{const b=el('button','face');b.dataset.k=fkey(f);b.dataset.f=ftok(f);
- const s=el('div','scr');s.appendChild(img(f));b.appendChild(s);b.appendChild(el('span',null,f.n));b.onclick=()=>faceSheet(f);(f.pkg?d:g).appendChild(b)});
- fchips()}
+ const s=el('div','scr');s.appendChild(img(f));b.appendChild(s);b.appendChild(el('span',null,f.n));b.onclick=()=>SEL?selTap(f):faceSheet(f);(f.pkg?d:g).appendChild(b)});
+ fchips();selShow()}
 const rotKeys=()=>st&&st.cfg.rot?st.cfg.rot.split(',').filter(Boolean):[];
+// seleção de vários mostradores: SEL guarda as chaves na ordem do toque (null = desligada); entram no rodízio de uma vez
+var SEL=null;  // var: buildFaces pode rodar antes desta linha
+function selMode(on){SEL=on?[]:null;selShow()}
+function selShow(){$('selbar').hidden=!SEL;$('selbtn').hidden=!!SEL;document.querySelectorAll('#faces .face,#dl .face').forEach(e=>e.classList.toggle('sel',!!SEL&&SEL.includes(e.dataset.k)));if(SEL)$('selcnt').textContent=t('{0} selecionado(s)',SEL.length)}
+function selTap(f){const k=fkey(f),i=SEL.indexOf(k);i<0?SEL.push(k):SEL.splice(i,1);selShow()}
+// uma gravação só; o relógio guarda até 300 letras (rotSet corta o resto em silêncio), então aqui avisa antes
+function rotSave(l,msg){const v=l.join(',');if(v.length>300){toast(t('Rodízio cheio: tire algum mostrador antes.'));return Promise.reject()}return save({rot:v}).then(()=>toast(msg))}
+function selAdd(){if(!SEL.length)return toast(t('Toque nos mostradores para selecionar'));const l=rotKeys(),n=SEL.filter(k=>!l.includes(k));
+ if(!n.length){selMode(0);return toast(t('Já estavam no rodízio'))}rotSave(l.concat(n),t('{0} incluído(s) no rodízio',n.length)).then(()=>selMode(0),()=>{})}
+function rotClear(){if(confirm(t('Tirar todos os mostradores do rodízio? O relógio fica no mostrador atual.')))rotSave([],t('Rodízio vazio')).catch(()=>{})}
 function rotToggle(f){const k=fkey(f),l=rotKeys(),on=l.includes(k);save({rot:(on?l.filter(x=>x!=k):l.concat(k)).join(',')}).then(()=>{closeSheet();toast(t(on?'Fora do rodízio':'Incluído no rodízio'))})}
 function faceSheet(f){const c=$('sheetc');c.innerHTML='';const s=el('div','scr');s.appendChild(img(f));c.appendChild(s);
  c.append(el('h3',null,f.n),el('p',null,f.d+(f.a?' · '+t('por')+' '+f.a:'')+(f.pkg?' · '+t('instalado'):'')));
@@ -714,7 +728,7 @@ function load(s){if(s.cfg.lang!=null&&s.cfg.lang!=LG)setLang(s.cfg.lang);if(last
  const when=ago<60?t('agora'):ago<3600?t('há {0} min',ago/60|0):t('há {0} h',ago/3600|0),cmdT=[0,t('começar o foco'),t('pausar'),t('foco de {0} min',ax.min),t('encerrar'),t('pausa curta'),t('pausa longa'),t('voltar ao foco'),t('pausa de {0} min',ax.min)][ax.last];
  $('alxst').style.display=s.cfg.alexa?'':'none';$('alxst').className='alx'+(seen?' ok':'');$('alxst').innerHTML='<i></i>';
  $('alxst').append(seen?t('Conectado à Alexa ({0}) · último contato {1}',ax.ip,when)+(cmdT?' · '+t('último comando: {0}',cmdT):''):t('Aguardando a Alexa: diga "Alexa, descobrir dispositivos".'));
- $('rotinfo').textContent=rk.length?t('No rodízio: {0}. Toque num mostrador para incluir ou tirar.',rk.map(k=>(FACES.find(f=>fkey(f)==k)||{n:k}).n).join(', ')):t('Toque num mostrador e escolha "Incluir no rodízio" (2 ou mais).');
+ $('rotclr').hidden=!rk.length;$('rotinfo').textContent=rk.length?t('No rodízio: {0}. Toque num mostrador para incluir ou tirar.',rk.map(k=>(FACES.find(f=>fkey(f)==k)||{n:k}).n).join(', ')):t('Toque em "Selecionar vários" ou num mostrador e escolha "Incluir no rodízio" (2 ou mais).');
  // noite pelo sol: horários do Open-Meteo; o horário fixo some quando o sol vale
  const hm=m=>String(m/60|0).padStart(2,'0')+':'+String(m%60).padStart(2,'0'),sun=s.wx&&s.wx.rise>=0&&s.wx.set>s.wx.rise;
  $('suninfo').textContent=s.cfg.nsun?(sun?t('Pôr do sol {0} · nascer {1} em {2}',hm(s.wx.set),hm(s.wx.rise),s.cfg.city):t('Escolha a cidade em Clima para saber os horários do sol; até lá vale o horário fixo.')):'';
