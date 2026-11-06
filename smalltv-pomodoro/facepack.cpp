@@ -51,6 +51,7 @@ static uint16_t bgColor = 0;
 static char pkId[24], pkName[32], pkDesc[64], pkAuthor[32];
 
 bool facePackLoaded() { return lay != nullptr; }
+uint16_t facePackSpriteBytes() { return sprUsed; }
 const char *facePackId() { return pkId; }
 const char *facePackName() { return pkName; }
 const char *facePackDesc() { return pkDesc; }
@@ -133,6 +134,8 @@ struct MemIn {
 //   quadro: [x0][y0][cw][ch] = recorte só com os pixels visíveis (cw = 0: quadro vazio) e os pixels do recorte,
 //           linha a linha, em 1, 2 ou 4 bits (pelo número de cores: 1, até 3, até 15; 0 = transparente).
 // Quadros com as mesmas linhas no JSON são guardados uma vez só (a tabela aponta para o mesmo lugar).
+// Pior caso (quadros cheios, mais de 3 cores, nenhum repetido): a conta crua + 6 B por quadro (4 do recorte e 2 da
+// tabela), ou seja, até ~576 B acima do teto público com 12 sprites de 8 quadros. O oráculo do sim confere esse limite.
 static uint8_t sprBits(uint8_t n) { return n <= 1 ? 1 : n <= 3 ? 2 : 4; }
 
 // valor (0 = transparente, 1..n = cor) da letra `c` da linha; como sempre, vale a última letra igual da paleta

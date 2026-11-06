@@ -549,9 +549,10 @@ static int testSpriteOracle(int nPacks, int maxFrames, int maxFps) {
   FastFrame *f = new FastFrame();
   std::vector<uint16_t> ref(240 * 240);
   int fails = 0, aceitos = 0, recusados = 0, quadros = 0;
+  long somaRaw = 0, somaRam = 0;
   for (int pk = 0; pk < nPacks; pk++) {
     std::vector<Spr> S(1 + rnd(3));
-    long raw = 0;
+    long raw = 0, nq = 0;
     for (Spr &s : S) {
       bool grande = rnd(3) == 0;
       s.w = grande ? 20 + rnd(13) : 1 + rnd(32);
@@ -587,6 +588,7 @@ static int testSpriteOracle(int nPacks, int maxFrames, int maxFps) {
         s.fr.push_back(q);
       }
       raw += 4 + 15 * 2 + (long)s.nf * ((s.w * s.h + 1) / 2);
+      nq += s.nf;
     }
     std::vector<Lay> L(S.size() + rnd(2));
     for (size_t i = 0; i < L.size(); i++) L[i] = {i < S.size() ? (int)i : rnd(S.size()), -20 + rnd(250), -20 + rnd(250), 1 + rnd(3)};
@@ -623,6 +625,15 @@ static int testSpriteOracle(int nPacks, int maxFrames, int maxFps) {
     }
     if (!ok) { recusados++; continue; }
     aceitos++;
+    // pior caso do formato na RAM: a conta crua + 6 B por quadro (ver sprEncode)
+    long ram = facePackSpriteBytes();
+    somaRaw += raw;
+    somaRam += ram;
+    if (ram > raw + 6 * nq) {
+      if (fails++ < 5) printf("oraculo: pacote %d com %ld B na RAM, acima de %ld crus + 6 x %ld quadros\n", pk, ram, raw, nq);
+      facePackUnload();
+      continue;
+    }
     // cada quadro de cada sprite, no instante em que o sprite s mostra o quadro k
     bool erro = false;
     for (size_t si = 0; si < S.size() && !erro; si++)
@@ -660,7 +671,8 @@ static int testSpriteOracle(int nPacks, int maxFrames, int maxFps) {
     facePackUnload();
   }
   delete f;
-  printf("oraculo dos sprites: %d pacotes (%d aceitos, %d recusados pelo teto), %d quadros comparados pixel a pixel, %d falhas\n", nPacks, aceitos, recusados, quadros, fails);
+  printf("oraculo dos sprites: %d pacotes (%d aceitos, %d recusados pelo teto), %d quadros comparados pixel a pixel, %d falhas; sprites na RAM %ld B contra %ld B crus\n",
+         nPacks, aceitos, recusados, quadros, fails, somaRam, somaRaw);
   return fails;
 }
 
