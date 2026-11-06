@@ -42,6 +42,8 @@ void newFormToken() {
 
 String formTokenField() { return "<input type=hidden name=csrf value=\"" + formToken + "\">"; }
 
+extern "C" char _heap_start[];  // fim do BSS (linker): daqui até o fim da DRAM (0x3FFFC000) é o heap
+
 uint8_t diagWhere = 0;  // o que o laço está fazendo de demorado: 1 clima, 2 aviso (diag.stallAt); 0 = outro
 
 static uint32_t diagStall = 0;  // maior intervalo entre dois laços desde que ligou (ms)
@@ -101,6 +103,10 @@ static void diagHeap(uint32_t &heapFree, uint32_t &blk, uint8_t &frag) {
   if (blk < diagMinBlk) diagMinBlk = blk;
 }
 
+// RAM fixa (DATA + RODATA + BSS): constante do build, do início da DRAM (0x3FFE8000) até o início do heap. O painel
+// calcula o resto da DRAM de 80 KB (81920 B): heap total = 81920 - ramfix. A pilha do laço fica fora (pilha do sistema).
+static uint32_t ramFixed() { return (uint32_t)(uintptr_t)_heap_start - 0x3FFE8000u; }
+
 static void diagJson(String &j, uint8_t frag) {
   const rst_info *r = ESP.getResetInfoPtr();
   char epc[12];
@@ -129,6 +135,8 @@ static void diagJson(String &j, uint8_t frag) {
   j += diagMinBlk;
   j += F(",\"stack\":");  // menor folga da pilha do laço desde que ligou (bytes)
   j += ESP.getFreeContStack();
+  j += F(",\"ramfix\":");  // RAM fixa do build em bytes (o painel desenha a barra fixa / em uso / livre)
+  j += ramFixed();
   j += F(",\"pack\":");  // ms da última carga de pacote de mostrador (0 = nenhuma)
   j += packLoadMs;
   j += F(",\"nomem\":{\"jpg\":");  // faltas de memória: foto, GIF e faixa de desenho recusada

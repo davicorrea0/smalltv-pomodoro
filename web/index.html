@@ -66,7 +66,7 @@ input[type=color]{width:52px;height:36px;padding:2px}
 .grid img{width:100%;height:100%;object-fit:cover}.grid div.on{outline:3px solid var(--ac)}
 .grid span{position:absolute;bottom:4px;right:4px;background:#000a;font-size:10px;padding:1px 5px;border-radius:6px}
 .diag div{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-top:1px solid var(--line);font-size:13px}.diag div:first-child{border-top:0}.diag b{color:var(--mut);font-weight:500;white-space:nowrap}.diag span{text-align:right}
-.spk div{padding:7px 0;border-top:1px solid var(--line);font-size:13px}.spk b{color:var(--mut);font-weight:500}.spk span{float:right}.spk canvas{display:block;width:100%;height:40px;margin-top:4px;color:var(--ac)}#dgt{width:100%;margin-top:8px;font:11px monospace;background:var(--card2);color:inherit;border:1px solid var(--line);border-radius:8px;padding:6px}
+.spk div{padding:7px 0;border-top:1px solid var(--line);font-size:13px}.spk b{color:var(--mut);font-weight:500}.spk span{float:right}.spk canvas{display:block;width:100%;height:40px;margin-top:4px;color:var(--ac)}.rb{display:flex;height:10px;margin:6px 0 4px;border-radius:5px;overflow:hidden;background:var(--line)}.rb i{height:100%}.rb i:nth-child(1){background:var(--mut)}.rb i:nth-child(2){background:var(--long)}.rb i:nth-child(3){background:var(--short)}.spk .rb+span{float:none;display:block;color:var(--mut)}#dgt{width:100%;margin-top:8px;font:11px monospace;background:var(--card2);color:inherit;border:1px solid var(--line);border-radius:8px;padding:6px}
 .bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:6px}.bar i{display:block;height:100%;background:var(--ac)}
 /* Silkscreen (SIL OFL 1.1), subset ASCII + acentos pt/es (pyftsubset --unicodes=U+0020-007E,U+00A1,U+00BF,... --flavor=woff2), só nos destaques: timer, títulos, contadores.
    Embutida (~2 KB): o painel funciona sem internet. Só liga (html.sk) depois de carregar; sem ela tudo fica na fonte do sistema.
@@ -625,16 +625,19 @@ function diagShow(s){const d=s.diag,c=$('diag'),q=d.rssi>=-60?'bom':d.rssi>=-72?
 // minigráficos: um anel de HN amostras por série (1 por segundo, alimentado pelo load/poll). Só vive nesta página:
 // nada vai para o relógio, para a flash nem para o localStorage. O pior (o menor) vale desde que a página abriu.
 const HN=600,HK=[['heap','Memória livre',kb],['blk','Maior bloco',kb],['rssi','Sinal do Wi-Fi',v=>v+' dBm']],HS={heap:[],blk:[],rssi:[]},HW={};let HT=0;
-$('spk').innerHTML='<div><b></b><span></span><canvas width="600" height="40"></canvas></div>'.repeat(3);
+$('spk').innerHTML='<div><b></b><span></span><canvas width="600" height="40"></canvas></div>'.repeat(3)+'<div><b></b><p class="rb"><i></i><i></i><i></i></p><span></span></div>';
 function spkDraw(){const p=$('spk');if(!p.offsetParent)return;HK.forEach(([k,n,f],i)=>{const a=HS[k],r=p.children[i];if(!a.length)return;
  r.firstChild.textContent=t(n);r.children[1].textContent=t('atual')+' '+f(a[a.length-1])+' · '+t('pior')+' '+f(HW[k]);
  const c=r.lastChild,g=c.getContext('2d'),W=c.width,H=c.height,lo=HW[k];let hi=Math.max(...a);if(hi==lo)hi++;g.clearRect(0,0,W,H);g.strokeStyle=getComputedStyle(c).color;g.lineWidth=2;g.beginPath();
  a.forEach((y,j)=>g[j?'lineTo':'moveTo'](j*(W-1)/Math.max(a.length-1,1),H-2-(y-lo)*(H-4)/(hi-lo)));g.stroke()})}
 function spkPush(s){const n=Date.now();if(n-HT<900)return;HT=n;  // load() também roda no ciclo rápido de 100 ms e após comandos
- const d={heap:s.heap,blk:s.blk,rssi:s.diag.rssi};for(const k in d){if(k=='rssi'&&!d[k])continue;const a=HS[k];a.push(d[k]);if(a.length>HN)a.shift();HW[k]=Math.min(d[k],HW[k]??d[k])}spkDraw()}
+ const d={heap:s.heap,blk:s.blk,rssi:s.diag.rssi};for(const k in d){if(k=='rssi'&&!d[k])continue;const a=HS[k];a.push(d[k]);if(a.length>HN)a.shift();HW[k]=Math.min(d[k],HW[k]??d[k])}spkDraw();ramBar(s)}
+// barra da RAM (DRAM de 80 KB = 81920 B): fixa do build (diag.ramfix) + heap em uso + heap livre. A pilha do laço fica fora (é da pilha do sistema).
+function ramBar(s){const r=$('spk').lastChild,f=s.diag.ramfix;r.hidden=f==null;if(f==null)return;const T=81920,u=T-f-s.heap;
+ [f,u,s.heap].forEach((v,k)=>r.children[1].children[k].style.width=v*100/T+'%');r.firstChild.textContent=t('Memória (RAM)');r.lastChild.textContent=t('fixa')+' '+kb(f)+' · '+t('em uso')+' '+kb(u)+' · '+t('livre')+' '+kb(s.heap)}
 // "Copiar diagnóstico": LISTA BRANCA. Só estas chaves saem; nada de cfg (cidade, latitude, longitude, fuso, nome), IP (nem o da Alexa), rede ou arquivo.
 // q() ainda tira tudo que não seja letra, número, ponto ou hífen: um campo novo nunca vira texto livre.
-const DKEY=['rst','exc','epc','rssi','minheap','minblk','frag','stack','up','draw','pack','stall','stallAt'],NKEY=['jpg','gif','strip'],BKEY=['scr','wifi','wf','time','src','ntp'],CKEY=['n','r','x','epc','va','up','ver'],PKEY=['heap','blk','rssi'];
+const DKEY=['rst','exc','epc','rssi','minheap','minblk','frag','stack','ramfix','up','draw','pack','stall','stallAt'],NKEY=['jpg','gif','strip'],BKEY=['scr','wifi','wf','time','src','ntp'],CKEY=['n','r','x','epc','va','up','ver'],PKEY=['heap','blk','rssi'];
 function diagText(s,w){const q=v=>String(v==null?'':v).replace(/[^\w.-]/g,''),kv=(o,K)=>K.map(k=>k+'='+q((o||{})[k])).join(' '),d=s.diag||{};
  return['SmallTV Pomodoro '+q(s.ver),'heap='+q(s.heap)+' blk='+q(s.blk),'diag '+kv(d,DKEY),'nomem '+kv(d.nomem,NKEY),'boot '+kv(d.boot,BKEY)].concat(s.crash?['crash '+kv(s.crash,CKEY)]:[],['page-min '+kv(w,PKEY)]).join('\n')}
 function diagCopy(){if(!st||!st.diag)return;const a=$('dgt'),x=diagText(st,HW);a.value=x;a.hidden=false;a.rows=x.split('\n').length;a.select();  // o texto fica à vista: dá para conferir o que foi copiado
