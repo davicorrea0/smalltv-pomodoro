@@ -233,6 +233,7 @@ extern uint8_t vcomTest;
 extern int8_t vcomDraw;
 extern uint16_t fullDrawMs;
 extern uint16_t pomoDrawMs;
+extern uint16_t packLoadMs;  // ms da última carga de pacote de mostrador (modulos/album.cpp); diag.pack
 
 // ---------- funções compartilhadas ----------
 void defaultSettings();
@@ -310,6 +311,8 @@ void newFormToken();
 String formTokenField();
 void jsonEscapeAppend(String &o, const char *s);
 void diagLoop();
+void diagBlkSample();         // amostra pontual do maior bloco livre (diag.minblk): só antes de foto, GIF, pacote e OTA
+void diagNoMem(uint8_t what);  // conta uma falta de memória: 0 foto, 1 GIF (diag.nomem)
 bool hostOk();
 bool panelOk();
 bool deny();

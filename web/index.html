@@ -66,6 +66,7 @@ input[type=color]{width:52px;height:36px;padding:2px}
 .grid img{width:100%;height:100%;object-fit:cover}.grid div.on{outline:3px solid var(--ac)}
 .grid span{position:absolute;bottom:4px;right:4px;background:#000a;font-size:10px;padding:1px 5px;border-radius:6px}
 .diag div{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-top:1px solid var(--line);font-size:13px}.diag div:first-child{border-top:0}.diag b{color:var(--mut);font-weight:500;white-space:nowrap}.diag span{text-align:right}
+.spk div{padding:7px 0;border-top:1px solid var(--line);font-size:13px}.spk b{color:var(--mut);font-weight:500}.spk span{float:right}.spk canvas{display:block;width:100%;height:40px;margin-top:4px;color:var(--ac)}#dgt{width:100%;margin-top:8px;font:11px monospace;background:var(--card2);color:inherit;border:1px solid var(--line);border-radius:8px;padding:6px}
 .bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:6px}.bar i{display:block;height:100%;background:var(--ac)}
 /* Silkscreen (SIL OFL 1.1), subset ASCII + acentos pt/es (pyftsubset --unicodes=U+0020-007E,U+00A1,U+00BF,... --flavor=woff2), só nos destaques: timer, títulos, contadores.
    Embutida (~2 KB): o painel funciona sem internet. Só liga (html.sk) depois de carregar; sem ela tudo fica na fonte do sistema.
@@ -322,6 +323,10 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
  <div class="card">
   <div id="diag" class="diag"></div>
   <small>Se o relógio reiniciar sozinho, o motivo aparece aqui. Wi-Fi fraco (abaixo de −75 dBm) costuma explicar clima e atualização falhando.</small>
+  <div id="spk" class="spk"></div>
+  <small>Gráficos: histórico só desde que esta página abriu (até 10 min), guardado só neste navegador.</small>
+  <p><button class="btn" onclick="diagCopy()">Copiar diagnóstico</button></p>
+  <textarea id="dgt" readonly hidden></textarea>
  </div>
  </div>
 </section>
@@ -611,11 +616,30 @@ const RST=['ligado na tomada','travou (watchdog de hardware)','travou (erro {0} 
 function dur(x){const d=x/86400|0,h=x%86400/3600|0,m=x%3600/60|0;return d?d+' d '+h+' h':h?h+' h '+m+' min':m+' min'}
 function bootTxt(b){if(!b)return'—';const f=x=>x?(x/1000).toFixed(1)+' s':'—';return t('tela')+' '+f(b.scr)+' · Wi-Fi '+f(b.wifi)+(b.wf==1?' ('+t('rápido')+')':'')+' · '+t('hora')+' '+f(b.time)+' · NTP '+f(b.ntp)}
 function diagShow(s){const d=s.diag,c=$('diag'),q=d.rssi>=-60?'bom':d.rssi>=-72?'médio':'fraco';c.innerHTML='';
- [[t('Ligado há'),dur(d.up)],[t('Último reinício'),t(RST[d.rst]||'?',d.exc,'0x'+d.epc)],[t('Última troca de tela'),d.draw?d.draw+' ms':'—'],[t('Maior parada do relógio'),d.stall?d.stall+' ms ('+t(['outro','clima','aviso'][d.stallAt]||'outro')+')':'—'],[t('Último início'),bootTxt(d.boot)],[t('Sinal do Wi-Fi'),d.rssi?d.rssi+' dBm ('+t(q)+')':t('desconectado')],
-  [t('Memória livre'),kb(s.heap)+' · '+t('menor desde que ligou')+' '+kb(d.minheap)+' · '+t('maior bloco')+' '+kb(s.blk)+' · '+t('fragmentação')+' '+d.frag+'%']]
+ [[t('Ligado há'),dur(d.up)],[t('Último reinício'),t(RST[d.rst]||'?',d.exc,'0x'+d.epc)],[t('Última troca de tela'),(d.draw?d.draw+' ms':'—')+(d.pack?' · '+t('pacote')+' '+d.pack+' ms':'')],[t('Maior parada do relógio'),d.stall?d.stall+' ms ('+t(['outro','clima','aviso'][d.stallAt]||'outro')+')':'—'],[t('Último início'),bootTxt(d.boot)],[t('Sinal do Wi-Fi'),d.rssi?d.rssi+' dBm ('+t(q)+')':t('desconectado')],
+  [t('Memória livre'),kb(s.heap)+' · '+t('menor desde que ligou')+' '+kb(d.minheap)+' · '+t('maior bloco')+' '+kb(s.blk)+(d.minblk!=null?' ('+t('mínimo')+' '+kb(d.minblk)+')':'')+' · '+t('fragmentação')+' '+d.frag+'%'+(d.stack!=null?' · '+t('pilha livre')+' '+d.stack+' B':'')
+   +(d.nomem&&d.nomem.jpg+d.nomem.gif+d.nomem.strip?' · '+t('sem memória (foto/GIF/desenho)')+' '+[d.nomem.jpg,d.nomem.gif,d.nomem.strip].map(v=>v>254?'255+':v).join('/'):'')]]
   .forEach(([a,b])=>{const r=el('div');r.append(el('b',null,a),el('span',null,b));c.appendChild(r)});
  const k=s.crash;if(k){const r=el('div'),b=el('button','btn',t('Limpar'));b.style.cssText='padding:4px 12px;min-height:0;margin-left:8px';b.onclick=()=>post('/api/crash').then(x=>{if(!x.ok)throw 0;delete st.crash;diagShow(s);toast(t('Registro apagado'))}).catch(()=>toast(t('Falha: ')));
   r.append(el('b',null,t('Última queda')),el('span',null,'#'+k.n+' · '+t(RST[k.r]||'?',k.x,'0x'+k.epc)+' · v'+k.ver+(k.up?' · '+t('após {0} ligado',dur(k.up)):'')+' '),b);c.appendChild(r)}}
+// minigráficos: um anel de HN amostras por série (1 por segundo, alimentado pelo load/poll). Só vive nesta página:
+// nada vai para o relógio, para a flash nem para o localStorage. O pior (o menor) vale desde que a página abriu.
+const HN=600,HK=[['heap','Memória livre',kb],['blk','Maior bloco',kb],['rssi','Sinal do Wi-Fi',v=>v+' dBm']],HS={heap:[],blk:[],rssi:[]},HW={};let HT=0;
+$('spk').innerHTML='<div><b></b><span></span><canvas width="600" height="40"></canvas></div>'.repeat(3);
+function spkDraw(){const p=$('spk');if(!p.offsetParent)return;HK.forEach(([k,n,f],i)=>{const a=HS[k],r=p.children[i];if(!a.length)return;
+ r.firstChild.textContent=t(n);r.children[1].textContent=t('atual')+' '+f(a[a.length-1])+' · '+t('pior')+' '+f(HW[k]);
+ const c=r.lastChild,g=c.getContext('2d'),W=c.width,H=c.height,lo=HW[k];let hi=Math.max(...a);if(hi==lo)hi++;g.clearRect(0,0,W,H);g.strokeStyle=getComputedStyle(c).color;g.lineWidth=2;g.beginPath();
+ a.forEach((y,j)=>g[j?'lineTo':'moveTo'](j*(W-1)/Math.max(a.length-1,1),H-2-(y-lo)*(H-4)/(hi-lo)));g.stroke()})}
+function spkPush(s){const n=Date.now();if(n-HT<900)return;HT=n;  // load() também roda no ciclo rápido de 100 ms e após comandos
+ const d={heap:s.heap,blk:s.blk,rssi:s.diag.rssi};for(const k in d){if(k=='rssi'&&!d[k])continue;const a=HS[k];a.push(d[k]);if(a.length>HN)a.shift();HW[k]=Math.min(d[k],HW[k]??d[k])}spkDraw()}
+// "Copiar diagnóstico": LISTA BRANCA. Só estas chaves saem; nada de cfg (cidade, latitude, longitude, fuso, nome), IP (nem o da Alexa), rede ou arquivo.
+// q() ainda tira tudo que não seja letra, número, ponto ou hífen: um campo novo nunca vira texto livre.
+const DKEY=['rst','exc','epc','rssi','minheap','minblk','frag','stack','up','draw','pack','stall','stallAt'],NKEY=['jpg','gif','strip'],BKEY=['scr','wifi','wf','time','src','ntp'],CKEY=['n','r','x','epc','va','up','ver'],PKEY=['heap','blk','rssi'];
+function diagText(s,w){const q=v=>String(v==null?'':v).replace(/[^\w.-]/g,''),kv=(o,K)=>K.map(k=>k+'='+q((o||{})[k])).join(' '),d=s.diag||{};
+ return['SmallTV Pomodoro '+q(s.ver),'heap='+q(s.heap)+' blk='+q(s.blk),'diag '+kv(d,DKEY),'nomem '+kv(d.nomem,NKEY),'boot '+kv(d.boot,BKEY)].concat(s.crash?['crash '+kv(s.crash,CKEY)]:[],['page-min '+kv(w,PKEY)]).join('\n')}
+function diagCopy(){if(!st||!st.diag)return;const a=$('dgt'),x=diagText(st,HW);a.value=x;a.hidden=false;a.rows=x.split('\n').length;a.select();  // o texto fica à vista: dá para conferir o que foi copiado
+ (navigator.clipboard?navigator.clipboard.writeText(x).then(()=>1):Promise.reject()).catch(()=>{try{return document.execCommand('copy')}catch(e){return 0}})  // em http:// (o relógio) o navegador não oferece navigator.clipboard
+  .then(r=>toast(t(r?'Diagnóstico copiado (sem dados pessoais)':'Não consegui copiar: selecione o texto abaixo')))}
 // data-neg: chave marcada = 0. "Inverter cores" é em relação ao normal (o painel IPS já liga com INVON)
 const ACI=['ler','estudar','codar','tarefas','desenhar'],actIc=v=>$('acth').setAttribute('href','#i-'+(ACI[v]||'ler'));
 document.querySelectorAll('[data-k]').forEach(e=>{e.onchange=()=>{const v=e.type=='checkbox'?(e.checked!=e.hasAttribute('data-neg')?1:0):e.value;if(e.dataset.k=='act')actIc(v);save({[e.dataset.k]:v}).then(()=>{toast(t('Salvo'));if(e.dataset.k=='beta')checkUpdate()})}});
@@ -667,7 +691,7 @@ function load(s){if(s.cfg.lang!=null&&s.cfg.lang!=LG)setLang(s.cfg.lang);if(last
  // fuso: o Open-Meteo diz o da cidade (e o deslocamento agora); se o do relógio for outro, oferece ajustar
  const w=s.wx||{},tzBad=!!(w.ok&&w.tzn&&w.loff!=null&&w.off!==w.loff);$('tzfix').hidden=!tzBad;
  $('tzauto').textContent=w.tzn?(tzBad?t('O fuso do relógio não bate com o da cidade ({0}).',w.tzn):t('Fuso da cidade: {0}',w.tzn)):'';
- if(s.diag)diagShow(s)
+ if(s.diag){diagShow(s);spkPush(s)}
  $('pvbar').style.display=s.pv?'block':'none';if(s.pv)$('pvbar').textContent=t('Prévia no relógio por mais {0} s · depois ele volta para {1}',s.pv,cf?cf.n:t('o mostrador salvo'));
  // clima
  $('city').textContent=s.cfg.city||'—';$('wx').hidden=!(s.cfg.won&&s.wx.ok);

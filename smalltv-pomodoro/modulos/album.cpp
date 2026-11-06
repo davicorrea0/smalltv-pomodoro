@@ -121,6 +121,7 @@ static JPEGDEC *jpgAlloc() {
 }
 
 JpgResult validJpg(const String &path) {
+  diagBlkSample();  // minblk: o maior bloco antes de o decodificador pegar ~18 KB
   JPEGDEC *jpg = jpgAlloc();
   if (!jpg) return JPG_NOMEM;
   bool opened = jpg->open(path.c_str(), mediaOpen, mediaClose, jpgRead, jpgSeek, jpgCheckDraw);
@@ -269,9 +270,11 @@ bool showAlbumItem(const String &f) {
       uiError(tr("GIF fora do padrao", "Unsupported GIF", "GIF fuera de norma"));
       return false;
     }
+    diagBlkSample();  // minblk: o maior bloco antes do GIF (e antes de albumMakeRoom soltar o pacote)
     albumMakeRoom(sizeof(AnimatedGIF) + 1024);
     gif = new (std::nothrow) AnimatedGIF();  // ~24 KB contíguos de RAM
     if (!gif) {
+      diagNoMem(1);
       uiError(tr("Sem memoria p/ GIF", "No memory for GIF", "Sin memoria p/ GIF"));
       return true;  // mantém a tela de aviso até o próximo item
     }
@@ -287,10 +290,13 @@ bool showAlbumItem(const String &f) {
     gifOffY = max(0, (240 - gif->getCanvasHeight()) / 2);
     nextFrameAt = 0;
   } else {
+    diagBlkSample();  // minblk: o maior bloco antes da foto (e antes de albumMakeRoom soltar o pacote)
     albumMakeRoom(sizeof(JPEGDEC) + 1024 + 8192);  // o decodificador e, depois, as tabelas de ~7,7 KB
     JpgResult r = drawJpg(f);
-    if (r == JPG_NOMEM) uiError(tr("Sem memoria p/ foto", "No memory for photo", "Sin memoria p/ foto"));  // o próximo item tenta de novo
-    else if (r == JPG_BAD) uiError(tr("JPG invalido", "Invalid JPG", "JPG invalido"));
+    if (r == JPG_NOMEM) {
+      diagNoMem(0);
+      uiError(tr("Sem memoria p/ foto", "No memory for photo", "Sin memoria p/ foto"));  // o próximo item tenta de novo
+    } else if (r == JPG_BAD) uiError(tr("JPG invalido", "Invalid JPG", "JPG invalido"));
   }
   return true;
 }
@@ -331,6 +337,8 @@ bool idOk(const String &id) {
   return true;
 }
 
+uint16_t packLoadMs = 0;  // ms da última carga que deu certo (0 = nenhuma desde que ligou)
+
 // Lê o arquivo e carrega no motor. Em erro, msg recebe o motivo.
 bool loadPackFile(const String &path, String &msg) {
   File f = fsOk ? LittleFS.open(path, "r") : File();
@@ -345,7 +353,10 @@ bool loadPackFile(const String &path, String &msg) {
     return false;
   }
   char err[96];
+  diagBlkSample();  // minblk: o maior bloco antes de o pacote ocupar a RAM
+  uint32_t t0 = millis();
   bool ok = facePackLoadFile(f, err, sizeof err);  // em passadas: o JSON não cabe inteiro na RAM
+  if (ok) packLoadMs = min<uint32_t>(millis() - t0, 65535);  // diag.pack
   f.close();
   if (!ok) msg = err;
   uiInvalidate();

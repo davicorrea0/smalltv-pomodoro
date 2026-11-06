@@ -155,6 +155,7 @@ const char *trP(PGM_P pt, PGM_P en, PGM_P es);
 // desenho do GIF e a linha do Flip. Nunca há dois usos ao mesmo tempo (um buffer só em vez de três: ~700 bytes).
 uint16_t *uiRowBuf();
 extern uint32_t uiEnters;                    // contador de trocas de tela inteira
+extern uint8_t uiOffscreenFail;              // faixas de uiOffscreen recusadas por falta de memória (satura em 255; diag.nomem)
 void uiRenderClock(const UiState &s);        // tela de relógio no tema escolhido
 void uiRenderPomodoro(const UiState &s);     // anel de progresso do Pomodoro
 void uiMessage(const char *title, const char *l1, const char *l2, const char *l3);
