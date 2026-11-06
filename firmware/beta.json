@@ -1,37 +1,40 @@
 {
-  "version": "1.24.13",
-  "date": "2026-11-05",
+  "version": "1.25.0",
+  "date": "2026-11-06",
   "file": "beta/smalltv-pomodoro.bin",
-  "size": 584176,
+  "size": 585248,
   "notes": {
     "pt": [
-      "Versão de teste: configurar o Wi-Fi do relógio ficou mais fácil",
-      "A página de configuração mostra as redes encontradas na hora, sem precisar tocar em nada; \"Atualizar lista\" procura de novo",
-      "A rede SmallTV-Pomodoro fica estável enquanto você configura, em vez de sumir do celular",
-      "A página de configuração e o modo de recuperação abrem no idioma do seu navegador enquanto o relógio estiver em inglês",
-      "Relógios novos começam em inglês; quem já usa mantém o idioma"
+      "Versão de teste: fuso horário escolhido pelo nome e diagnóstico com gráficos",
+      "Fuso horário: escolha a sua cidade numa lista por nome; a regra técnica (POSIX) fica em \"Avançado\", e o painel avisa quando o relógio não vai mudar para o horário de verão da sua cidade",
+      "Fotos: quando falta memória para mostrar uma foto, o relógio avisa \"Sem memoria p/ foto\" e não apaga mais a foto enviada",
+      "Mostradores de pacote liberam a memória quando o álbum ou a atualização precisam dela e voltam sozinhos depois",
+      "Instalar de novo um mostrador que já existe não corre mais o risco de perdê-lo se o relógio desligar no meio",
+      "Ajustes → Sistema: gráficos de memória e de sinal do Wi-Fi, barra de uso da RAM e o botão \"Copiar diagnóstico\", que copia só dados técnicos, sem nome, rede, IP nem cidade"
     ],
     "en": [
-      "Test version: setting up the clock's Wi-Fi is easier",
-      "The setup page shows the networks it found right away, with nothing to tap; \"Refresh list\" searches again",
-      "The SmallTV-Pomodoro network stays stable while you set up, instead of dropping off your phone",
-      "The setup page and recovery mode open in your browser's language while the clock is set to English",
-      "New clocks start in English; existing clocks keep their language"
+      "Test version: pick your time zone by name, and diagnostics with charts",
+      "Time zone: choose your city from a list by name; the technical rule (POSIX) moves to \"Advanced\", and the panel warns when the clock won't switch to your city's daylight saving time",
+      "Photos: when there isn't enough memory to show a photo, the clock says \"No memory for photo\" and no longer deletes the photo you uploaded",
+      "Face packs free their memory when the album or an update needs it, and come back on their own afterwards",
+      "Reinstalling a face that already exists no longer risks losing it if the clock powers off midway",
+      "Settings → System: memory and Wi-Fi signal charts, a RAM usage bar and a \"Copy diagnostics\" button that copies technical data only, without name, network, IP or city"
     ],
     "es": [
-      "Versión de prueba: configurar el Wi-Fi del reloj es más fácil",
-      "La página de configuración muestra las redes encontradas al instante, sin tocar nada; \"Actualizar lista\" busca de nuevo",
-      "La red SmallTV-Pomodoro se mantiene estable mientras configuras, en lugar de desaparecer del móvil",
-      "La página de configuración y el modo de recuperación se abren en el idioma de tu navegador mientras el reloj esté en inglés",
-      "Los relojes nuevos empiezan en inglés; los que ya se usan mantienen su idioma"
+      "Versión de prueba: huso horario elegido por nombre y diagnóstico con gráficos",
+      "Huso horario: elige tu ciudad en una lista por nombre; la regla técnica (POSIX) pasa a \"Avanzado\", y el panel avisa cuando el reloj no va a cambiar al horario de verano de tu ciudad",
+      "Fotos: cuando falta memoria para mostrar una foto, el reloj avisa \"Sin memoria p/ foto\" y ya no borra la foto enviada",
+      "Las esferas de paquete liberan la memoria cuando el álbum o la actualización la necesitan y vuelven solas después",
+      "Reinstalar una esfera que ya existe ya no corre el riesgo de perderla si el reloj se apaga a mitad",
+      "Ajustes → Sistema: gráficos de memoria y de señal del Wi-Fi, barra de uso de la RAM y el botón \"Copiar diagnóstico\", que copia solo datos técnicos, sin nombre, red, IP ni ciudad"
     ]
   },
   "gz": "beta/smalltv-pomodoro.bin.gz",
-  "gzsize": 430726,
+  "gzsize": 431538,
   "layout": "4m2m",
-  "panel": "panel-1193c99d0700ee4353415a82.html.gz",
-  "psri": "sha256-EZPJnQcA7kNTQVqC5xgMFKAxOwBd/Gr5e/dLBvIcJTI=",
-  "sig": "LfMEK0qAmdB2bcD/YncbFmkvdp+Sts5Xsnlq8HTjIP+pF1AKfvwlosizXzCvsEJmuBaAr3FwCLahjaa6ig/1qjlsAao+QgmkE687ytTedVlQSbrwotURkDd0tZcoADu7bvi/h5eDNYSkGxCyK4hmgtH6nmNDUCe2bhrm3BmVVFAsolmLb3LwOUXaFahALfw+pE+a/1vo2p3qU2MJ5fqHPhqn2rz24Ks006Gwg7cCWA+vF4qiAxDjYP0JlAG38dKTA85PpcpflSDbXMnkjBtzLtOuBR2+sql2YV1zbBeNV4hFIo9/0s1VGNl/gYGs+e9zOE69jMsRqch5BGbNWJY5mw==",
-  "gzsig": "GJAkqVhC/R6cQP15s5vwg5vHAcJSzlSNRzMnehx0z4Mk0oclPs1J343rM+NblIwGKjLBuFiHAFA+ooE4DvqrXbJfu8XzllLQs3nQ3oZwVU+qnXfoQ4ganMNGuZnwFsHaEcVWSMYWPgFrzUSh8z3cbZlnqovl3uTCsv8dYViOV/4A+4bXT8aXFtT2hskvVO0GozFKm5xxGOMEe2mQ60x3faoMLfouBbBEK3xjcpY1Pb7z1QemtrqOXrO7Zfi6YoN8FEhl9i2Ky/JznUKQLv9HRHYqpcT9jAnndylCjadX56zHYyHv767E+ln6O20sUB3kUdRyrSD2dl06w3vBcPcJqg==",
+  "panel": "panel-a794f180528f0053d3ca3009.html.gz",
+  "psri": "sha256-p5TxgFKPAFPTyjAJG8Wh8er/YtHAuhnPECv2MOasrfI=",
+  "sig": "azbxjNxmcsybr14TmCfTm8AMceYVTRjxdD+10n4YBnUnVUkY+CRqxDFRtM5PF+4L3DPEM61tFspLDX8j5Q45l6xToqf5tz0CqKQgKUycA/IIvKL9rLa0fj2NWVetfGifzSNyPR7Lqugu5+aWmCFx/NFbjfsTWdYAGPNCEf/M7zo+icamFq48cw1T19vbAJeU9y9oAlm2QjspLOFaImYob8Wp6Itmf4ZvQT4JvIS3YvzM4fjRF01WzUYYF2LUnpdlHA0CYwojHhnqf+im1gbbwJDT2oy+Mo9rEBcjCIq+6enn/1HbUEpLUdm+DdeeCohXQNgMybtJR8Y0hLRa7J67kA==",
+  "gzsig": "RAIXW8gjUnwWn4aKqutxy2wV0lSB5BqwiMnCO+eIvrl0mNtY3Lx4Yn1eJczA9OJYdInWMtKlp4dvPNmSCKAlh2J1+Yg/NmVPoYF8QnEknJ5im02AxhCNVj2AQ+VgDgeP+yxsdMJ+uf82q1Qe/+fAmzmLGz3KbsGnmrG4mmqABF4J1f2jCpu3eReZxWsqQuw8Mpi77q3JJUxMJWpnhYzsnpa7ZxEfZJkJ3YP+EiT8iQILIoDW2a3JXihyyIwd9oO7iVjHGD95EG+cS9Q+x7LJ155sjcLiNd+FjxxTz2+4a92bC3DEAcRN1ylkn6ihup4vc6Y4a+tvtRtWQ8BpL1IpKg==",
   "ponte": 1
 }
