@@ -41,5 +41,6 @@ node catalog.js
 $CXX -O1 -std=c++17 -w -Ishim brilho_test.cpp -o "out/brilho_$BIN" && "./out/brilho_$BIN" || exit 1
 node painel_test.cjs
 node ponte_test.cjs || exit 1
+node fuso_test.cjs || exit 1
 node ../web/build.js
 exit $r
