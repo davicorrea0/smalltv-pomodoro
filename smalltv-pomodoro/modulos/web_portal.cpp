@@ -863,7 +863,8 @@ void setupWeb() {
       msg = F("id invalido");
     }
     if (ok) {
-      LittleFS.remove("/faces/" + id + ".json");
+      // sem remove antes: o rename do LittleFS (lfs_rename) troca o destino num commit só; apagar antes abria uma janela
+      // em que a queda de energia deixava o mostrador sem nenhuma das duas versões
       LittleFS.rename("/faces/_novo.json", "/faces/" + id + ".json");
       LittleFS.remove("/faces/" + id + ".png");
       if (LittleFS.exists("/faces/_novo.png")) LittleFS.rename("/faces/_novo.png", "/faces/" + id + ".png");
