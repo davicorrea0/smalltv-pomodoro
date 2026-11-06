@@ -150,7 +150,7 @@ static void hueLight(String &j, int i) {
   uint8_t m[6];
   WiFi.macAddress(m);
   char id[27];
-  snprintf(id, sizeof id, "%02X:%02X:%02X:%02X:%02X:%02X:00:11-%02X", m[0], m[1], m[2], m[3], m[4], m[5], i + 1);
+  snprintf_P(id, sizeof id, PSTR("%02X:%02X:%02X:%02X:%02X:%02X:00:11-%02X"), m[0], m[1], m[2], m[3], m[4], m[5], i + 1);
   j += F("{\"state\":{\"on\":");
   j += hueOn(i) ? F("true") : F("false");
   j += F(",\"bri\":");
@@ -211,15 +211,15 @@ void alexaApi() {
   }
   alexaSeen = millis() | 1;  // um Echo falou com o relógio (o painel mostra)
   alexaIp = server.client().remoteIP();
-  if (body.indexOf("devicetype") > 0) {  // pede um usuário da API do Hue: qualquer um serve
-    server.send(200, "application/json", F("[{\"success\":{\"username\":\"2WLEDHardQrI3WHYTHoMcXHgEspsM8ZZRpSKtBQr\"}}]"));
+  if (body.indexOf(F("devicetype")) > 0) {  // pede um usuário da API do Hue: qualquer um serve
+    server.send(200, PSTR("application/json"), F("[{\"success\":{\"username\":\"2WLEDHardQrI3WHYTHoMcXHgEspsM8ZZRpSKtBQr\"}}]"));
     return;
   }
   int pos = req.indexOf("lights");
   long key = pos > 0 ? req.substring(pos + 7).toInt() : 0;
   int i = key & 127;  // índice da lâmpada na chave
   if (req.indexOf("state") > 0 && body.length()) {
-    server.send(200, "application/json", F("[{\"success\":{\"/lights/1/state/\": true}}]"));
+    server.send(200, PSTR("application/json"), F("[{\"success\":{\"/lights/1/state/\": true}}]"));
     if (i < HUE_LIGHTS) hueCommand(i, body);
     return;
   }
@@ -236,7 +236,7 @@ void alexaApi() {
     j += '}';
   } else if (pos > 0 && i < HUE_LIGHTS) hueLight(j, i);
   else j = "{}";
-  server.send(200, "application/json", j);
+  server.send(200, PSTR("application/json"), j);
 }
 
 void alexaBegin() {
@@ -257,8 +257,8 @@ void alexaLoop() {
   int len = hueUdp.read(p, sizeof p - 1);
   p[len < 0 ? 0 : len] = 0;
   hueUdp.flush();
-  if (!cfg.alexa || !strstr(p, "M-SEARCH") || !strstr(p, "ssdp:disc") ||
-      !(strstr(p, "upnp:rootd") || strstr(p, "ssdp:all") || strstr(p, "asic:1")))
+  if (!cfg.alexa || !strstr_P(p, PSTR("M-SEARCH")) || !strstr_P(p, PSTR("ssdp:disc")) ||
+      !(strstr_P(p, PSTR("upnp:rootd")) || strstr_P(p, PSTR("ssdp:all")) || strstr_P(p, PSTR("asic:1"))))
     return;
   // no máximo 4 respostas por segundo: o Echo pergunta poucas vezes, e um pedido pequeno vira uma resposta
   // ~3x maior (dava para usar o relógio para multiplicar tráfego na rede)
@@ -296,5 +296,5 @@ void sendHueDescription() {
   x += F("</serialNumber><UDN>uuid:2f402f80-da50-11e1-9b23-");
   x += hueMac;
   x += F("</UDN><presentationURL>index.html</presentationURL></device></root>");
-  server.send(200, "text/xml", x);
+  server.send(200, PSTR("text/xml"), x);
 }
