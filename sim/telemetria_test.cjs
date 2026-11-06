@@ -13,14 +13,14 @@ const cut = (sig, from = 0) => { const a = source.indexOf(sig, from); if (a < 0)
 
 // ---------- 1. campos aditivos ----------
 const OLD = ('phase running remaining total cycle today streak best clock showing wx ok t min max h rin tzn off loff rise set desc fs l2 mig used cfg work short long every bri auto h12 tz lock theme mode delay color non nstart nend nbri won fahr rain beta lat lon city bgr inv flip vcom wdown tok tund pkg goal act lang nsun warm lcdg alexa rotmin rot ago ip last pv name heap blk pdraw pseq pshown ver diag rst exc epc rssi minheap frag up draw stall stallAt boot scr wifi wf time src ntp crash n r x va').split(' ');
-const NEW = ['minblk', 'stack', 'ramfix', 'pack', 'nomem', 'jpg', 'gif', 'strip'];
+const NEW = ['minblk', 'stack', 'ramfix', 'lps', 'pack', 'nomem', 'jpg', 'gif', 'strip'];
 const sendState = cut('static void sendState() {'), diagJson = cut('static void diagJson('), crashJson = cut('static void crashJson(');
 const keys = new Set([...(sendState + diagJson + crashJson).matchAll(/\\"(\w+)\\":/g)].map(m => m[1]));
 for (const k of OLD) assert(keys.has(k), 'chave antiga sumiu do /api/state: ' + k + ' (painéis antigos leem esse JSON)');
-assert.deepStrictEqual([...keys].filter(k => !OLD.includes(k)).sort(), [...NEW].sort(), 'o /api/state só pode ganhar minblk, stack, ramfix, pack e nomem{jpg,gif,strip}');
+assert.deepStrictEqual([...keys].filter(k => !OLD.includes(k)).sort(), [...NEW].sort(), 'o /api/state só pode ganhar minblk, stack, ramfix, lps, pack e nomem{jpg,gif,strip}');
 // os campos novos ficam dentro de diag
 const d = sendState + diagJson;  // diag abre no sendState (\"diag\":{), os campos vêm no diagJson
-for (const k of ['minblk', 'stack', 'ramfix', 'pack', 'nomem']) assert(d.includes('\\"' + k + '\\":'), k + ' fora de diag');
+for (const k of ['minblk', 'stack', 'ramfix', 'lps', 'pack', 'nomem']) assert(d.includes('\\"' + k + '\\":'), k + ' fora de diag');
 
 // uma só varredura do heap por pedido (getHeapStats), nenhuma das duas chamadas antigas no pedido, nada no laço
 const heapFn = cut('static void diagHeap(');
@@ -59,7 +59,7 @@ const state = {
   phase: 'idle', ver: '1.25.0', heap: 31200, blk: 17600, showing: '/image/SEGREDO-ARQUIVO.jpg', name: 'SEGREDO-NOME', clock: '10:21',
   cfg: { city: 'SEGREDO-CIDADE', lat: -23.5478, lon: -46.6361, tz: 'SEGREDO-FUSO', lock: 1, pkg: 'SEGREDO-PKG', rot: 'SEGREDO-ROT', pass: 'SEGREDO-SENHA' },
   alexa: { ago: 5, ip: '192.168.77.5', last: 1, min: 0 }, wx: { tzn: 'SEGREDO-CIDADE', desc: 'SEGREDO-CIDADE' }, fs: { used: 1, total: 2 },
-  diag: { rst: 4, exc: 0, epc: '40201234', rssi: -61, minheap: 24100, minblk: 14200, frag: 12, stack: 3180, ramfix: 38480, up: 3600, draw: 140, pack: 38, stall: 90, stallAt: 1,
+  diag: { rst: 4, exc: 0, epc: '40201234', rssi: -61, minheap: 24100, minblk: 14200, frag: 12, stack: 3180, ramfix: 38496, lps: 58000, up: 3600, draw: 140, pack: 38, stall: 90, stallAt: 1,
     nomem: { jpg: 1, gif: 0, strip: 2 }, boot: { scr: 1200, wifi: 800, wf: 1, time: 900, src: 1, ntp: 700 },
     ip: '192.168.77.5', ssid: 'SEGREDO-NOME', city: 'SEGREDO-CIDADE', campoNovo: 'SEGREDO-CIDADE' },
   crash: { n: 1, r: 2, x: 29, epc: '40201234', va: '00000000', up: 120, ver: '1.24.9', ip: '192.168.77.5', msg: 'SEGREDO-CIDADE' },
@@ -68,7 +68,7 @@ const txt = diagText(state, { heap: 26000, blk: 14000, rssi: -74, ip: '192.168.7
 for (const s of SEN) assert(!txt.includes(s), 'a lista branca vazou: ' + s);
 assert(!/\b\d{1,3}(\.\d{1,3}){3}\b/.test(txt), 'IP no diagnóstico copiado');
 assert(!/cfg|city|(lat|lon)=|name|ssid|alexa|tz=|pkg|rot=|showing/i.test(txt), 'campo pessoal no diagnóstico copiado: ' + txt);
-for (const want of ['SmallTV Pomodoro 1.25.0', 'heap=31200 blk=17600', 'minheap=24100', 'minblk=14200', 'stack=3180', 'ramfix=38480', 'pack=38', 'nomem jpg=1 gif=0 strip=2', 'boot scr=1200', 'crash n=1 r=2 x=29 epc=40201234 va=00000000 up=120 ver=1.24.9', 'page-min heap=26000 blk=14000 rssi=-74'])
+for (const want of ['SmallTV Pomodoro 1.25.0', 'heap=31200 blk=17600', 'minheap=24100', 'minblk=14200', 'stack=3180', 'ramfix=38496', 'lps=58000', 'pack=38', 'nomem jpg=1 gif=0 strip=2', 'boot scr=1200', 'crash n=1 r=2 x=29 epc=40201234 va=00000000 up=120 ver=1.24.9', 'page-min heap=26000 blk=14000 rssi=-74'])
   assert(txt.includes(want), 'faltou no diagnóstico: ' + want);
 // campo que o firmware ganhar um dia não entra sozinho, e valor de texto livre é limpo mesmo numa chave da lista
 assert.strictEqual(diagText({ ...state, diag: { ...state.diag, outro: 'x' } }, {}), diagText(state, {}), 'chave fora da lista branca entrou');
@@ -76,6 +76,8 @@ assert(/^diag( \w+=[\w.-]*)+$/.test(diagText({ ...state, diag: { ...state.diag, 
 assert.doesNotThrow(() => diagText({ ver: '1.25.0' }, {}), 'firmware antigo (sem diag.minblk/nomem/boot) não pode quebrar o texto');
 // barra de RAM: fixa + em uso + livre fecha a DRAM de 80 KB (81920 B)
 assert(html.includes('const T=81920,u=T-f-s.heap;') && html.includes('[f,u,s.heap]') && /0x3FFE8000u/.test(source) && /heap total = 81920 - ramfix/.test(source), 'conta da barra de RAM: fixa + (81920 - fixa - livre) + livre');
+// lps (voltas do laço por segundo): só em diag e no texto copiado; nada na tela, sem % nem gráfico
+assert(!/lps/.test(html.replace(/const DKEY=[^\n]*/, '')), 'lps não pode aparecer na tela do painel (só no texto copiado)');
 // textos novos em en/es
 for (const k of ['pacote', 'mínimo', 'pilha livre', 'sem memória (foto/GIF/desenho)', 'Maior bloco', 'atual', 'pior', 'Memória (RAM)', 'fixa', 'livre', 'Copiar diagnóstico', 'Diagnóstico copiado (sem dados pessoais)', 'Não consegui copiar: selecione o texto abaixo',
   'Gráficos: histórico só desde que esta página abriu (até 10 min), guardado só neste navegador.'])
@@ -127,7 +129,7 @@ static struct { void getHeapStats(uint32_t *f, uint32_t *m, uint8_t *fr) { g_sta
   const rst_info *getResetInfoPtr() { return &g_rst; } } ESP;
 static struct { bool isConnected() { return true; } int RSSI() { return g_rssi; } } WiFi;
 uint32_t millis() { return g_now; }
-static char *_heap_start = (char *)(uintptr_t)0x3FFF1650u;  // o do .elf compilado: RAM fixa = 0x3FFF1650 - 0x3FFE8000 = 38480
+static char *_heap_start = (char *)(uintptr_t)0x3FFF1660u;  // o do .elf compilado: RAM fixa = 0x3FFF1660 - 0x3FFE8000 = 38496
 uint16_t fullDrawMs = 140, packLoadMs = 38; uint8_t uiOffscreenFail = 2;
 uint32_t bootScreenMs = 1200, bootWifiMs = 800, bootTimeMs = 900, bootNtpMs = 700; uint8_t bootTimeSrc = 1, bootWifiPath = 1;
 ${line(/uint8_t diagWhere = 0;/)}
@@ -164,7 +166,7 @@ int main() {
   CHECK(num(doc, "pdraw") == 120 && num(doc, "pseq") == 1 && num(doc, "pshown") == 1 && num(doc, "up") == 100 && num(doc, "stall") == 0 && num(doc, "rst") == 4);
   CHECK(doc.find("\\"ip\\":\\"192.168.100.200\\"") != std::string::npos && doc.find("\\"crash\\":{\\"n\\":255,") != std::string::npos && doc.find("\\"ver\\":\\"1.25.0\\"}") != std::string::npos);
   // novos
-  CHECK(num(doc, "minblk") == 17600 && num(doc, "stack") == 3180 && num(doc, "pack") == 38 && num(doc, "ramfix") == 38480);
+  CHECK(num(doc, "minblk") == 17600 && num(doc, "stack") == 3180 && num(doc, "pack") == 38 && num(doc, "ramfix") == 38496);
   CHECK(num(doc, "jpg") == 0 && num(doc, "gif") == 0 && num(doc, "strip") == 2);
   // uma varredura por pedido: getHeapStats uma vez; nem getMaxFreeBlockSize nem getHeapFragmentation (nem existe no ESP de mentira)
   CHECK(g_stats == 1 && g_max == 0);
@@ -175,6 +177,8 @@ int main() {
   g_hMax = 4000; diagBlkSample(); g_hMax = 20000; String j4; tail(j4); CHECK(num(j4.s, "minblk") == 4000 && g_max == 1);
   // diagLoop (a cada volta) não varre o heap
   int s0 = g_stats, m0 = g_max; for (int i = 0; i < 1000; i++) { g_now += 10; diagLoop(); } CHECK(g_stats == s0 && g_max == m0);
+  // lps: voltas por segundo. Passos de 10 ms = 100 voltas/s; o pedido só lê o número, sem varrer nada
+  { String jl; g_hMax = 20000; tail(jl); CHECK(num(jl.s, "lps") >= 99 && num(jl.s, "lps") <= 101); }
   // contadores: saturam em 255 e ignoram tipo inválido
   for (int i = 0; i < 300; i++) diagNoMem(0); diagNoMem(1); diagNoMem(1); diagNoMem(7);
   String j5; tail(j5); CHECK(num(j5.s, "jpg") == 255 && num(j5.s, "gif") == 2 && num(j5.s, "strip") == 2);

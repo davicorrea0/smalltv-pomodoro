@@ -68,8 +68,18 @@ static uint32_t diagMinHeap = 0xFFFFFFFF, diagLastMs = 0;
 
 static uint16_t diagWraps = 0;  // millis() volta a zero a cada ~49,7 dias
 
+// Voltas do laço por segundo (diag.lps): só um número para o "Copiar diagnóstico", sem % nem gráfico. O loop() não tem
+// ocioso, então isto mede o quanto ele desenha e atende, não "carga de CPU".
+static uint32_t diagLoops = 0, diagLps = 0, diagLpsAt = 0;
+
 void diagLoop() {
   uint32_t now = millis(), h = ESP.getFreeHeap();
+  diagLoops++;
+  if (now - diagLpsAt >= 1000) {
+    diagLps = diagLoops * 1000UL / (now - diagLpsAt);
+    diagLoops = 0;
+    diagLpsAt = now;
+  }
   if (now < diagLastMs) diagWraps++;
   else if (diagLastMs && now - diagLastMs > diagStall) {
     diagStall = now - diagLastMs;
@@ -137,6 +147,8 @@ static void diagJson(String &j, uint8_t frag) {
   j += ESP.getFreeContStack();
   j += F(",\"ramfix\":");  // RAM fixa do build em bytes (o painel desenha a barra fixa / em uso / livre)
   j += ramFixed();
+  j += F(",\"lps\":");  // voltas do laço por segundo (só no texto copiado do painel)
+  j += diagLps;
   j += F(",\"pack\":");  // ms da última carga de pacote de mostrador (0 = nenhuma)
   j += packLoadMs;
   j += F(",\"nomem\":{\"jpg\":");  // faltas de memória: foto, GIF e faixa de desenho recusada
