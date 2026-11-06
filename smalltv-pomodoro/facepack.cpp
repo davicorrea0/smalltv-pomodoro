@@ -46,7 +46,7 @@ static uint8_t nLay = 0;
 static char *pool = nullptr;
 static uint16_t poolUsed = 0, poolCap = 0;
 static uint8_t *spr = nullptr;
-static uint16_t sprUsed = 0, sprCap = 0;
+static uint16_t sprUsed = 0, sprRaw = 0;  // bytes usados em spr; sprRaw = soma crua, só para o teto
 static uint16_t bgColor = 0;
 static char pkId[24], pkName[32], pkDesc[64], pkAuthor[32];
 
@@ -64,7 +64,7 @@ void facePackUnload() {
   pool = nullptr;
   spr = nullptr;
   nLay = 0;
-  poolUsed = poolCap = sprUsed = sprCap = 0;
+  poolUsed = poolCap = sprUsed = sprRaw = 0;
   pkId[0] = pkName[0] = pkDesc[0] = pkAuthor[0] = 0;
 }
 
@@ -126,61 +126,44 @@ struct MemIn {
 };
 
 // Lê o pacote em passadas com filtro, direto da fonte (arquivo ou memória), em vez de montar a árvore do
-// arquivo inteiro: com ~31 KB de heap livre, um JSON acima de ~10 KB dava "NoMemory". Passada 1: camadas e
-// metadados (mais só o "fps" de cada sprite); depois uma passada por sprite. O pico de memória passa a
-// depender do maior sprite, não do tamanho do pacote. `rewind` volta a fonte ao início.
+// arquivo inteiro: com ~31 KB de heap livre, um JSON acima de ~10 KB dava "NoMemory". O pico de memória da
+// carga é a maior árvore viva somada ao que já foi alocado, então a ordem importa:
+//  1. passada mínima: "format" e os nomes dos sprites (a árvore é liberada logo);
+//  2. uma passada por sprite, crescendo `spr` no tamanho exato de cada um;
+//  3. passada das camadas e dos metadados; só então `lay` e `pool`.
+// Assim a árvore das camadas não fica viva durante as passadas dos sprites, e `lay`/`pool` não ocupam a RAM
+// enquanto os sprites são lidos. `rewind` volta a fonte ao início.
 template <class In, class Rew>
 static bool loadFrom(In &in, Rew rewind, char *err, size_t errLen) {
   facePackUnload();
-  JsonDocument doc;
-  {
-    JsonDocument filter;
-    for (const char *k : {"format", "layers", "bg", "name", "desc", "author", "id"}) filter[k] = true;
-    filter["sprites"]["*"]["fps"] = true;
-    rewind();
-    DeserializationError e = deserializeJson(doc, in, DeserializationOption::Filter(filter));
-    if (e) {
-      snprintf_P(err, errLen, PSTR("JSON invalido: %s"), e.c_str());
-      return false;
-    }
-  }
-  if ((doc["format"] | 0) != 1) {
-    snprintf_P(err, errLen, PSTR("formato desconhecido (use \"format\": 1)"));
-    return false;
-  }
-  JsonArrayConst layers = doc["layers"];
-  if (layers.isNull() || layers.size() == 0 || layers.size() > MAX_LAYERS) {
-    snprintf_P(err, errLen, PSTR("\"layers\" precisa ter de 1 a %d camadas"), MAX_LAYERS);
-    return false;
-  }
-  // tamanhos para alocar de uma vez
-  size_t pcap = 1;
-  for (JsonObjectConst l : layers) {
-    const char *t = l["text"] | (const char *)nullptr, *f = l["file"] | (const char *)nullptr;
-    pcap += (t ? strlen(t) + 1 : 1) + (f ? strlen(f) + 1 : 1);  // sem o campo, a camada guarda "" (1 byte)
-    if (l["text"].is<JsonObjectConst>())  // {"pt": ..., "en": ..., "es": ...}
-      for (const char *k : {"pt", "en", "es"}) pcap += strlen(l["text"][k] | (l["text"]["pt"] | "")) + 1;
-  }
   char sprName[MAX_SPRITES][24];
   uint16_t sprOff[MAX_SPRITES];
   uint8_t ns = 0;
-  for (JsonPairConst kv : doc["sprites"].as<JsonObjectConst>()) {
-    if (ns >= MAX_SPRITES || strlen(kv.key().c_str()) >= sizeof sprName[0]) {
-      snprintf_P(err, errLen, PSTR("sprite \"%s\": ate 32x32 e no maximo %d sprites"), kv.key().c_str(), MAX_SPRITES);
+  {
+    JsonDocument doc;
+    {
+      JsonDocument filter;
+      filter["format"] = true;
+      filter["sprites"]["*"]["fps"] = true;  // só para ter as chaves; os sprites vêm um por vez, abaixo
+      rewind();
+      DeserializationError e = deserializeJson(doc, in, DeserializationOption::Filter(filter));
+      if (e) {
+        snprintf_P(err, errLen, PSTR("JSON invalido: %s"), e.c_str());
+        return false;
+      }
+    }
+    if ((doc["format"] | 0) != 1) {
+      snprintf_P(err, errLen, PSTR("formato desconhecido (use \"format\": 1)"));
       return false;
     }
-    strcpy(sprName[ns++], kv.key().c_str());
+    for (JsonPairConst kv : doc["sprites"].as<JsonObjectConst>()) {
+      if (ns >= MAX_SPRITES || strlen(kv.key().c_str()) >= sizeof sprName[0]) {
+        snprintf_P(err, errLen, PSTR("sprite \"%s\": ate 32x32 e no maximo %d sprites"), kv.key().c_str(), MAX_SPRITES);
+        return false;
+      }
+      strcpy(sprName[ns++], kv.key().c_str());
+    }
   }
-  lay = (Layer *)calloc(layers.size(), sizeof(Layer));
-  pool = (char *)malloc(pcap);
-  if (!lay || !pool) {
-    facePackUnload();
-    snprintf_P(err, errLen, PSTR("sem memoria para o pacote"));
-    return false;
-  }
-  poolCap = pcap;
-  pool[0] = 0;
-  poolUsed = 1;  // posição 0 = texto vazio
 
   // sprites, um por vez: [w][h][n][paleta n x RGB565][pixels 4 bits; 0 = transparente]
   for (uint8_t si = 0; si < ns; si++) {
@@ -217,21 +200,15 @@ static bool loadFrom(In &in, Rew rewind, char *err, size_t errLen) {
         snprintf_P(err, errLen, PSTR("sprite \"%s\": todos os quadros precisam ter o mesmo tamanho"), sprName[si]);
         return false;
       }
+    // teto público: tamanho cru, sempre com 15 cores por sprite (a conta que a doc e a galeria usam)
     size_t add = 4 + 15 * 2 + nf0 * ((w0 * h0 + 1) / 2);
-    if (sprCap + add > MAX_SPR_BYTES) {
-      size_t tot = sprCap + add;
+    if (sprRaw + add > MAX_SPR_BYTES) {
+      size_t tot = sprRaw + add;
       facePackUnload();
       snprintf_P(err, errLen, PSTR("sprites grandes demais: %d bytes no total (maximo %d)"), (int)tot, MAX_SPR_BYTES);
       return false;
     }
-    uint8_t *ns_ = (uint8_t *)realloc(spr, sprCap + add);
-    if (!ns_) {
-      facePackUnload();
-      snprintf_P(err, errLen, PSTR("sem memoria para o pacote"));
-      return false;
-    }
-    spr = ns_;
-    sprCap += add;
+    sprRaw += add;
     uint8_t w = w0, h = h0, n = 0, nf = nf0;
     char keys[16];
     uint16_t colors[15];
@@ -245,6 +222,15 @@ static bool loadFrom(In &in, Rew rewind, char *err, size_t errLen) {
       int32_t col = parseColor(c.value().as<const char *>(), 0);
       colors[n++] = col < 0 ? 0 : col;
     }
+    const int fsz = (w * h + 1) / 2;
+    // alocação exata: só as n cores usadas (a árvore da passada das camadas, mais adiante, aproveita o resto)
+    uint8_t *ns_ = (uint8_t *)realloc(spr, sprUsed + 4 + n * 2 + fsz * nf);
+    if (!ns_) {
+      facePackUnload();
+      snprintf_P(err, errLen, PSTR("sem memoria para o pacote"));
+      return false;
+    }
+    spr = ns_;
     uint8_t *p = spr + sprUsed;
     sprOff[si] = sprUsed;
     p[0] = w;
@@ -255,7 +241,6 @@ static bool loadFrom(In &in, Rew rewind, char *err, size_t errLen) {
       p[4 + i * 2] = colors[i] >> 8;
       p[5 + i * 2] = colors[i] & 255;
     }
-    const int fsz = (w * h + 1) / 2;
     uint8_t *pix = p + 4 + n * 2;
     memset(pix, 0, fsz * nf);
     for (uint8_t k = 0; k < nf; k++) {
@@ -273,6 +258,44 @@ static bool loadFrom(In &in, Rew rewind, char *err, size_t errLen) {
     }
     sprUsed += 4 + n * 2 + fsz * nf;
   }
+
+  // camadas e metadados
+  JsonDocument doc;
+  {
+    JsonDocument filter;
+    for (const char *k : {"layers", "bg", "name", "desc", "author", "id"}) filter[k] = true;
+    rewind();
+    DeserializationError e = deserializeJson(doc, in, DeserializationOption::Filter(filter));
+    if (e) {
+      facePackUnload();
+      snprintf_P(err, errLen, PSTR("JSON invalido: %s"), e.c_str());
+      return false;
+    }
+  }
+  JsonArrayConst layers = doc["layers"];
+  if (layers.isNull() || layers.size() == 0 || layers.size() > MAX_LAYERS) {
+    facePackUnload();
+    snprintf_P(err, errLen, PSTR("\"layers\" precisa ter de 1 a %d camadas"), MAX_LAYERS);
+    return false;
+  }
+  // tamanhos para alocar de uma vez
+  size_t pcap = 1;
+  for (JsonObjectConst l : layers) {
+    const char *t = l["text"] | (const char *)nullptr, *f = l["file"] | (const char *)nullptr;
+    pcap += (t ? strlen(t) + 1 : 1) + (f ? strlen(f) + 1 : 1);  // sem o campo, a camada guarda "" (1 byte)
+    if (l["text"].is<JsonObjectConst>())  // {"pt": ..., "en": ..., "es": ...}
+      for (const char *k : {"pt", "en", "es"}) pcap += strlen(l["text"][k] | (l["text"]["pt"] | "")) + 1;
+  }
+  lay = (Layer *)calloc(layers.size(), sizeof(Layer));
+  pool = (char *)malloc(pcap);
+  if (!lay || !pool) {
+    facePackUnload();
+    snprintf_P(err, errLen, PSTR("sem memoria para o pacote"));
+    return false;
+  }
+  poolCap = pcap;
+  pool[0] = 0;
+  poolUsed = 1;  // posição 0 = texto vazio
 
   // camadas
   for (JsonObjectConst l : layers) {
