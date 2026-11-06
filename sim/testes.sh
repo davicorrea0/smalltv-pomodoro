@@ -28,6 +28,7 @@ for t in sec stats jpg_nomem portal idioma; do
 done
 g++ -std=c++17 -fsanitize=address,undefined -g -w warm_test.cpp -o "$T/warm"
 "$T/warm"
+[ -n "${GEN:-}" ] || node pacote_ram_test.cjs  # pacote de mostrador × álbum e OTA: ligação entre as peças
 g++ -std=c++17 -fsanitize=address,undefined -g -w -Ishim brilho_test.cpp -o "$T/brilho"
 "$T/brilho"
 [ -n "${GEN:-}" ] || node wifi_flash_test.cjs  # persistent do Wi-Fi só nas gravações de propósito (sem gravar a flash a cada ciclo)

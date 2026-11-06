@@ -214,7 +214,10 @@ void setupUpdate() {
         ota = {0, 0, 0, 0xFFFFFFFF, {0}, String(), authOk(), false, false, false};
         otaSigBegin();
         if (!ota.authOk) ota.err = F("senha");
-        else if (inAlbum) stopAlbum();  // libera RAM e o LittleFS durante a gravação
+        else {
+          if (inAlbum) stopAlbum();  // libera RAM e o LittleFS durante a gravação
+          facePackUnload();  // dicionário de 8 KB do .gz e RSA (7,5 KB contíguos) precisam do heap; o relógio recarrega o pacote se o OTA falhar
+        }
       } else if (up.status == UPLOAD_FILE_WRITE && !ota.err.length()) {
         if (!ota.begun) {  // primeiro pedaço: .gz vai para o fim da área (tamanho do envio); .bin, para o espaço livre
           ota.begun = true;
