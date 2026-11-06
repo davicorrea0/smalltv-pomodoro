@@ -4,20 +4,23 @@
     "Rodízio: o botão \"Editar rodízio\", em Aparência, mostra os mostradores instalados para marcar ou desmarcar vários de uma vez; \"Tirar todos do rodízio\" esvazia a lista",
     "O painel abre mais rápido a partir da segunda vez, porque o navegador reaproveita o que já baixou",
     "Mais memória livre no relógio, que sobra para fotos, GIFs e mostradores",
-    "Mostradores animados de pacote ocupam bem menos memória para carregar e enquanto rodam"
+    "Mostradores animados de pacote ocupam bem menos memória para carregar e enquanto rodam",
+    "A troca entre os mostradores LCD (LCD retrô, Previsão LCD, Mundo e Mundo relógio) ficou mais suave, sem saltos"
   ],
   "en": [
     "Test version: edit the rotation in one go, a faster-opening panel and more free memory",
     "Rotation: the \"Edit rotation\" button, under Appearance, lists your installed faces so you can tick or untick several at once; \"Remove all from rotation\" empties the list",
     "The panel opens faster from the second time on, because the browser reuses what it already downloaded",
     "More free memory on the clock, left over for photos, GIFs and faces",
-    "Animated face packs use much less memory while loading and while running"
+    "Animated face packs use much less memory while loading and while running",
+    "Switching between the LCD faces (LCD retrô, Previsão LCD, Mundo and Mundo relógio) is smoother, without jumps"
   ],
   "es": [
     "Versión de prueba: rotación editada de una vez, panel más rápido de abrir y más memoria libre",
     "Rotación: el botón \"Editar rotación\", en Apariencia, muestra las esferas instaladas para marcar o desmarcar varias de una vez; \"Quitar todas de la rotación\" vacía la lista",
     "El panel abre más rápido a partir de la segunda vez, porque el navegador reutiliza lo que ya descargó",
     "Más memoria libre en el reloj, que queda para fotos, GIF y esferas",
-    "Las esferas animadas de paquete ocupan mucha menos memoria al cargar y mientras funcionan"
+    "Las esferas animadas de paquete ocupan mucha menos memoria al cargar y mientras funcionan",
+    "El cambio entre las esferas LCD (LCD retrô, Previsão LCD, Mundo y Mundo relógio) es más suave, sin saltos"
   ]
 }
