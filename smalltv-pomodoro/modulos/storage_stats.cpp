@@ -207,7 +207,7 @@ void handleStatsImport() {
     fh.close();
   }
   statsCompute();
-  server.send(saved ? 200 : 500, "text/plain", saved ? "ok" : "falhou");
+  server.send_P(saved ? 200 : 500, PSTR("text/plain"), saved ? PSTR("ok") : PSTR("falhou"));
 }
 
 void statsLoad() {
@@ -274,11 +274,11 @@ void sendStorage() {
   if (!readOk()) return;
   static FSInfo fi;
   if (fsOk) LittleFS.info(fi);
-  server.sendHeader("Cache-Control", "no-store");
+  server.sendHeader("Cache-Control", F("no-store"));
   server.setContentLength(CONTENT_LENGTH_UNKNOWN);
-  server.send(200, "application/json", "");
-  server.sendContent("{\"used\":" + String(fsOk ? fi.usedBytes : 0) + ",\"total\":" + String(fsOk ? fi.totalBytes : 0) +
-                     ",\"block\":" + String(fsOk ? fi.blockSize : 0) + ",\"files\":[");
+  server.send(200, PSTR("application/json"), "");
+  server.sendContent(String(F("{\"used\":")) + String(fsOk ? fi.usedBytes : 0) + F(",\"total\":") + String(fsOk ? fi.totalBytes : 0) +
+                     F(",\"block\":") + String(fsOk ? fi.blockSize : 0) + F(",\"files\":["));
   std::vector<String> dirs = {"/"};
   bool first = true;
   int n = 0;

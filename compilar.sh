@@ -32,7 +32,13 @@ CLI="${ARDUINO_CLI:-arduino-cli}"
 LAYOUT="${LAYOUT:-4M2M}"
 case "$LAYOUT" in 4M2M|4M3M) ;; *) echo "LAYOUT deve ser 4M2M ou 4M3M"; exit 2 ;; esac
 mkdir -p build
+# Sem o objeto global Wire (I2C, que o relógio não usa): -DNO_GLOBAL_TWOWIRE tira o objeto do core (−296 B de RAM
+# fixa) e o -include do sem_wire.h declara o extern que a Adafruit BusIO pede. As duas andam juntas: só a flag quebra
+# na hora em Adafruit_I2CDevice.h ("Wire was not declared"); sem nenhuma das duas compila normal, só 296 B maior.
+# Vai em compiler.cpp.extra_flags (vazio no platform.txt do core 3.1.2), nunca em build.extra_flags, que é das opções
+# da placa. A CI e o scripts/publicar.sh compilam por aqui.
 "$CLI" compile --fqbn "esp8266:esp8266:generic:eesz=$LAYOUT,xtal=160,ip=lm2n" --build-property "build.float=" \
+  --build-property "compiler.cpp.extra_flags=-DNO_GLOBAL_TWOWIRE \"-include{build.source.path}/sem_wire.h\"" \
   --output-dir build smalltv-pomodoro "$@" > build/compilar.log 2>&1; rc=$?
 cat build/compilar.log
 [ $rc -eq 0 ] || exit 1
