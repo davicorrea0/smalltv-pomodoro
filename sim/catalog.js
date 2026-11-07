@@ -41,7 +41,7 @@ for (const f of fs.readdirSync(dir).filter(f => f.endsWith('.json') && f !== 'ca
   const raw = path.join(__dirname, 'out', `pack-${id}.raw`);
   if (fs.existsSync(raw)) fs.writeFileSync(path.join(dir, `${id}.png`), png(fs.readFileSync(raw)));
   list.push({ id, name: j.name || id, author: j.author || '', desc: j.desc || '', file: f, preview: `${id}.png`,
-    size: fs.statSync(path.join(dir, f)).size });
+    size: fs.statSync(path.join(dir, f)).size, ...(j.format >= 2 ? { fw: '1.26.0' } : {}) });  // formato 2: cenas 3D, motion...
 }
 fs.writeFileSync(path.join(dir, 'catalog.json'), JSON.stringify({ format: 1, faces: list }, null, 2) + '\n');
 console.log(`catálogo: ${list.length} pacote(s)`);
