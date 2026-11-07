@@ -74,6 +74,8 @@ extern const VecFont VF_BEBAS, VF_OUTFIT, VF_RIGHTEOUS;
 // das descendentes (h é a altura da linha inteira). Caracteres fora da lista avançam meio espaço.
 extern const VecFont VF_OUTFIT_TXT;
 void vecText(const VecFont &f, int x, int y, int h, const char *s, uint16_t fg, uint16_t bg);
+void vecTextOver(const VecFont &f, int x, int y, int h, const char *s, uint16_t fg);
+void uiBlendCoverage(int x, int y, const uint8_t *coverage, int w, uint16_t fg);
 int vecWidth(const VecFont &f, const char *s, int h);
 uint16_t mix16(uint16_t a, uint16_t b, int n);  // n/16 de b sobre a
 // Fonte vetorial "Geo": dígito de 6s x 10s com traço de espessura w

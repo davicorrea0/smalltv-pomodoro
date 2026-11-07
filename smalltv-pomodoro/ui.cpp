@@ -461,6 +461,27 @@ class BufGfx : public Adafruit_GFX {
 static BufGfx bufGfx;
 static bool offscreen = false;
 
+// Cobertura de 0..64 sobre a faixa existente; nunca pinta os pixels transparentes.
+void uiBlendCoverage(int x, int y, const uint8_t *coverage, int w, uint16_t fg) {
+  if (offscreen) {
+    if (y < bufGfx.by || y >= bufGfx.by + bufGfx.bh) return;
+    int x0 = x > bufGfx.bx ? x : bufGfx.bx;
+    int x1 = x + w < bufGfx.bx + bufGfx.bw ? x + w : bufGfx.bx + bufGfx.bw;
+    for (int xx = x0; xx < x1; ++xx) {
+      int n = coverage[xx-x] / 4; if (n > 16) n = 16;
+      if (n) { uint16_t &p = bufGfx.buf[(y - bufGfx.by) * bufGfx.bw + (xx - bufGfx.bx)]; p = mix16(p, fg, n); }
+    }
+    return;
+  }
+  // Sem faixa legível, mantém transparência com borda binária (ex.: primeiro desenho ou falta de RAM).
+  for (int i = 0; i < w;) {
+    while (i < w && coverage[i] < 32) ++i;
+    int start = i;
+    while (i < w && coverage[i] >= 32) ++i;
+    if (i > start) G->drawFastHLine(x + start, y, i - start, fg);
+  }
+}
+
 static void rawBlit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h) {
   if (offscreen) {
     for (int r = 0; r < h; r++) bufGfx.put(x, y + r, px + r * w, w, 1);

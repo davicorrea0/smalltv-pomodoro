@@ -347,9 +347,9 @@ bool loadPackFile(const String &path, String &msg) {
     return false;
   }
   size_t n = f.size();
-  if (n == 0 || n > 16384) {
+  if (n == 0 || n > 24576) {
     f.close();
-    msg = F("pacote vazio ou maior que 16 KB");
+    msg = F("pacote vazio ou maior que 24 KB");
     return false;
   }
   char err[96];
@@ -416,7 +416,7 @@ void handlePackUpload() {
     if (up.name == "face") { LittleFS.remove("/faces/_novo.json"); LittleFS.remove("/faces/_novo.png"); }
     packUpload = LittleFS.open(up.name == "preview" ? "/faces/_novo.png" : "/faces/_novo.json", "w");
     if (!packUpload) { packUploadError = F("Falha ao criar arquivo"); return; }
-    packGate.begin(true, up.name == "face" ? 16384 : 65536);
+    packGate.begin(true, up.name == "face" ? 24576 : 65536);
   } else if (up.status == UPLOAD_FILE_WRITE) {
     if (!packGate.active) return;
     if (!packGate.take(up.currentSize)) packUploadError = F("Arquivo grande demais");
