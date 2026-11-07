@@ -8,28 +8,43 @@
 
 #include "facepack.h"
 #include "ui_kit.h"
+#include "tunel_lut.h"
 #include <ArduinoJson.h>
 #include <stdlib.h>
 
 bool (*uiDrawImage)(const char *path, int x, int y) = nullptr;
 
-enum : uint8_t { L_RECT, L_CIRCLE, L_LINE, L_TEXT, L_SPRITE, L_MASCOT, L_WEATHER, L_BAR, L_HAND, L_IMAGE, L_ARC, L_TICKS, L_PLANT, L_TYPES };
+enum : uint8_t { L_RECT, L_CIRCLE, L_LINE, L_TEXT, L_SPRITE, L_MASCOT, L_WEATHER, L_BAR, L_HAND, L_IMAGE, L_ARC, L_TICKS, L_PLANT, L_WORLD3D, L_TYPES };
 enum : uint8_t { F_PIXEL, F_DM, F_GEO, F_DSEG, F_BEBAS, F_OUTFIT, F_RIGHTEOUS, F_FONTS };
 enum : uint8_t { A_LEFT, A_CENTER, A_RIGHT };
 enum : uint8_t { W_ALWAYS, W_DAY, W_NIGHT, W_RAIN, W_DRY, W_WX, W_NOWX, W_GOAL, W_NOGOAL, W_STREAK, W_WHENS };
 enum : uint8_t { V_SEC, V_MIN, V_HOUR, V_FOCOS, V_HUM, V_VARS };
-static const char TYPES[] PROGMEM = "rect\0circle\0line\0text\0sprite\0mascot\0weather\0bar\0hand\0image\0arc\0ticks\0plant";
+static const char TYPES[] PROGMEM = "rect\0circle\0line\0text\0sprite\0mascot\0weather\0bar\0hand\0image\0arc\0ticks\0plant\0world3d";
 static const char FONTS[] PROGMEM = "pixel\0dm\0geo\0dseg\0bebas\0outfit\0righteous";
 static const char ALIGNS[] PROGMEM = "left\0center\0right";
 static const char WHENS[] PROGMEM = "always\0day\0night\0rain\0dry\0weather\0noweather\0goal\0nogoal\0streak";
 static const char VARS[] PROGMEM = "sec\0min\0hour\0focos\0hum";
 static const char MOODS[] PROGMEM = "feliz\0dormindo\0focado\0relax\0comemorando\0guarda-chuva\0cachecol\0oculos\0auto";
+// chaves das camadas lidas no formato 2 (filtro da carga, sem "text", "file" e "motion", lidos à parte); fora da função-modelo, senão o PROGMEM não vale
+static const char LAYER_KEYS[] PROGMEM = "type\0x\0y\0w\0h\0r\0max\0x2\0y2\0len\0tail\0count\0size\0font\0align\0when\0mood\0value\0"
+    "color\0color2\0track\0off\0stroke\0bg\0glow\0spread\0base\0pulse\0sprite\0overlay\0geometry\0shape\0fps\0"
+    "speed\0sway\0spin\0colors\0accent\0map\0period\0camera\0";
 static const int32_t C_NONE = -1, C_ACCENT = -2;
-static const uint8_t MAX_LAYERS = 48, MAX_SPRITES = 12, MAX_FRAMES = 8;
-static const uint16_t MAX_SPR_BYTES = 6144;
+// Formato 2 (1.26.0): até 16 quadros e 8.192 B crus, "world3d", "motion" e "overlay". O formato 1 continua com 8 quadros
+// e 6.144 B, e o firmware recusa no formato 1 o que só o 2 tem (a 1.25.0 recusaria o pacote com outra mensagem).
+// Chaves e nomes novos do formato 2 vão para a flash (no ESP8266 o .rodata das strings ocupa RAM); o simulador não tem
+// PROGMEM no ArduinoJson, então lá ficam como texto comum.
+#ifdef ESP8266
+#define JK(s) F(s)
+#else
+#define JK(s) s
+#endif
+static const uint8_t MAX_LAYERS = 48, MAX_SPRITES = 12, MAX_FRAMES = 16, V1_FRAMES = 8, MAX_MOTION = 12, MAX_TEXT = 48;
+static const uint16_t MAX_SPR_BYTES = 8192, V1_SPR_BYTES = 6144, V1_FILE = 16384, MAX_POOL = 1536;  // arquivo: até 24 KB (album.cpp)
 
 struct Layer {
   uint8_t type, font, align, when, var, size;
+  uint8_t mot, ov;         // mot: movimento (posição em motPool, 0xFF = parado); ov: texto por cima da cena 3D
   int16_t x, y, w, h, r, mx;
   int32_t c1, c2;
   uint16_t str;            // texto/arquivo (posição no pool) ou sprite (posição em spr)
@@ -40,6 +55,34 @@ struct Layer {
   uint16_t gc, gb, gp;     // brilho: cor, cor da superfície sob o halo (0xFFFF = fundo do pacote) e período do pulso em ms (0 = fixo)
 };
 struct Box { int16_t x, y, w, h; };
+// mot e ov ocupam o enchimento que já existia antes de c1: 48 camadas não podem crescer
+static_assert(sizeof(Layer) == 56, "Layer cresceu: cada byte conta 48 vezes no pacote carregado");
+
+// Movimento de um sprite: posição absoluta em 2 a 6 pontos no tempo, em volta (o último ponto fecha o período).
+// Fica num bloco à parte, só para as camadas que têm movimento (até MAX_MOTION).
+struct MotionKey { uint16_t t; int16_t x, y; };
+struct Motion { uint16_t period; uint8_t n; MotionKey k[6]; };
+static Motion *motPool = nullptr;
+
+// Cena 3D (camada "world3d", só como primeira camada): túnel (tabela polar na flash, tunel_lut.h) ou corredores num
+// mapa 8x8 com câmera. O cache das 120 colunas do corredor vem no mesmo bloco, só para o corredor. Tudo é alocado na
+// carga e liberado no facePackUnload (álbum e OTA também descarregam o pacote).
+struct WorldKey { uint16_t t; int16_t x, y, yaw; };  // x, y em centésimos de célula; yaw em graus
+struct World3D {
+  uint8_t kind, fps, speed, sway, spin, keyCount, shape;  // kind: 0 túnel, 1 corredor; shape: 0 redondo, 1 quadrado
+  uint16_t period, colors[4], accent;
+  uint8_t cells[8];  // bit x da linha y = parede
+  WorldKey camera[6];
+};
+struct GridCache {
+  uint32_t tick;
+  bool ready;
+  int16_t top[120], bottom[120];
+  uint16_t wall[120], mortar[120];
+  uint8_t seam[120];
+};
+static World3D *world3d = nullptr;
+static GridCache *gridCache() { return (GridCache *)(world3d + 1); }
 
 static Layer *lay = nullptr;
 static uint8_t nLay = 0;
@@ -58,6 +101,10 @@ const char *facePackDesc() { return pkDesc; }
 const char *facePackAuthor() { return pkAuthor; }
 
 void facePackUnload() {
+  free(world3d);
+  free(motPool);
+  world3d = nullptr;
+  motPool = nullptr;
   free(lay);
   free(pool);
   free(spr);
@@ -101,6 +148,139 @@ static uint16_t addStr(const char *s) {
   return off;
 }
 
+// ---------- cena 3D e movimento: tudo conferido antes de alocar ----------
+static bool worldColor(JsonVariantConst v, uint16_t &out) {
+  const char *s = v.is<const char *>() ? v.as<const char *>() : nullptr;
+  if (!s || s[0] != '#' || strlen(s) != 7) return false;
+  for (int i = 1; i < 7; i++)
+    if (!((s[i] >= '0' && s[i] <= '9') || (s[i] >= 'a' && s[i] <= 'f') || (s[i] >= 'A' && s[i] <= 'F'))) return false;
+  out = (uint16_t)parseColor(s, 0);
+  return true;
+}
+static bool worldOpen(const World3D &w, int x, int y) {
+  return x >= 100 && x < 700 && y >= 100 && y < 700 && !(w.cells[y / 100] & (1U << (x / 100)));
+}
+// O trecho reto da câmera entre dois pontos não pode tocar nenhuma célula de parede (nem pelo canto).
+static bool worldSegmentClear(const World3D &w, int x0, int y0, int x1, int y1) {
+  for (int cy = 0; cy < 8; cy++)
+    for (int cx = 0; cx < 8; cx++) {
+      if (!(w.cells[cy] & (1U << cx))) continue;
+      float lo = 0, hi = 1;
+      const int a[2] = {x0, y0}, d[2] = {x1 - x0, y1 - y0}, mn[2] = {cx * 100, cy * 100}, mxv[2] = {cx * 100 + 100, cy * 100 + 100};
+      bool hit = true;
+      for (int k = 0; k < 2 && hit; k++) {
+        if (!d[k]) {
+          if (a[k] < mn[k] || a[k] > mxv[k]) hit = false;
+        } else {
+          float t0 = (float)(mn[k] - a[k]) / d[k], t1 = (float)(mxv[k] - a[k]) / d[k];
+          if (t0 > t1) { float t = t0; t0 = t1; t1 = t; }
+          if (t0 > lo) lo = t0;
+          if (t1 < hi) hi = t1;
+          if (lo > hi) hit = false;
+        }
+      }
+      if (hit) return false;
+    }
+  return true;
+}
+static bool loadWorld3D(JsonObjectConst l, char *err, size_t len) {
+  World3D w = {};
+  const char *kind = l[JK("geometry")] | "";
+  if (!strcmp_P(kind, PSTR("tunnel"))) w.kind = 0;
+  else if (!strcmp_P(kind, PSTR("grid"))) w.kind = 1;
+  else { snprintf_P(err, len, PSTR("cena 3D: geometry deve ser tunnel ou grid")); return false; }
+  const char *shape = l[JK("shape")] | "";  // padrão: redondo
+  if (!strcmp_P(shape, PSTR("square"))) w.shape = 1;
+  else if (*shape && strcmp_P(shape, PSTR("round"))) { snprintf_P(err, len, PSTR("cena 3D: shape deve ser round ou square")); return false; }
+  int fps = l[JK("fps")] | 8, speed = l[JK("speed")] | 16, sway = l[JK("sway")] | 0, spin = l[JK("spin")] | 0;
+  if (fps < 1 || fps > 10 || speed < 0 || speed > 32 || sway < 0 || sway > 8 || spin < 0 || spin > 8) {
+    snprintf_P(err, len, PSTR("cena 3D: fps 1-10, speed 0-32, sway e spin 0-8"));
+    return false;
+  }
+  w.fps = fps; w.speed = speed; w.sway = sway; w.spin = spin;
+  JsonArrayConst colors = l[JK("colors")];
+  if (colors.size() != 4) { snprintf_P(err, len, PSTR("cena 3D: \"colors\" precisa de 4 cores")); return false; }
+  for (int i = 0; i < 4; i++)
+    if (!worldColor(colors[i], w.colors[i])) { snprintf_P(err, len, PSTR("cena 3D: cor invalida (use #rrggbb)")); return false; }
+  if (!worldColor(l[JK("accent")], w.accent)) { snprintf_P(err, len, PSTR("cena 3D: \"accent\" invalido (use #rrggbb)")); return false; }
+  if (w.kind == 1) {
+    JsonArrayConst map = l[JK("map")], keys = l[JK("camera")];
+    int period = l[JK("period")] | 0;
+    if (map.size() != 8 || keys.size() < 2 || keys.size() > 6 || period < 1000 || period > 60000) {
+      snprintf_P(err, len, PSTR("cena 3D: mapa 8x8, 2 a 6 pontos de camera e period 1000-60000"));
+      return false;
+    }
+    for (int y = 0; y < 8; y++) {
+      const char *row = map[y] | "";
+      if (strlen(row) != 8) { snprintf_P(err, len, PSTR("cena 3D: mapa deve ter 8x8")); return false; }
+      for (int x = 0; x < 8; x++) {
+        char c = row[x];
+        if ((c != '#' && c != '.') || ((x == 0 || x == 7 || y == 0 || y == 7) && c != '#')) {
+          snprintf_P(err, len, PSTR("cena 3D: mapa de # e . com a borda fechada"));
+          return false;
+        }
+        if (c == '#') w.cells[y] |= 1U << x;
+      }
+    }
+    w.period = period;
+    for (JsonObjectConst key : keys) {
+      if (!key[JK("t")].is<int>() || !key[JK("x")].is<int>() || !key[JK("y")].is<int>() || !key[JK("yaw")].is<int>()) {
+        snprintf_P(err, len, PSTR("cena 3D: ponto da camera precisa de t, x, y e yaw"));
+        return false;
+      }
+      int t = key[JK("t")], x = key[JK("x")], y = key[JK("y")], yaw = key[JK("yaw")];
+      if (t < 0 || t > period || yaw < -720 || yaw > 720 || !worldOpen(w, x, y) || (!w.keyCount && t != 0) ||
+          (w.keyCount && t <= w.camera[w.keyCount - 1].t)) {
+        snprintf_P(err, len, PSTR("cena 3D: camera fora do mapa ou tempos fora de ordem"));
+        return false;
+      }
+      if (w.keyCount && !worldSegmentClear(w, w.camera[w.keyCount - 1].x, w.camera[w.keyCount - 1].y, x, y)) {
+        snprintf_P(err, len, PSTR("cena 3D: o caminho da camera cruza uma parede"));
+        return false;
+      }
+      w.camera[w.keyCount++] = {(uint16_t)t, (int16_t)x, (int16_t)y, (int16_t)yaw};
+    }
+    const WorldKey &a = w.camera[0], &b = w.camera[w.keyCount - 1];
+    if (b.t != period || a.x != b.x || a.y != b.y || (b.yaw - a.yaw) % 360) {
+      snprintf_P(err, len, PSTR("cena 3D: o ultimo ponto (t = period) volta ao primeiro"));
+      return false;
+    }
+  }
+  world3d = (World3D *)malloc(sizeof w + (w.kind == 1 ? sizeof(GridCache) : 0));
+  if (!world3d) { snprintf_P(err, len, PSTR("sem memoria para a cena 3D")); return false; }
+  *world3d = w;
+  if (w.kind == 1) gridCache()->ready = false;
+  return true;
+}
+// "motion": {"period": ms, "keys": [{"t", "x", "y"}, ...]}: 2 a 6 pontos, t do 0 ao period, sempre crescente
+static bool loadMotion(JsonObjectConst m, Motion &out, char *err, size_t len, int layer) {
+  JsonArrayConst keys = m[JK("keys")];
+  int period = m[JK("period")] | 0;
+  if (period < 100 || period > 60000 || keys.size() < 2 || keys.size() > 6) {
+    snprintf_P(err, len, PSTR("camada %d: motion com period 100-60000 e 2 a 6 pontos"), layer);
+    return false;
+  }
+  out.period = period;
+  out.n = 0;
+  for (JsonObjectConst key : keys) {
+    if (!key[JK("t")].is<int>() || !key[JK("x")].is<int>() || !key[JK("y")].is<int>()) {
+      snprintf_P(err, len, PSTR("camada %d: ponto do motion precisa de t, x e y"), layer);
+      return false;
+    }
+    int t = key[JK("t")], x = key[JK("x")], y = key[JK("y")];
+    if (t < 0 || t > period || abs(x) > 480 || abs(y) > 480 || (!out.n && t != 0) || (out.n && t <= out.k[out.n - 1].t)) {
+      snprintf_P(err, len, PSTR("camada %d: ponto do motion fora do limite ou fora de ordem"), layer);
+      return false;
+    }
+    out.k[out.n++] = {(uint16_t)t, (int16_t)x, (int16_t)y};
+  }
+  if (out.k[out.n - 1].t != period) {
+    snprintf_P(err, len, PSTR("camada %d: o ultimo ponto do motion precisa de t = period"), layer);
+    return false;
+  }
+  return true;
+}
+
 // id seguro: letras minúsculas, números, '-' e '_'
 static void safeId(const char *s, char *out, size_t n) {
   size_t o = 0;
@@ -128,7 +308,7 @@ struct MemIn {
 
 // ---------- sprites compactados na RAM ----------
 // Cada sprite em `spr`:
-//   [0] w  [1] h  [2] n (cores)  [3] fps << 4 | quadros
+//   [0] w  [1] h  [2] n (cores)  [3] fps << 4 | (quadros - 1)  (até 16 quadros; leia sempre com sprNf)
 //   [4 ..] paleta: n x RGB565 (alto, baixo)
 //   tabela: um uint16 por quadro (alto, baixo) = posição do quadro, contada do início do sprite
 //   quadro: [x0][y0][cw][ch] = recorte só com os pixels visíveis (cw = 0: quadro vazio) e os pixels do recorte,
@@ -156,7 +336,7 @@ static size_t sprEncode(JsonArrayConst fr, JsonArrayConst px1, uint8_t w, uint8_
     out[0] = w;
     out[1] = h;
     out[2] = n;
-    out[3] = fps << 4 | nf;
+    out[3] = fps << 4 | (nf - 1);
     for (uint8_t i = 0; i < n; i++) {
       out[4 + i * 2] = colors[i] >> 8;
       out[5 + i * 2] = colors[i] & 255;
@@ -221,11 +401,12 @@ static size_t sprEncode(JsonArrayConst fr, JsonArrayConst px1, uint8_t w, uint8_
 // Assim a árvore das camadas não fica viva durante as passadas dos sprites, e `lay`/`pool` não ocupam a RAM
 // enquanto os sprites são lidos. `rewind` volta a fonte ao início.
 template <class In, class Rew>
-static bool loadFrom(In &in, Rew rewind, char *err, size_t errLen) {
+static bool loadFrom(In &in, Rew rewind, size_t size, char *err, size_t errLen) {
   facePackUnload();
   char sprName[MAX_SPRITES][24];
   uint16_t sprOff[MAX_SPRITES];
-  uint8_t ns = 0;
+  uint8_t ns = 0, fmt = 0;
+  bool v2 = size > V1_FILE;  // usa algo que só o formato 2 tem (ver MAX_FRAMES); a 1.25.0 recusa arquivo acima de 16 KB
   {
     JsonDocument doc;
     {
@@ -239,10 +420,12 @@ static bool loadFrom(In &in, Rew rewind, char *err, size_t errLen) {
         return false;
       }
     }
-    if ((doc["format"] | 0) != 1) {
-      snprintf_P(err, errLen, PSTR("formato desconhecido (use \"format\": 1)"));
+    int f = doc["format"] | 0;
+    if (f != 1 && f != 2) {
+      snprintf_P(err, errLen, PSTR("formato desconhecido (use \"format\": 1 ou 2)"));
       return false;
     }
+    fmt = f;
     for (JsonPairConst kv : doc["sprites"].as<JsonObjectConst>()) {
       if (ns >= MAX_SPRITES || strlen(kv.key().c_str()) >= sizeof sprName[0]) {
         snprintf_P(err, errLen, PSTR("sprite \"%s\": ate 32x32 e no maximo %d sprites"), kv.key().c_str(), MAX_SPRITES);
@@ -296,6 +479,7 @@ static bool loadFrom(In &in, Rew rewind, char *err, size_t errLen) {
       return false;
     }
     sprRaw += add;
+    if (nf0 > V1_FRAMES || sprRaw > V1_SPR_BYTES) v2 = true;
     uint8_t w = w0, h = h0, n = 0, nf = nf0;
     char keys[16];
     uint16_t colors[15];
@@ -329,13 +513,124 @@ static bool loadFrom(In &in, Rew rewind, char *err, size_t errLen) {
     sprUsed += sz;
   }
 
-  // camadas e metadados
+  bool hasMot = false, hasTxt = false;
+  // Corta strings gigantes (> 64 B, ou textos >= MAX_TEXT / acima do pool) para 48 'x' antes de irem ao StringPool:
+  // um pacote de 24 KB com 48 textos distintos estouraria os 15 KB já no deserializeJson; na validação, >= 48 B é recusado.
+  struct CapIn {
+    In &in;
+    char b[66], last = 0;
+    uint8_t i = 0, len = 0;
+    bool isTxt = false;
+    uint16_t tot = 0;
+    int read() {
+      if (i < len) return (uint8_t)b[i++];
+      int c = in.read();
+      if (c != '"') {
+        if (c > ' ') last = c;
+        return c;
+      }
+      i = len = 0;
+      int d = -1;
+      for (bool esc = false;;) {
+        d = in.read();
+        if (d < 0) break;
+        if (len <= 65) b[len++] = d;
+        if (esc) esc = false;
+        else if (d == '\\') esc = true;
+        else if (d == '"') break;
+      }
+      uint8_t sLen = d == '"' && len ? len - 1 : len;
+      if (last == '{' || last == ',')
+        isTxt = (sLen == 2 && ((b[0] == 'p' && b[1] == 't') || (b[0] == 'e' && (b[1] == 'n' || b[1] == 's')))) ||
+                (sLen == 4 && (!memcmp(b, "text", 4) || !memcmp(b, "file", 4)));
+      else if (last == ':' && isTxt) {
+        tot += sLen + 1;
+        if (sLen >= MAX_TEXT || tot > MAX_POOL + 512) len = 66;
+      }
+      last = '"';
+      if (len > 65) {
+        memset(b, 'x', MAX_TEXT);
+        b[MAX_TEXT] = '"';
+        len = d < 0 ? MAX_TEXT : MAX_TEXT + 1;
+      }
+      return '"';
+    }
+    size_t readBytes(char *p, size_t m) {
+      size_t k = 0;
+      while (k < m) { int c = read(); if (c < 0) break; p[k++] = c; }
+      return k;
+    }
+  };
+  auto loadTexts = [&](JsonArrayConst tl) -> bool {
+    size_t pcap = 1;
+    uint8_t i = 0;
+    for (JsonObjectConst l : tl) {
+      if (i >= nLay) break;
+      const Layer &L = lay[i++];
+      if (L.type == L_TEXT && l[JK("text")].is<JsonObjectConst>()) {
+        JsonObjectConst tx = l[JK("text")];
+        const char *pt = tx["pt"] | "";
+        for (const char *k : {"pt", "en", "es"}) {
+          size_t n = strlen(tx[k] | pt);
+          if (n >= MAX_TEXT) { pcap = MAX_POOL + 1; break; }
+          pcap += n + 1;
+        }
+      } else if (L.type == L_TEXT || L.type == L_IMAGE) {
+        const char *s = (L.type == L_TEXT ? l[JK("text")] : l[JK("file")]) | "";
+        size_t n = strlen(s);
+        if (n >= MAX_TEXT) pcap = MAX_POOL + 1;
+        else pcap += n + 1;
+      }
+      if (pcap > MAX_POOL) {
+        snprintf_P(err, errLen, PSTR("camada %d: texto grande demais"), i);
+        facePackUnload();
+        return false;
+      }
+    }
+    pool = (char *)malloc(pcap);
+    if (!pool) {
+      facePackUnload();
+      snprintf_P(err, errLen, PSTR("sem memoria para o pacote"));
+      return false;
+    }
+    poolCap = pcap;
+    pool[0] = 0;
+    poolUsed = 1;  // posição 0 = texto vazio
+    i = 0;
+    for (JsonObjectConst l : tl) {
+      if (i >= nLay) break;
+      Layer &L = lay[i++];
+      if (L.type == L_TEXT && l[JK("text")].is<JsonObjectConst>()) {  // um texto por idioma, em sequência no pool
+        JsonObjectConst tx = l[JK("text")];
+        const char *pt = tx["pt"] | "";
+        L.str = addStr(pt);
+        addStr(tx["en"] | pt);
+        addStr(tx["es"] | pt);
+        L.tr = 1;
+      } else if (L.type == L_TEXT) L.str = addStr(l[JK("text")] | "");
+      else if (L.type == L_IMAGE) L.str = addStr(l[JK("file")] | "");
+    }
+    return true;
+  };
+  // camadas e metadados (no formato 2, sem "text", "file" e "motion", lidos depois em passadas próprias: somar
+  // 48 textos ou 12 caminhos de movimento à árvore das 48 camadas passaria de 15 KB)
+  {
   JsonDocument doc;
   {
     JsonDocument filter;
-    for (const char *k : {"layers", "bg", "name", "desc", "author", "id"}) filter[k] = true;
+    for (const char *k : {"bg", "name", "desc", "author", "id"}) filter[k] = true;
+    if (fmt == 2) {
+      // todas as chaves que as camadas usam, menos "text", "file" e "motion".
+      // O filtro maior custa ~1 KB a mais durante a leitura; o formato 1 continua com o filtro de antes (mesmo pico)
+      char k[12];
+      for (PGM_P p = LAYER_KEYS; pgm_read_byte(p); p += strlen_P(p) + 1) {
+        strcpy_P(k, p);
+        filter["layers"][0][k] = true;
+      }
+    } else filter["layers"] = true;  // no formato 1 o "motion" não vale; se aparecer, a passada do movimento recusa
     rewind();
-    DeserializationError e = deserializeJson(doc, in, DeserializationOption::Filter(filter));
+    CapIn cap = {in};
+    DeserializationError e = deserializeJson(doc, cap, DeserializationOption::Filter(filter));
     if (e) {
       facePackUnload();
       snprintf_P(err, errLen, PSTR("JSON invalido: %s"), e.c_str());
@@ -348,24 +643,12 @@ static bool loadFrom(In &in, Rew rewind, char *err, size_t errLen) {
     snprintf_P(err, errLen, PSTR("\"layers\" precisa ter de 1 a %d camadas"), MAX_LAYERS);
     return false;
   }
-  // tamanhos para alocar de uma vez
-  size_t pcap = 1;
-  for (JsonObjectConst l : layers) {
-    const char *t = l["text"] | (const char *)nullptr, *f = l["file"] | (const char *)nullptr;
-    pcap += (t ? strlen(t) + 1 : 1) + (f ? strlen(f) + 1 : 1);  // sem o campo, a camada guarda "" (1 byte)
-    if (l["text"].is<JsonObjectConst>())  // {"pt": ..., "en": ..., "es": ...}
-      for (const char *k : {"pt", "en", "es"}) pcap += strlen(l["text"][k] | (l["text"]["pt"] | "")) + 1;
-  }
   lay = (Layer *)calloc(layers.size(), sizeof(Layer));
-  pool = (char *)malloc(pcap);
-  if (!lay || !pool) {
+  if (!lay) {
     facePackUnload();
     snprintf_P(err, errLen, PSTR("sem memoria para o pacote"));
     return false;
   }
-  poolCap = pcap;
-  pool[0] = 0;
-  poolUsed = 1;  // posição 0 = texto vazio
 
   // camadas
   for (JsonObjectConst l : layers) {
@@ -375,6 +658,19 @@ static bool loadFrom(In &in, Rew rewind, char *err, size_t errLen) {
       snprintf_P(err, errLen, PSTR("camada %d: tipo desconhecido"), nLay + 1);
       facePackUnload();
       return false;
+    }
+    L.mot = 0xFF;
+    if (L.type == L_WORLD3D) {  // a cena cobre a tela inteira: só faz sentido no fundo, e uma por pacote
+      if (nLay) {
+        snprintf_P(err, errLen, PSTR("camada %d: \"world3d\" so como primeira camada"), nLay + 1);
+        facePackUnload();
+        return false;
+      }
+      if (!loadWorld3D(l, err, errLen)) {
+        facePackUnload();
+        return false;
+      }
+      v2 = true;
     }
     L.x = l["x"] | 0;
     L.y = l["y"] | 0;
@@ -414,6 +710,15 @@ static bool loadFrom(In &in, Rew rewind, char *err, size_t errLen) {
       facePackUnload();
       return false;
     }
+    if (l[JK("overlay")] | false) {  // dígitos com borda suave por cima do que já está desenhado (a cena 3D), sem fundo
+      if (L.type != L_TEXT || (L.font != F_BEBAS && L.font != F_OUTFIT && L.font != F_RIGHTEOUS)) {
+        snprintf_P(err, errLen, PSTR("camada %d: \"overlay\" so em texto bebas, outfit ou righteous"), nLay + 1);
+        facePackUnload();
+        return false;
+      }
+      L.ov = 1;
+      v2 = true;
+    }
     int32_t defC1 = L.type == L_RECT || L.type == L_CIRCLE ? CARD : L.type == L_BAR || L.type == L_ARC ? WORK : TEXT;
     L.c1 = parseColor(l["color"] | (const char *)nullptr, defC1);
     const char *c2 = l["color2"] | (const char *)nullptr;  // aceita também os apelidos abaixo
@@ -430,19 +735,7 @@ static bool loadFrom(In &in, Rew rewind, char *err, size_t errLen) {
       L.gb = l["base"].is<const char *>() ? parseColor(l["base"], 0) : 0xFFFF;
       L.gp = gp <= 0 ? 0 : gp < 400 ? 400 : gp > 10000 ? 10000 : gp;
     }
-    if (L.type == L_TEXT && l["text"].is<JsonObjectConst>()) {  // um texto por idioma, em sequência no pool
-      JsonObjectConst tx = l["text"];
-      const char *pt = tx["pt"] | "";
-      L.str = addStr(pt);
-      if (addStr(tx["en"] | pt) == 0xFFFF || addStr(tx["es"] | pt) == 0xFFFF) L.str = 0xFFFF;
-      L.tr = 1;
-    } else if (L.type == L_TEXT) L.str = addStr(l["text"] | "");
-    else if (L.type == L_IMAGE) L.str = addStr(l["file"] | "");
-    if ((L.type == L_TEXT || L.type == L_IMAGE) && L.str == 0xFFFF) {  // não coube no pool: nunca ler pool + 0xFFFF
-      snprintf_P(err, errLen, PSTR("camada %d: texto grande demais"), nLay + 1);
-      facePackUnload();
-      return false;
-    }
+    if (L.type == L_TEXT || L.type == L_IMAGE) hasTxt = true;
     else if (L.type == L_SPRITE) {
       const char *sn = l["sprite"] | "";
       L.str = 0xFFFF;
@@ -454,8 +747,10 @@ static bool loadFrom(In &in, Rew rewind, char *err, size_t errLen) {
         return false;
       }
     }
+    if (!l[JK("motion")].isNull()) hasMot = true;
     nLay++;
   }
+  if (fmt == 1 && !loadTexts(layers)) return false;
   bgColor = (uint16_t)parseColor(doc["bg"] | (const char *)nullptr, BG);
   snprintf(pkName, sizeof pkName, "%s", doc["name"] | "Sem nome");
   snprintf(pkDesc, sizeof pkDesc, "%s", doc["desc"] | "");
@@ -465,17 +760,90 @@ static bool loadFrom(In &in, Rew rewind, char *err, size_t errLen) {
       if (*t == '\n' || *t == '\r') *t = ' ';
   safeId(doc["id"] | pkName, pkId, sizeof pkId);
   if (!pkId[0]) strcpy(pkId, "pacote");
+  }  // a árvore das camadas sai da memória aqui
+
+  if (fmt == 2 && hasTxt) {
+    JsonDocument td;
+    {
+      JsonDocument filter;
+      filter["layers"][0][JK("text")] = true;
+      filter["layers"][0][JK("file")] = true;
+      rewind();
+      CapIn cap = {in};
+      DeserializationError e = deserializeJson(td, cap, DeserializationOption::Filter(filter));
+      if (e) {
+        facePackUnload();
+        snprintf_P(err, errLen, PSTR("JSON invalido: %s"), e.c_str());
+        return false;
+      }
+    }
+    if (!loadTexts(td["layers"])) return false;
+  }
+
+  // movimento: uma passada só com o "motion" de cada camada, depois de lay/pool alocados e da árvore das camadas solta
+  // (só no formato 2 ou se apareceu "motion": os pacotes do formato 1 não pagam a passada a mais)
+  if (fmt == 2 || hasMot) {
+    JsonDocument md;
+    {
+      JsonDocument filter;
+      filter["layers"][0][JK("motion")] = true;
+      rewind();
+      DeserializationError e = deserializeJson(md, in, DeserializationOption::Filter(filter));
+      if (e) {
+        facePackUnload();
+        snprintf_P(err, errLen, PSTR("JSON invalido: %s"), e.c_str());
+        return false;
+      }
+    }
+    JsonArrayConst ml = md["layers"];
+    uint8_t nMot = 0;
+    for (JsonObjectConst l : ml)
+      if (!l[JK("motion")].isNull()) nMot++;
+    if (nMot > MAX_MOTION) {
+      facePackUnload();
+      snprintf_P(err, errLen, PSTR("no maximo %d camadas com \"motion\""), MAX_MOTION);
+      return false;
+    }
+    if (nMot && !(motPool = (Motion *)malloc(nMot * sizeof(Motion)))) {
+      facePackUnload();
+      snprintf_P(err, errLen, PSTR("sem memoria para o pacote"));
+      return false;
+    }
+    uint8_t i = 0, motUsed = 0;
+    for (JsonObjectConst l : ml) {
+      if (i >= nLay) break;  // a mesma lista de camadas da passada anterior
+      if (!l[JK("motion")].isNull()) {
+        if (lay[i].type != L_SPRITE) {
+          snprintf_P(err, errLen, PSTR("camada %d: \"motion\" so em sprite"), i + 1);
+          facePackUnload();
+          return false;
+        }
+        if (!loadMotion(l[JK("motion")], motPool[motUsed], err, errLen, i + 1)) {
+          facePackUnload();
+          return false;
+        }
+        lay[i].mot = motUsed++;
+        v2 = true;
+      }
+      i++;
+    }
+  }
+  if (fmt == 1 && v2) {
+    facePackUnload();
+    snprintf_P(err, errLen, PSTR("use \"format\": 2 (3D, motion, overlay, mais de 8 quadros, 6 KB de sprites ou 16 KB)"));
+    return false;
+  }
   return true;
 }
 
 bool facePackLoad(char *json, size_t len, char *err, size_t errLen) {
   MemIn in = {json, len, 0};
-  return loadFrom(in, [&] { in.i = 0; }, err, errLen);
+  return loadFrom(in, [&] { in.i = 0; }, len, err, errLen);
 }
 
 #ifdef ESP8266
 bool facePackLoadFile(File &f, char *err, size_t errLen) {
-  return loadFrom(f, [&] { f.seek(0); }, err, errLen);
+  return loadFrom(f, [&] { f.seek(0); }, f.size(), err, errLen);
 }
 #endif
 
@@ -661,7 +1029,10 @@ static int runText(const Layer &L, const char *str, int x, int y, bool draw, uin
         const VecFont &vf = L.font == F_BEBAS ? VF_BEBAS : L.font == F_OUTFIT ? VF_OUTFIT : VF_RIGHTEOUS;
         char one[2] = {(char)ch, 0};
         int w = vecWidth(vf, one, sz);
-        if (draw && (ch == ':' || (ch >= '0' && ch <= '9'))) vecText(vf, x, y, sz, one, fg, c2 == C_NONE ? bgColor : (uint16_t)c2);
+        if (draw && (ch == ':' || (ch >= '0' && ch <= '9'))) {
+          if (L.ov) vecTextOver(vf, x, y, sz, one, fg);  // borda misturada com o que já está na faixa
+          else vecText(vf, x, y, sz, one, fg, c2 == C_NONE ? bgColor : (uint16_t)c2);
+        }
         x += w;
         break;
       }
@@ -708,6 +1079,7 @@ static Box measure(const Layer &L, const UiState &s, const char *txt) {
       return {(int16_t)(x - pad), (int16_t)(L.y - pad), (int16_t)(w + 2 * pad), (int16_t)(h + 2 * pad)};
     }
     case L_SPRITE: return {L.x, L.y, (int16_t)(spr[L.str] * L.size), (int16_t)(spr[L.str + 1] * L.size)};
+    case L_WORLD3D: return {0, 0, 240, 240};
     case L_MASCOT:
     case L_PLANT: return {L.x, L.y, (int16_t)(16 * L.size), (int16_t)(16 * L.size)};
     case L_WEATHER: {
@@ -742,11 +1114,30 @@ static inline uint8_t sprPixel(const uint8_t *px, uint8_t bits, int i) {
   return px[b >> 3] >> (8 - bits - (b & 7)) & ((1 << bits) - 1);
 }
 
+// número de quadros do sprite (1 a 16; ver o cabeçalho em sprEncode)
+static inline uint8_t sprNf(const uint8_t *p) { return (p[3] & 15) + 1; }
+
 // quadro do sprite no instante s.ms (1 quadro = parado)
 static uint8_t sprFrame(const Layer &L, const UiState &s) {
-  uint8_t nf = spr[L.str + 3] & 15;
+  uint8_t nf = sprNf(spr + L.str);
   return nf > 1 ? (uint64_t)s.ms * (spr[L.str + 3] >> 4) / 1000 % nf : 0;  // 64 bits: ms x fps estouraria em ~5 dias
 }
+
+// Sprite com "motion": a posição do instante s.ms vai para a própria camada (as posições do movimento são absolutas,
+// e o x/y do JSON não é usado). Inteiros só; cada ponto vale até o próximo, e o último fecha a volta.
+static void moveLayer(Layer &L, const UiState &s) {
+  const Motion &m = motPool[L.mot];
+  uint32_t t = s.ms % m.period;
+  uint8_t i = 1;
+  while (i + 1 < m.n && t >= m.k[i].t) i++;
+  const MotionKey &a = m.k[i - 1], &b = m.k[i];
+  int32_t dt = (int32_t)t - a.t, span = b.t - a.t;
+  L.x = a.x + ((int32_t)b.x - a.x) * dt / span;
+  L.y = a.y + ((int32_t)b.y - a.y) * dt / span;
+}
+
+// quadro da cena 3D no instante s.ms (o que muda a imagem: a cena só é refeita quando ele muda)
+static uint32_t worldTick(const UiState &s) { return (uint64_t)s.ms * world3d->fps / 1000; }
 
 static uint32_t signature(const Layer &L, const UiState &s, char *txt, size_t n) {
   uint32_t h = 2166136261u;
@@ -764,7 +1155,12 @@ static uint32_t signature(const Layer &L, const UiState &s, char *txt, size_t n)
     case L_BAR: { int mx, v = value(L, s, mx); int fw = L.mx > 0 ? (v > L.mx ? L.mx : v) * L.w / L.mx : (v > mx ? mx : v) * L.w / mx; h = fnv(h, &fw, sizeof fw); break; }
     case L_HAND: { int a = (int)(handAngle(L, s) * 1000); h = fnv(h, &a, sizeof a); break; }
     case L_ARC: { int mx, v = value(L, s, mx); if (L.mx > 0) mx = L.mx; int q = (v > mx ? mx : v) * 720 / mx; h = fnv(h, &q, sizeof q); break; }
-    case L_SPRITE: if ((spr[L.str + 3] & 15) > 1) { uint8_t f = sprFrame(L, s); h = fnv(h, &f, 1); } break;  // só animado muda
+    case L_SPRITE: if (sprNf(spr + L.str) > 1) { uint8_t f = sprFrame(L, s); h = fnv(h, &f, 1); } break;  // só animado muda
+    case L_WORLD3D: { uint32_t k = worldTick(s); h = fnv(h, &k, sizeof k); break; }
+  }
+  if (L.mot != 0xFF) {  // o sprite que anda muda de lugar (moveLayer já pôs a posição do instante)
+    h = fnv(h, &L.x, sizeof L.x);
+    h = fnv(h, &L.y, sizeof L.y);
   }
   return h | 1;  // nunca 0 (0 = invisível)
 }
@@ -802,6 +1198,112 @@ static void arcRing(int cx, int cy, int r, int th, float f, uint16_t c, int32_t 
     float rm = r - th / 2.0f;
     G->fillCircle(cx, cy - (int)rm, th / 2, c);
     G->fillCircle(cx + (int)(sinf(a) * rm), cy - (int)(cosf(a) * rm), th / 2, c);
+  }
+}
+
+// ---------- cena 3D ----------
+// Corredor: uma coluna de raio a cada 2 px (120), com o mapa 8x8 e a câmera do instante. As colunas são calculadas uma
+// vez por quadro da cena (gridCache) e cada faixa da tela só pinta as linhas dela.
+static void drawGrid(const UiState &s) {
+  const World3D &w = *world3d;
+  GridCache &g = *gridCache();
+  uint32_t tick = worldTick(s);
+  if (!g.ready || tick != g.tick) {
+    g.ready = true;
+    g.tick = tick;
+    uint32_t ct = s.ms % w.period;
+    int j = 1;
+    while (j + 1 < w.keyCount && ct >= w.camera[j].t) j++;
+    const WorldKey &u = w.camera[j - 1], &v = w.camera[j];
+    float f = (float)(ct - u.t) / (v.t - u.t);
+    float px = (u.x + (v.x - u.x) * f) / 100.0f, py = (u.y + (v.y - u.y) * f) / 100.0f;
+    float a = (u.yaw + (v.yaw - u.yaw) * f) * 0.0174532925f, dx = cosf(a), dy = sinf(a);
+    for (int i = 0; i < 120; i++) {
+      float c = ((i * 2 + 1) - 120) / 120.0f * 0.66f, rx = dx - dy * c, ry = dy + dx * c;
+      int mx = (int)px, my = (int)py, sx = rx < 0 ? -1 : 1, sy = ry < 0 ? -1 : 1;
+      float ax = rx == 0 ? 1e20f : fabsf(1.0f / rx), ay = ry == 0 ? 1e20f : fabsf(1.0f / ry);
+      float tx = (rx < 0 ? px - mx : mx + 1.0f - px) * ax, ty = (ry < 0 ? py - my : my + 1.0f - py) * ay;
+      int side = 0;
+      float dist = 0.01f;
+      for (int n = 0; n < 24; n++) {  // o mapa é fechado: 24 passos atravessam qualquer diagonal de 8x8
+        if (tx < ty) { dist = tx; tx += ax; mx += sx; side = 0; }
+        else { dist = ty; ty += ay; my += sy; side = 1; }
+        if (mx < 0 || mx >= 8 || my < 0 || my >= 8 || (w.cells[my] & (1U << mx))) break;
+      }
+      if (dist < 0.05f) dist = 0.05f;
+      int h = (int)(158.0f / dist);
+      if (h > 480) h = 480;
+      g.top[i] = 120 - h / 2;
+      g.bottom[i] = 120 + h / 2;
+      float hit = side ? px + dist * rx : py + dist * ry;
+      hit -= floorf(hit);
+      g.seam[i] = ((int)(hit * 8) & 3) == 0;
+      int shade = 16 - (int)(dist * 2) - (side ? 2 : 0);
+      if (shade < 4) shade = 4;
+      if (shade > 16) shade = 16;
+      g.wall[i] = mix16(0, w.colors[0], shade);
+      g.mortar[i] = mix16(0, w.accent, shade);
+    }
+  }
+  int x0 = 0, x1 = 240, y0 = 0, y1 = 240;
+  if (uiClip.on) { x0 = uiClip.x0; x1 = uiClip.x1; y0 = uiClip.y0; y1 = uiClip.y1; }
+  const uint16_t ceiling = w.colors[1], floor = w.colors[2];
+  G->fillRect(x0, 0, x1 - x0, 120, ceiling);
+  G->fillRect(x0, 120, x1 - x0, 120, floor);
+  for (int i = x0 / 2; i < 120 && i * 2 < x1; i++) {
+    int t = g.top[i], b = g.bottom[i], h = b - t, ct = t > y0 ? t : y0, cb = b < y1 ? b : y1;
+    if (cb <= ct) continue;
+    G->fillRect(i * 2, ct, 2, cb - ct, g.wall[i]);
+    for (int k = 1; k < 8; k++) {  // juntas horizontais da parede
+      int y = t + h * k / 8;
+      if (y >= y0 && y < y1) G->fillRect(i * 2, y, 2, 1, g.mortar[i]);
+    }
+    if (g.seam[i]) G->fillRect(i * 2, ct, 1, cb - ct, g.mortar[i]);  // juntas verticais
+    if (t >= y0 && t < y1) G->fillRect(i * 2, t, 2, 1, mix565(ceiling, g.wall[i], 128));  // borda mais suave
+    if (b - 1 >= y0 && b - 1 < y1) G->fillRect(i * 2, b - 1, 2, 1, mix565(floor, g.wall[i], 128));
+  }
+}
+
+// Túnel: cada amostra 2x2 tem profundidade e ângulo na tabela da flash (tunel_lut.h); o avanço desloca as faixas de
+// cor ao longo do eixo, sem conta em ponto flutuante por quadro. Desenha linha a linha (uiRowBuf), só as da faixa.
+static void drawTunnel(const UiState &s) {
+  const World3D &w = *world3d;
+  int y0 = uiClip.on ? uiClip.y0 : 0, y1 = uiClip.on ? uiClip.y1 : 240;
+  if (y0 < 0) y0 = 0;
+  if (y1 > 240) y1 = 240;
+  unsigned phase = (uint64_t)s.ms * w.speed / 1000U & 31U;
+  int t = s.ms % 4000, tri = t < 2000 ? t : 4000 - t;
+  int shift = (tri * 2 - 2000) * w.sway / 2000;  // "sway" balança o ponto de fuga
+  int rotation = (uint64_t)s.ms * w.spin / 4000U & 15;  // "spin" gira os setores de cor
+  uint16_t *row = uiRowBuf();
+  uint8_t depth[60];
+  for (int y = y0 & ~1; y < y1; y += 2) {
+    int py = y / 2, qy = py < 60 ? 59 - py : py - 60;
+    unsigned nib = (unsigned)pgm_read_word(&TUNEL_ROWS[qy]) * 2;
+    int prev = 0;
+    for (int q = 0; q < 60; q++) {
+      auto next = [&]() -> uint8_t { uint8_t b = pgm_read_byte(&TUNEL_DEPTH[nib / 2]); uint8_t v = nib & 1 ? b & 15 : b >> 4; nib++; return v; };
+      uint8_t v = next();
+      if (v == 15) { uint8_t hi = next(), lo = next(); prev = hi << 4 | lo; }
+      else prev += (int)v - 7;
+      depth[q] = (uint8_t)prev;
+    }
+    for (int px = 0; px < 120; px++) {
+      int sx = px - shift;
+      if (sx < 0) sx = 0;
+      if (sx > 119) sx = 119;
+      int qx = sx < 60 ? 59 - sx : sx - 60;
+      unsigned idx = qy * 60 + qx, a = (pgm_read_byte(&TUNEL_ANGLE[idx / 4]) >> ((idx & 3) * 2)) & 3, z = depth[qx];
+      if (w.shape) z = pgm_read_byte(&TUNEL_SQUARE[qx > qy ? qx : qy]);
+      int sector = sx >= 60 ? (py >= 60 ? a : 15 - a) : (py >= 60 ? 7 - a : 8 + a);
+      uint16_t c = w.colors[((sector + rotation) & 15) / 4];
+      unsigned band = (z + phase) & 31;
+      if (band < 13) c = (c & 0xf7de) >> 1;  // metade do brilho: as faixas escuras
+      if (band == 0 || band == 16) c = w.accent;
+      row[px * 2] = row[px * 2 + 1] = c;
+    }
+    if (y >= y0) blit(0, y, row, 240, 1);
+    if (y + 1 < y1) blit(0, y + 1, row, 240, 1);
   }
 }
 
@@ -848,6 +1350,7 @@ static void drawLayer(const Layer &L, const UiState &s, const char *txt) {
         }
       break;
     }
+    case L_WORLD3D: world3d->kind ? drawGrid(s) : drawTunnel(s); break;
     case L_MASCOT: mascot(L.x, L.y, L.size, L.var == 8 ? autoMood(s) : L.var); break;
     case L_PLANT: uiSprite(plantSprite(s.streak), L.x, L.y, L.size); break;
     case L_WEATHER:
@@ -915,6 +1418,7 @@ void facePackRender(const UiState &s, bool full) {
   int nd = 0;
   for (int i = 0; i < nLay; i++) {
     Layer &L = lay[i];
+    if (L.mot != 0xFF) moveLayer(L, s);  // posição do instante, usada abaixo e no desenho das faixas
     bool vis = cond(L.when, s);
     uint32_t sig = vis ? signature(L, s, txt, sizeof txt) : 0;
     if (!full && sig == L.sig) continue;
@@ -929,7 +1433,11 @@ void facePackRender(const UiState &s, bool full) {
     L.bw = nb.w;
     L.bh = nb.h;
   }
-  if (full) {
+  // Com cena 3D o desenho completo também vai em faixas fora da tela: a cena cobre tudo (sem apagar antes, a tela não
+  // pisca) e o texto "overlay" precisa dos pixels da cena na faixa para misturar a borda.
+  const bool scene = world3d && lay[0].sig;  // a cena é sempre a camada 0; com "when" ela pode estar escondida
+  if (full && scene) addDirty(dirty, nd, {0, 0, 240, 240});
+  else if (full) {
     G->fillScreen(bgColor);
     for (int i = 0; i < nLay; i++)
       if (lay[i].sig) {
@@ -943,7 +1451,7 @@ void facePackRender(const UiState &s, bool full) {
   struct Area { Box d; const UiState *s; char *txt; } area = {{0, 0, 0, 0}, &s, txt};
   auto paint = [](void *p) {
     Area &a = *(Area *)p;
-    G->fillRect(a.d.x, a.d.y, a.d.w, a.d.h, bgColor);
+    if (!world3d || !lay[0].sig) G->fillRect(a.d.x, a.d.y, a.d.w, a.d.h, bgColor);  // a cena 3D (camada 0) pinta tudo
     for (int i = 0; i < nLay; i++) {
       const Layer &L = lay[i];
       Box lb = {L.bx, L.by, L.bw, L.bh};
