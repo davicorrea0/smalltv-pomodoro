@@ -84,23 +84,9 @@ If the clock freezes or keeps restarting, **unplug it and plug it back in 3 time
 
 See every face in the [gallery](https://davicorrea0.github.io/smalltv-pomodoro/en/gallery.html), what changed in each [release](https://davicorrea0.github.io/smalltv-pomodoro/en/releases.html), and how to use it all in the [docs](https://davicorrea0.github.io/smalltv-pomodoro/en/docs.html). The full list and the technical details are in [docs/TECHNICAL.md](docs/TECHNICAL.md).
 
-## How it compares
+## Related projects
 
-There is more than one good way to use this clock. Pick what fits you.
-
-| | GeekMagic firmware | [smalltv-mod](https://github.com/giovi321/smalltv-mod) | SmallTV Pomodoro |
-|---|---|---|---|
-| Focus | A clock with weather, photos and themes | Stock and crypto ticker, Claude usage meter, plane radar, Home Assistant screens and themes | A Pomodoro timer with a character and a focus history |
-| Devices | Each model has its own | 5: SmallTV, SmallTV Ultra, SmallTV Pro, an ESP32-C2 SmallTV and the NM-TV-154 | SmallTV Ultra only |
-| Install | Comes on the clock | Factory page (two steps with a loader on the Ultra) or USB, depending on the model | Factory page, sometimes with the same loader as smalltv-mod; no cable |
-| Faces | Factory themes | Themes (`.stheme`) and a visual editor in the browser | Built-in faces and a gallery of `.json` faces |
-| Data | Factory weather service | Straight from the sources (Yahoo Finance and others) or your MQTT broker | Straight from Open-Meteo (weather) and time servers; no cloud of its own |
-| Price | Comes with the clock | Free | Free |
-| Source | Closed | Open (WTFPL) | Open (GPL-3.0) |
-
-- **smalltv-mod** is the best choice if you have another model or want MQTT. Its loader is what makes our install work on some units, and we proposed a [shared face format](https://github.com/giovi321/smalltv-mod/issues/31) to it.
-- **The factory firmware** needs nothing installed.
-- **This project** is for people who want a focus timer on the desk: free, open, with no account and no cloud.
+- **[smalltv-mod](https://github.com/giovi321/smalltv-mod)** by giovi321 is a partner project for the same family of clocks: stock and crypto tickers, Home Assistant screens, themes with a visual editor, and support for five models. Its loader is what makes our install work on some units, and the two projects are working on a [shared face format](https://github.com/giovi321/smalltv-mod/issues/31).
 
 ## FAQ
 

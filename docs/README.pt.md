@@ -84,23 +84,9 @@ Se o relógio travar ou ficar reiniciando, **tire da tomada e ligue de novo 3 ve
 
 Veja todos os mostradores na [galeria](https://davicorrea0.github.io/smalltv-pomodoro/galeria.html), o que mudou em cada [versão](https://davicorrea0.github.io/smalltv-pomodoro/versoes.html) e como usar tudo na [documentação](https://davicorrea0.github.io/smalltv-pomodoro/docs.html). A lista completa e os detalhes técnicos estão em [TECHNICAL.md](TECHNICAL.md) (em inglês).
 
-## Comparação
+## Projetos relacionados
 
-Há mais de um bom jeito de usar este relógio. Escolha o que combina com você.
-
-| | Firmware da GeekMagic | [smalltv-mod](https://github.com/giovi321/smalltv-mod) | SmallTV Pomodoro |
-|---|---|---|---|
-| Foco | Relógio com clima, fotos e temas | Cotações de ações e cripto, medidor de uso do Claude, radar de aviões, telas do Home Assistant e temas | Pomodoro com personagem e histórico de focos |
-| Aparelhos | Cada modelo tem o seu | 5: SmallTV, SmallTV Ultra, SmallTV Pro, um SmallTV ESP32-C2 e o NM-TV-154 | Só o SmallTV Ultra |
-| Instalação | Vem no relógio | Página de fábrica (em duas etapas com carregador no Ultra) ou USB, conforme o modelo | Página de fábrica, às vezes com o mesmo carregador do smalltv-mod; sem cabo |
-| Mostradores | Temas de fábrica | Temas (`.stheme`) e um editor visual no navegador | Embutidos e uma galeria de mostradores `.json` |
-| Dados | Serviço de clima de fábrica | Direto das fontes (Yahoo Finance e outras) ou do seu broker MQTT | Direto do Open-Meteo (clima) e de servidores de hora; sem nuvem própria |
-| Preço | Vem com o relógio | Grátis | Grátis |
-| Código | Fechado | Aberto (WTFPL) | Aberto (GPL-3.0) |
-
-- **smalltv-mod** é a melhor escolha para outro modelo ou para quem quer MQTT. O carregador dele é o que faz a nossa instalação funcionar em algumas unidades, e propusemos a ele um [formato de mostrador em comum](https://github.com/giovi321/smalltv-mod/issues/31).
-- **O firmware de fábrica** não pede instalação nenhuma.
-- **Este projeto** é para quem quer um timer de foco na mesa: grátis, aberto, sem conta e sem nuvem.
+- **[smalltv-mod](https://github.com/giovi321/smalltv-mod)**, do giovi321, é um projeto parceiro para a mesma família de relógios: cotações de ações e cripto, telas do Home Assistant, temas com editor visual e suporte a cinco modelos. O carregador dele é o que faz a nossa instalação funcionar em algumas unidades, e os dois projetos estão trabalhando num [formato de mostrador em comum](https://github.com/giovi321/smalltv-mod/issues/31).
 
 ## Perguntas frequentes
 
