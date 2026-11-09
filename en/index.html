@@ -66,12 +66,12 @@
       <p class="meta">Free and open (GPL-3.0) · English, Portuguese and Spanish · <a href="#device">is this my device?</a></p>
     </div>
     <div>
-      <div class="device" aria-label="Preview of the clock switching faces">
-        <div class="screen" id="screen">
-          <img class="px on" src="../img/faces/face-1.png" alt="Tomato face" width="240" height="240">
+      <div class="device" aria-label="Demo of the clock running">
+        <div class="screen">
+          <img class="px on" src="../img/hero-sim-en.gif" alt="SmallTV Pomodoro screens in a loop: a focus session with its progress ring, the end of a phase, the tomato scene from day to night and rain, the world map, the yearly garden and the Flip, Retro LCD and Neon faces" width="480" height="480">
         </div>
       </div>
-      <div class="device-caption" id="screen-name">Tomato</div>
+      <div class="device-caption">rendered by the firmware simulator</div>
     </div>
   </div>
 </div>
@@ -94,11 +94,11 @@
       <div class="eyebrow">See it run</div>
       <h2>A timer you catch from the corner of your eye</h2>
       <p class="section-lead">A ring fills up until the end of the focus, the end time stays on screen and the tomato keeps you company: focused while you work, a coffee on the break, napping when you pause and jumping when a phase ends.</p>
-      <p class="fine-print">Animation made with the project's simulator, which compiles the same drawing code as the firmware. A video of the real clock is coming.</p>
+      <p class="fine-print">rendered by the firmware simulator</p>
     </div>
     <!-- video here: swap the <img> for <video src="../img/relogio.mp4" poster="../img/relogio.jpg" autoplay muted loop playsinline width="480" height="480"></video> once the video of the real clock is ready -->
     <figure class="clip">
-      <img class="px" src="../img/hero-sim.gif" alt="SmallTV Pomodoro screens in a loop: the tomato scene, a focus session with its progress ring, the end of a phase, rain on the way, and the Flip, Neon, Retro LCD and World faces" width="480" height="480" loading="lazy">
+      <img class="px" src="../img/hero-sim-en.gif" alt="SmallTV Pomodoro screens in a loop: a focus session with its progress ring, the end of a phase, the tomato scene from day to night and rain, the world map, the yearly garden and the Flip, Retro LCD and Neon faces" width="480" height="480" loading="lazy">
     </figure>
   </div>
 </section>
@@ -225,15 +225,16 @@
           <summary>Got “ERROR[4]: Not Enough Space”?</summary>
           <p style="color:var(--muted)">The factory update space varies between units. In that case, go through a small loader first:</p>
           <ol>
-            <li>Download <a href="https://github.com/giovi321/smalltv-mod/releases/tag/v2.8.2"><code>smalltv-mod-loader.bin</code></a> (giovi321/smalltv-mod v2.8.2) and upload it under <strong>Firmware Upgrade</strong>.</li>
+            <li>Download <a href="https://github.com/giovi321/smalltv-mod/releases/tag/v2.8.2"><code>smalltv-mod-loader.bin</code></a> (giovi321/smalltv-mod v2.8.2) and upload it under <strong>Firmware Upgrade</strong>. <strong>The screen goes black with the loader, and that is normal:</strong> the clock is on and waiting for the next step.</li>
             <li>Join the open Wi-Fi network <code>SmallTV-Loader</code> from your phone or computer.</li>
-            <li>Open <code>http://192.168.4.1/update</code> and upload the SmallTV Pomodoro firmware.</li>
+            <li>Open <code>http://192.168.4.1/update</code> and upload the SmallTV Pomodoro <code>.bin</code>. <strong>Do not unplug it until the Pomodoro screen (the Wi-Fi QR code) appears.</strong> The clock restarts by itself after the upload.</li>
           </ol>
         </details>
       </li>
       <li>
         <h3>Connect it to Wi-Fi</h3>
-        <p>If the clock does not join your network by itself, scan the QR on its screen with your phone, confirm the <code>SmallTV-Pomodoro</code> network and pick yours.</p>
+        <p>If the clock does not join your network by itself, scan the QR on its screen with your phone, confirm the <code>SmallTV-Pomodoro</code> network and pick yours (<strong>2.4 GHz</strong> networks only).</p>
+        <p>If the Wi-Fi does not connect, do not unplug the clock to try again: 3 restarts in a row, each under 30 s, open <a href="docs.html#recuperacao">recovery mode</a> (safe, but confusing).</p>
       </li>
       <li>
         <h3>Open the panel</h3>
@@ -247,8 +248,7 @@
 
     <details class="note" id="revert" style="margin-top:14px">
       <summary>Going back to the original firmware</summary>
-      <p style="color:var(--muted)">Download GeekMagic's <code>.bin</code> from <a href="https://github.com/GeekMagicClock/smalltv-ultra">GeekMagicClock/smalltv-ultra</a>, open <strong>recovery mode</strong> (unplug it and plug it back in 3 times in a row, less than 30 s each; the network password is on the screen) and upload the file there. <strong>Settings → Update firmware</strong> won't do: it only accepts firmware signed by this project.</p>
-      <p style="color:var(--muted);margin:0">Save a backup in the panel first: the original firmware splits the memory differently, and photos and downloaded faces may not stay. <a href="docs.html#voltar-original">More details</a>.</p>
+      <p style="color:var(--muted);margin:0">Since the 1.24 memory layout change (4M2M), going back to <a href="https://github.com/GeekMagicClock/smalltv-ultra">GeekMagic's original firmware</a> over Wi-Fi has not been tested on a real clock yet. The step-by-step instructions are on hold until we test it with a serial cable to make sure it is safe — do not try it unless you can <a href="docs.html#recuperacao">reflash over a cable (USB-TTL)</a>.</p>
     </details>
   </div>
 </section>
@@ -262,7 +262,7 @@
       <details class="note"><summary>Is it safe?</summary><p>The clock checks every update (size, CRC, full decompression and the project's signature) before switching, and the current firmware keeps running if anything fails. If it freezes, recovery mode opens with no button. Flashing any other firmware is always at your own risk.</p></details>
       <details class="note"><summary>Where does my data go?</summary><p>It stays on the clock. The clock gets the time from time servers and the weather from Open-Meteo; the panel gets updates from this website. There is no project account or cloud.</p></details>
       <details class="note"><summary>What about the photos already on the clock?</summary><p>Installing formats the file storage, so they are not kept. The saved Wi-Fi stays. Upload your photos again from the panel.</p></details>
-      <details class="note"><summary>Can I go back to the original firmware?</summary><p>Through recovery mode, which accepts any firmware. Save a backup first. <a href="#revert">How to go back</a>.</p></details>
+      <details class="note"><summary>Can I go back to the original firmware?</summary><p>The step-by-step instructions are on hold until we test going back from the 1.24 memory layout on a clock with a serial cable. <a href="#revert">Details</a>.</p></details>
     </div>
     <p class="more">More answers in the <a href="docs.html#faq">docs FAQ</a>.</p>
   </div>

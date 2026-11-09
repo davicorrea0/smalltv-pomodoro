@@ -70,14 +70,15 @@
   <ol class="steps"><li><h3>Download the file</h3><p>Get the latest <code>.bin</code> from the <a href="https://github.com/davicorrea0/smalltv-pomodoro/releases">releases page</a> (or the download button on the <a href="./">home page</a>). Use the <strong>stable</strong> version.</p></li><li><h3>Open the factory clock's page</h3><p>In your browser, open the clock's address (the IP shown on its screen) and go to <strong>Firmware Upgrade</strong>.</p></li><li><h3>Upload the file</h3><p>Pick the <code>.bin</code>, upload it and wait for the clock to restart by itself. The Pomodoro screens appear next.</p></li></ol>
   <div class="note warn"><p><strong>Got ERROR[4]: Not Enough Space?</strong> The factory update space varies between units. Fix it in two steps:</p>
    <ol style="margin:6px 0 0;padding-left:20px;color:var(--muted)">
-    <li>First upload the loader <a href="https://github.com/giovi321/smalltv-mod/releases/tag/v2.8.2"><code>smalltv-mod-loader.bin</code></a> (giovi321/smalltv-mod v2.8.2) through the same <strong>Firmware Upgrade</strong>.</li>
-    <li>Join the open network <code>SmallTV-Loader</code> and upload the Pomodoro firmware at <code>http://192.168.4.1/update</code>.</li>
+    <li>First upload the loader <a href="https://github.com/giovi321/smalltv-mod/releases/tag/v2.8.2"><code>smalltv-mod-loader.bin</code></a> (giovi321/smalltv-mod v2.8.2) through the same <strong>Firmware Upgrade</strong>. <strong>The screen goes black with the loader, and that is normal:</strong> the clock is on and waiting for the next step.</li>
+    <li>Join the open network <code>SmallTV-Loader</code> and upload the Pomodoro <code>.bin</code> at <code>http://192.168.4.1/update</code> (from your phone or computer). <strong>Do not unplug it until the Pomodoro screen (the Wi-Fi QR code) appears.</strong> The clock restarts by itself after the upload.</li>
    </ol></div>
   <div class="note"><p><strong>Photos and GIFs from the factory firmware:</strong> installing formats the file storage, so the original's photos are <strong>not kept</strong>. The saved Wi-Fi stays; settings start from scratch. Upload the photos again from the panel afterwards.</p></div>
 
   <h3 class="sub">Connect the clock to Wi-Fi</h3>
   <p>If the clock already had your home Wi-Fi saved by the factory firmware, it joins by itself and you can skip to <a href="#achar-painel">finding the panel</a>. If it did not:</p>
   <ol class="steps"><li><h3>Scan the QR on the screen</h3><p>The screen shows <strong>STEP 1/2</strong> with a QR. Point your phone's camera at it and confirm joining the <code>SmallTV-Pomodoro</code> network. The QR already carries that network's temporary password.</p><p class="m">No camera, or the QR did not scan? Join <code>SmallTV-Pomodoro</code> from your phone's Wi-Fi list and type the 8-character password shown on the screen.</p></li><li><h3>Open the portal</h3><p>Once your phone is connected, the screen changes to <strong>STEP 2/2</strong>. The portal usually opens by itself. If it does not, scan the second QR or open <code>http://192.168.4.1/</code>.</p></li><li><h3>Pick your home Wi-Fi</h3><p>Select your network and type its password. Only <strong>2.4 GHz</strong> networks work (the clock has no 5 GHz). The clock restarts and shows the panel's address.</p></li></ol>
+  <div class="note"><p>If the Wi-Fi does not connect, do not unplug the clock to try again: 3 restarts in a row, each under 30 s, open <a href="#recuperacao">recovery mode</a> (safe, but confusing).</p></div>
   <div class="row2">
    <figure class="lcd"><img class="px" src="../docs/img/qr-1.png" width="240" height="240" loading="lazy" alt="Screen with a QR and the SmallTV-Pomodoro network password"><figcaption>Step 1/2: join the clock's network</figcaption></figure>
    <figure class="lcd"><img class="px" src="../docs/img/qr-2.png" width="240" height="240" loading="lazy" alt="Screen with the QR that opens the setup portal"><figcaption>Step 2/2: open the portal</figcaption></figure>
@@ -201,8 +202,7 @@
   </div>
 
   <div class="topic" id="voltar-original"><h3>Go back to the original firmware</h3>
-   <ol class="steps"><li><p>Download GeekMagic's <code>.bin</code> from <a href="https://github.com/GeekMagicClock/smalltv-ultra">GeekMagicClock/smalltv-ultra</a>.</p></li><li><p>Open <a href="#recuperacao">recovery mode</a> (3 power cycles) and upload the file there. <em>Settings → Update firmware</em> will not work: it only accepts firmware signed by this project.</p></li></ol>
-   <div class="note"><p>The original firmware expects photos in another part of the memory; the Pomodoro ones are left behind (it may format or reuse that area). Back up first if you want to keep them.</p></div>
+   <div class="note warn"><p><strong>Instructions on hold until tested with a cable:</strong> since version 1.24 (4M2M memory layout), going back to <a href="https://github.com/GeekMagicClock/smalltv-ultra">GeekMagic's original firmware</a> through recovery mode has not been tested on a real clock yet. Do not try going back unless you have a 3.3 V USB-TTL adapter to <a href="#recuperacao">reflash over a cable</a> if the original firmware does not boot.</p></div>
   </div>
  </div>
 </section>

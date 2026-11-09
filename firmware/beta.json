@@ -1,40 +1,40 @@
 {
-  "version": "1.24.12",
-  "date": "2026-11-04",
+  "version": "1.25.0",
+  "date": "2026-11-06",
   "file": "beta/smalltv-pomodoro.bin",
-  "size": 584112,
+  "size": 585248,
   "notes": {
     "pt": [
-      "Versão de teste: controles do timer (zerar, tocar, pausar, pular) redesenhados em contorno arredondado",
-      "Ícones do painel em pixel art 16x16, nítidos também em telas com escala de 125% e 150%; logo, timer e títulos na fonte pixel Silkscreen",
-      "Ajustes do painel com controles deslizantes",
-      "Prepara o relógio para as próximas atualizações; relógios mais antigos atualizam em duas etapas, sozinhos",
-      "Mais memória livre no relógio: tabelas do QR code, GIF e JPEG na flash, e respostas do painel enviadas em partes",
-      "Foto que falha por falta de memória mostra \"Sem memória p/ foto\" e tenta de novo, em vez de \"JPG inválido\""
+      "Versão de teste: fuso horário escolhido pelo nome e diagnóstico com gráficos",
+      "Fuso horário: escolha a sua cidade numa lista por nome; a regra técnica (POSIX) fica em \"Avançado\", e o painel avisa quando o relógio não vai mudar para o horário de verão da sua cidade",
+      "Fotos: quando falta memória para mostrar uma foto, o relógio avisa \"Sem memoria p/ foto\" e não apaga mais a foto enviada",
+      "Mostradores de pacote liberam a memória quando o álbum ou a atualização precisam dela e voltam sozinhos depois",
+      "Instalar de novo um mostrador que já existe não corre mais o risco de perdê-lo se o relógio desligar no meio",
+      "Ajustes → Sistema: gráficos de memória e de sinal do Wi-Fi, barra de uso da RAM e o botão \"Copiar diagnóstico\", que copia só dados técnicos, sem nome, rede, IP nem cidade"
     ],
     "en": [
-      "Test version: timer controls (reset, play, pause, skip) redrawn as rounded outlines",
-      "Panel icons in 16x16 pixel art, sharp also at 125% and 150% display scaling; logo, timer and headings in the Silkscreen pixel font",
-      "Panel Settings use sliders",
-      "Prepares the clock for upcoming updates; older clocks update in two steps, on their own",
-      "More free memory on the clock: QR code, GIF and JPEG tables moved to flash, and panel responses sent in chunks",
-      "A photo that fails for lack of memory shows \"No memory for photo\" and retries, instead of \"Invalid JPG\""
+      "Test version: pick your time zone by name, and diagnostics with charts",
+      "Time zone: choose your city from a list by name; the technical rule (POSIX) moves to \"Advanced\", and the panel warns when the clock won't switch to your city's daylight saving time",
+      "Photos: when there isn't enough memory to show a photo, the clock says \"No memory for photo\" and no longer deletes the photo you uploaded",
+      "Face packs free their memory when the album or an update needs it, and come back on their own afterwards",
+      "Reinstalling a face that already exists no longer risks losing it if the clock powers off midway",
+      "Settings → System: memory and Wi-Fi signal charts, a RAM usage bar and a \"Copy diagnostics\" button that copies technical data only, without name, network, IP or city"
     ],
     "es": [
-      "Versión de prueba: controles del temporizador (reiniciar, reproducir, pausar, saltar) rediseñados con contorno redondeado",
-      "Iconos del panel en pixel art 16x16, nítidos también con escalado de 125% y 150%; logo, temporizador y títulos en la fuente pixel Silkscreen",
-      "Los Ajustes del panel usan controles deslizantes",
-      "Prepara el reloj para las próximas actualizaciones; los relojes más antiguos se actualizan en dos pasos, solos",
-      "Más memoria libre en el reloj: tablas del código QR, GIF y JPEG en la flash, y respuestas del panel enviadas en partes",
-      "Una foto que falla por falta de memoria muestra \"Sin memoria p/ foto\" y lo intenta de nuevo, en lugar de \"JPG invalido\""
+      "Versión de prueba: huso horario elegido por nombre y diagnóstico con gráficos",
+      "Huso horario: elige tu ciudad en una lista por nombre; la regla técnica (POSIX) pasa a \"Avanzado\", y el panel avisa cuando el reloj no va a cambiar al horario de verano de tu ciudad",
+      "Fotos: cuando falta memoria para mostrar una foto, el reloj avisa \"Sin memoria p/ foto\" y ya no borra la foto enviada",
+      "Las esferas de paquete liberan la memoria cuando el álbum o la actualización la necesitan y vuelven solas después",
+      "Reinstalar una esfera que ya existe ya no corre el riesgo de perderla si el reloj se apaga a mitad",
+      "Ajustes → Sistema: gráficos de memoria y de señal del Wi-Fi, barra de uso de la RAM y el botón \"Copiar diagnóstico\", que copia solo datos técnicos, sin nombre, red, IP ni ciudad"
     ]
   },
   "gz": "beta/smalltv-pomodoro.bin.gz",
-  "gzsize": 430474,
+  "gzsize": 431538,
   "layout": "4m2m",
-  "panel": "panel-1193c99d0700ee4353415a82.html.gz",
-  "psri": "sha256-EZPJnQcA7kNTQVqC5xgMFKAxOwBd/Gr5e/dLBvIcJTI=",
-  "sig": "jDgKxKN+YBb4L81KoQwzJTDzUiqJ1tK6JNhU5x8pdn4OGPkNTbI54lM1FkieAc/bmxHnG0Ifup1E0/Pgpw+RK1pEYaI8mkGvYFJ1WK+yvfCF/2TbQdOzEtL2XQzc5HvPLl7Fc0HPvNLg5E1usvD2/+Q/TI59pdOpqGG9ouFkDdKi+TZg1q9Nwyb8P+VVrQfurBCYBoipUBOflqWcDrHDujUpkHaQUmbdV4DS6lSyRZ5RdlMjmAXwWNFC2zRWcf6VRr9dHSeHrKBDIVDdhQt0gHQ+MTMDuXGbGL+93GPUpe/u8nRw5W6yThC4XTvzGLf6UbksjzoaSEEv4KmWjHxAjg==",
-  "gzsig": "a+T1a5IsM3D4tpB5FCmahbFyBOv31VzmDs6n/PI9ZVa8am6JSm9o+jlAtlLyD3sMe2ZfqrJRKjo31enSUzDDhsTovB6bS7tkANiciONXR+iEDkpVLDrAyI9OuyAYQLrnAvPETHBLLeQ+C0TFra60A64Vx6+UDTxc26Fig+qFw10PB8Q9oWeULIn15+iL1DhZHoWc/qW3wmENiGbU6+SFENQ1HL3zx2K0Vq7wNuP9AckK/vLX1RTEzBJdmr2Bw0I0drTg7+/RqtLox+dI18RikJZdQ4iUD14Z0nGSuqhRRMhUNP2uoAjLzONk6AVzJaqt7mGjVgzGK+8B0Uy6XpwtWw==",
+  "panel": "panel-a794f180528f0053d3ca3009.html.gz",
+  "psri": "sha256-p5TxgFKPAFPTyjAJG8Wh8er/YtHAuhnPECv2MOasrfI=",
+  "sig": "azbxjNxmcsybr14TmCfTm8AMceYVTRjxdD+10n4YBnUnVUkY+CRqxDFRtM5PF+4L3DPEM61tFspLDX8j5Q45l6xToqf5tz0CqKQgKUycA/IIvKL9rLa0fj2NWVetfGifzSNyPR7Lqugu5+aWmCFx/NFbjfsTWdYAGPNCEf/M7zo+icamFq48cw1T19vbAJeU9y9oAlm2QjspLOFaImYob8Wp6Itmf4ZvQT4JvIS3YvzM4fjRF01WzUYYF2LUnpdlHA0CYwojHhnqf+im1gbbwJDT2oy+Mo9rEBcjCIq+6enn/1HbUEpLUdm+DdeeCohXQNgMybtJR8Y0hLRa7J67kA==",
+  "gzsig": "RAIXW8gjUnwWn4aKqutxy2wV0lSB5BqwiMnCO+eIvrl0mNtY3Lx4Yn1eJczA9OJYdInWMtKlp4dvPNmSCKAlh2J1+Yg/NmVPoYF8QnEknJ5im02AxhCNVj2AQ+VgDgeP+yxsdMJ+uf82q1Qe/+fAmzmLGz3KbsGnmrG4mmqABF4J1f2jCpu3eReZxWsqQuw8Mpi77q3JJUxMJWpnhYzsnpa7ZxEfZJkJ3YP+EiT8iQILIoDW2a3JXihyyIwd9oO7iVjHGD95EG+cS9Q+x7LJ155sjcLiNd+FjxxTz2+4a92bC3DEAcRN1ylkn6ihup4vc6Y4a+tvtRtWQ8BpL1IpKg==",
   "ponte": 1
 }

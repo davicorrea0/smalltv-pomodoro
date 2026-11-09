@@ -66,12 +66,12 @@
       <p class="meta">Grátis e aberto (GPL-3.0) · português, inglês e espanhol · <a href="#aparelho">é o meu aparelho?</a></p>
     </div>
     <div>
-      <div class="device" aria-label="Prévia do relógio trocando de mostrador">
-        <div class="screen" id="screen">
-          <img class="px on" src="img/faces/face-1.png" alt="Mostrador Tomate" width="240" height="240">
+      <div class="device" aria-label="Demonstração do relógio em funcionamento">
+        <div class="screen">
+          <img class="px on" src="img/hero-sim.gif" alt="Telas do SmallTV Pomodoro em sequência: um foco com o anel de progresso, o fim de uma fase, a cena do tomate do dia à noite e com chuva, o mapa-múndi, a horta do ano e os mostradores Flip, LCD retrô e Neon" width="480" height="480">
         </div>
       </div>
-      <div class="device-caption" id="screen-name">Tomate</div>
+      <div class="device-caption">gerado pelo simulador do firmware</div>
     </div>
   </div>
 </div>
@@ -94,11 +94,11 @@
       <div class="eyebrow">Veja funcionando</div>
       <h2>Um timer que você vê com o canto do olho</h2>
       <p class="section-lead">Um anel enche até o fim do foco, o horário de término fica na tela e o tomate acompanha: concentrado no trabalho, com café na pausa, cochilando quando você pausa e pulando quando a fase acaba.</p>
-      <p class="fine-print">Animação feita com o simulador do projeto, que compila o mesmo código de desenho do firmware. Um vídeo do relógio de verdade vem em breve.</p>
+      <p class="fine-print">gerado pelo simulador do firmware</p>
     </div>
     <!-- vídeo aqui: troque o <img> por <video src="img/relogio.mp4" poster="img/relogio.jpg" autoplay muted loop playsinline width="480" height="480"></video> quando o vídeo do relógio real estiver pronto -->
     <figure class="clip">
-      <img class="px" src="img/hero-sim.gif" alt="Telas do SmallTV Pomodoro em sequência: a cena do tomate, um foco com o anel de progresso, o fim de uma fase, chuva chegando e os mostradores Flip, Neon, LCD retrô e Mundo" width="480" height="480" loading="lazy">
+      <img class="px" src="img/hero-sim.gif" alt="Telas do SmallTV Pomodoro em sequência: um foco com o anel de progresso, o fim de uma fase, a cena do tomate do dia à noite e com chuva, o mapa-múndi, a horta do ano e os mostradores Flip, LCD retrô e Neon" width="480" height="480" loading="lazy">
     </figure>
   </div>
 </section>
@@ -225,15 +225,16 @@
           <summary>Apareceu “ERROR[4]: Not Enough Space”?</summary>
           <p style="color:var(--muted)">O espaço de atualização de fábrica varia entre unidades. Nesse caso, passe antes por um carregador pequeno:</p>
           <ol>
-            <li>Baixe <a href="https://github.com/giovi321/smalltv-mod/releases/tag/v2.8.2"><code>smalltv-mod-loader.bin</code></a> (giovi321/smalltv-mod v2.8.2) e envie em <strong>Firmware Upgrade</strong>.</li>
+            <li>Baixe <a href="https://github.com/giovi321/smalltv-mod/releases/tag/v2.8.2"><code>smalltv-mod-loader.bin</code></a> (giovi321/smalltv-mod v2.8.2) e envie em <strong>Firmware Upgrade</strong>. <strong>A tela fica preta com o carregador, e isso é normal:</strong> o relógio está ligado, esperando o próximo passo.</li>
             <li>Conecte o celular ou computador à rede Wi-Fi aberta <code>SmallTV-Loader</code>.</li>
-            <li>Abra <code>http://192.168.4.1/update</code> e envie o firmware SmallTV Pomodoro.</li>
+            <li>Abra <code>http://192.168.4.1/update</code> e envie o <code>.bin</code> do SmallTV Pomodoro. <strong>Não desligue o relógio até aparecer a tela do Pomodoro (o QR do Wi-Fi).</strong> Ele reinicia sozinho depois do envio.</li>
           </ol>
         </details>
       </li>
       <li>
         <h3>Conecte ao Wi-Fi</h3>
-        <p>Se o relógio não entrar sozinho na sua rede, leia o QR da tela com o celular, confirme a rede <code>SmallTV-Pomodoro</code> e escolha a sua.</p>
+        <p>Se o relógio não entrar sozinho na sua rede, leia o QR da tela com o celular, confirme a rede <code>SmallTV-Pomodoro</code> e escolha a sua (só funciona em <strong>2,4 GHz</strong>).</p>
+        <p>Se o Wi-Fi não conectar, não tire da tomada para tentar de novo: 3 reinícios seguidos, com menos de 30 s ligado em cada um, abrem o <a href="docs.html#recuperacao">modo de recuperação</a> (seguro, mas confunde).</p>
       </li>
       <li>
         <h3>Abra o painel</h3>
@@ -247,8 +248,7 @@
 
     <details class="note" id="voltar" style="margin-top:14px">
       <summary>Voltar ao firmware original</summary>
-      <p style="color:var(--muted)">Baixe o <code>.bin</code> da GeekMagic em <a href="https://github.com/GeekMagicClock/smalltv-ultra">GeekMagicClock/smalltv-ultra</a>, abra o <strong>modo de recuperação</strong> (tire da tomada e ligue de novo 3 vezes seguidas, menos de 30 s cada; a senha da rede aparece na tela) e envie o arquivo por lá. <strong>Ajustes → Atualizar firmware</strong> não serve: ele só aceita firmware assinado deste projeto.</p>
-      <p style="color:var(--muted);margin:0">Faça um backup no painel antes: o firmware original usa outra divisão da memória, e as fotos e mostradores baixados podem não ficar. <a href="docs.html#voltar-original">Mais detalhes</a>.</p>
+      <p style="color:var(--muted);margin:0">Desde a mudança do layout de memória na versão 1.24 (4M2M), a volta ao <a href="https://github.com/GeekMagicClock/smalltv-ultra">firmware original da GeekMagic</a> pelo Wi-Fi ainda não foi testada num relógio de verdade. A instrução passo a passo fica suspensa até testarmos com cabo serial para garantir que é seguro — não tente sem ter como <a href="docs.html#recuperacao">regravar por cabo (USB-TTL)</a>.</p>
     </details>
   </div>
 </section>
@@ -262,7 +262,7 @@
       <details class="note"><summary>É seguro?</summary><p>O relógio confere cada atualização (tamanho, CRC, descompressão completa e a assinatura do projeto) antes de trocar, e o firmware atual continua se algo falhar. Se travar, o modo de recuperação abre sem botão. Gravar outro firmware é sempre por sua conta e risco.</p></details>
       <details class="note"><summary>Para onde vão os meus dados?</summary><p>Ficam no relógio. Ele busca a hora em servidores de hora e o clima no Open-Meteo; o painel busca as atualizações neste site. Não há conta nem nuvem do projeto.</p></details>
       <details class="note"><summary>E as fotos que já estão no relógio?</summary><p>A instalação formata a memória de arquivos, então elas não ficam. O Wi-Fi salvo continua. Envie as fotos de novo pelo painel.</p></details>
-      <details class="note"><summary>Dá para voltar ao firmware original?</summary><p>Pelo modo de recuperação, que aceita qualquer firmware. Faça um backup antes. <a href="#voltar">Como voltar</a>.</p></details>
+      <details class="note"><summary>Dá para voltar ao firmware original?</summary><p>A instrução passo a passo está suspensa até testarmos a volta a partir do layout de memória da 1.24 num relógio com cabo serial. <a href="#voltar">Detalhes</a>.</p></details>
     </div>
     <p class="more">Mais respostas nas <a href="docs.html#faq">perguntas frequentes da documentação</a>.</p>
   </div>
