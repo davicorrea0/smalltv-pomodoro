@@ -58,11 +58,12 @@
     <div>
       <div class="eyebrow">Open firmware for the GeekMagic SmallTV Ultra</div>
       <h1>Focus on your desk.<br><em>Not on your phone.</em></h1>
-      <p class="lead">A Pomodoro timer with a pixel art tomato, clock faces, weather and a web panel on your phone, running on your SmallTV Ultra. No account, no cloud and no cable to install.</p>
+      <p class="lead">A Pomodoro timer with a pixel art tomato, <!--g:builtin-->13<!--/g--> clock faces, weather and a web panel on your phone, running on your SmallTV Ultra. No account, no cloud and no cable to install.</p>
       <div class="btns">
         <a class="btn primary" href="#install"><img class="px" src="../img/icons/download.svg" alt="">Install</a>
+        <a class="btn" href="gallery.html">See the faces</a>
       </div>
-      <p class="meta">Free and open (GPL-3.0) · English, Portuguese and Spanish · <a href="gallery.html">see the faces</a></p>
+      <p class="meta">Free and open (GPL-3.0) · English, Portuguese and Spanish · <a href="#device">is this my device?</a></p>
     </div>
     <div>
       <div class="device" aria-label="Demo of the clock running">
@@ -75,22 +76,43 @@
   </div>
 </div>
 
-<section id="what">
+<div class="stats" id="what">
   <div class="wrap">
-    <h2>What it is</h2>
-    <div class="grid two">
-      <div class="card">
-        <h3>The clock: GeekMagic SmallTV Ultra</h3>
-        <p style="color:var(--muted);margin:0">A small desk cube with Wi-Fi and a 240×240 colour screen (ESP8266 chip and ST7789 display). From the factory it shows the time, weather and photos, with GeekMagic's closed firmware.</p>
-      </div>
-      <div class="card">
-        <h3>The firmware: SmallTV Pomodoro</h3>
-        <p style="color:var(--muted);margin:0">A new program for the same device, written from scratch and open on GitHub. You install it from the clock's own web page, like a regular update, and it gains new clock faces, a Pomodoro timer and the tomato.</p>
-      </div>
+    <dl>
+      <div><dt><!--g:builtin-->13<!--/g--></dt><dd>built-in clock faces</dd></div>
+      <div><dt><!--g:catalog-->41<!--/g--></dt><dd>more in the gallery</dd></div>
+      <div><dt>1 year</dt><dd>of focus sessions kept on the clock</dd></div>
+      <div><dt>3</dt><dd>languages on the panel and screen</dd></div>
+      <div><dt>0</dt><dd>accounts, clouds or cables</dd></div>
+    </dl>
+  </div>
+</div>
+
+<section id="video">
+  <div class="wrap split-media">
+    <div>
+      <div class="eyebrow">See it run</div>
+      <h2>A timer you catch from the corner of your eye</h2>
+      <p class="section-lead">A ring fills up until the end of the focus, the end time stays on screen and the tomato keeps you company: focused while you work, a coffee on the break, napping when you pause and jumping when a phase ends.</p>
+      <p class="fine-print">rendered by the firmware simulator</p>
     </div>
-    <h3 class="sub" id="device" style="margin-top:28px">Is this my device?</h3>
-    <p class="section-lead" style="margin-top:6px">Made and tested on the <strong>SmallTV Ultra</strong> (ESP8266); on the Ultra, the factory firmware is branded <em>Ultra</em> (its web page shows a version like <code>Ultra-V9.0.x</code>). The original SmallTV, which is not an Ultra, has not been tested yet. <strong>Do not flash</strong> the SmallTV Pro or other ESP32 / ESP32-C2 clocks.</p>
-    <p class="fine-print">For other models, the partner project <a href="https://github.com/giovi321/smalltv-mod">smalltv-mod</a> by giovi321 runs on five clocks from the same family.</p>
+    <!-- video here: swap the <img> for <video src="../img/relogio.mp4" poster="../img/relogio.jpg" autoplay muted loop playsinline width="480" height="480"></video> once the video of the real clock is ready -->
+    <figure class="clip">
+      <img class="px" src="../img/hero-sim-en.gif" alt="SmallTV Pomodoro screens in a loop: focus ending → break → retro LCD, World, Flip, Nixie, Campfire" width="480" height="480" loading="lazy">
+    </figure>
+  </div>
+</section>
+
+<section id="why">
+  <div class="wrap">
+    <div class="eyebrow">Why use it</div>
+    <h2>The clock you already have, made for focus</h2>
+    <div class="grid two">
+      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/focado.svg" alt=""></span>The timer is the point</h3><p>Focus, short and long breaks, a daily goal and the activity you are doing. The clock keeps a year of sessions, and a plant grows with your streak up to a golden tomato.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/download.svg" alt=""></span>Installs without a cable</h3><p>You upload the file on the clock's own factory web page, like a normal update. Some units need a small loader first; the <a href="docs.html#primeiros-passos">guide</a> shows how.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/seta.svg" alt=""></span>Checked updates</h3><p>New versions arrive with one tap in the panel, signed, and the clock checks the whole file before switching. If something goes wrong, recovery mode opens with no button: power-cycle it 3 times.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/grade.svg" alt=""></span>Faces without reflashing</h3><p><!--g:builtin-->13<!--/g--> built-in faces and <!--g:catalog-->41<!--/g--> more in the gallery, each one a small file the panel installs without updating the firmware.</p></div>
+    </div>
   </div>
 </section>
 
@@ -102,6 +124,7 @@
       <div class="tabs" role="tablist" aria-label="Screens">
         <button type="button" role="tab" data-shot="1" aria-selected="true" aria-pressed="true">Pomodoro</button>
         <button type="button" role="tab" data-shot="0" aria-selected="false" aria-pressed="false">Tomato</button>
+        <button type="button" role="tab" data-shot="3" aria-selected="false" aria-pressed="false">Game</button>
         <button type="button" role="tab" data-shot="4" aria-selected="false" aria-pressed="false">Drawings</button>
       </div>
       <figure class="shot one pomo" role="tabpanel" data-shot="1">
@@ -123,6 +146,10 @@
         <img class="px" src="../img/tomate.png" alt="Tomato scene: day, night, rain, snow, heat and goal reached" width="1480" height="990" loading="lazy">
         <figcaption>Tomato face: day, night, rain, cold, heat and the daily goal reached. The tomato opens its umbrella when rain is about to start.</figcaption>
       </figure>
+      <figure class="shot one" role="tabpanel" data-shot="3" hidden>
+        <img class="px" src="../img/jogo/tomate-7.png" alt="Tomato face with the golden plant and a 7-day streak" width="240" height="240" loading="lazy">
+        <figcaption>Every day in a row with the goal reached grows the plant, up to the golden tomato. <a href="game.html">Meet the game</a>.</figcaption>
+      </figure>
       <figure class="shot" role="tabpanel" data-shot="4" hidden>
         <img class="px" src="../img/assets.png" alt="Sheet with every pixel art drawing in the firmware" width="752" height="568" loading="lazy">
         <figcaption>Every pixel art drawing is a text file in the repository, easy to edit.</figcaption>
@@ -131,33 +158,48 @@
   </div>
 </section>
 
+<section id="new-gallery">
+  <div class="wrap">
+    <div class="eyebrow">Gallery</div>
+    <h2>New clock faces to install</h2>
+    <p class="section-lead">Besides the <!--g:builtin-->13<!--/g--> built-in faces, the gallery has faces that don't ship with the firmware: Bento, Synthwave, Terminal, Aquarium, Station and more. The panel installs each one without reflashing, and “Show on clock” tries it for 15 s without saving.</p>
+    <div class="shelf" id="shelf"><div class="ph"></div><div class="ph"></div><div class="ph"></div><div class="ph"></div></div>
+    <a class="btn primary" href="gallery.html">See the gallery (<span id="shelf-count"><!--g:catalog-->41<!--/g--></span> new)</a>
+  </div>
+</section>
+
 <section id="features">
   <div class="wrap">
-    <h2>Everything that comes with it</h2>
+    <h2>Everything else that comes with it</h2>
+    <p class="section-lead">It runs on the clock itself. With internet, the clock gets the time and the weather (Open-Meteo), and the panel gets updates from this website. No account, no cloud.</p>
     <div class="grid three">
       <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/sol.svg" alt=""></span>Weather</h3><p>From <a href="https://open-meteo.com/">Open-Meteo</a>, no sign-up or API key. A 5-day forecast, °C or °F, and a warning when rain starts within the hour.</p></div>
-      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/jogo/planta/dourada.svg" alt=""></span>Focus game</h3><p>Day streaks, a yearly garden, 10 achievements and a year of focus sessions kept on the clock. <a href="game.html">See the game</a>.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/jogo/planta/dourada.svg" alt=""></span>Focus game</h3><p>Day streaks, a yearly garden, 10 achievements and a day card to share. <a href="game.html">See the game</a>.</p></div>
       <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/foto.svg" alt=""></span>Photos and GIFs</h3><p>Upload them from the panel; the browser crops them to 240×240. The clock checks every GIF before showing it.</p></div>
       <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/lua.svg" alt=""></span>Night brightness</h3><p>The screen dims from sunset to sunrise, or on a schedule you pick.</p></div>
       <div class="card feature" id="alexa"><h3><span class="ico"><img class="px" src="../img/icons/alexa.svg" alt=""></span>Alexa</h3><p>“Alexa, turn on Pomodoro”: start, pause and stop the timer by voice on your local network, with no account or skill. <a href="docs.html#alexa">How to set it up</a>.</p></div>
-      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/celular.svg" alt=""></span>Web panel</h3><p>On your phone or computer, in three languages. Optional password, backup, diagnostics and one-tap updates, checked and signed before the firmware is replaced.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="../img/icons/celular.svg" alt=""></span>Web panel</h3><p>On your phone or computer, in English, Portuguese or Spanish. Optional password, backup and restore, diagnostics, and screen colour and rotation settings.</p></div>
     </div>
   </div>
 </section>
 
-<section id="new-gallery">
+<section id="device">
   <div class="wrap">
-    <h2>Clock faces</h2>
-    <p class="section-lead"><!--g:builtin-->13<!--/g--> ship with the firmware and the gallery has <!--g:catalog-->41<!--/g--> more to install: Bento, Synthwave, Terminal, Aquarium, Station and others. The panel installs each one without reflashing, and “Show on clock” tries it for 15 s without saving.</p>
-    <div class="shelf" id="shelf"><div class="ph"></div><div class="ph"></div><div class="ph"></div><div class="ph"></div></div>
-    <a class="btn primary" href="gallery.html">See the gallery (<span id="shelf-count"><!--g:catalog-->41<!--/g--></span> new)</a>
+    <h2>Is this my device?</h2>
+    <p class="section-lead">The firmware is made and tested on the <strong>SmallTV Ultra</strong>. On the Ultra, the factory firmware is branded <em>Ultra</em> (its web page shows a version like <code>Ultra-V9.0.x</code>).</p>
+    <div class="fit">
+      <div class="yes"><b>GeekMagic SmallTV Ultra</b><span>ESP8266</span><em>Works</em></div>
+      <div class="maybe"><b>Original SmallTV (not Ultra)</b><span>ESP8266</span><em>Not tested</em></div>
+      <div class="no"><b>SmallTV Pro and other ESP32 / ESP32-C2</b><span>ESP32</span><em>Do not flash</em></div>
+    </div>
+    <p class="fine-print">For other models, the partner project <a href="https://github.com/giovi321/smalltv-mod">smalltv-mod</a> by giovi321 runs on five clocks from the same family.</p>
   </div>
 </section>
 
 <section id="install">
   <div class="wrap">
     <h2>How to install</h2>
-    <p class="section-lead">No cable and no software on your computer: everything happens in the browser, on a <strong>2.4 GHz</strong> Wi-Fi network.</p>
+    <p class="section-lead">No cable and no software on your computer: everything happens in the browser. You need a <strong>2.4 GHz</strong> Wi-Fi network.</p>
 
     <div class="download" id="downloads">
       <div>
@@ -173,23 +215,56 @@
 
     <ol class="steps">
       <li>
+        <h3>Download the firmware</h3>
+        <p>Get the <code>.bin</code> file from the button above.</p>
+      </li>
+      <li>
         <h3>Upload it on the factory page</h3>
-        <p>Open the IP the clock shows in your browser, go to <strong>Firmware Upgrade</strong>, pick the <code>.bin</code> and upload it. The clock restarts by itself.</p>
+        <p>Open the IP the clock shows in your browser, go to <strong>Firmware Upgrade</strong>, pick the file and upload it. The clock restarts by itself.</p>
+        <details class="note">
+          <summary>Got “ERROR[4]: Not Enough Space”?</summary>
+          <p style="color:var(--muted)">The factory update space varies between units. In that case, go through a small loader first:</p>
+          <ol>
+            <li>Download <a href="https://github.com/giovi321/smalltv-mod/releases/tag/v2.8.2"><code>smalltv-mod-loader.bin</code></a> (giovi321/smalltv-mod v2.8.2) and upload it under <strong>Firmware Upgrade</strong>. <strong>The screen goes black with the loader, and that is normal:</strong> the clock is on and waiting for the next step.</li>
+            <li>Join the open Wi-Fi network <code>SmallTV-Loader</code> from your phone or computer.</li>
+            <li>Open <code>http://192.168.4.1/update</code> and upload the SmallTV Pomodoro <code>.bin</code>. <strong>Do not unplug it until the Pomodoro screen (the Wi-Fi QR code) appears.</strong> The clock restarts by itself after the upload.</li>
+          </ol>
+        </details>
       </li>
       <li>
         <h3>Connect it to Wi-Fi</h3>
-        <p>If the clock does not join your network by itself, scan the QR on its screen with your phone and pick yours.</p>
-        <p>If it does not connect, do not unplug the clock to try again: 3 restarts in a row open <a href="docs.html#recuperacao">recovery mode</a>.</p>
+        <p>If the clock does not join your network by itself, scan the QR on its screen with your phone, confirm the <code>SmallTV-Pomodoro</code> network and pick yours (<strong>2.4 GHz</strong> networks only).</p>
+        <p>If the Wi-Fi does not connect, do not unplug the clock to try again: 3 restarts in a row, each under 30 s, open <a href="docs.html#recuperacao">recovery mode</a> (safe, but confusing).</p>
       </li>
       <li>
         <h3>Open the panel</h3>
-        <p>Type the IP shown on the screen in your browser (or <code>http://smalltv.local/</code>), pick a face and your weather city, and start a focus session.</p>
+        <p>Type the IP shown on the screen in your browser (or <code>http://smalltv.local/</code>). Pick a face and your weather city, and start a focus session. New versions arrive with one tap in the panel.</p>
       </li>
     </ol>
 
-    <div class="note warn" style="margin-top:14px">Installing formats the clock's file storage: <strong>photos from the factory firmware are not kept</strong>. The saved Wi-Fi stays; settings start from scratch.</div>
+    <div class="note warn" style="margin-top:14px">Installing formats the clock's file storage: <strong>photos from the factory firmware are not kept</strong>. The saved Wi-Fi stays; settings start from scratch. Upload your photos again from the panel.</div>
 
-    <p class="more">Got <em>ERROR[4]: Not Enough Space</em>, a black screen or Wi-Fi that will not connect? The <a href="docs.html#primeiros-passos">full guide</a> covers each case, <a href="docs.html#recuperacao">recovery mode</a> and the status of <a href="docs.html#voltar-original">going back to the original</a> (on hold for now).</p>
+    <p class="more">Pictures of every step, how to find the panel and what to do if something fails: <a href="docs.html#primeiros-passos">full guide</a>.</p>
+
+    <details class="note" id="revert" style="margin-top:14px">
+      <summary>Going back to the original firmware</summary>
+      <p style="color:var(--muted);margin:0">Since the 1.24 memory layout change (4M2M), going back to <a href="https://github.com/GeekMagicClock/smalltv-ultra">GeekMagic's original firmware</a> over Wi-Fi has not been tested on a real clock yet. The step-by-step instructions are on hold until we test it with a serial cable to make sure it is safe — do not try it unless you can <a href="docs.html#recuperacao">reflash over a cable (USB-TTL)</a>.</p>
+    </details>
+  </div>
+</section>
+
+<section id="questions">
+  <div class="wrap">
+    <h2>Questions</h2>
+    <div class="faq-home">
+      <details class="note"><summary>Will it work on my device?</summary><p>Only on the GeekMagic SmallTV Ultra (ESP8266). See <a href="#device">is this my device?</a></p></details>
+      <details class="note"><summary>How much does it cost?</summary><p>Nothing. It is free and open source (GPL-3.0), with no account and no subscription.</p></details>
+      <details class="note"><summary>Is it safe?</summary><p>The clock checks every update (size, CRC, full decompression and the project's signature) before switching, and the current firmware keeps running if anything fails. If it freezes, recovery mode opens with no button. Flashing any other firmware is always at your own risk.</p></details>
+      <details class="note"><summary>Where does my data go?</summary><p>It stays on the clock. The clock gets the time from time servers and the weather from Open-Meteo; the panel gets updates from this website. There is no project account or cloud.</p></details>
+      <details class="note"><summary>What about the photos already on the clock?</summary><p>Installing formats the file storage, so they are not kept. The saved Wi-Fi stays. Upload your photos again from the panel.</p></details>
+      <details class="note"><summary>Can I go back to the original firmware?</summary><p>The step-by-step instructions are on hold until we test going back from the 1.24 memory layout on a clock with a serial cable. <a href="#revert">Details</a>.</p></details>
+    </div>
+    <p class="more">More answers in the <a href="docs.html#faq">docs FAQ</a>.</p>
   </div>
 </section>
 
