@@ -19,7 +19,7 @@
 **A focus timer for your desk that isn't your phone.** Open-source firmware for the GeekMagic SmallTV Ultra (ESP8266): a Pomodoro timer with a pixel art tomato, clock faces, weather and a web panel. No account, no cloud, no cable to install.
 
 <!-- GIF: rendered by the firmware simulator (same drawing code as the clock, 2x nearest neighbour). When the video of the real clock exists, replace docs/hero.gif (same name) and link the video below it. -->
-<p align="center"><img src="docs/hero.gif" width="327" alt="Simulated SmallTV Ultra running SmallTV Pomodoro, in a loop: a focus session ends, the screen flashes and the short break starts; then the retro LCD, World, Flip (turning to the next minute), Nixie and Campfire faces"></p>
+<p align="center"><img src="docs/hero.gif" width="327" alt="Simulated SmallTV Ultra running SmallTV Pomodoro, in a loop: a focus session ends and the short break starts; then the retro LCD, World, Flip (turning to the next minute), Nixie and Campfire faces"></p>
 
 <p align="center"><sub>Rendered by the firmware simulator: the same drawing code as the clock, pixel for pixel. A recording of a real clock is coming.</sub></p>
 
