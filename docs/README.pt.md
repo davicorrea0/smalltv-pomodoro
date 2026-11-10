@@ -18,10 +18,10 @@
 
 **Um timer de foco na mesa que não é o celular.** Firmware de código aberto para o GeekMagic SmallTV Ultra (ESP8266): Pomodoro com um tomate em pixel art, mostradores, clima e um painel web. Sem conta, sem nuvem e sem cabo para instalar.
 
-<!-- GIF aqui: o mesmo docs/hero.gif do README em inglês (troque pelo GIF do relógio real com o mesmo nome). -->
-<p align="center"><img src="hero.gif" width="360" alt="Telas do SmallTV Pomodoro em sequência: a cena do tomate, um foco com o anel de progresso, o fim de uma fase, chuva chegando e os mostradores Flip, Neon, LCD retrô e Mundo"></p>
+<!-- GIF gerado pelo simulador do firmware (mesmo código de desenho do relógio, ampliado 2x sem suavizar). Quando houver o vídeo do relógio real, troque docs/hero-pt.gif (mesmo nome) e ponha o link do vídeo abaixo. -->
+<p align="center"><img src="hero-pt.gif" width="327" alt="Simulação do SmallTV Ultra com o SmallTV Pomodoro, em sequência: um foco termina, a tela pisca e começa a pausa curta; depois os mostradores LCD retrô, Mundo, Flip (virando o minuto), Nixie e Fogueira"></p>
 
-<p align="center"><sub>Feito com o simulador do projeto, que compila o mesmo código de desenho do firmware. Uma gravação do relógio de verdade vem em breve.</sub></p>
+<p align="center"><sub>Gerado pelo simulador do firmware: o mesmo código de desenho do relógio, pixel por pixel. Uma gravação do relógio de verdade vem em breve.</sub></p>
 
 <p align="center">
   <a href="https://davicorrea0.github.io/smalltv-pomodoro/galeria.html"><img src="https://img.shields.io/badge/Ver_os_mostradores-ff5a47?style=for-the-badge&amp;logo=probot&amp;logoColor=white" alt="Ver os mostradores"></a>
