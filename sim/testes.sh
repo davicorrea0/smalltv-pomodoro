@@ -8,6 +8,7 @@
 #    do "Copiar diagnóstico" do painel (telemetria_test.cjs);
 #  - cor quente (warm.h): os comandos do gama digital de dia, de noite e na prévia;
 #  - curva de brilho (bri_curva.h) contra a fórmula antiga com powf, em todas as entradas;
+#    e o brilho noturno 0 (tela apagada) que acende para avisos e volta a apagar (noite.h);
 #  - GIF e JPEG: as amostras válidas precisam decodificar e o fuzzing não pode achar erro de memória.
 # Uso: sim/testes.sh [casos de fuzzing por formato, padrão 5000]
 # Os .cpp dos testes são gerados com node; sem node (WSL), passe a pasta já gerada em GEN.
