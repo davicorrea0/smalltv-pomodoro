@@ -87,10 +87,15 @@ int main(int argc, char **argv) {
   std::vector<std::string> todos;
   for (const char *s : SEMENTES) todos.push_back(s);
   DIR *d = opendir(pasta);
+  std::vector<std::string> nomes;  // em ordem alfabética: a ordem do readdir muda de sistema para sistema e mudaria as mutações
   for (struct dirent *e; d && (e = readdir(d));) {
     size_t n = strlen(e->d_name);
     if (n < 6 || strcmp(e->d_name + n - 5, ".json") || !strcmp(e->d_name, "catalog.json")) continue;
-    FILE *f = fopen((std::string(pasta) + "/" + e->d_name).c_str(), "rb");
+    nomes.push_back(e->d_name);
+  }
+  std::sort(nomes.begin(), nomes.end());
+  for (const std::string &nome : nomes) {
+    FILE *f = fopen((std::string(pasta) + "/" + nome).c_str(), "rb");
     if (!f) continue;
     std::string s;
     char b[4096];
@@ -104,6 +109,20 @@ int main(int argc, char **argv) {
   uiBegin(tela);
   long aceitos = 0;
   char err[96];
+  // entradas extremas que precisam ser recusadas com mensagem (sem comportamento indefinido: o sanitizer aborta)
+  static const char *const RECUSAS[] = {
+    "{\"format\":2,\"sprites\":{\"s\":{\"pal\":{\"a\":\"#fff\"},\"px\":[\"a\"]}},\"layers\":[{\"type\":\"sprite\",\"sprite\":\"s\",\"motion\":{\"period\":1000,\"keys\":[{\"t\":0,\"x\":-2147483648,\"y\":0},{\"t\":1000,\"x\":0,\"y\":0}]}}]}",
+    "{\"format\":2,\"sprites\":{\"s\":{\"pal\":{\"a\":\"#fff\"},\"px\":[\"a\"]}},\"layers\":[{\"type\":\"sprite\",\"sprite\":\"s\",\"motion\":{\"period\":1000,\"keys\":[{\"t\":0,\"x\":0,\"y\":-2147483648},{\"t\":1000,\"x\":0,\"y\":0}]}}]}",
+    "{\"format\":2,\"sprites\":{\"s\":{\"pal\":{\"a\":\"#fff\"},\"px\":[\"a\"]}},\"layers\":[{\"type\":\"sprite\",\"sprite\":\"s\",\"motion\":{\"period\":1000,\"keys\":[{\"t\":0,\"x\":2147483647,\"y\":0},{\"t\":1000,\"x\":0,\"y\":0}]}}]}",
+    "{\"format\":2,\"sprites\":{\"s\":{\"pal\":{\"a\":\"#fff\"},\"px\":[\"a\"]}},\"layers\":[{\"type\":\"sprite\",\"sprite\":\"s\",\"motion\":{\"period\":-2147483648,\"keys\":[{\"t\":0,\"x\":0,\"y\":0},{\"t\":1000,\"x\":0,\"y\":0}]}}]}",
+  };
+  for (const char *r : RECUSAS) {
+    std::string s = r;
+    std::vector<char> buf(s.begin(), s.end());
+    buf.push_back(0);
+    err[0] = 0;
+    if (facePackLoad(buf.data(), s.size(), err, sizeof err) || !err[0]) { printf("facepack_fuzz: entrada extrema deveria ser recusada com mensagem: %s\n", r); return 1; }
+  }
   for (long c = 0; c < casos + (long)todos.size(); c++) {
     std::string s = todos[c < (long)todos.size() ? c : rnd(todos.size())];
     if (c >= (long)todos.size()) mutar(s, todos);
