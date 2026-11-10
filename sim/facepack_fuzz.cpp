@@ -43,14 +43,12 @@ static const char *SEMENTES[] = {
   "{\"type\":\"image\",\"x\":0,\"y\":0,\"w\":40,\"h\":40,\"file\":\"/a.jpg\"},{\"type\":\"mascot\",\"x\":80,\"y\":80,\"size\":4,\"mood\":\"auto\"},{\"type\":\"plant\",\"x\":0,\"y\":180,\"size\":2},"
   "{\"type\":\"weather\",\"x\":200,\"y\":40,\"size\":12,\"when\":\"weather\"},{\"type\":\"line\",\"x\":0,\"y\":0,\"x2\":239,\"y2\":239,\"size\":5},{\"type\":\"circle\",\"x\":30,\"y\":30,\"r\":20,\"color\":\"accent\",\"stroke\":\"text\"},"
   "{\"type\":\"text\",\"x\":5,\"y\":5,\"font\":\"dseg\",\"size\":30,\"text\":\"{SS}\",\"off\":\"#202020\"},{\"type\":\"text\",\"x\":5,\"y\":60,\"font\":\"dm\",\"size\":4,\"text\":\"{TEMP}\\u00b0{UNIT}\"}]}",
-  // formato 2: cena 3D (túnel e corredor com câmera), texto "overlay" e sprite com "motion"
-  "{\"format\":2,\"layers\":[{\"type\":\"world3d\",\"geometry\":\"tunnel\",\"shape\":\"square\",\"fps\":8,\"speed\":20,\"sway\":4,\"spin\":2,"
-  "\"colors\":[\"#0cbbce\",\"#176cb3\",\"#503e9c\",\"#9b427f\"],\"accent\":\"#8af5fa\"},{\"type\":\"text\",\"x\":120,\"y\":72,\"font\":\"bebas\",\"size\":96,"
-  "\"align\":\"center\",\"color\":\"#ecffff\",\"overlay\":true,\"text\":\"{HH}:{MM}\"}]}",
+  // formato 2: texto "overlay" sobre sprites (círculo + sprite com "motion") e sprite com muitos quadros e "motion"
+  "{\"format\":2,\"bg\":\"#102040\",\"sprites\":{\"s\":{\"fps\":4,\"pal\":{\"a\":\"#e0a030\",\"b\":\"#30a0e0\"},\"frames\":[[\"aab\",\"aab\",\"bbb\"],[\"baa\",\"baa\",\"bbb\"]]}},"
+  "\"layers\":[{\"type\":\"circle\",\"x\":120,\"y\":120,\"r\":90,\"color\":\"#2a5a8a\"},{\"type\":\"sprite\",\"sprite\":\"s\",\"size\":8,\"motion\":{\"period\":4000,\"keys\":[{\"t\":0,\"x\":20,\"y\":40},{\"t\":2000,\"x\":180,\"y\":90},{\"t\":4000,\"x\":20,\"y\":40}]}},"
+  "{\"type\":\"text\",\"x\":120,\"y\":72,\"font\":\"bebas\",\"size\":96,\"align\":\"center\",\"color\":\"#ecffff\",\"overlay\":true,\"text\":\"{HH}:{MM}\"}]}",
   "{\"format\":2,\"sprites\":{\"m\":{\"pal\":{\"a\":\"#ffcc00\"},\"fps\":10,\"frames\":[[\"a.\"],[\".a\"],[\"aa\"],[\"a.\"],[\".a\"],[\"aa\"],[\"a.\"],[\".a\"],[\"aa\"]]}},"
-  "\"layers\":[{\"type\":\"world3d\",\"geometry\":\"grid\",\"fps\":6,\"colors\":[\"#a07855\",\"#15151d\",\"#2c211b\",\"#777777\"],\"accent\":\"#4a3228\","
-  "\"map\":[\"########\",\"#......#\",\"#...#..#\",\"#...#..#\",\"#......#\",\"#......#\",\"#......#\",\"########\"],\"period\":4000,"
-  "\"camera\":[{\"t\":0,\"x\":150,\"y\":150,\"yaw\":0},{\"t\":2000,\"x\":550,\"y\":150,\"yaw\":90},{\"t\":4000,\"x\":150,\"y\":150,\"yaw\":360}]},"
+  "\"layers\":[{\"type\":\"rect\",\"x\":0,\"y\":0,\"w\":240,\"h\":240,\"color\":\"#15151d\",\"when\":\"night\"},"
   "{\"type\":\"sprite\",\"sprite\":\"m\",\"size\":6,\"motion\":{\"period\":3000,\"keys\":[{\"t\":0,\"x\":-20,\"y\":10},{\"t\":1500,\"x\":230,\"y\":200},{\"t\":3000,\"x\":-20,\"y\":10}]}}]}",
 };
 
@@ -89,10 +87,15 @@ int main(int argc, char **argv) {
   std::vector<std::string> todos;
   for (const char *s : SEMENTES) todos.push_back(s);
   DIR *d = opendir(pasta);
+  std::vector<std::string> nomes;  // em ordem alfabética: a ordem do readdir muda de sistema para sistema e mudaria as mutações
   for (struct dirent *e; d && (e = readdir(d));) {
     size_t n = strlen(e->d_name);
     if (n < 6 || strcmp(e->d_name + n - 5, ".json") || !strcmp(e->d_name, "catalog.json")) continue;
-    FILE *f = fopen((std::string(pasta) + "/" + e->d_name).c_str(), "rb");
+    nomes.push_back(e->d_name);
+  }
+  std::sort(nomes.begin(), nomes.end());
+  for (const std::string &nome : nomes) {
+    FILE *f = fopen((std::string(pasta) + "/" + nome).c_str(), "rb");
     if (!f) continue;
     std::string s;
     char b[4096];
@@ -106,6 +109,20 @@ int main(int argc, char **argv) {
   uiBegin(tela);
   long aceitos = 0;
   char err[96];
+  // entradas extremas que precisam ser recusadas com mensagem (sem comportamento indefinido: o sanitizer aborta)
+  static const char *const RECUSAS[] = {
+    "{\"format\":2,\"sprites\":{\"s\":{\"pal\":{\"a\":\"#fff\"},\"px\":[\"a\"]}},\"layers\":[{\"type\":\"sprite\",\"sprite\":\"s\",\"motion\":{\"period\":1000,\"keys\":[{\"t\":0,\"x\":-2147483648,\"y\":0},{\"t\":1000,\"x\":0,\"y\":0}]}}]}",
+    "{\"format\":2,\"sprites\":{\"s\":{\"pal\":{\"a\":\"#fff\"},\"px\":[\"a\"]}},\"layers\":[{\"type\":\"sprite\",\"sprite\":\"s\",\"motion\":{\"period\":1000,\"keys\":[{\"t\":0,\"x\":0,\"y\":-2147483648},{\"t\":1000,\"x\":0,\"y\":0}]}}]}",
+    "{\"format\":2,\"sprites\":{\"s\":{\"pal\":{\"a\":\"#fff\"},\"px\":[\"a\"]}},\"layers\":[{\"type\":\"sprite\",\"sprite\":\"s\",\"motion\":{\"period\":1000,\"keys\":[{\"t\":0,\"x\":2147483647,\"y\":0},{\"t\":1000,\"x\":0,\"y\":0}]}}]}",
+    "{\"format\":2,\"sprites\":{\"s\":{\"pal\":{\"a\":\"#fff\"},\"px\":[\"a\"]}},\"layers\":[{\"type\":\"sprite\",\"sprite\":\"s\",\"motion\":{\"period\":-2147483648,\"keys\":[{\"t\":0,\"x\":0,\"y\":0},{\"t\":1000,\"x\":0,\"y\":0}]}}]}",
+  };
+  for (const char *r : RECUSAS) {
+    std::string s = r;
+    std::vector<char> buf(s.begin(), s.end());
+    buf.push_back(0);
+    err[0] = 0;
+    if (facePackLoad(buf.data(), s.size(), err, sizeof err) || !err[0]) { printf("facepack_fuzz: entrada extrema deveria ser recusada com mensagem: %s\n", r); return 1; }
+  }
   for (long c = 0; c < casos + (long)todos.size(); c++) {
     std::string s = todos[c < (long)todos.size() ? c : rnd(todos.size())];
     if (c >= (long)todos.size()) mutar(s, todos);
