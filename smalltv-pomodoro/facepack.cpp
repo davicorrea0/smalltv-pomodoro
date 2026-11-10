@@ -1436,7 +1436,11 @@ void facePackRender(const UiState &s, bool full) {
   // Com cena 3D o desenho completo também vai em faixas fora da tela: a cena cobre tudo (sem apagar antes, a tela não
   // pisca) e o texto "overlay" precisa dos pixels da cena na faixa para misturar a borda.
   const bool scene = world3d && lay[0].sig;  // a cena é sempre a camada 0; com "when" ela pode estar escondida
-  if (full && scene) addDirty(dirty, nd, {0, 0, 240, 240});
+  // texto "overlay" sobre sprites (sem cena 3D) também só mistura a borda numa faixa fora da tela: o desenho completo
+  // direto na tela deixaria a borda binária e diferente do incremental
+  bool strips = scene;
+  for (int i = 0; i < nLay && !strips; i++) strips = lay[i].ov && lay[i].sig;
+  if (full && strips) addDirty(dirty, nd, {0, 0, 240, 240});
   else if (full) {
     G->fillScreen(bgColor);
     for (int i = 0; i < nLay; i++)
