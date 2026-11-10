@@ -118,7 +118,7 @@ Há mais de um bom jeito de usar este relógio. Escolha o que combina com você.
 
 Relatos de problemas, ideias e "funcionou na minha unidade" são bem-vindos em [Issues](https://github.com/davicorrea0/smalltv-pomodoro/issues).
 
-- **Mostrador novo sem compilar:** um pacote `.json` pequeno; veja [PACOTES.md](PACOTES.md) e a pasta [`faces/`](../faces).
+- **Mostrador novo sem compilar:** um pacote `.json` pequeno; veja [PACOTES.md](PACOTES.md) e a pasta [`faces/`](../faces). Antes de criar, leia as [diretrizes de design](PACOTES.md#diretrizes-de-design): área segura, legibilidade, cores RGB565, noite âmbar, animação calma, o que não usar e como compartilhar na issue #84 (`.json` mais imagem).
 - **Mostrador embutido ou código:** o [simulador](TECHNICAL.md#screen-simulator) desenha todas as telas no PC, sem gravar o relógio; como compilar e testar está em [TECHNICAL.md](TECHNICAL.md#building). Guia de mostrador embutido: [CRIAR_MOSTRADOR.md](CRIAR_MOSTRADOR.md).
 - **Pixel art:** cada sprite é um arquivo de texto em [`assets/`](../assets) ([como](TECHNICAL.md#asset-library)).
 
