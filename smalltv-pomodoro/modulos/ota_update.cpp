@@ -177,12 +177,22 @@ void setupUpdate() {
   server.on("/update", HTTP_GET, [] {
     if (!hostOk()) { deny(); return; }
     if (!recoveryMode && !authed()) return;
+    PageLang lang;  // idioma do navegador enquanto os ajustes são os de fábrica (ver pageLang)
     String p = F("<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>SmallTV</title>"
                  "<style>body{font:16px system-ui;background:#111;color:#eee;max-width:420px;margin:auto;padding:20px}"
                  "input,button{width:100%;padding:12px;margin:8px 0;border-radius:10px;border:1px solid #333;background:#1c1c1c;color:#eee;font:inherit}"
                  "button{background:#ff5a47;border:0;font-weight:700}</style><h2>");
-    p += tr("Atualizar firmware", "Update firmware", "Actualizar firmware");
-    p += F("</h2><form method=post enctype=multipart/form-data><input type=file name=firmware accept=.bin,.gz required>");
+    p += recoveryMode ? tr("Instalar versao do Pomodoro", "Install Pomodoro version", "Instalar version de Pomodoro")
+                      : tr("Atualizar firmware", "Update firmware", "Actualizar firmware");
+    p += F("</h2><form method=post enctype=multipart/form-data");
+    if (recoveryMode) {
+      p += F(" data-q=\"");
+      p += tr("Este arquivo nao parece ser do SmallTV Pomodoro. Outro firmware pode impedir o relogio de iniciar sem cabo. Enviar mesmo assim?",
+              "This file does not look like SmallTV Pomodoro. Another firmware may prevent the clock from starting without a cable. Upload anyway?",
+              "Este archivo no parece ser de SmallTV Pomodoro. Otro firmware puede impedir que el reloj inicie sin cable. Subir de todos modos?");
+      p += F("\"");
+    }
+    p += F("><input type=file name=firmware accept=.bin,.gz required>");
     if (!recoveryMode) {  // fora do modo de recuperação só entra firmware assinado: o .sig vem junto no site
       p += tr("Assinatura (.sig)", "Signature (.sig)", "Firma (.sig)");
       p += F("<input type=file name=sig accept=.sig required>");
@@ -190,9 +200,11 @@ void setupUpdate() {
     p += F("<button>");
     p += tr("Enviar", "Upload", "Enviar");
     // Só o firmware vai no corpo; a assinatura segue em base64 no cabeçalho X-Firmware-Sig.
+    // Na recuperação (sem .sig), confere no navegador se o arquivo traz a marca "SmallTV-Pomodoro" antes de enviar.
     p += F("</button></form><small>v" FW_VERSION "</small>"
-           "<script>document.forms[0].onsubmit=async e=>{e.preventDefault();const f=e.target,h={'X-SmallTV':'1'},d=new FormData();"
-           "d.append('firmware',f.firmware.files[0]);"
+           "<script>document.forms[0].onsubmit=async e=>{e.preventDefault();const f=e.target,w=f.firmware.files[0],h={'X-SmallTV':'1'},d=new FormData();"
+           "if(f.dataset.q&&new Uint8Array(await w.slice(0,2).arrayBuffer()).join()!=='31,139'&&!(await w.text()).includes('SmallTV-Pomodoro')&&!confirm(f.dataset.q))return;"
+           "d.append('firmware',w);"
            "if(f.sig&&f.sig.files[0])h['X-Firmware-Sig']=btoa(String.fromCharCode(...new Uint8Array(await f.sig.files[0].arrayBuffer())));"
            "document.body.innerHTML='...';"
            "fetch('/update',{method:'POST',body:d,headers:h}).then(r=>r.text()).then(t=>document.body.innerHTML=t)}</script>");
@@ -205,7 +217,12 @@ void setupUpdate() {
         server.send(400, "text/plain", "Update error: " + ota.err);
         return;
       }
-      server.send(200, "text/html", F("<meta http-equiv=refresh content='20;URL=/'>Update Success! Rebooting..."));
+      String ok = F("<meta http-equiv=refresh content='20;URL=/'>Update Success! Rebooting...<p>");
+      ok += tr("Nao desligue ate aparecer a tela nova (ate 1 min).",
+               "Do not unplug until the new screen appears (up to 1 min).",
+               "No desconecte hasta que aparezca la pantalla nueva (hasta 1 min).");
+      ok += F("</p>");
+      server.send(200, "text/html", ok);
       delay(200);
       safeRestart();
     }, [authOk] {
@@ -286,7 +303,7 @@ void startRecovery() {
     p += F("</h2><p>v" FW_VERSION " &middot; ");
     p += WiFi.status() == WL_CONNECTED ? WiFi.localIP().toString() : String(F("192.168.4.1"));
     p += F("</p><a class=p href=/update>");
-    p += tr("Atualizar firmware", "Update firmware", "Actualizar firmware");
+    p += tr("Instalar versao do Pomodoro", "Install Pomodoro version", "Instalar version de Pomodoro");
     p += F("</a><a href=/api/stats download=historico.json>");
     p += tr("Baixar historico de focos", "Download focus history", "Descargar historial");
     p += F("</a><form method=post action=/rec/factory>");
