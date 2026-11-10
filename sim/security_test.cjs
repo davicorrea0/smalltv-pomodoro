@@ -141,7 +141,8 @@ int main(){
  reset();jpgRes=JPG_OK;send(handleUpload,UPLOAD_FILE_START);send(handleUpload,UPLOAD_FILE_WRITE);send(handleUpload,UPLOAD_FILE_END);assert(deletes==0&&!uploadError.length());
  reset();event.filename="a..b.jpg";send(handleUpload,UPLOAD_FILE_START);assert(uploadPath=="/image/a.b.jpg");
  reset();send(handleUpload,UPLOAD_FILE_START);event.currentSize=3*1024*1024+1;send(handleUpload,UPLOAD_FILE_WRITE);assert(!writes&&deletes==1&&!photoGate.active);
- reset();send(handlePackUpload,UPLOAD_FILE_START);event.currentSize=16385;send(handlePackUpload,UPLOAD_FILE_WRITE);send(handlePackUpload,UPLOAD_FILE_END);assert(!writes&&!packFaceReady&&!packGate.active);
+ reset();send(handlePackUpload,UPLOAD_FILE_START);event.currentSize=24577;send(handlePackUpload,UPLOAD_FILE_WRITE);send(handlePackUpload,UPLOAD_FILE_END);assert(!writes&&!packFaceReady&&!packGate.active);
+ reset();send(handlePackUpload,UPLOAD_FILE_START);event.currentSize=24576;send(handlePackUpload,UPLOAD_FILE_WRITE);send(handlePackUpload,UPLOAD_FILE_END);assert(writes==1&&packFaceReady);  // pacote de até 24 KB (formato 2, 1.26.0)
  reset();send(handlePackUpload,UPLOAD_FILE_START);send(handlePackUpload,UPLOAD_FILE_WRITE);send(handlePackUpload,UPLOAD_FILE_END);assert(packFaceReady&&written==1);
  reset();send(handlePackUpload,UPLOAD_FILE_START);send(handlePackUpload,UPLOAD_FILE_ABORTED);assert(!packFaceReady);
  reset();event.name="unknown";send(handlePackUpload,UPLOAD_FILE_START);send(handlePackUpload,UPLOAD_FILE_WRITE);assert(!opens&&!writes);
