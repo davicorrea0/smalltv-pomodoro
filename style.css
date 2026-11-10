@@ -545,3 +545,11 @@ footer .links { display: flex; gap: 16px; flex-wrap: wrap; margin-left: auto; }
 .faq-home details.note { margin: 0; background: var(--card); border-color: var(--line); }
 .faq-home details.note[open] { border-color: rgba(255, 90, 71, 0.35); }
 .faq-home details.note p { margin: 0; color: var(--muted); }
+
+/* timer da home: tela animada ao lado do texto */
+.split-media .anim { width: 100%; max-width: 360px; aspect-ratio: 1; justify-self: center; background-color: #000; background-repeat: no-repeat; background-position: 0 0; image-rendering: pixelated; border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 30px 60px -24px rgba(0,0,0,0.75); }
+.pomo-text .tabs.states { margin: 18px 0 0; flex-wrap: wrap; overflow: visible; }
+.pomo-text p { margin: 12px 0 0; }
+.pomo-text .section-lead { margin-top: 10px; }
+.pomo-text .sub { font-family: var(--pixel); font-size: 11px; color: var(--accent); }
+.pomo-text .act-lead { border-top: 1px solid var(--line); padding-top: 12px; margin-top: 16px; }
