@@ -142,7 +142,7 @@ static bool loadMotion(JsonObjectConst m, Motion &out, char *err, size_t len, in
       return false;
     }
     int t = key[JK("t")], x = key[JK("x")], y = key[JK("y")];
-    if (t < 0 || t > period || abs(x) > 480 || abs(y) > 480 || (!out.n && t != 0) || (out.n && t <= out.k[out.n - 1].t)) {
+    if (t < 0 || t > period || x < -480 || x > 480 || y < -480 || y > 480 || (!out.n && t != 0) || (out.n && t <= out.k[out.n - 1].t)) {
       snprintf_P(err, len, PSTR("camada %d: ponto do motion fora do limite ou fora de ordem"), layer);
       return false;
     }
