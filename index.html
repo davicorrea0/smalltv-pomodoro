@@ -32,7 +32,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Silkscreen&display=swap">
-<link rel="stylesheet" href="style.css?v=18">
+<link rel="stylesheet" href="style.css?v=19">
 </head>
 <body>
 
@@ -56,156 +56,63 @@
 <div class="hero">
   <div class="wrap">
     <div>
-      <div class="eyebrow">Firmware alternativo · código aberto</div>
-      <h1>Seu SmallTV Ultra com <em>Pomodoro</em>, <!--g:builtin-->13<!--/g--> mostradores e um tomate.</h1>
-      <p class="lead">Um firmware novo para o relógio de mesa GeekMagic SmallTV Ultra: mostradores desenhados à mão, um timer Pomodoro com mascote em pixel art, clima sem chave de API e um painel web simples no celular.</p>
+      <div class="eyebrow">Firmware aberto para o GeekMagic SmallTV Ultra</div>
+      <h1>Foco na mesa.<br><em>Não no celular.</em></h1>
+      <p class="lead">Um timer Pomodoro com um tomate em pixel art, <!--g:builtin-->13<!--/g--> mostradores, clima e um painel no celular, rodando no seu SmallTV Ultra. Sem conta, sem nuvem e sem cabo para instalar.</p>
       <div class="btns">
-        <a class="btn primary" href="#downloads">Baixar firmware</a>
+        <a class="btn primary" href="#instalar"><img class="px" src="img/icons/download.svg" alt="">Instalar</a>
         <a class="btn" href="galeria.html">Ver os mostradores</a>
       </div>
-      <p class="meta">Grátis · instala pelo próprio painel do relógio, sem cabo · dá para voltar ao original</p>
+      <p class="meta">Grátis e aberto (GPL-3.0) · português, inglês e espanhol · <a href="#aparelho">é o meu aparelho?</a></p>
     </div>
     <div>
-      <div class="device" aria-label="Prévia do relógio trocando de mostrador">
-        <div class="screen" id="screen">
-          <img class="px on" src="img/faces/face-1.png" alt="Mostrador Tomate" width="240" height="240">
+      <div class="device" aria-label="Demonstração do relógio em funcionamento">
+        <div class="screen">
+          <img class="px on" src="img/hero-sim.gif" alt="Telas do SmallTV Pomodoro em sequência: foco terminando → pausa → LCD retrô, Mundo, Flip, Nixie, Fogueira" width="480" height="480">
         </div>
       </div>
-      <div class="device-caption" id="screen-name">Tomate</div>
+      <div class="device-caption">gerado pelo simulador do firmware</div>
     </div>
   </div>
 </div>
 
-<section id="o-que-e">
+<div class="stats" id="o-que-e">
   <div class="wrap">
-    <h2>O que é</h2>
-    <div class="grid two">
-      <div class="card">
-        <h3>O relógio: GeekMagic SmallTV Ultra</h3>
-        <p style="color:var(--muted);margin:0">Um cubinho de mesa com Wi-Fi e uma tela colorida de 240×240 pixels. Por dentro tem um <strong>ESP8266</strong> (o mesmo chip de muitos projetos de automação) e um display <strong>ST7789</strong>. De fábrica ele mostra hora, clima e fotos, com o firmware fechado da GeekMagic.</p>
-      </div>
-      <div class="card">
-        <h3>O firmware: SmallTV Pomodoro</h3>
-        <p style="color:var(--muted);margin:0">Um programa novo para o mesmo aparelho, escrito do zero e aberto no GitHub. Você grava pelo painel web do próprio relógio, como uma atualização comum, e ele passa a ter mostradores novos, um timer Pomodoro e um mascote tomate. As fotos que já estavam gravadas continuam lá.</p>
-      </div>
+    <dl>
+      <div><dt><!--g:builtin-->13<!--/g--></dt><dd>mostradores embutidos</dd></div>
+      <div><dt><!--g:catalog-->41<!--/g--></dt><dd>para instalar pela galeria</dd></div>
+      <div><dt>1 ano</dt><dd>de focos guardados no relógio</dd></div>
+      <div><dt>3</dt><dd>idiomas no painel e na tela</dd></div>
+      <div><dt>0</dt><dd>contas, nuvens ou cabos</dd></div>
+    </dl>
+  </div>
+</div>
+
+<section id="video">
+  <div class="wrap split-media">
+    <div>
+      <div class="eyebrow">Veja funcionando</div>
+      <h2>Um timer que você vê com o canto do olho</h2>
+      <p class="section-lead">Um anel enche até o fim do foco, o horário de término fica na tela e o tomate acompanha: concentrado no trabalho, com café na pausa, cochilando quando você pausa e pulando quando a fase acaba.</p>
+      <p class="fine-print">gerado pelo simulador do firmware</p>
     </div>
-    <figure class="shot" style="margin-top:14px">
-      <img class="px" src="img/mostradores.png" alt="Mostradores embutidos: Matriz, Tomate, Analógico, Clima, Neon, Flip, LCD retrô, Palavras, Previsão, Previsão em cartões e Previsão LCD" width="1160" height="950" loading="lazy">
-      <figcaption>Alguns dos <!--g:builtin-->13<!--/g--> mostradores embutidos. Imagens geradas pelo simulador do projeto, que compila o mesmo código de desenho do firmware.</figcaption>
+    <!-- vídeo aqui: troque o <img> por <video src="img/relogio.mp4" poster="img/relogio.jpg" autoplay muted loop playsinline width="480" height="480"></video> quando o vídeo do relógio real estiver pronto -->
+    <figure class="clip">
+      <img class="px" src="img/hero-sim.gif" alt="Telas do SmallTV Pomodoro em sequência: foco terminando → pausa → LCD retrô, Mundo, Flip, Nixie, Fogueira" width="480" height="480" loading="lazy">
     </figure>
   </div>
 </section>
 
-<section id="galeria-nova">
+<section id="por-que">
   <div class="wrap">
-    <div class="eyebrow">Galeria nova</div>
-    <h2>Mostradores novos para instalar</h2>
-    <p class="section-lead">Além dos <!--g:builtin-->13<!--/g--> embutidos, há uma galeria de mostradores que não vêm no firmware: Bento, Synthwave, Terminal, Aquário, Estação e outros. Cada um é um arquivo pequeno que o relógio instala sem regravar o firmware.</p>
-    <div class="shelf" id="shelf"><div class="ph"></div><div class="ph"></div><div class="ph"></div><div class="ph"></div></div>
-    <a class="btn primary" href="galeria.html">Ver a galeria (<span id="shelf-count"><!--g:catalog-->41<!--/g--></span> novos)</a>
-  </div>
-</section>
-
-<section id="antes-depois">
-  <div class="wrap">
-    <h2>O que muda em relação ao firmware de fábrica</h2>
-    <p class="section-lead">O hardware é o mesmo. O que muda é o que roda nele.</p>
-    <div class="compare">
-      <div class="head"><span></span><span>Firmware da GeekMagic</span><span>SmallTV Pomodoro</span></div>
-      <div class="row">
-        <div class="topic">Mostradores</div>
-        <div class="was">Temas de fábrica</div>
-        <div class="now"><!--g:builtin-->13<!--/g--> mostradores embutidos e uma <a href="galeria.html">galeria de novos</a> para instalar; prévia no painel e "Ver no relógio" testa por 15 s sem salvar</div>
-      </div>
-      <div class="row">
-        <div class="topic">Foco</div>
-        <div class="was">Não tem</div>
-        <div class="now">Pomodoro com anel de progresso, horário de término, escolha da atividade e meta diária de focos</div>
-      </div>
-      <div class="row">
-        <div class="topic">Personagem</div>
-        <div class="was">Não tem</div>
-        <div class="now">Um tomate em pixel art que reage à hora, ao clima e ao seu foco</div>
-      </div>
-      <div class="row">
-        <div class="topic">Clima</div>
-        <div class="was">Configuração de serviço de clima de fábrica</div>
-        <div class="now">Open-Meteo, sem chave de API; busca a cidade pelo nome no painel</div>
-      </div>
-      <div class="row">
-        <div class="topic">Fotos e GIFs</div>
-        <div class="was">Álbum de fábrica</div>
-        <div class="now">Lê os mesmos arquivos já gravados; envio pelo painel com recorte automático para 240×240</div>
-      </div>
-      <div class="row">
-        <div class="topic">Painel web</div>
-        <div class="was">Painel de fábrica</div>
-        <div class="now">4 abas pensadas para o celular (Relógio, Foco, Fotos, Ajustes); os ajustes salvam sozinhos</div>
-      </div>
-      <div class="row">
-        <div class="topic">Voz</div>
-        <div class="was">Não tem</div>
-        <div class="now">Alexa começa, pausa e encerra o Pomodoro, direto na rede local, e avisa quando a fase termina</div>
-      </div>
-      <div class="row">
-        <div class="topic">Código</div>
-        <div class="was">Fechado</div>
-        <div class="now">Aberto: dá para criar mostradores e desenhos novos</div>
-      </div>
+    <div class="eyebrow">Por que usar</div>
+    <h2>O relógio que você já tem, pensado para focar</h2>
+    <div class="grid two">
+      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/focado.svg" alt=""></span>O timer é o centro</h3><p>Foco, pausa curta e longa, meta do dia e a atividade que você está fazendo. O relógio guarda um ano de focos e uma planta cresce com a sua sequência, até o tomate dourado.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/download.svg" alt=""></span>Instala sem cabo</h3><p>Você envia o arquivo pela própria página de fábrica do relógio, como uma atualização comum. Algumas unidades pedem antes um carregador pequeno; o <a href="docs.html#primeiros-passos">guia</a> mostra como.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/seta.svg" alt=""></span>Atualizações conferidas</h3><p>As versões novas chegam com um toque no painel, assinadas, e o relógio confere o arquivo inteiro antes de trocar. Se algo der errado, o modo de recuperação abre sem botão: é só ligar e desligar 3 vezes.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/grade.svg" alt=""></span>Mostradores sem regravar</h3><p><!--g:builtin-->13<!--/g--> mostradores embutidos e mais <!--g:catalog-->41<!--/g--> na galeria, cada um num arquivo pequeno que o painel instala sem atualizar o firmware.</p></div>
     </div>
-  </div>
-</section>
-
-<section id="funcoes">
-  <div class="wrap">
-    <h2>Funções</h2>
-    <p class="section-lead">Tudo cabe em cerca de 520 KB (390 KB comprimido) e roda no próprio relógio.</p>
-    <div class="grid three">
-      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/relogio.svg" alt=""></span><!--g:builtin-->13<!--/g--> mostradores</h3><p>Matriz, Tomate, Analógico, Clima, Neon, Flip (com animação de virada de verdade), LCD retrô, Palavras (a hora por extenso) Previsão (os próximos 5 dias), Previsão em cartões, Previsão LCD, Mundo (mapa-múndi com dia e noite) e Mundo relógio.</p></div>
-      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/focado.svg" alt=""></span>Pomodoro com mascote</h3><p>O tomate fica focado, relaxa com um café na pausa, dorme quando o timer está pausado e pula de alegria quando uma fase termina.</p></div>
-      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/livro.svg" alt=""></span>Atividade do foco</h3><p>Escolha no painel o que vai fazer: ler, estudar, programar, tarefas ou desenhar. A tela mostra o objeto da atividade ao lado do tomate.</p></div>
-      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/sol.svg" alt=""></span>Clima</h3><p>Pelo <a href="https://open-meteo.com/">Open-Meteo</a>, sem cadastro nem chave de API. Em °C ou °F. Avisa quando a chuva vai começar na próxima hora. Na chuva o tomate abre o guarda-chuva; no frio põe cachecol; no calor, óculos escuros.</p></div>
-      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/foto.svg" alt=""></span>Fotos e GIFs</h3><p>Usa o álbum que já estava no relógio. Fotos novas vão pelo painel e são recortadas para 240×240 automaticamente.</p></div>
-      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/lua.svg" alt=""></span>Brilho noturno</h3><p>Escolha um horário para a tela ficar mais fraca à noite e não iluminar o quarto.</p></div>
-      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/celular.svg" alt=""></span>Painel web</h3><p>Abra no celular ou no computador o IP que aparece na tela: mostradores, Pomodoro, fotos e ajustes, incluindo cor e rotação da tela. Em português, inglês ou espanhol.</p></div>
-      <div class="card feature"><h3><span class="ico"><img class="px" src="img/jogo/planta/dourada.svg" alt=""></span>Jogo do foco</h3><p>Sequência de dias com a meta batida, planta que cresce até o tomate dourado, horta do ano, 10 conquistas e cartão do dia para compartilhar. <a href="jogo.html">Ver o jogo</a>.</p></div>
-      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/seta.svg" alt=""></span>Atualização em um toque</h3><p>Quando sai uma versão nova, o painel avisa e atualiza o relógio com um toque (a partir da v1.8). Também dá para enviar o arquivo em <code>/update</code> (o <code>.bin.gz</code>, sem descompactar) e voltar ao firmware original.</p></div>
-    </div>
-  </div>
-</section>
-
-<section id="novo">
-  <div class="wrap">
-    <div class="eyebrow">Novo na v1.19 (atual: v<!--g:version-->1.24.9<!--/g-->)</div>
-    <h2><span class="h-ico"><img class="px" src="img/icons/nuvem.svg" alt=""></span>Aviso de chuva, °F e mais segurança</h2>
-    <div class="grid three">
-      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/nuvem.svg" alt=""></span>Vai chover</h3><p>Quando a chuva deve começar na próxima hora, a tela mostra “chuva 15 min” e o tomate já abre o guarda-chuva. Usa a previsão de 15 em 15 minutos do Open-Meteo. Liga e desliga em <strong>Ajustes → Clima</strong>.</p></div>
-      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/sol.svg" alt=""></span>Temperatura em °F</h3><p>Uma chave em <strong>Ajustes → Clima</strong>. Os mostradores e os pacotes (<code>{UNIT}</code>, <code>{RAIN}</code>) passam a usar °F, com três dígitos nos dias quentes.</p></div>
-      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/seta.svg" alt=""></span>Mais leve e mais seguro</h3><p>O painel saiu da memória do programa e fica na memória de arquivos, conferido por SHA-256: firmware 11 KB menor. Uploads só com a senha certa, JPEG e pacotes de mostrador protegidos contra arquivos forjados, e o histórico de focos não se perde mais ao reiniciar.</p></div>
-    </div>
-    <p style="color:var(--muted);font-size:14px;margin-top:14px">Depois de atualizar, a primeira abertura do painel baixa o painel novo do site (o navegador precisa de internet). Pelo <code>/update</code>, envie o <code>.bin.gz</code> sem descompactar.</p>
-  </div>
-</section>
-
-<section id="alexa">
-  <div class="wrap">
-    <div class="eyebrow">Novo na v1.13</div>
-    <h2><span class="h-ico"><img class="px" src="img/icons/alexa.svg" alt=""></span>Controle pela Alexa</h2>
-    <p class="section-lead">Comece, pause e encerre o Pomodoro pela voz. O relógio aparece para o Echo como três lâmpadas na sua rede: sem conta, sem skill e sem nuvem. Ligar e desligar mexem no timer, e a porcentagem vira minutos.</p>
-    <div class="voice">
-      <div><b>“Alexa, ligar Pomodoro”</b><span>começa o foco (ou continua, se estava pausado) e a tela vai para o timer</span></div>
-      <div><b>“Alexa, desligar Pomodoro”</b><span>pausa; repetindo, encerra</span></div>
-      <div><b>“Alexa, Pomodoro em 40%”</b><span>um foco de 40 minutos</span></div>
-      <div><b>“Alexa, ligar Pausa”</b><span>começa a pausa curta; “Pausa em 10%” faz uma pausa de 10 minutos</span></div>
-      <div><b>“Alexa, ligar Pausa longa”</b><span>começa a pausa longa</span></div>
-      <div><b>“Alexa, desligar Pausa”</b><span>volta ao foco</span></div>
-    </div>
-    <div class="grid three" style="margin-top:14px">
-      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/celular.svg" alt=""></span>Como ligar</h3><p>No painel, em <strong>Ajustes → Alexa</strong>, ative <strong>Controlar pela Alexa</strong>. Com um Echo na mesma rede Wi-Fi, diga “Alexa, descobrir dispositivos”. O painel mostra quando o Echo se conectou e o último comando.</p></div>
-      <div class="card feature"><h3><span class="ico"><img class="px" src="img/jogo/conquistas/ic_calendario.svg" alt=""></span>Rotinas</h3><p>No app da Alexa, crie rotinas com frases suas, como “Alexa, hora de focar”. A lâmpada acesa mostra a fase atual: Pomodoro, Pausa ou Pausa longa.</p></div>
-      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/alexa.svg" alt=""></span>Alexa avisa o fim</h3><p>Cole no painel o endereço de um gatilho do <a href="https://www.virtualsmarthome.xyz/">Virtual Smart Home</a>, Voice Monkey ou IFTTT. Quando o foco ou a pausa terminam, o relógio chama o gatilho e uma rotina faz a Alexa dizer “Pomodoro concluído”.</p></div>
-    </div>
-    <p style="color:var(--muted);font-size:14px;margin-top:14px">Precisa do firmware v1.13.0 ou mais novo. Os nomes das lâmpadas seguem o idioma do relógio. Depois de atualizar, diga “Alexa, descobrir dispositivos” de novo.</p>
   </div>
 </section>
 
@@ -215,16 +122,12 @@
     <p class="section-lead">As telas do relógio, geradas pelo simulador do projeto com o mesmo código do firmware.</p>
     <div class="viewer" id="viewer">
       <div class="tabs" role="tablist" aria-label="Telas">
-        <button type="button" role="tab" data-shot="0" aria-selected="true" aria-pressed="true">Tomate</button>
-        <button type="button" role="tab" data-shot="1" aria-selected="false" aria-pressed="false">Pomodoro</button>
+        <button type="button" role="tab" data-shot="1" aria-selected="true" aria-pressed="true">Pomodoro</button>
+        <button type="button" role="tab" data-shot="0" aria-selected="false" aria-pressed="false">Tomate</button>
         <button type="button" role="tab" data-shot="3" aria-selected="false" aria-pressed="false">Jogo</button>
         <button type="button" role="tab" data-shot="4" aria-selected="false" aria-pressed="false">Desenhos</button>
       </div>
-      <figure class="shot" role="tabpanel" data-shot="0">
-        <img class="px" src="img/tomate.png" alt="Cena Tomate: dia, noite, chuva, neve, calor e meta batida" width="1480" height="990">
-        <figcaption>Mostrador Tomate: dia, noite, chuva, frio, calor e meta do dia batida.</figcaption>
-      </figure>
-      <figure class="shot one pomo" role="tabpanel" data-shot="1" hidden>
+      <figure class="shot one pomo" role="tabpanel" data-shot="1">
         <div class="anim" id="pomo-anim" role="img" aria-label="Tela do Pomodoro animada" data-src="img/pomodoro/pt-" style="background-image:url(img/pomodoro/pt-foco.png);background-size:1200% 100%"></div>
         <figcaption>
           <div class="tabs states" role="group">
@@ -239,28 +142,70 @@
           <span class="acts"><span><img class="px" src="img/icons/livro.svg" alt="">Ler</span><span><img class="px" src="img/icons/caderno.svg" alt="">Estudar</span><span><img class="px" src="img/icons/notebook.svg" alt="">Programar</span><span><img class="px" src="img/icons/prancheta.svg" alt="">Tarefas</span><span><img class="px" src="img/icons/paleta.svg" alt="">Desenhar</span></span>
         </figcaption>
       </figure>
+      <figure class="shot" role="tabpanel" data-shot="0" hidden>
+        <img class="px" src="img/tomate.png" alt="Cena Tomate: dia, noite, chuva, neve, calor e meta batida" width="1480" height="990" loading="lazy">
+        <figcaption>Mostrador Tomate: dia, noite, chuva, frio, calor e meta do dia batida. O tomate abre o guarda-chuva quando a chuva vai começar.</figcaption>
+      </figure>
       <figure class="shot one" role="tabpanel" data-shot="3" hidden>
-        <img class="px" src="img/jogo/tomate-7.png" alt="Mostrador Tomate com a planta dourada e 7 dias seguidos" width="240" height="240">
+        <img class="px" src="img/jogo/tomate-7.png" alt="Mostrador Tomate com a planta dourada e 7 dias seguidos" width="240" height="240" loading="lazy">
         <figcaption>Cada dia seguido com a meta batida faz a planta crescer, até o tomate dourado. <a href="jogo.html">Conheça o jogo</a>.</figcaption>
       </figure>
       <figure class="shot" role="tabpanel" data-shot="4" hidden>
-        <img class="px" src="img/assets.png" alt="Folha com todos os desenhos em pixel art do firmware" width="752" height="568">
+        <img class="px" src="img/assets.png" alt="Folha com todos os desenhos em pixel art do firmware" width="752" height="568" loading="lazy">
         <figcaption>Todos os desenhos em pixel art são arquivos de texto no repositório, fáceis de editar.</figcaption>
       </figure>
     </div>
   </div>
 </section>
 
+<section id="galeria-nova">
+  <div class="wrap">
+    <div class="eyebrow">Galeria</div>
+    <h2>Mostradores novos para instalar</h2>
+    <p class="section-lead">Além dos <!--g:builtin-->13<!--/g--> embutidos, a galeria tem mostradores que não vêm no firmware: Bento, Synthwave, Terminal, Aquário, Estação e outros. O painel instala cada um sem regravar o firmware, e “Ver no relógio” testa por 15 s sem salvar.</p>
+    <div class="shelf" id="shelf"><div class="ph"></div><div class="ph"></div><div class="ph"></div><div class="ph"></div></div>
+    <a class="btn primary" href="galeria.html">Ver a galeria (<span id="shelf-count"><!--g:catalog-->41<!--/g--></span> novos)</a>
+  </div>
+</section>
+
+<section id="funcoes">
+  <div class="wrap">
+    <h2>Tudo o que vem junto</h2>
+    <p class="section-lead">Roda no próprio relógio. Com internet, o relógio busca a hora e o clima (Open-Meteo), e o painel busca as atualizações neste site. Sem conta nem nuvem.</p>
+    <div class="grid three">
+      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/sol.svg" alt=""></span>Clima</h3><p>Pelo <a href="https://open-meteo.com/">Open-Meteo</a>, sem cadastro nem chave de API. Previsão de 5 dias, °C ou °F e aviso quando a chuva começa na próxima hora.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="img/jogo/planta/dourada.svg" alt=""></span>Jogo do foco</h3><p>Sequência de dias, horta do ano, 10 conquistas e um cartão do dia para compartilhar. <a href="jogo.html">Ver o jogo</a>.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/foto.svg" alt=""></span>Fotos e GIFs</h3><p>Envie pelo painel; o navegador recorta para 240×240. O relógio confere cada GIF antes de mostrar.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/lua.svg" alt=""></span>Brilho noturno</h3><p>A tela fica mais fraca do pôr ao nascer do sol, ou num horário que você escolhe.</p></div>
+      <div class="card feature" id="alexa"><h3><span class="ico"><img class="px" src="img/icons/alexa.svg" alt=""></span>Alexa</h3><p>“Alexa, ligar Pomodoro”: começa, pausa e encerra o timer pela voz, na rede local, sem conta nem skill. <a href="docs.html#alexa">Como ligar</a>.</p></div>
+      <div class="card feature"><h3><span class="ico"><img class="px" src="img/icons/celular.svg" alt=""></span>Painel web</h3><p>No celular ou no computador, em português, inglês ou espanhol. Senha opcional, backup e restauração, diagnóstico e ajustes de cor e rotação da tela.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="aparelho">
+  <div class="wrap">
+    <h2>É o meu aparelho?</h2>
+    <p class="section-lead">O firmware é feito e testado no <strong>SmallTV Ultra</strong>. No Ultra, o firmware de fábrica tem a marca <em>Ultra</em> (a página dele mostra uma versão como <code>Ultra-V9.0.x</code>).</p>
+    <div class="fit">
+      <div class="yes"><b>GeekMagic SmallTV Ultra</b><span>ESP8266</span><em>Funciona</em></div>
+      <div class="maybe"><b>SmallTV original (não Ultra)</b><span>ESP8266</span><em>Não testado</em></div>
+      <div class="no"><b>SmallTV Pro e outros ESP32 / ESP32-C2</b><span>ESP32</span><em>Não grave</em></div>
+    </div>
+    <p class="fine-print">Para outros modelos, o projeto parceiro <a href="https://github.com/giovi321/smalltv-mod">smalltv-mod</a>, do giovi321, roda em cinco aparelhos da mesma família.</p>
+  </div>
+</section>
+
 <section id="instalar">
   <div class="wrap">
     <h2>Como instalar</h2>
-    <p class="section-lead">Leva uns 5 minutos e não precisa de cabo nem de programas no computador: tudo acontece pelo navegador.</p>
+    <p class="section-lead">Sem cabo e sem programa no computador: tudo pelo navegador. Você precisa de uma rede Wi-Fi de <strong>2,4 GHz</strong>.</p>
 
     <div class="download" id="downloads">
       <div>
-        <div class="ver" id="rel-ver">Versão mais recente</div>
+        <div class="ver" id="rel-ver">Versão estável mais recente</div>
         <h3 id="rel-name">SmallTV Pomodoro</h3>
-        <p id="rel-info">Arquivo <code>.bin</code> para enviar pelo painel do relógio.</p>
+        <p id="rel-info">Arquivo <code>.bin</code> para enviar pela página do relógio.</p>
       </div>
       <div class="btns">
         <a class="btn primary" id="rel-bin" href="https://github.com/davicorrea0/smalltv-pomodoro/releases/latest"><img class="px" src="img/icons/download.svg" alt="">Baixar .bin</a>
@@ -268,15 +213,13 @@
       </div>
     </div>
 
-    <div class="note warn" style="margin:14px 0">Use só no <strong>SmallTV Ultra</strong> (ESP8266). Não grave no SmallTV Pro (ESP32) nem em outros modelos.</div>
-
     <ol class="steps">
       <li>
         <h3>Baixe o firmware</h3>
         <p>Pegue o arquivo <code>.bin</code> no botão acima.</p>
       </li>
       <li>
-        <h3>Envie pelo painel de fábrica</h3>
+        <h3>Envie pela página de fábrica</h3>
         <p>Abra no navegador o IP que o relógio mostra, entre em <strong>Firmware Upgrade</strong>, escolha o arquivo e envie. O relógio reinicia sozinho.</p>
         <details class="note">
           <summary>Apareceu “ERROR[4]: Not Enough Space”?</summary>
@@ -290,37 +233,51 @@
       </li>
       <li>
         <h3>Conecte ao Wi-Fi</h3>
-        <p>Se o relógio não entrar sozinho na sua rede, conecte-se à rede <code>SmallTV-Pomodoro</code> e abra <code>http://192.168.4.1</code> para escolher a rede.</p>
-        <p>Só funciona com redes de <strong>2,4 GHz</strong>.</p>
+        <p>Se o relógio não entrar sozinho na sua rede, leia o QR da tela com o celular, confirme a rede <code>SmallTV-Pomodoro</code> e escolha a sua (só funciona em <strong>2,4 GHz</strong>).</p>
         <p>Se o Wi-Fi não conectar, não tire da tomada para tentar de novo: 3 reinícios seguidos, com menos de 30 s ligado em cada um, abrem o <a href="docs.html#recuperacao">modo de recuperação</a> (seguro, mas confunde).</p>
       </li>
       <li>
         <h3>Abra o painel</h3>
-        <p>Digite no navegador o IP que aparece na tela do relógio. Escolha o mostrador, a cidade do clima e comece um foco.</p>
-        <p>Atualizações seguintes: o painel avisa quando há versão nova; ou envie o arquivo em <strong>Ajustes → Atualizar firmware</strong>.</p>
+        <p>Digite no navegador o IP que aparece na tela (ou <code>http://smalltv.local/</code>). Escolha o mostrador, a cidade do clima e comece um foco. As próximas versões chegam com um toque no painel.</p>
       </li>
     </ol>
 
+    <div class="note warn" style="margin-top:14px">Instalar formata a memória de arquivos do relógio: <strong>as fotos do firmware de fábrica não ficam</strong>. O Wi-Fi salvo continua; os ajustes começam do zero. Envie as fotos de novo pelo painel.</div>
+
+    <p class="more">Imagens de cada passo, como achar o painel e o que fazer se algo falhar: <a href="docs.html#primeiros-passos">guia completo</a>.</p>
+
     <details class="note" id="voltar" style="margin-top:14px">
       <summary>Voltar ao firmware original</summary>
-      <p style="color:var(--muted)">Baixe o <code>.bin</code> oficial em <a href="https://github.com/GeekMagicClock/smalltv-ultra">GeekMagicClock/smalltv-ultra</a> e envie no painel do SmallTV Pomodoro em <strong>Ajustes → Atualizar firmware</strong> (ou em <code>/update</code>, usuário <code>admin</code>).</p>
-      <p style="color:var(--muted);margin:0">Funciona porque o SmallTV Pomodoro usa o mesmo layout de memória do original e fica abaixo do tamanho limite (cerca de 530 KB). O sistema de arquivos é montado sem formatação automática: suas fotos não são apagadas.</p>
+      <p style="color:var(--muted);margin:0">Desde a mudança do layout de memória na versão 1.24 (4M2M), a volta ao <a href="https://github.com/GeekMagicClock/smalltv-ultra">firmware original da GeekMagic</a> pelo Wi-Fi ainda não foi testada num relógio de verdade. A instrução passo a passo fica suspensa até testarmos com cabo serial para garantir que é seguro — não tente sem ter como <a href="docs.html#recuperacao">regravar por cabo (USB-TTL)</a>.</p>
     </details>
   </div>
 </section>
 
-</main>
+<section id="perguntas">
+  <div class="wrap">
+    <h2>Perguntas</h2>
+    <div class="faq-home">
+      <details class="note"><summary>Funciona no meu aparelho?</summary><p>Só no GeekMagic SmallTV Ultra (ESP8266). Veja <a href="#aparelho">é o meu aparelho?</a></p></details>
+      <details class="note"><summary>Quanto custa?</summary><p>Nada. É grátis e de código aberto (GPL-3.0), sem conta e sem assinatura.</p></details>
+      <details class="note"><summary>É seguro?</summary><p>O relógio confere cada atualização (tamanho, CRC, descompressão completa e a assinatura do projeto) antes de trocar, e o firmware atual continua se algo falhar. Se travar, o modo de recuperação abre sem botão. Gravar outro firmware é sempre por sua conta e risco.</p></details>
+      <details class="note"><summary>Para onde vão os meus dados?</summary><p>Ficam no relógio. Ele busca a hora em servidores de hora e o clima no Open-Meteo; o painel busca as atualizações neste site. Não há conta nem nuvem do projeto.</p></details>
+      <details class="note"><summary>E as fotos que já estão no relógio?</summary><p>A instalação formata a memória de arquivos, então elas não ficam. O Wi-Fi salvo continua. Envie as fotos de novo pelo painel.</p></details>
+      <details class="note"><summary>Dá para voltar ao firmware original?</summary><p>A instrução passo a passo está suspensa até testarmos a volta a partir do layout de memória da 1.24 num relógio com cabo serial. <a href="#voltar">Detalhes</a>.</p></details>
+    </div>
+    <p class="more">Mais respostas nas <a href="docs.html#faq">perguntas frequentes da documentação</a>.</p>
+  </div>
+</section>
 
-<footer>
+<section id="mexer">
   <div class="wrap">
     <div class="foot-grid">
-      <div id="mexer">
+      <div>
         <h3>Para quem quer mexer</h3>
         <ul>
           <li><a href="https://github.com/davicorrea0/smalltv-pomodoro/blob/main/docs/PACOTES.md">Criar um mostrador em JSON</a>, sem compilar</li>
           <li><a href="https://github.com/davicorrea0/smalltv-pomodoro/blob/main/docs/CRIAR_MOSTRADOR.md">Criar um mostrador no firmware</a> (C++)</li>
-          <li><a href="https://github.com/davicorrea0/smalltv-pomodoro#biblioteca-de-assets">Desenhar em pixel art</a>: um <code>.txt</code> por sprite</li>
-          <li><a href="https://github.com/davicorrea0/smalltv-pomodoro#simulador-das-telas">Simulador no PC</a>, sem gravar o relógio</li>
+          <li><a href="https://github.com/davicorrea0/smalltv-pomodoro/blob/main/docs/TECHNICAL.md#asset-library">Desenhar em pixel art</a>: um <code>.txt</code> por sprite</li>
+          <li><a href="https://github.com/davicorrea0/smalltv-pomodoro/blob/main/docs/TECHNICAL.md#screen-simulator">Simulador no PC</a>, sem gravar o relógio</li>
         </ul>
       </div>
       <div id="creditos">
@@ -329,24 +286,41 @@
           <li>Código, pixel art e mostradores sob a <a href="https://github.com/davicorrea0/smalltv-pomodoro/blob/main/LICENSE">licença GPL v3</a>: pode usar, estudar, mudar e compartilhar; versões modificadas que você distribuir também precisam ser GPL, com o código aberto</li>
           <li>Pinagem: <a href="https://devices.esphome.io/devices/geekmagic-ultra/">ESPHome devices</a></li>
           <li>Ordem de cor e carregador: <a href="https://github.com/giovi321/smalltv-mod">giovi321/smalltv-mod</a></li>
-          <li><a href="https://github.com/keshikan/DSEG">DSEG7 Classic</a> (keshikan) e <a href="https://github.com/dharmatype/Bebas-Neue">Bebas Neue</a> (Dharma Type), SIL Open Font License 1.1 (<a href="https://github.com/davicorrea0/smalltv-pomodoro/tree/main/licenses">licenças</a>), convertidas em polígonos</li>
+          <li><a href="https://github.com/keshikan/DSEG">DSEG7 Classic</a> (keshikan), <a href="https://github.com/dharmatype/Bebas-Neue">Bebas Neue</a> (Dharma Type), Outfit e Righteous, SIL Open Font License 1.1 (<a href="https://github.com/davicorrea0/smalltv-pomodoro/tree/main/licenses">licenças</a>), convertidas em polígonos</li>
           <li>Clima: <a href="https://open-meteo.com/">Open-Meteo</a></li>
-          <li>Adafruit GFX e ST7789, ArduinoJson, JPEGDEC e AnimatedGIF (bitbank2)</li>
+          <li>Adafruit GFX e ST7789, ArduinoJson, JPEGDEC e AnimatedGIF (bitbank2), uzlib e o gerador de QR do Project Nayuki</li>
         </ul>
       </div>
     </div>
-    <p class="fine">GeekMagic e SmallTV são marcas dos seus donos. Este é um projeto independente, sem ligação com a GeekMagic. Gravar outro firmware é por sua conta e risco.</p>
-    <div class="foot-bottom">
-      <img class="px" src="img/tomate.svg" alt="">
-      <span>SmallTV Pomodoro · feito por Davi Mattos</span>
-      <div class="links">
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-main">
+      <div class="foot-brand">
+        <a class="brand" href="./"><img class="px" src="img/tomate.svg" alt=""><span>SmallTV Pomodoro</span></a>
+        <p>Firmware de código aberto para o GeekMagic SmallTV Ultra. Feito por Davi Mattos.</p>
+      </div>
+      <nav class="foot-nav" aria-label="Site">
+        <h3>Site</h3>
+        <a href="./">Início</a>
         <a href="galeria.html">Galeria</a>
-        <a href="https://github.com/davicorrea0/smalltv-pomodoro"><span class="gh" aria-hidden="true"></span>Código no GitHub</a>
         <a href="docs.html">Docs</a>
         <a href="versoes.html">Versões</a>
-        <a href="en/" hreflang="en">English</a>
-      </div>
+        <a href="jogo.html">Jogo</a>
+      </nav>
+      <nav class="foot-nav" aria-label="Projeto">
+        <h3>Projeto</h3>
+        <a href="https://github.com/davicorrea0/smalltv-pomodoro"><span class="gh" aria-hidden="true"></span>Código no GitHub</a>
+        <a href="https://github.com/davicorrea0/smalltv-pomodoro/issues">Relatar um problema</a>
+        <a href="https://github.com/davicorrea0/smalltv-pomodoro/blob/main/LICENSE">Licença GPL v3</a>
+        <a href="en/" hreflang="en" lang="en">English</a>
+      </nav>
     </div>
+    <p class="fine">GeekMagic e SmallTV são marcas dos seus donos. Este é um projeto independente, sem ligação com a GeekMagic. Gravar outro firmware é por sua conta e risco.</p>
   </div>
 </footer>
 

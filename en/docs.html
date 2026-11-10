@@ -31,7 +31,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Silkscreen&display=swap">
-<link rel="stylesheet" href="../style.css?v=16">
+<link rel="stylesheet" href="../style.css?v=19">
 </head>
 <body>
 
@@ -73,7 +73,7 @@
     <li>First upload the loader <a href="https://github.com/giovi321/smalltv-mod/releases/tag/v2.8.2"><code>smalltv-mod-loader.bin</code></a> (giovi321/smalltv-mod v2.8.2) through the same <strong>Firmware Upgrade</strong>. <strong>The screen goes black with the loader, and that is normal:</strong> the clock is on and waiting for the next step.</li>
     <li>Join the open network <code>SmallTV-Loader</code> and upload the Pomodoro <code>.bin</code> at <code>http://192.168.4.1/update</code> (from your phone or computer). <strong>Do not unplug it until the Pomodoro screen (the Wi-Fi QR code) appears.</strong> The clock restarts by itself after the upload.</li>
    </ol></div>
-  <div class="note"><p><strong>Photos and GIFs from the factory firmware:</strong> installing formats the file storage, so the original's photos are <strong>not kept</strong>. Settings and the saved Wi-Fi stay. Upload the photos again from the panel afterwards.</p></div>
+  <div class="note"><p><strong>Photos and GIFs from the factory firmware:</strong> installing formats the file storage, so the original's photos are <strong>not kept</strong>. The saved Wi-Fi stays; settings start from scratch. Upload the photos again from the panel afterwards.</p></div>
 
   <h3 class="sub">Connect the clock to Wi-Fi</h3>
   <p>If the clock already had your home Wi-Fi saved by the factory firmware, it joins by itself and you can skip to <a href="#achar-painel">finding the panel</a>. If it did not:</p>
@@ -202,8 +202,7 @@
   </div>
 
   <div class="topic" id="voltar-original"><h3>Go back to the original firmware</h3>
-   <ol class="steps"><li><p>Download GeekMagic's <code>.bin</code> from <a href="https://github.com/GeekMagicClock/smalltv-ultra">GeekMagicClock/smalltv-ultra</a>.</p></li><li><p>Open <a href="#recuperacao">recovery mode</a> (3 power cycles) and upload the file there. <em>Settings → Update firmware</em> will not work: it only accepts firmware signed by this project.</p></li></ol>
-   <div class="note"><p>The original firmware expects photos in another part of the memory; the Pomodoro ones are left behind (it may format or reuse that area). Back up first if you want to keep them.</p></div>
+   <div class="note warn"><p><strong>Instructions on hold until tested with a cable:</strong> since version 1.24 (4M2M memory layout), going back to <a href="https://github.com/GeekMagicClock/smalltv-ultra">GeekMagic's original firmware</a> through recovery mode has not been tested on a real clock yet. Do not try going back unless you have a 3.3 V USB-TTL adapter to <a href="#recuperacao">reflash over a cable</a> if the original firmware does not boot.</p></div>
   </div>
  </div>
 </section>
@@ -228,16 +227,28 @@
 
 <footer>
   <div class="wrap">
-    <div class="foot-bottom">
-      <img class="px" src="../img/tomate.svg" alt="">
-      <span>SmallTV Pomodoro · made by Davi Mattos</span>
-      <div class="links">
-        <a href="./">Home</a>
-        <a href="https://github.com/davicorrea0/smalltv-pomodoro"><span class="gh" aria-hidden="true"></span>Code on GitHub</a>
-        <a href="releases.html">Releases</a>
-        <a href="../docs.html" hreflang="pt-BR">Português</a>
+    <div class="foot-main">
+      <div class="foot-brand">
+        <a class="brand" href="./"><img class="px" src="../img/tomate.svg" alt=""><span>SmallTV Pomodoro</span></a>
+        <p>Open-source firmware for the GeekMagic SmallTV Ultra. Made by Davi Mattos.</p>
       </div>
+      <nav class="foot-nav" aria-label="Site">
+        <h3>Site</h3>
+        <a href="./">Home</a>
+        <a href="gallery.html">Gallery</a>
+        <a href="docs.html">Docs</a>
+        <a href="releases.html">Releases</a>
+        <a href="game.html">Game</a>
+      </nav>
+      <nav class="foot-nav" aria-label="Project">
+        <h3>Project</h3>
+        <a href="https://github.com/davicorrea0/smalltv-pomodoro"><span class="gh" aria-hidden="true"></span>Code on GitHub</a>
+        <a href="https://github.com/davicorrea0/smalltv-pomodoro/issues">Report a problem</a>
+        <a href="https://github.com/davicorrea0/smalltv-pomodoro/blob/main/LICENSE">GPL v3 license</a>
+        <a href="../docs.html" hreflang="pt-BR" lang="pt-BR">Português</a>
+      </nav>
     </div>
+    <p class="fine">GeekMagic and SmallTV are trademarks of their owners. This is an independent project, not affiliated with GeekMagic. Flashing other firmware is at your own risk.</p>
   </div>
 </footer>
 

@@ -97,10 +97,12 @@ p { margin: 0 0 1em; }
   font-family: var(--pixel); font-size: 13px; color: var(--accent);
   letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 10px;
 }
-.hero h1 { font-size: clamp(2rem, 8vw, 3.4rem); letter-spacing: -0.02em; }
+.hero h1 { font-size: clamp(2.1rem, 8.5vw, 3.6rem); letter-spacing: -0.025em; line-height: 1.08; }
 .hero h1 em { font-style: normal; color: var(--accent); }
 .hero .lead { font-size: 1.1rem; color: var(--muted); max-width: 34em; }
 .hero .meta { font-size: 14px; color: var(--muted); margin-top: 14px; }
+.hero .meta a { color: var(--muted); }
+.hero .meta a:hover { color: var(--text); }
 @media (min-width: 820px) {
   .hero { padding: 72px 0 40px; }
   .hero .wrap { grid-template-columns: 1.15fr 1fr; }
@@ -108,7 +110,7 @@ p { margin: 0 0 1em; }
 
 /* O relógio: um cubinho com a tela 240×240 trocando de mostrador. */
 .device {
-  --s: min(78vw, 340px);
+  --s: min(66vw, 340px);
   width: var(--s); margin: 0 auto; position: relative;
   padding: calc(var(--s) * 0.075) calc(var(--s) * 0.075) calc(var(--s) * 0.16);
   border-radius: calc(var(--s) * 0.08);
@@ -323,15 +325,12 @@ footer {
   border-top: 1px solid var(--line); padding: 28px 0 40px;
   color: var(--muted); font-size: 14px;
 }
-footer .foot-bottom { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; }
 .foot-grid { display: grid; gap: 24px; margin-bottom: 20px; }
 @media (min-width: 760px) { .foot-grid { grid-template-columns: 1fr 1fr; } }
 .foot-grid h3 { font-size: 15px; color: var(--text); margin-bottom: 8px; }
 .foot-grid ul { margin: 0; padding-left: 18px; }
 .foot-grid li { margin-bottom: 5px; }
 footer .fine { font-size: 13px; border-top: 1px solid var(--line); padding-top: 16px; }
-footer img { width: 22px; height: 22px; }
-footer .links { display: flex; gap: 16px; flex-wrap: wrap; margin-left: auto; }
 footer a { color: var(--muted); }
 footer a:hover { color: var(--text); }
 
@@ -404,13 +403,6 @@ section[data-kind].first { border-top: 0; padding-top: 16px; }
   mask: url(img/icons/github.svg) center / 16px 16px no-repeat;
 }
 
-/* Seção Alexa: frases de voz em cartões */
-.h-ico img { display: inline-block; width: 28px; height: 28px; vertical-align: -4px; margin-right: 10px; }
-.voice { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
-.voice div { background: var(--card); border: 1px solid var(--line); border-left: 3px solid #3fc8ff; border-radius: 8px; padding: 12px 14px; }
-.voice b { display: block; font-size: 15px; margin-bottom: 2px; }
-.voice span { font-size: 14px; color: var(--muted); }
-
 /* Página de versões (gerada por scripts/releases-page.cjs) */
 .page-head h1 .count { font-family: var(--pixel); font-size: 14px; font-weight: 400; color: var(--accent); vertical-align: middle; margin-left: 6px; }
 .page-head .note { margin: 18px 0 0; max-width: 46em; }
@@ -480,3 +472,76 @@ section[data-kind].first { border-top: 0; padding-top: 16px; }
   .lang { padding-left: 8px; padding-right: 8px; }
 }
 .doc .topic { margin-bottom: 40px; }
+
+/* ---------- Página inicial (reorganização de 11/2026) ---------- */
+/* Números: fatos do projeto numa faixa logo abaixo do topo */
+.stats { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--bg-2); }
+.stats dl { margin: 0; display: grid; grid-template-columns: repeat(2, 1fr); }
+.stats dl > div { padding: 18px 12px; border-left: 1px solid var(--line); }
+.stats dl > div:nth-child(odd) { border-left: 0; }
+.stats dl > div:nth-child(n+3) { border-top: 1px solid var(--line); }
+.stats dl > div:last-child { grid-column: 1 / -1; border-left: 0; }
+.stats dt { font: 400 clamp(1.6rem, 6vw, 2.2rem)/1.1 var(--pixel); color: var(--text); }
+.stats dd { margin: 4px 0 0; font-size: 14px; color: var(--muted); }
+@media (min-width: 760px) {
+  .stats dl { grid-template-columns: repeat(5, 1fr); }
+  .stats dl > div { padding: 22px 18px; border-left: 1px solid var(--line); border-top: 0 !important; }
+  .stats dl > div:first-child, .stats dl > div:last-child { grid-column: auto; }
+  .stats dl > div:first-child { border-left: 0; padding-left: 0; }
+}
+.stats + section { border-top: 0; }
+
+/* Texto ao lado de uma mídia (o vídeo do relógio) */
+.split-media { display: grid; gap: 24px; align-items: center; }
+@media (min-width: 820px) { .split-media { grid-template-columns: 1fr 1fr; gap: 48px; } }
+.clip { margin: 0; justify-self: center; width: min(100%, 420px); border-radius: var(--radius); overflow: hidden; background: #000; border: 1px solid var(--line); box-shadow: 0 30px 60px -24px rgba(0,0,0,0.75); }
+.clip img, .clip video { width: 100%; height: auto; aspect-ratio: 1; display: block; }
+.fine-print { font-size: 13px; color: var(--muted); margin: 14px 0 0; }
+.fine-print a { color: var(--muted); }
+.fine-print a:hover { color: var(--text); }
+.more { margin: 14px 0 0; color: var(--muted); font-size: 15px; }
+
+/* É o meu aparelho? */
+.fit { display: grid; gap: 10px; }
+@media (min-width: 760px) { .fit { grid-template-columns: repeat(3, 1fr); } }
+.fit > div {
+  display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; align-items: center;
+  background: var(--card); border: 1px solid var(--line); border-left-width: 3px; border-radius: 8px; padding: 14px 16px;
+}
+.fit b { font-size: 15px; line-height: 1.3; }
+.fit span { grid-row: 2; font-size: 13px; color: var(--muted); }
+.fit em { grid-row: 1 / span 2; grid-column: 2; font: 400 11px var(--pixel); font-style: normal; padding: 4px 8px; border-radius: 6px; white-space: nowrap; }
+.fit .yes { border-left-color: var(--green); }
+.fit .yes em { color: var(--green); background: rgba(96, 196, 84, 0.12); }
+.fit .maybe { border-left-color: #ffc43d; }
+.fit .maybe em { color: #ffc43d; background: rgba(255, 196, 61, 0.1); }
+.fit .no { border-left-color: var(--accent); }
+.fit .no em { color: var(--accent); background: rgba(255, 90, 71, 0.12); }
+
+/* Rodapé antigo: fica por uma versão, para páginas de versões geradas por um branch sem o site-rodape.cjs */
+footer .foot-bottom { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; }
+footer .foot-bottom img { width: 22px; height: 22px; }
+footer .links { display: flex; gap: 16px; flex-wrap: wrap; margin-left: auto; }
+
+/* Rodapé comum (gerado por scripts/site-rodape.cjs no repositório principal) */
+.foot-main { display: grid; gap: 24px; grid-template-columns: 1fr 1fr; margin-bottom: 20px; }
+.foot-brand { grid-column: 1 / -1; }
+.foot-brand .brand img { width: 26px; height: 26px; }
+.foot-brand p { margin: 10px 0 0; max-width: 26em; }
+.foot-nav { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.foot-nav h3 { font: 400 12px var(--pixel); color: var(--text); text-transform: uppercase; letter-spacing: 0.04em; margin: 0 0 4px; }
+.foot-nav a { text-decoration: none; }
+.foot-nav a:hover { text-decoration: underline; }
+@media (min-width: 760px) {
+  .foot-main { grid-template-columns: 2fr 1fr 1fr; }
+  .foot-brand { grid-column: auto; }
+}
+#mexer .foot-grid, #hack .foot-grid { margin: 0; color: var(--muted); font-size: 15px; }
+@media (max-width: 520px) { .foot-brand .brand span { display: inline; } }
+
+/* Perguntas na página inicial */
+.faq-home { display: grid; gap: 10px; align-items: start; }
+@media (min-width: 760px) { .faq-home { grid-template-columns: 1fr 1fr; } }
+.faq-home details.note { margin: 0; background: var(--card); border-color: var(--line); }
+.faq-home details.note[open] { border-color: rgba(255, 90, 71, 0.35); }
+.faq-home details.note p { margin: 0; color: var(--muted); }
