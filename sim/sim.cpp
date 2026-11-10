@@ -556,55 +556,70 @@ static int testSpriteLimits() {
   return fails;
 }
 
-// Cena 3D ("world3d", formato 2): as cores e a geometria mudam a imagem, a câmera anda, o desenho incremental (só o que
-// mudou, em faixas) fica igual ao completo quadro a quadro, o texto "overlay" preserva a cena e mistura a borda, e cada
-// entrada insegura é recusada com mensagem (um pacote que derrubasse a carga reiniciaria o relógio a cada boot).
-static int testWorld3D() {
+// "when" sem clima (sem Wi-Fi, API fora, hora ainda não sincronizada): day/night caem no 6h-18h e rain/dry em "seco",
+// sem ler dado ausente. Usa o quartinho da galeria, que muda a janela e o fundo conforme o clima.
+static int testSemClima() {
   int fails = 0;
-  const std::string cores = R"("colors":["#1188aa","#443399","#aa3366","#00bbaa"],"accent":"#ccffff")";
-  const std::string mapa = R"("map":["########","#......#","#...#..#","#...#..#","#......#","#......#","#......#","########"])";
-  auto tunel = [&](const std::string &extra, int fmt = 2) {
-    return "{\"format\":" + std::to_string(fmt) + ",\"layers\":[{\"type\":\"world3d\",\"geometry\":\"tunnel\",\"fps\":8,\"speed\":16," + cores + extra + "}]}";
-  };
-  auto grade = [&](const std::string &cam, const std::string &extra = "", const std::string &m = "") {
-    return "{\"format\":2,\"layers\":[{\"type\":\"world3d\",\"geometry\":\"grid\",\"fps\":8," + cores + "," + (m.empty() ? mapa : m) +
-           ",\"period\":4000,\"camera\":[" + cam + "]" + extra + "}]}";
-  };
-  const std::string cam = R"({"t":0,"x":150,"y":150,"yaw":0},{"t":2000,"x":550,"y":150,"yaw":0},{"t":4000,"x":150,"y":150,"yaw":0})";
-  Frame *a = new Frame(), *b = new Frame();
-  UiState st = base(14, 37, 0);
-  st.theme = THEME_PACK;
-  st.ms = 1000;
+  FILE *fp = fopen("../faces/quartinho.json", "rb");
+  if (!fp) { printf("sem clima: faces/quartinho.json ausente\n"); return 1; }
+  static char orig[24577], buf[24577];
+  size_t len = fread(orig, 1, sizeof orig - 1, fp);
+  fclose(fp);
+  orig[len] = 0;
   char err[96];
-  auto render = [&](const std::string &js, Frame *f) {
-    bool ok = facePackLoad((char *)js.c_str(), js.size(), err, sizeof err);
+  auto render = [&](UiState st, Frame *f) {
+    memcpy(buf, orig, len + 1);
+    bool ok = facePackLoad(buf, len, err, sizeof err);
     if (ok) { uiBegin(f); facePackRender(st, true); }
     facePackUnload();
     return ok;
   };
-  {
-    std::string outra = tunel("");
-    outra.replace(outra.find("#1188aa"), 7, "#aa2200");
-    if (!render(tunel(""), a) || !render(outra, b) || !memcmp(a->px, b->px, sizeof a->px)) { printf("world3d cores FALHOU\n"); fails++; }
-  }
-  if (!render(tunel(""), a) || !render(tunel(",\"shape\":\"square\""), b) || !memcmp(a->px, b->px, sizeof a->px)) { printf("world3d quadrado FALHOU: %s\n", err); fails++; }
-  // câmera colada na parede (x = 699, a 0,01 célula da borda) olhando para ela: a distância mínima (0,05) segura a altura
-  st.ms = 2000;
-  if (!render(grade(R"({"t":0,"x":150,"y":150,"yaw":0},{"t":2000,"x":699,"y":150,"yaw":0},{"t":4000,"x":150,"y":150,"yaw":0})"), a)) {
-    printf("world3d camera colada FALHOU: %s\n", err);
-    fails++;
-  }
-  st.ms = 1000;
-  if (!render(grade(cam), a)) { printf("world3d corredor FALHOU: %s\n", err); fails++; }
+  // compara só a cena (y < 180): a hora de baixo muda com o relógio de cada caso
+  Frame *dia = new Frame(), *noite = new Frame(), *semHora = new Frame(), *apiFora = new Frame(), *chuva = new Frame(), *tmp = new Frame();
+  UiState s = base(12, 0, 0);
+  s.theme = THEME_PACK;
+  s.ms = 500;
+  s.weatherOn = false;  // sem clima: vale a hora
+  s.wx.ok = false;
+  bool ok = render(s, dia);
+  s.now.tm_hour = 23;
+  ok = ok && render(s, noite);
+  UiState h = base(23, 0, 0);  // hora não sincronizada: day (padrão do firmware)
+  h.theme = THEME_PACK; h.ms = 500; h.weatherOn = false; h.wx.ok = false; h.timeOk = false;
+  ok = ok && render(h, semHora);
+  UiState a = base(12, 0, 0);  // clima ligado mas a API não respondeu
+  a.theme = THEME_PACK; a.ms = 500; a.weatherOn = true; a.wx.ok = false;
+  ok = ok && render(a, apiFora);
+  UiState c = base(12, 0, 0);  // clima ok, chovendo, de dia
+  c.theme = THEME_PACK; c.ms = 500; c.weatherOn = true; c.wx.ok = true; c.wx.day = true; c.wx.code = 61;
+  ok = ok && render(c, chuva);
+  UiState d = c;  // clima ok, seco, de dia: igual ao sem clima ao meio-dia
+  d.wx.code = 0;
+  ok = ok && render(d, tmp);
+  if (!ok) { printf("sem clima FALHOU: pacote recusado (%s)\n", err); fails++; }
   else {
-    st.ms = 2000;
-    if (!render(grade(cam), b) || !memcmp(a->px, b->px, sizeof a->px)) { printf("world3d camera FALHOU\n"); fails++; }
+    if (!memcmp(dia->px, noite->px, 180 * 240 * 2)) { printf("sem clima FALHOU: meio-dia e 23h iguais\n"); fails++; }
+    if (memcmp(dia->px, apiFora->px, 180 * 240 * 2)) { printf("sem clima FALHOU: API fora deveria cair no horario (dia)\n"); fails++; }
+    if (memcmp(dia->px, semHora->px, 180 * 240 * 2)) { printf("sem clima FALHOU: hora nao sincronizada deveria valer dia\n"); fails++; }
+    if (!memcmp(dia->px, chuva->px, 180 * 240 * 2)) { printf("sem clima FALHOU: chuva nao mudou a janela\n"); fails++; }
+    if (memcmp(dia->px, tmp->px, 180 * 240 * 2)) { printf("sem clima FALHOU: clima seco de dia deveria igualar o sem clima ao meio-dia\n"); fails++; }
   }
-  // incremental (faixas, só o que mudou) contra completo, 40 quadros, com o relógio por cima (overlay) e a virada do minuto
-  for (const std::string &js : {tunel(""), tunel(",\"shape\":\"square\",\"sway\":4,\"spin\":3"), grade(cam)}) {
-    std::string j = js;  // mais uma camada: o relógio por cima da cena
-    j.insert(j.size() - 2, R"(,{"type":"text","x":120,"y":72,"font":"bebas","size":96,"align":"center","color":"#ecffff","overlay":true,"text":"{HH}:{MM}"})");
-    if (!facePackLoad((char *)j.c_str(), j.size(), err, sizeof err)) { printf("world3d com overlay FALHOU: %s\n", err); fails++; continue; }
+  if (!fails) printf("sem clima: ok (API fora e hora nao sincronizada caem no horario 6h-18h; chuva muda a janela; seco = sem clima)\n");
+  delete dia; delete noite; delete semHora; delete apiFora; delete chuva; delete tmp;
+  return fails;
+}
+
+// Texto "overlay" sobre sprites (formato 2): o desenho incremental (só o que mudou, em faixas) fica igual ao completo quadro
+// a quadro, e os dígitos misturam a borda com o fundo. "world3d" (retirado da 1.26.0) é recusado com mensagem: um pacote
+// de terceiros com cena 3D não pode ser aceito pela metade.
+static int testOverlay() {
+  int fails = 0;
+  char err[96];
+  const std::string fundo = R"({"format":2,"bg":"#102040","sprites":{"s":{"fps":4,"pal":{"a":"#e0a030","b":"#30a0e0"},"frames":[["aab","aab","bbb"],["baa","baa","bbb"]]}},"layers":[{"type":"circle","x":120,"y":120,"r":90,"color":"#2a5a8a"},{"type":"sprite","sprite":"s","size":8,"motion":{"period":4000,"keys":[{"t":0,"x":20,"y":40},{"t":2000,"x":180,"y":90},{"t":4000,"x":20,"y":40}]}})";
+  const std::string texto = R"(,{"type":"text","x":120,"y":72,"font":"bebas","size":96,"align":"center","color":"#ecffff","overlay":true,"text":"{HH}:{MM}"}]})";
+  {
+    std::string j = fundo + texto;
+    if (!facePackLoad((char *)j.c_str(), j.size(), err, sizeof err)) { printf("overlay sobre sprites FALHOU: %s\n", err); return 1; }
     Frame *inc = new Frame(), *fresh = new Frame();
     UiState s = base(14, 37, 0);
     s.theme = THEME_PACK;
@@ -623,83 +638,49 @@ static int testWorld3D() {
     facePackUnload();
     delete inc;
     delete fresh;
-    if (diff) { printf("world3d incremental FALHOU: %d de 40 quadros diferentes do completo\n", diff); fails++; }
+    if (diff) { printf("overlay incremental FALHOU: %d de 40 quadros diferentes do completo\n", diff); fails++; }
   }
-  // overlay: fora dos dígitos a cena fica igual; nos dígitos há tinta e borda misturada
+  // fora dos dígitos o fundo fica igual; nos dígitos há tinta e borda misturada
   {
-    std::string fundo = tunel(""), texto = fundo;
-    texto.insert(texto.size() - 2, R"(,{"type":"text","x":120,"y":72,"font":"bebas","size":96,"align":"center","color":"#ecffff","overlay":true,"text":"{HH}:{MM}"})");
+    std::string sem = fundo + "]}", com = fundo + texto;
+    Frame *a = new Frame(), *b = new Frame();
+    UiState st = base(14, 37, 0);
+    st.theme = THEME_PACK;
     st.ms = 125;
+    auto render = [&](const std::string &js, Frame *f) {
+      bool ok = facePackLoad((char *)js.c_str(), js.size(), err, sizeof err);
+      if (ok) { uiBegin(f); facePackRender(st, true); }
+      facePackUnload();
+      return ok;
+    };
     int same = 0, changed = 0, blended = 0;
     uint16_t fg = uiRgb(236, 255, 255);
-    if (render(fundo, a) && render(texto, b))
+    if (render(sem, a) && render(com, b))
       for (int y = 72; y < 168; y++)
         for (int x = 15; x < 225; x++) {
           int i = y * 240 + x;
           if (a->px[i] == b->px[i]) same++;
           else { changed++; if (b->px[i] != fg) blended++; }
         }
-    if (same < 100 || changed < 100 || blended < 10) { printf("world3d overlay FALHOU: %d preservados, %d tinta, %d bordas (%s)\n", same, changed, blended, err); fails++; }
+    if (same < 100 || changed < 100 || blended < 10) { printf("overlay FALHOU: %d preservados, %d tinta, %d bordas (%s)\n", same, changed, blended, err); fails++; }
+    delete a;
+    delete b;
   }
-  // entradas que precisam ser recusadas (com mensagem)
-  const std::string fecha = R"({"t":4000,"x":150,"y":150,"yaw":0})";
-  struct { const char *nome; std::string js; } R[] = {
-    {"mapa aberto", grade(cam, "", R"("map":[".#######","#......#","#......#","#......#","#......#","#......#","#......#","########"])")},
-    {"mapa 7 linhas", grade(cam, "", R"("map":["########","#......#","#......#","#......#","#......#","#......#","########"])")},
-    {"letra no mapa", grade(cam, "", R"("map":["########","#..x...#","#......#","#......#","#......#","#......#","#......#","########"])")},
-    {"camera atravessa parede", grade(R"({"t":0,"x":150,"y":250,"yaw":0},{"t":2000,"x":550,"y":250,"yaw":0},)" + std::string(R"({"t":4000,"x":150,"y":250,"yaw":0})"))},
-    {"camera pelo canto", grade(R"({"t":0,"x":350,"y":150,"yaw":0},{"t":2000,"x":450,"y":250,"yaw":0},{"t":4000,"x":350,"y":150,"yaw":0})")},
-    {"camera dentro da parede", grade(R"({"t":0,"x":450,"y":250,"yaw":0},)" + fecha)},
-    {"camera fora do mapa", grade(R"({"t":0,"x":150,"y":150,"yaw":0},{"t":2000,"x":900,"y":150,"yaw":0},)" + fecha)},
-    {"tempos fora de ordem", grade(R"({"t":0,"x":150,"y":150,"yaw":0},{"t":3000,"x":550,"y":150,"yaw":0},{"t":2000,"x":550,"y":550,"yaw":0},)" + fecha)},
-    {"tempo repetido", grade(R"({"t":0,"x":150,"y":150,"yaw":0},{"t":2000,"x":550,"y":150,"yaw":0},{"t":2000,"x":550,"y":550,"yaw":0},)" + fecha)},
-    {"primeiro t diferente de 0", grade(R"({"t":10,"x":150,"y":150,"yaw":0},)" + fecha)},
-    {"sem ponto final", grade(R"({"t":0,"x":150,"y":150,"yaw":0},{"t":2000,"x":550,"y":150,"yaw":0})")},
-    {"nao fecha o ciclo", grade(R"({"t":0,"x":150,"y":150,"yaw":0},{"t":4000,"x":550,"y":150,"yaw":0})")},
-    {"yaw nao fecha", grade(R"({"t":0,"x":150,"y":150,"yaw":0},{"t":4000,"x":150,"y":150,"yaw":90})")},
-    {"yaw 721", grade(R"({"t":0,"x":150,"y":150,"yaw":721},{"t":4000,"x":150,"y":150,"yaw":721})")},
-    {"7 pontos", grade(R"({"t":0,"x":150,"y":150,"yaw":0},{"t":500,"x":160,"y":150,"yaw":0},{"t":1000,"x":170,"y":150,"yaw":0},{"t":1500,"x":180,"y":150,"yaw":0},{"t":2000,"x":190,"y":150,"yaw":0},{"t":3000,"x":200,"y":150,"yaw":0},)" + fecha)},
-    {"1 ponto", grade(R"({"t":0,"x":150,"y":150,"yaw":0})")},
-    {"ponto sem yaw", grade(R"({"t":0,"x":150,"y":150},)" + fecha)},
-    {"ponto em texto", grade(R"("t",)" + fecha)},
-    {"geometria desconhecida", "{\"format\":2,\"layers\":[{\"type\":\"world3d\",\"geometry\":\"sphere\"," + cores + "}]}"},
-    {"forma hexagono", tunel(",\"shape\":\"hexagon\"")},
-    {"fps 60", tunel(",\"fps\":60")},
-    {"fps 0", tunel(",\"fps\":0")},
-    {"speed 33", tunel(",\"speed\":33")},
-    {"sway 9", tunel(",\"sway\":9")},
-    {"3 cores", "{\"format\":2,\"layers\":[{\"type\":\"world3d\",\"geometry\":\"tunnel\",\"colors\":[\"#111111\",\"#222222\",\"#333333\"],\"accent\":\"#ffffff\"}]}"},
-    {"cor #xxxxxx", "{\"format\":2,\"layers\":[{\"type\":\"world3d\",\"geometry\":\"tunnel\",\"colors\":[\"#xxxxxx\",\"#222222\",\"#333333\",\"#444444\"],\"accent\":\"#ffffff\"}]}"},
-    {"cor com nome", "{\"format\":2,\"layers\":[{\"type\":\"world3d\",\"geometry\":\"tunnel\",\"colors\":[\"accent\",\"#222222\",\"#333333\",\"#444444\"],\"accent\":\"#ffffff\"}]}"},
-    {"sem accent", "{\"format\":2,\"layers\":[{\"type\":\"world3d\",\"geometry\":\"tunnel\",\"colors\":[\"#111111\",\"#222222\",\"#333333\",\"#444444\"]}]}"},
-    {"period 999", grade(cam, "").replace(grade(cam).find("\"period\":4000"), 13, "\"period\":999")},
-    {"period 60001", grade(cam, "").replace(grade(cam).find("\"period\":4000"), 13, "\"period\":60001")},
-    {"world3d na segunda camada", "{\"format\":2,\"layers\":[{\"type\":\"rect\",\"w\":10,\"h\":10},{\"type\":\"world3d\",\"geometry\":\"tunnel\"," + cores + "}]}"},
-    {"dois world3d", "{\"format\":2,\"layers\":[{\"type\":\"world3d\",\"geometry\":\"tunnel\"," + cores + "},{\"type\":\"world3d\",\"geometry\":\"tunnel\"," + cores + "}]}"},
-    {"world3d no formato 1", tunel("", 1)},
-    {"overlay no formato 1", R"({"format":1,"layers":[{"type":"text","font":"bebas","size":40,"overlay":true,"text":"{HH}"}]})"},
-    {"overlay em fonte pixel", R"({"format":2,"layers":[{"type":"text","font":"pixel","overlay":true,"text":"{HH}"}]})"},
-    {"overlay em retangulo", R"({"format":2,"layers":[{"type":"rect","w":10,"h":10,"overlay":true}]})"},
-    {"tipo raycast", R"({"format":2,"layers":[{"type":"raycast"}]})"},
-    {"tipo speed_tunnel", R"({"format":2,"layers":[{"type":"speed_tunnel"}]})"},
-    {"tipo shots", R"({"format":2,"layers":[{"type":"shots"}]})"},
-  };
-  int recusas = 0;
-  for (auto &r : R) {
+  // "world3d" saiu do formato: recusado, com mensagem (túnel e corredor)
+  const char *velhos[] = {
+    R"({"format":2,"layers":[{"type":"world3d","geometry":"tunnel","fps":8,"speed":16,"colors":["#1188aa","#443399","#aa3366","#00bbaa"],"accent":"#ccffff"}]})",
+    R"({"format":2,"layers":[{"type":"world3d","geometry":"grid","fps":8,"map":["########","#......#","#......#","#......#","#......#","#......#","#......#","########"],"period":4000,"camera":[{"t":0,"x":150,"y":150,"yaw":0},{"t":4000,"x":150,"y":150,"yaw":0}]}]})",
+    R"({"format":1,"layers":[{"type":"world3d"}]})"};
+  int n = 0;
+  for (const char *js : velhos) {
+    std::string j = js;
     err[0] = 0;
-    bool ok = facePackLoad((char *)r.js.c_str(), r.js.size(), err, sizeof err);
-    facePackUnload();
-    if (ok || !err[0]) { printf("world3d recusa \"%s\" FALHOU (%s)\n", r.nome, ok ? "aceito" : "sem mensagem"); fails++; }
-    else recusas++;
+    bool ok = facePackLoad((char *)j.c_str(), j.size(), err, sizeof err);
+    if (ok) facePackUnload();
+    if (ok || !err[0]) { printf("world3d recusa %d FALHOU (%s)\n", n, ok ? "aceito" : "sem mensagem"); fails++; }
+    n++;
   }
-  // a cena e o cache do corredor somem com o pacote: carregar e descarregar 200 vezes não pode deixar memória presa
-  for (int k = 0; k < 200; k++) {
-    std::string js = k & 1 ? grade(cam) : tunel("");
-    if (facePackLoad((char *)js.c_str(), js.size(), err, sizeof err)) facePackUnload();
-  }
-  delete a;
-  delete b;
-  if (!fails) printf("world3d: ok (cores, quadrado, camera, incremental igual ao completo em 3 cenas x 40 quadros, overlay, %d entradas recusadas)\n", recusas);
+  if (!fails) printf("overlay: ok (incremental igual ao completo em 40 quadros, borda misturada, world3d recusado com mensagem)\n");
   return fails;
 }
 
@@ -1126,7 +1107,8 @@ int main() {
   fails += testSpriteLimits();
   fails += testSpriteOracle(2000, 8, 10);
   fails += testSpriteOracle(2000, 16, 10, 2);
-  fails += testWorld3D();
+  fails += testOverlay();
+  fails += testSemClima();
   fails += testMotion();
   fails += TintTest::run();
   return fails;
