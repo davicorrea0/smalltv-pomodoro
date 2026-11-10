@@ -421,7 +421,7 @@ static int testPackages(const UiState &pomo) {
     snprintf(path, sizeof path, "../faces/%s", e->d_name);
     FILE *fp = fopen(path, "rb");
     if (!fp) continue;
-    static char buf[16384];
+    static char buf[24577];
     size_t len = fread(buf, 1, sizeof buf - 1, fp);
     fclose(fp);
     buf[len] = 0;
@@ -473,11 +473,23 @@ static int testSpriteLimits() {
     }
     return r + "]";
   };
-  auto pack = [&](const std::string &spr) {
-    return "{\"format\":1,\"sprites\":{" + spr + "},\"layers\":[{\"type\":\"rect\",\"w\":10,\"h\":10}]}";
+  auto pack = [&](const std::string &spr, int fmt = 1) {
+    return "{\"format\":" + std::to_string(fmt) + ",\"sprites\":{" + spr + "},\"layers\":[{\"type\":\"rect\",\"w\":10,\"h\":10}]}";
   };
   auto sp = [&](const char *name, const std::string &fr, const char *extra = "") {
     return std::string("\"") + name + "\":{\"pal\":{\"a\":\"#fff\",\"b\":\"#f00\"},\"frames\":" + fr + extra + "}";
+  };
+  auto textos = [](int n, int tam) {
+    std::string r = "{\"format\":2,\"layers\":[";
+    for (int i = 0; i < n; i++) {
+      auto s = [&](int k) {
+        char p[8];
+        snprintf(p, sizeof p, "%03d_", i * 3 + k);
+        return (std::string(p) + std::string(tam, 'a' + (i + k) % 26)).substr(0, tam);
+      };
+      r += std::string(i ? "," : "") + "{\"type\":\"text\",\"text\":{\"pt\":\"" + s(0) + "\",\"en\":\"" + s(1) + "\",\"es\":\"" + s(2) + "\"}}";
+    }
+    return r + "]}";
   };
   struct { const char *nome; std::string json; bool ok; } T[] = {
     {"8 quadros 32x32", pack(sp("s", frames(8, 32, 32))), true},
@@ -490,6 +502,25 @@ static int testSpriteLimits() {
     {"33x33", pack(sp("s", frames(2, 33, 33))), false},
     {"total > 6144 bytes", pack(sp("a", frames(8, 32, 32)) + "," + sp("b", frames(8, 32, 32))), false},
     {"frames vazio", pack(sp("s", "[]")), false},
+    // formato 2 (1.26.0): até 16 quadros e 8.192 B crus; fps continua até 10 (o relógio desenha a 10 Hz)
+    {"f2 16 quadros", pack(sp("s", frames(16, 8, 8)), 2), true},
+    {"f2 17 quadros", pack(sp("s", frames(17, 8, 8)), 2), false},
+    {"f2 fps 11", pack(sp("s", frames(2, 8, 8), ",\"fps\":11"), 2), false},
+    {"f2 16 quadros 31x32", pack(sp("s", frames(16, 31, 32)), 2), true},
+    {"f2 total > 8192 bytes", pack(sp("a", frames(16, 32, 32)) + "," + sp("b", frames(1, 8, 8)), 2), false},
+    {"f2 sem novidade", pack(sp("s", frames(2, 8, 8)), 2), true},
+    {"f1 16 quadros", pack(sp("s", frames(16, 8, 8))), false},
+    {"f1 7 KB crus", pack(sp("a", frames(8, 32, 32)) + "," + sp("b", frames(8, 24, 24))), false},
+    {"formato 3", pack(sp("s", frames(2, 8, 8)), 3), false},
+    // arquivo acima de 16 KB (a 1.25.0 recusa): só no formato 2
+    {"f1 arquivo 17 KB", "{\"format\":1,\"desc\":\"" + std::string(17000, 'x') + "\",\"layers\":[{\"type\":\"rect\",\"w\":10,\"h\":10}]}", false},
+    {"f2 arquivo 17 KB", "{\"format\":2,\"desc\":\"" + std::string(17000, 'x') + "\",\"layers\":[{\"type\":\"rect\",\"w\":10,\"h\":10}]}", true},
+    // textos: até 47 B por texto (cabe em char txt[48]) e 1.536 B no pool do pacote
+    {"texto 47 B", "{\"format\":2,\"layers\":[{\"type\":\"text\",\"text\":\"" + std::string(47, 'x') + "\"}]}", true},
+    {"texto 48 B", "{\"format\":2,\"layers\":[{\"type\":\"text\",\"text\":\"" + std::string(48, 'x') + "\"}]}", false},
+    {"48 textos <= 1536 B", textos(48, 9), true},
+    {"48 textos > 1536 B", textos(48, 11), false},
+    {"48 textos 125 B", textos(48, 125), false},
   };
   for (auto &t : T) {
     char err[96] = "";
@@ -508,19 +539,237 @@ static int testSpriteLimits() {
         if (!q[0]) q[0] = nf, q[1] = w, q[2] = h;
       }
   auto um = [&](const char *nome, int b) { return sp(nome, frames(quadros[b][0], quadros[b][1], quadros[b][2])); };
-  for (int alvo : {6144, 6145}) {
+  for (int alvo : {6144, 6145, 8192, 8193}) {
+    const int fmt = alvo > 6145 ? 2 : 1, teto = fmt == 1 ? 6144 : 8192;
     std::string achado;
     for (int a = 4096; a >= 1 && achado.empty(); a--)
       for (int b = 1; b <= 4096 && quadros[a][0] && achado.empty(); b++) {
         int c = alvo - 3 * 34 - a - b;
-        if (quadros[b][0] && c >= 1 && c <= 4096 && quadros[c][0]) achado = pack(um("a", a) + "," + um("b", b) + "," + um("c", c));
+        if (quadros[b][0] && c >= 1 && c <= 4096 && quadros[c][0]) achado = pack(um("a", a) + "," + um("b", b) + "," + um("c", c), fmt);
       }
     char err[96] = "";
     bool ok = !achado.empty() && facePackLoad((char *)achado.c_str(), achado.size(), err, sizeof err);
     if (ok) facePackUnload();
-    if (achado.empty() || ok != (alvo == 6144)) { printf("sprite teto %d B          FALHOU (%s)\n", alvo, achado.empty() ? "sem combinacao" : ok ? "aceito" : err); fails++; }
+    if (achado.empty() || ok != (alvo == teto)) { printf("sprite teto %d B          FALHOU (%s)\n", alvo, achado.empty() ? "sem combinacao" : ok ? "aceito" : err); fails++; }
     else printf("sprite teto %d B          ok%s%s\n", alvo, ok ? "" : ": ", ok ? "" : err);
   }
+  return fails;
+}
+
+// Cena 3D ("world3d", formato 2): as cores e a geometria mudam a imagem, a câmera anda, o desenho incremental (só o que
+// mudou, em faixas) fica igual ao completo quadro a quadro, o texto "overlay" preserva a cena e mistura a borda, e cada
+// entrada insegura é recusada com mensagem (um pacote que derrubasse a carga reiniciaria o relógio a cada boot).
+static int testWorld3D() {
+  int fails = 0;
+  const std::string cores = R"("colors":["#1188aa","#443399","#aa3366","#00bbaa"],"accent":"#ccffff")";
+  const std::string mapa = R"("map":["########","#......#","#...#..#","#...#..#","#......#","#......#","#......#","########"])";
+  auto tunel = [&](const std::string &extra, int fmt = 2) {
+    return "{\"format\":" + std::to_string(fmt) + ",\"layers\":[{\"type\":\"world3d\",\"geometry\":\"tunnel\",\"fps\":8,\"speed\":16," + cores + extra + "}]}";
+  };
+  auto grade = [&](const std::string &cam, const std::string &extra = "", const std::string &m = "") {
+    return "{\"format\":2,\"layers\":[{\"type\":\"world3d\",\"geometry\":\"grid\",\"fps\":8," + cores + "," + (m.empty() ? mapa : m) +
+           ",\"period\":4000,\"camera\":[" + cam + "]" + extra + "}]}";
+  };
+  const std::string cam = R"({"t":0,"x":150,"y":150,"yaw":0},{"t":2000,"x":550,"y":150,"yaw":0},{"t":4000,"x":150,"y":150,"yaw":0})";
+  Frame *a = new Frame(), *b = new Frame();
+  UiState st = base(14, 37, 0);
+  st.theme = THEME_PACK;
+  st.ms = 1000;
+  char err[96];
+  auto render = [&](const std::string &js, Frame *f) {
+    bool ok = facePackLoad((char *)js.c_str(), js.size(), err, sizeof err);
+    if (ok) { uiBegin(f); facePackRender(st, true); }
+    facePackUnload();
+    return ok;
+  };
+  {
+    std::string outra = tunel("");
+    outra.replace(outra.find("#1188aa"), 7, "#aa2200");
+    if (!render(tunel(""), a) || !render(outra, b) || !memcmp(a->px, b->px, sizeof a->px)) { printf("world3d cores FALHOU\n"); fails++; }
+  }
+  if (!render(tunel(""), a) || !render(tunel(",\"shape\":\"square\""), b) || !memcmp(a->px, b->px, sizeof a->px)) { printf("world3d quadrado FALHOU: %s\n", err); fails++; }
+  // câmera colada na parede (x = 699, a 0,01 célula da borda) olhando para ela: a distância mínima (0,05) segura a altura
+  st.ms = 2000;
+  if (!render(grade(R"({"t":0,"x":150,"y":150,"yaw":0},{"t":2000,"x":699,"y":150,"yaw":0},{"t":4000,"x":150,"y":150,"yaw":0})"), a)) {
+    printf("world3d camera colada FALHOU: %s\n", err);
+    fails++;
+  }
+  st.ms = 1000;
+  if (!render(grade(cam), a)) { printf("world3d corredor FALHOU: %s\n", err); fails++; }
+  else {
+    st.ms = 2000;
+    if (!render(grade(cam), b) || !memcmp(a->px, b->px, sizeof a->px)) { printf("world3d camera FALHOU\n"); fails++; }
+  }
+  // incremental (faixas, só o que mudou) contra completo, 40 quadros, com o relógio por cima (overlay) e a virada do minuto
+  for (const std::string &js : {tunel(""), tunel(",\"shape\":\"square\",\"sway\":4,\"spin\":3"), grade(cam)}) {
+    std::string j = js;  // mais uma camada: o relógio por cima da cena
+    j.insert(j.size() - 2, R"(,{"type":"text","x":120,"y":72,"font":"bebas","size":96,"align":"center","color":"#ecffff","overlay":true,"text":"{HH}:{MM}"})");
+    if (!facePackLoad((char *)j.c_str(), j.size(), err, sizeof err)) { printf("world3d com overlay FALHOU: %s\n", err); fails++; continue; }
+    Frame *inc = new Frame(), *fresh = new Frame();
+    UiState s = base(14, 37, 0);
+    s.theme = THEME_PACK;
+    uiBegin(inc);
+    facePackRender(s, true);
+    int diff = 0;
+    for (int k = 1; k <= 40; k++) {
+      s.ms = k * 125;
+      if (k == 20) s.now.tm_min = 38;
+      uiBegin(inc);
+      facePackRender(s, false);
+      uiBegin(fresh);
+      facePackRender(s, true);
+      if (memcmp(inc->px, fresh->px, sizeof inc->px)) diff++;
+    }
+    facePackUnload();
+    delete inc;
+    delete fresh;
+    if (diff) { printf("world3d incremental FALHOU: %d de 40 quadros diferentes do completo\n", diff); fails++; }
+  }
+  // overlay: fora dos dígitos a cena fica igual; nos dígitos há tinta e borda misturada
+  {
+    std::string fundo = tunel(""), texto = fundo;
+    texto.insert(texto.size() - 2, R"(,{"type":"text","x":120,"y":72,"font":"bebas","size":96,"align":"center","color":"#ecffff","overlay":true,"text":"{HH}:{MM}"})");
+    st.ms = 125;
+    int same = 0, changed = 0, blended = 0;
+    uint16_t fg = uiRgb(236, 255, 255);
+    if (render(fundo, a) && render(texto, b))
+      for (int y = 72; y < 168; y++)
+        for (int x = 15; x < 225; x++) {
+          int i = y * 240 + x;
+          if (a->px[i] == b->px[i]) same++;
+          else { changed++; if (b->px[i] != fg) blended++; }
+        }
+    if (same < 100 || changed < 100 || blended < 10) { printf("world3d overlay FALHOU: %d preservados, %d tinta, %d bordas (%s)\n", same, changed, blended, err); fails++; }
+  }
+  // entradas que precisam ser recusadas (com mensagem)
+  const std::string fecha = R"({"t":4000,"x":150,"y":150,"yaw":0})";
+  struct { const char *nome; std::string js; } R[] = {
+    {"mapa aberto", grade(cam, "", R"("map":[".#######","#......#","#......#","#......#","#......#","#......#","#......#","########"])")},
+    {"mapa 7 linhas", grade(cam, "", R"("map":["########","#......#","#......#","#......#","#......#","#......#","########"])")},
+    {"letra no mapa", grade(cam, "", R"("map":["########","#..x...#","#......#","#......#","#......#","#......#","#......#","########"])")},
+    {"camera atravessa parede", grade(R"({"t":0,"x":150,"y":250,"yaw":0},{"t":2000,"x":550,"y":250,"yaw":0},)" + std::string(R"({"t":4000,"x":150,"y":250,"yaw":0})"))},
+    {"camera pelo canto", grade(R"({"t":0,"x":350,"y":150,"yaw":0},{"t":2000,"x":450,"y":250,"yaw":0},{"t":4000,"x":350,"y":150,"yaw":0})")},
+    {"camera dentro da parede", grade(R"({"t":0,"x":450,"y":250,"yaw":0},)" + fecha)},
+    {"camera fora do mapa", grade(R"({"t":0,"x":150,"y":150,"yaw":0},{"t":2000,"x":900,"y":150,"yaw":0},)" + fecha)},
+    {"tempos fora de ordem", grade(R"({"t":0,"x":150,"y":150,"yaw":0},{"t":3000,"x":550,"y":150,"yaw":0},{"t":2000,"x":550,"y":550,"yaw":0},)" + fecha)},
+    {"tempo repetido", grade(R"({"t":0,"x":150,"y":150,"yaw":0},{"t":2000,"x":550,"y":150,"yaw":0},{"t":2000,"x":550,"y":550,"yaw":0},)" + fecha)},
+    {"primeiro t diferente de 0", grade(R"({"t":10,"x":150,"y":150,"yaw":0},)" + fecha)},
+    {"sem ponto final", grade(R"({"t":0,"x":150,"y":150,"yaw":0},{"t":2000,"x":550,"y":150,"yaw":0})")},
+    {"nao fecha o ciclo", grade(R"({"t":0,"x":150,"y":150,"yaw":0},{"t":4000,"x":550,"y":150,"yaw":0})")},
+    {"yaw nao fecha", grade(R"({"t":0,"x":150,"y":150,"yaw":0},{"t":4000,"x":150,"y":150,"yaw":90})")},
+    {"yaw 721", grade(R"({"t":0,"x":150,"y":150,"yaw":721},{"t":4000,"x":150,"y":150,"yaw":721})")},
+    {"7 pontos", grade(R"({"t":0,"x":150,"y":150,"yaw":0},{"t":500,"x":160,"y":150,"yaw":0},{"t":1000,"x":170,"y":150,"yaw":0},{"t":1500,"x":180,"y":150,"yaw":0},{"t":2000,"x":190,"y":150,"yaw":0},{"t":3000,"x":200,"y":150,"yaw":0},)" + fecha)},
+    {"1 ponto", grade(R"({"t":0,"x":150,"y":150,"yaw":0})")},
+    {"ponto sem yaw", grade(R"({"t":0,"x":150,"y":150},)" + fecha)},
+    {"ponto em texto", grade(R"("t",)" + fecha)},
+    {"geometria desconhecida", "{\"format\":2,\"layers\":[{\"type\":\"world3d\",\"geometry\":\"sphere\"," + cores + "}]}"},
+    {"forma hexagono", tunel(",\"shape\":\"hexagon\"")},
+    {"fps 60", tunel(",\"fps\":60")},
+    {"fps 0", tunel(",\"fps\":0")},
+    {"speed 33", tunel(",\"speed\":33")},
+    {"sway 9", tunel(",\"sway\":9")},
+    {"3 cores", "{\"format\":2,\"layers\":[{\"type\":\"world3d\",\"geometry\":\"tunnel\",\"colors\":[\"#111111\",\"#222222\",\"#333333\"],\"accent\":\"#ffffff\"}]}"},
+    {"cor #xxxxxx", "{\"format\":2,\"layers\":[{\"type\":\"world3d\",\"geometry\":\"tunnel\",\"colors\":[\"#xxxxxx\",\"#222222\",\"#333333\",\"#444444\"],\"accent\":\"#ffffff\"}]}"},
+    {"cor com nome", "{\"format\":2,\"layers\":[{\"type\":\"world3d\",\"geometry\":\"tunnel\",\"colors\":[\"accent\",\"#222222\",\"#333333\",\"#444444\"],\"accent\":\"#ffffff\"}]}"},
+    {"sem accent", "{\"format\":2,\"layers\":[{\"type\":\"world3d\",\"geometry\":\"tunnel\",\"colors\":[\"#111111\",\"#222222\",\"#333333\",\"#444444\"]}]}"},
+    {"period 999", grade(cam, "").replace(grade(cam).find("\"period\":4000"), 13, "\"period\":999")},
+    {"period 60001", grade(cam, "").replace(grade(cam).find("\"period\":4000"), 13, "\"period\":60001")},
+    {"world3d na segunda camada", "{\"format\":2,\"layers\":[{\"type\":\"rect\",\"w\":10,\"h\":10},{\"type\":\"world3d\",\"geometry\":\"tunnel\"," + cores + "}]}"},
+    {"dois world3d", "{\"format\":2,\"layers\":[{\"type\":\"world3d\",\"geometry\":\"tunnel\"," + cores + "},{\"type\":\"world3d\",\"geometry\":\"tunnel\"," + cores + "}]}"},
+    {"world3d no formato 1", tunel("", 1)},
+    {"overlay no formato 1", R"({"format":1,"layers":[{"type":"text","font":"bebas","size":40,"overlay":true,"text":"{HH}"}]})"},
+    {"overlay em fonte pixel", R"({"format":2,"layers":[{"type":"text","font":"pixel","overlay":true,"text":"{HH}"}]})"},
+    {"overlay em retangulo", R"({"format":2,"layers":[{"type":"rect","w":10,"h":10,"overlay":true}]})"},
+    {"tipo raycast", R"({"format":2,"layers":[{"type":"raycast"}]})"},
+    {"tipo speed_tunnel", R"({"format":2,"layers":[{"type":"speed_tunnel"}]})"},
+    {"tipo shots", R"({"format":2,"layers":[{"type":"shots"}]})"},
+  };
+  int recusas = 0;
+  for (auto &r : R) {
+    err[0] = 0;
+    bool ok = facePackLoad((char *)r.js.c_str(), r.js.size(), err, sizeof err);
+    facePackUnload();
+    if (ok || !err[0]) { printf("world3d recusa \"%s\" FALHOU (%s)\n", r.nome, ok ? "aceito" : "sem mensagem"); fails++; }
+    else recusas++;
+  }
+  // a cena e o cache do corredor somem com o pacote: carregar e descarregar 200 vezes não pode deixar memória presa
+  for (int k = 0; k < 200; k++) {
+    std::string js = k & 1 ? grade(cam) : tunel("");
+    if (facePackLoad((char *)js.c_str(), js.size(), err, sizeof err)) facePackUnload();
+  }
+  delete a;
+  delete b;
+  if (!fails) printf("world3d: ok (cores, quadrado, camera, incremental igual ao completo em 3 cenas x 40 quadros, overlay, %d entradas recusadas)\n", recusas);
+  return fails;
+}
+
+// Movimento ("motion", formato 2, só em sprite): a posição segue os pontos, o desenho incremental fica igual ao
+// completo, e entradas inseguras são recusadas
+static int testMotion() {
+  int fails = 0;
+  auto pack = [](const std::string &mot, int fmt = 2, const char *tipo = "sprite", int n = 1) {
+    std::string js = "{\"format\":" + std::to_string(fmt) + R"(,"sprites":{"s":{"pal":{"a":"#ffcc00"},"frames":[["aaaa","a..a","aaaa"],["....","aaaa","...."]],"fps":5}},"layers":[)";
+    for (int i = 0; i < n; i++)
+      js += std::string(i ? "," : "") + "{\"type\":\"" + tipo + "\",\"sprite\":\"s\",\"w\":10,\"h\":10,\"size\":4,\"motion\":" + mot + "}";
+    return js + "]}";
+  };
+  const std::string ok = R"({"period":4000,"keys":[{"t":0,"x":10,"y":20},{"t":2000,"x":200,"y":150},{"t":4000,"x":10,"y":20}]})";
+  char err[96];
+  std::string js = pack(ok);
+  if (!facePackLoad((char *)js.c_str(), js.size(), err, sizeof err)) { printf("motion valido FALHOU: %s\n", err); return 1; }
+  Frame *inc = new Frame(), *fresh = new Frame();
+  UiState s = base(14, 37, 0);
+  s.theme = THEME_PACK;
+  uiBegin(inc);
+  facePackRender(s, true);
+  int diff = 0;
+  for (int k = 1; k <= 60; k++) {
+    s.ms = k * 100;
+    uiBegin(inc);
+    facePackRender(s, false);
+    uiBegin(fresh);
+    facePackRender(s, true);
+    if (memcmp(inc->px, fresh->px, sizeof inc->px)) diff++;
+  }
+  // em t = 1000 o sprite está no meio do caminho (105, 85), no quadro 1 (só a linha do meio): o pixel (105, 89) é dele
+  s.ms = 1000;
+  uiBegin(fresh);
+  facePackRender(s, true);
+  if (fresh->px[89 * 240 + 105] != uiRgb(255, 204, 0)) { printf("motion posicao FALHOU\n"); fails++; }
+  facePackUnload();
+  delete inc;
+  delete fresh;
+  if (diff) { printf("motion incremental FALHOU: %d de 60 quadros diferentes do completo\n", diff); fails++; }
+  struct { const char *nome; std::string js; } R[] = {
+    {"period 0", pack(R"({"period":0,"keys":[{"t":0,"x":0,"y":0},{"t":0,"x":0,"y":0}]})")},
+    {"period 60001", pack(R"({"period":60001,"keys":[{"t":0,"x":0,"y":0},{"t":60001,"x":0,"y":0}]})")},
+    {"7 pontos", pack(R"({"period":700,"keys":[{"t":0,"x":0,"y":0},{"t":100,"x":0,"y":0},{"t":200,"x":0,"y":0},{"t":300,"x":0,"y":0},{"t":400,"x":0,"y":0},{"t":500,"x":0,"y":0},{"t":700,"x":0,"y":0}]})")},
+    {"1 ponto", pack(R"({"period":1000,"keys":[{"t":0,"x":0,"y":0}]})")},
+    {"tempos fora de ordem", pack(R"({"period":1000,"keys":[{"t":0,"x":0,"y":0},{"t":600,"x":0,"y":0},{"t":500,"x":0,"y":0},{"t":1000,"x":0,"y":0}]})")},
+    {"tempo repetido", pack(R"({"period":1000,"keys":[{"t":0,"x":0,"y":0},{"t":500,"x":0,"y":0},{"t":500,"x":9,"y":0},{"t":1000,"x":0,"y":0}]})")},
+    {"primeiro t 5", pack(R"({"period":1000,"keys":[{"t":5,"x":0,"y":0},{"t":1000,"x":0,"y":0}]})")},
+    {"sem ponto final", pack(R"({"period":1000,"keys":[{"t":0,"x":0,"y":0},{"t":900,"x":0,"y":0}]})")},
+    {"x 481", pack(R"({"period":1000,"keys":[{"t":0,"x":481,"y":0},{"t":1000,"x":0,"y":0}]})")},
+    {"y -481", pack(R"({"period":1000,"keys":[{"t":0,"x":0,"y":-481},{"t":1000,"x":0,"y":0}]})")},
+    {"ponto sem y", pack(R"({"period":1000,"keys":[{"t":0,"x":0},{"t":1000,"x":0,"y":0}]})")},
+    {"keys em texto", pack(R"({"period":1000,"keys":"abc"})")},
+    {"motion em numero", pack("5")},
+    {"motion em texto", pack(R"({"type":"text","text":"x"})", 2, "text")},
+    {"motion no formato 1", pack(ok, 1)},
+    {"13 camadas com motion", pack(ok, 2, "sprite", 13)},
+  };
+  int recusas = 0;
+  for (auto &r : R) {
+    err[0] = 0;
+    bool aceito = facePackLoad((char *)r.js.c_str(), r.js.size(), err, sizeof err);
+    facePackUnload();
+    if (aceito || !err[0]) { printf("motion recusa \"%s\" FALHOU (%s)\n", r.nome, aceito ? "aceito" : "sem mensagem"); fails++; }
+    else recusas++;
+  }
+  js = pack(ok, 2, "sprite", 12);
+  if (!facePackLoad((char *)js.c_str(), js.size(), err, sizeof err)) { printf("motion 12 camadas FALHOU: %s\n", err); fails++; }
+  facePackUnload();
+  if (!fails) printf("motion: ok (posicao, incremental igual ao completo em 60 quadros, 12 camadas aceitas, %d entradas recusadas)\n", recusas);
   return fails;
 }
 
@@ -539,8 +788,9 @@ class FastFrame : public Frame {  // o mesmo Frame, com retângulos preenchidos 
   void fillScreen(uint16_t c) override { fillRect(0, 0, 240, 240, c); }
 };
 
-static int testSpriteOracle(int nPacks, int maxFrames, int maxFps) {
-  uint32_t seed = 0x5EED2026u;
+static int testSpriteOracle(int nPacks, int maxFrames, int maxFps, int fmt = 1) {
+  const long teto = fmt == 1 ? 6144 : 8192;  // teto cru do formato
+  uint32_t seed = fmt == 1 ? 0x5EED2026u : 0x5EED2027u;  // o formato 1 com a mesma semente do #78
   auto rnd = [&](int n) { seed ^= seed << 13; seed ^= seed >> 17; seed ^= seed << 5; return (int)(seed % (uint32_t)n); };
   static const char LETRAS[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   static const char VAZIO[] = ". #-";  // fora da paleta = transparente
@@ -596,7 +846,7 @@ static int testSpriteOracle(int nPacks, int maxFrames, int maxFps) {
     // JSON
     char hex[8];
     auto cor = [&](uint16_t c) { snprintf(hex, sizeof hex, "#%02x%02x%02x", (c >> 11) << 3, ((c >> 5) & 63) << 2, (c & 31) << 3); return std::string(hex); };
-    std::string js = "{\"format\":1,\"bg\":\"" + cor(bg) + "\",\"sprites\":{";
+    std::string js = "{\"format\":" + std::to_string(fmt) + ",\"bg\":\"" + cor(bg) + "\",\"sprites\":{";
     for (size_t i = 0; i < S.size(); i++) {
       Spr &s = S[i];
       js += (i ? ",\"s" : "\"s") + std::to_string(i) + "\":{\"pal\":{";
@@ -618,7 +868,7 @@ static int testSpriteOracle(int nPacks, int maxFrames, int maxFps) {
     js += "]}";
     char err[96] = "";
     bool ok = facePackLoad((char *)js.c_str(), js.size(), err, sizeof err);
-    if (ok != (raw <= 6144)) {
+    if (ok != (raw <= teto)) {
       if (fails++ < 5) printf("oraculo: pacote %d %s com %ld B crus (%s)\n", pk, ok ? "aceito" : "recusado", raw, err);
       if (ok) facePackUnload();
       continue;
@@ -671,8 +921,8 @@ static int testSpriteOracle(int nPacks, int maxFrames, int maxFps) {
     facePackUnload();
   }
   delete f;
-  printf("oraculo dos sprites: %d pacotes (%d aceitos, %d recusados pelo teto), %d quadros comparados pixel a pixel, %d falhas; sprites na RAM %ld B contra %ld B crus\n",
-         nPacks, aceitos, recusados, quadros, fails, somaRam, somaRaw);
+  printf("oraculo dos sprites (formato %d, ate %d quadros): %d pacotes (%d aceitos, %d recusados pelo teto), %d quadros comparados pixel a pixel, %d falhas; sprites na RAM %ld B contra %ld B crus\n",
+         fmt, maxFrames, nPacks, aceitos, recusados, quadros, fails, somaRam, somaRaw);
   return fails;
 }
 
@@ -875,6 +1125,9 @@ int main() {
   fails += testPackages(p);
   fails += testSpriteLimits();
   fails += testSpriteOracle(2000, 8, 10);
+  fails += testSpriteOracle(2000, 16, 10, 2);
+  fails += testWorld3D();
+  fails += testMotion();
   fails += TintTest::run();
   return fails;
 }
