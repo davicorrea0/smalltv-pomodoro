@@ -8,18 +8,17 @@
 
 #include "facepack.h"
 #include "ui_kit.h"
-#include "tunel_lut.h"
 #include <ArduinoJson.h>
 #include <stdlib.h>
 
 bool (*uiDrawImage)(const char *path, int x, int y) = nullptr;
 
-enum : uint8_t { L_RECT, L_CIRCLE, L_LINE, L_TEXT, L_SPRITE, L_MASCOT, L_WEATHER, L_BAR, L_HAND, L_IMAGE, L_ARC, L_TICKS, L_PLANT, L_WORLD3D, L_TYPES };
+enum : uint8_t { L_RECT, L_CIRCLE, L_LINE, L_TEXT, L_SPRITE, L_MASCOT, L_WEATHER, L_BAR, L_HAND, L_IMAGE, L_ARC, L_TICKS, L_PLANT, L_TYPES };
 enum : uint8_t { F_PIXEL, F_DM, F_GEO, F_DSEG, F_BEBAS, F_OUTFIT, F_RIGHTEOUS, F_FONTS };
 enum : uint8_t { A_LEFT, A_CENTER, A_RIGHT };
 enum : uint8_t { W_ALWAYS, W_DAY, W_NIGHT, W_RAIN, W_DRY, W_WX, W_NOWX, W_GOAL, W_NOGOAL, W_STREAK, W_WHENS };
 enum : uint8_t { V_SEC, V_MIN, V_HOUR, V_FOCOS, V_HUM, V_VARS };
-static const char TYPES[] PROGMEM = "rect\0circle\0line\0text\0sprite\0mascot\0weather\0bar\0hand\0image\0arc\0ticks\0plant\0world3d";
+static const char TYPES[] PROGMEM = "rect\0circle\0line\0text\0sprite\0mascot\0weather\0bar\0hand\0image\0arc\0ticks\0plant";
 static const char FONTS[] PROGMEM = "pixel\0dm\0geo\0dseg\0bebas\0outfit\0righteous";
 static const char ALIGNS[] PROGMEM = "left\0center\0right";
 static const char WHENS[] PROGMEM = "always\0day\0night\0rain\0dry\0weather\0noweather\0goal\0nogoal\0streak";
@@ -27,10 +26,10 @@ static const char VARS[] PROGMEM = "sec\0min\0hour\0focos\0hum";
 static const char MOODS[] PROGMEM = "feliz\0dormindo\0focado\0relax\0comemorando\0guarda-chuva\0cachecol\0oculos\0auto";
 // chaves das camadas lidas no formato 2 (filtro da carga, sem "text", "file" e "motion", lidos à parte); fora da função-modelo, senão o PROGMEM não vale
 static const char LAYER_KEYS[] PROGMEM = "type\0x\0y\0w\0h\0r\0max\0x2\0y2\0len\0tail\0count\0size\0font\0align\0when\0mood\0value\0"
-    "color\0color2\0track\0off\0stroke\0bg\0glow\0spread\0base\0pulse\0sprite\0overlay\0geometry\0shape\0fps\0"
-    "speed\0sway\0spin\0colors\0accent\0map\0period\0camera\0";
+    "color\0color2\0track\0off\0stroke\0bg\0glow\0spread\0base\0pulse\0sprite\0overlay\0fps\0"
+    "period\0";
 static const int32_t C_NONE = -1, C_ACCENT = -2;
-// Formato 2 (1.26.0): até 16 quadros e 8.192 B crus, "world3d", "motion" e "overlay". O formato 1 continua com 8 quadros
+// Formato 2 (1.26.0): até 16 quadros e 8.192 B crus, "motion" e "overlay". O formato 1 continua com 8 quadros
 // e 6.144 B, e o firmware recusa no formato 1 o que só o 2 tem (a 1.25.0 recusaria o pacote com outra mensagem).
 // Chaves e nomes novos do formato 2 vão para a flash (no ESP8266 o .rodata das strings ocupa RAM); o simulador não tem
 // PROGMEM no ArduinoJson, então lá ficam como texto comum.
@@ -44,7 +43,7 @@ static const uint16_t MAX_SPR_BYTES = 8192, V1_SPR_BYTES = 6144, V1_FILE = 16384
 
 struct Layer {
   uint8_t type, font, align, when, var, size;
-  uint8_t mot, ov;         // mot: movimento (posição em motPool, 0xFF = parado); ov: texto por cima da cena 3D
+  uint8_t mot, ov;         // mot: movimento (posição em motPool, 0xFF = parado); ov: texto por cima do que já está desenhado
   int16_t x, y, w, h, r, mx;
   int32_t c1, c2;
   uint16_t str;            // texto/arquivo (posição no pool) ou sprite (posição em spr)
@@ -64,26 +63,6 @@ struct MotionKey { uint16_t t; int16_t x, y; };
 struct Motion { uint16_t period; uint8_t n; MotionKey k[6]; };
 static Motion *motPool = nullptr;
 
-// Cena 3D (camada "world3d", só como primeira camada): túnel (tabela polar na flash, tunel_lut.h) ou corredores num
-// mapa 8x8 com câmera. O cache das 120 colunas do corredor vem no mesmo bloco, só para o corredor. Tudo é alocado na
-// carga e liberado no facePackUnload (álbum e OTA também descarregam o pacote).
-struct WorldKey { uint16_t t; int16_t x, y, yaw; };  // x, y em centésimos de célula; yaw em graus
-struct World3D {
-  uint8_t kind, fps, speed, sway, spin, keyCount, shape;  // kind: 0 túnel, 1 corredor; shape: 0 redondo, 1 quadrado
-  uint16_t period, colors[4], accent;
-  uint8_t cells[8];  // bit x da linha y = parede
-  WorldKey camera[6];
-};
-struct GridCache {
-  uint32_t tick;
-  bool ready;
-  int16_t top[120], bottom[120];
-  uint16_t wall[120], mortar[120];
-  uint8_t seam[120];
-};
-static World3D *world3d = nullptr;
-static GridCache *gridCache() { return (GridCache *)(world3d + 1); }
-
 static Layer *lay = nullptr;
 static uint8_t nLay = 0;
 static char *pool = nullptr;
@@ -101,9 +80,7 @@ const char *facePackDesc() { return pkDesc; }
 const char *facePackAuthor() { return pkAuthor; }
 
 void facePackUnload() {
-  free(world3d);
   free(motPool);
-  world3d = nullptr;
   motPool = nullptr;
   free(lay);
   free(pool);
@@ -148,110 +125,7 @@ static uint16_t addStr(const char *s) {
   return off;
 }
 
-// ---------- cena 3D e movimento: tudo conferido antes de alocar ----------
-static bool worldColor(JsonVariantConst v, uint16_t &out) {
-  const char *s = v.is<const char *>() ? v.as<const char *>() : nullptr;
-  if (!s || s[0] != '#' || strlen(s) != 7) return false;
-  for (int i = 1; i < 7; i++)
-    if (!((s[i] >= '0' && s[i] <= '9') || (s[i] >= 'a' && s[i] <= 'f') || (s[i] >= 'A' && s[i] <= 'F'))) return false;
-  out = (uint16_t)parseColor(s, 0);
-  return true;
-}
-static bool worldOpen(const World3D &w, int x, int y) {
-  return x >= 100 && x < 700 && y >= 100 && y < 700 && !(w.cells[y / 100] & (1U << (x / 100)));
-}
-// O trecho reto da câmera entre dois pontos não pode tocar nenhuma célula de parede (nem pelo canto).
-static bool worldSegmentClear(const World3D &w, int x0, int y0, int x1, int y1) {
-  for (int cy = 0; cy < 8; cy++)
-    for (int cx = 0; cx < 8; cx++) {
-      if (!(w.cells[cy] & (1U << cx))) continue;
-      float lo = 0, hi = 1;
-      const int a[2] = {x0, y0}, d[2] = {x1 - x0, y1 - y0}, mn[2] = {cx * 100, cy * 100}, mxv[2] = {cx * 100 + 100, cy * 100 + 100};
-      bool hit = true;
-      for (int k = 0; k < 2 && hit; k++) {
-        if (!d[k]) {
-          if (a[k] < mn[k] || a[k] > mxv[k]) hit = false;
-        } else {
-          float t0 = (float)(mn[k] - a[k]) / d[k], t1 = (float)(mxv[k] - a[k]) / d[k];
-          if (t0 > t1) { float t = t0; t0 = t1; t1 = t; }
-          if (t0 > lo) lo = t0;
-          if (t1 < hi) hi = t1;
-          if (lo > hi) hit = false;
-        }
-      }
-      if (hit) return false;
-    }
-  return true;
-}
-static bool loadWorld3D(JsonObjectConst l, char *err, size_t len) {
-  World3D w = {};
-  const char *kind = l[JK("geometry")] | "";
-  if (!strcmp_P(kind, PSTR("tunnel"))) w.kind = 0;
-  else if (!strcmp_P(kind, PSTR("grid"))) w.kind = 1;
-  else { snprintf_P(err, len, PSTR("cena 3D: geometry deve ser tunnel ou grid")); return false; }
-  const char *shape = l[JK("shape")] | "";  // padrão: redondo
-  if (!strcmp_P(shape, PSTR("square"))) w.shape = 1;
-  else if (*shape && strcmp_P(shape, PSTR("round"))) { snprintf_P(err, len, PSTR("cena 3D: shape deve ser round ou square")); return false; }
-  int fps = l[JK("fps")] | 8, speed = l[JK("speed")] | 16, sway = l[JK("sway")] | 0, spin = l[JK("spin")] | 0;
-  if (fps < 1 || fps > 10 || speed < 0 || speed > 32 || sway < 0 || sway > 8 || spin < 0 || spin > 8) {
-    snprintf_P(err, len, PSTR("cena 3D: fps 1-10, speed 0-32, sway e spin 0-8"));
-    return false;
-  }
-  w.fps = fps; w.speed = speed; w.sway = sway; w.spin = spin;
-  JsonArrayConst colors = l[JK("colors")];
-  if (colors.size() != 4) { snprintf_P(err, len, PSTR("cena 3D: \"colors\" precisa de 4 cores")); return false; }
-  for (int i = 0; i < 4; i++)
-    if (!worldColor(colors[i], w.colors[i])) { snprintf_P(err, len, PSTR("cena 3D: cor invalida (use #rrggbb)")); return false; }
-  if (!worldColor(l[JK("accent")], w.accent)) { snprintf_P(err, len, PSTR("cena 3D: \"accent\" invalido (use #rrggbb)")); return false; }
-  if (w.kind == 1) {
-    JsonArrayConst map = l[JK("map")], keys = l[JK("camera")];
-    int period = l[JK("period")] | 0;
-    if (map.size() != 8 || keys.size() < 2 || keys.size() > 6 || period < 1000 || period > 60000) {
-      snprintf_P(err, len, PSTR("cena 3D: mapa 8x8, 2 a 6 pontos de camera e period 1000-60000"));
-      return false;
-    }
-    for (int y = 0; y < 8; y++) {
-      const char *row = map[y] | "";
-      if (strlen(row) != 8) { snprintf_P(err, len, PSTR("cena 3D: mapa deve ter 8x8")); return false; }
-      for (int x = 0; x < 8; x++) {
-        char c = row[x];
-        if ((c != '#' && c != '.') || ((x == 0 || x == 7 || y == 0 || y == 7) && c != '#')) {
-          snprintf_P(err, len, PSTR("cena 3D: mapa de # e . com a borda fechada"));
-          return false;
-        }
-        if (c == '#') w.cells[y] |= 1U << x;
-      }
-    }
-    w.period = period;
-    for (JsonObjectConst key : keys) {
-      if (!key[JK("t")].is<int>() || !key[JK("x")].is<int>() || !key[JK("y")].is<int>() || !key[JK("yaw")].is<int>()) {
-        snprintf_P(err, len, PSTR("cena 3D: ponto da camera precisa de t, x, y e yaw"));
-        return false;
-      }
-      int t = key[JK("t")], x = key[JK("x")], y = key[JK("y")], yaw = key[JK("yaw")];
-      if (t < 0 || t > period || yaw < -720 || yaw > 720 || !worldOpen(w, x, y) || (!w.keyCount && t != 0) ||
-          (w.keyCount && t <= w.camera[w.keyCount - 1].t)) {
-        snprintf_P(err, len, PSTR("cena 3D: camera fora do mapa ou tempos fora de ordem"));
-        return false;
-      }
-      if (w.keyCount && !worldSegmentClear(w, w.camera[w.keyCount - 1].x, w.camera[w.keyCount - 1].y, x, y)) {
-        snprintf_P(err, len, PSTR("cena 3D: o caminho da camera cruza uma parede"));
-        return false;
-      }
-      w.camera[w.keyCount++] = {(uint16_t)t, (int16_t)x, (int16_t)y, (int16_t)yaw};
-    }
-    const WorldKey &a = w.camera[0], &b = w.camera[w.keyCount - 1];
-    if (b.t != period || a.x != b.x || a.y != b.y || (b.yaw - a.yaw) % 360) {
-      snprintf_P(err, len, PSTR("cena 3D: o ultimo ponto (t = period) volta ao primeiro"));
-      return false;
-    }
-  }
-  world3d = (World3D *)malloc(sizeof w + (w.kind == 1 ? sizeof(GridCache) : 0));
-  if (!world3d) { snprintf_P(err, len, PSTR("sem memoria para a cena 3D")); return false; }
-  *world3d = w;
-  if (w.kind == 1) gridCache()->ready = false;
-  return true;
-}
+// ---------- movimento: tudo conferido antes de alocar ----------
 // "motion": {"period": ms, "keys": [{"t", "x", "y"}, ...]}: 2 a 6 pontos, t do 0 ao period, sempre crescente
 static bool loadMotion(JsonObjectConst m, Motion &out, char *err, size_t len, int layer) {
   JsonArrayConst keys = m[JK("keys")];
@@ -660,18 +534,6 @@ static bool loadFrom(In &in, Rew rewind, size_t size, char *err, size_t errLen) 
       return false;
     }
     L.mot = 0xFF;
-    if (L.type == L_WORLD3D) {  // a cena cobre a tela inteira: só faz sentido no fundo, e uma por pacote
-      if (nLay) {
-        snprintf_P(err, errLen, PSTR("camada %d: \"world3d\" so como primeira camada"), nLay + 1);
-        facePackUnload();
-        return false;
-      }
-      if (!loadWorld3D(l, err, errLen)) {
-        facePackUnload();
-        return false;
-      }
-      v2 = true;
-    }
     L.x = l["x"] | 0;
     L.y = l["y"] | 0;
     L.w = l["w"] | 0;
@@ -710,7 +572,7 @@ static bool loadFrom(In &in, Rew rewind, size_t size, char *err, size_t errLen) 
       facePackUnload();
       return false;
     }
-    if (l[JK("overlay")] | false) {  // dígitos com borda suave por cima do que já está desenhado (a cena 3D), sem fundo
+    if (l[JK("overlay")] | false) {  // dígitos com borda suave por cima do que já está desenhado, sem fundo
       if (L.type != L_TEXT || (L.font != F_BEBAS && L.font != F_OUTFIT && L.font != F_RIGHTEOUS)) {
         snprintf_P(err, errLen, PSTR("camada %d: \"overlay\" so em texto bebas, outfit ou righteous"), nLay + 1);
         facePackUnload();
@@ -830,7 +692,7 @@ static bool loadFrom(In &in, Rew rewind, size_t size, char *err, size_t errLen) 
   }
   if (fmt == 1 && v2) {
     facePackUnload();
-    snprintf_P(err, errLen, PSTR("use \"format\": 2 (3D, motion, overlay, mais de 8 quadros, 6 KB de sprites ou 16 KB)"));
+    snprintf_P(err, errLen, PSTR("use \"format\": 2 (motion, overlay, mais de 8 quadros, 6 KB de sprites ou 16 KB)"));
     return false;
   }
   return true;
@@ -1079,7 +941,6 @@ static Box measure(const Layer &L, const UiState &s, const char *txt) {
       return {(int16_t)(x - pad), (int16_t)(L.y - pad), (int16_t)(w + 2 * pad), (int16_t)(h + 2 * pad)};
     }
     case L_SPRITE: return {L.x, L.y, (int16_t)(spr[L.str] * L.size), (int16_t)(spr[L.str + 1] * L.size)};
-    case L_WORLD3D: return {0, 0, 240, 240};
     case L_MASCOT:
     case L_PLANT: return {L.x, L.y, (int16_t)(16 * L.size), (int16_t)(16 * L.size)};
     case L_WEATHER: {
@@ -1136,9 +997,6 @@ static void moveLayer(Layer &L, const UiState &s) {
   L.y = a.y + ((int32_t)b.y - a.y) * dt / span;
 }
 
-// quadro da cena 3D no instante s.ms (o que muda a imagem: a cena só é refeita quando ele muda)
-static uint32_t worldTick(const UiState &s) { return (uint64_t)s.ms * world3d->fps / 1000; }
-
 static uint32_t signature(const Layer &L, const UiState &s, char *txt, size_t n) {
   uint32_t h = 2166136261u;
   txt[0] = 0;
@@ -1156,7 +1014,6 @@ static uint32_t signature(const Layer &L, const UiState &s, char *txt, size_t n)
     case L_HAND: { int a = (int)(handAngle(L, s) * 1000); h = fnv(h, &a, sizeof a); break; }
     case L_ARC: { int mx, v = value(L, s, mx); if (L.mx > 0) mx = L.mx; int q = (v > mx ? mx : v) * 720 / mx; h = fnv(h, &q, sizeof q); break; }
     case L_SPRITE: if (sprNf(spr + L.str) > 1) { uint8_t f = sprFrame(L, s); h = fnv(h, &f, 1); } break;  // só animado muda
-    case L_WORLD3D: { uint32_t k = worldTick(s); h = fnv(h, &k, sizeof k); break; }
   }
   if (L.mot != 0xFF) {  // o sprite que anda muda de lugar (moveLayer já pôs a posição do instante)
     h = fnv(h, &L.x, sizeof L.x);
@@ -1198,112 +1055,6 @@ static void arcRing(int cx, int cy, int r, int th, float f, uint16_t c, int32_t 
     float rm = r - th / 2.0f;
     G->fillCircle(cx, cy - (int)rm, th / 2, c);
     G->fillCircle(cx + (int)(sinf(a) * rm), cy - (int)(cosf(a) * rm), th / 2, c);
-  }
-}
-
-// ---------- cena 3D ----------
-// Corredor: uma coluna de raio a cada 2 px (120), com o mapa 8x8 e a câmera do instante. As colunas são calculadas uma
-// vez por quadro da cena (gridCache) e cada faixa da tela só pinta as linhas dela.
-static void drawGrid(const UiState &s) {
-  const World3D &w = *world3d;
-  GridCache &g = *gridCache();
-  uint32_t tick = worldTick(s);
-  if (!g.ready || tick != g.tick) {
-    g.ready = true;
-    g.tick = tick;
-    uint32_t ct = s.ms % w.period;
-    int j = 1;
-    while (j + 1 < w.keyCount && ct >= w.camera[j].t) j++;
-    const WorldKey &u = w.camera[j - 1], &v = w.camera[j];
-    float f = (float)(ct - u.t) / (v.t - u.t);
-    float px = (u.x + (v.x - u.x) * f) / 100.0f, py = (u.y + (v.y - u.y) * f) / 100.0f;
-    float a = (u.yaw + (v.yaw - u.yaw) * f) * 0.0174532925f, dx = cosf(a), dy = sinf(a);
-    for (int i = 0; i < 120; i++) {
-      float c = ((i * 2 + 1) - 120) / 120.0f * 0.66f, rx = dx - dy * c, ry = dy + dx * c;
-      int mx = (int)px, my = (int)py, sx = rx < 0 ? -1 : 1, sy = ry < 0 ? -1 : 1;
-      float ax = rx == 0 ? 1e20f : fabsf(1.0f / rx), ay = ry == 0 ? 1e20f : fabsf(1.0f / ry);
-      float tx = (rx < 0 ? px - mx : mx + 1.0f - px) * ax, ty = (ry < 0 ? py - my : my + 1.0f - py) * ay;
-      int side = 0;
-      float dist = 0.01f;
-      for (int n = 0; n < 24; n++) {  // o mapa é fechado: 24 passos atravessam qualquer diagonal de 8x8
-        if (tx < ty) { dist = tx; tx += ax; mx += sx; side = 0; }
-        else { dist = ty; ty += ay; my += sy; side = 1; }
-        if (mx < 0 || mx >= 8 || my < 0 || my >= 8 || (w.cells[my] & (1U << mx))) break;
-      }
-      if (dist < 0.05f) dist = 0.05f;
-      int h = (int)(158.0f / dist);
-      if (h > 480) h = 480;
-      g.top[i] = 120 - h / 2;
-      g.bottom[i] = 120 + h / 2;
-      float hit = side ? px + dist * rx : py + dist * ry;
-      hit -= floorf(hit);
-      g.seam[i] = ((int)(hit * 8) & 3) == 0;
-      int shade = 16 - (int)(dist * 2) - (side ? 2 : 0);
-      if (shade < 4) shade = 4;
-      if (shade > 16) shade = 16;
-      g.wall[i] = mix16(0, w.colors[0], shade);
-      g.mortar[i] = mix16(0, w.accent, shade);
-    }
-  }
-  int x0 = 0, x1 = 240, y0 = 0, y1 = 240;
-  if (uiClip.on) { x0 = uiClip.x0; x1 = uiClip.x1; y0 = uiClip.y0; y1 = uiClip.y1; }
-  const uint16_t ceiling = w.colors[1], floor = w.colors[2];
-  G->fillRect(x0, 0, x1 - x0, 120, ceiling);
-  G->fillRect(x0, 120, x1 - x0, 120, floor);
-  for (int i = x0 / 2; i < 120 && i * 2 < x1; i++) {
-    int t = g.top[i], b = g.bottom[i], h = b - t, ct = t > y0 ? t : y0, cb = b < y1 ? b : y1;
-    if (cb <= ct) continue;
-    G->fillRect(i * 2, ct, 2, cb - ct, g.wall[i]);
-    for (int k = 1; k < 8; k++) {  // juntas horizontais da parede
-      int y = t + h * k / 8;
-      if (y >= y0 && y < y1) G->fillRect(i * 2, y, 2, 1, g.mortar[i]);
-    }
-    if (g.seam[i]) G->fillRect(i * 2, ct, 1, cb - ct, g.mortar[i]);  // juntas verticais
-    if (t >= y0 && t < y1) G->fillRect(i * 2, t, 2, 1, mix565(ceiling, g.wall[i], 128));  // borda mais suave
-    if (b - 1 >= y0 && b - 1 < y1) G->fillRect(i * 2, b - 1, 2, 1, mix565(floor, g.wall[i], 128));
-  }
-}
-
-// Túnel: cada amostra 2x2 tem profundidade e ângulo na tabela da flash (tunel_lut.h); o avanço desloca as faixas de
-// cor ao longo do eixo, sem conta em ponto flutuante por quadro. Desenha linha a linha (uiRowBuf), só as da faixa.
-static void drawTunnel(const UiState &s) {
-  const World3D &w = *world3d;
-  int y0 = uiClip.on ? uiClip.y0 : 0, y1 = uiClip.on ? uiClip.y1 : 240;
-  if (y0 < 0) y0 = 0;
-  if (y1 > 240) y1 = 240;
-  unsigned phase = (uint64_t)s.ms * w.speed / 1000U & 31U;
-  int t = s.ms % 4000, tri = t < 2000 ? t : 4000 - t;
-  int shift = (tri * 2 - 2000) * w.sway / 2000;  // "sway" balança o ponto de fuga
-  int rotation = (uint64_t)s.ms * w.spin / 4000U & 15;  // "spin" gira os setores de cor
-  uint16_t *row = uiRowBuf();
-  uint8_t depth[60];
-  for (int y = y0 & ~1; y < y1; y += 2) {
-    int py = y / 2, qy = py < 60 ? 59 - py : py - 60;
-    unsigned nib = (unsigned)pgm_read_word(&TUNEL_ROWS[qy]) * 2;
-    int prev = 0;
-    for (int q = 0; q < 60; q++) {
-      auto next = [&]() -> uint8_t { uint8_t b = pgm_read_byte(&TUNEL_DEPTH[nib / 2]); uint8_t v = nib & 1 ? b & 15 : b >> 4; nib++; return v; };
-      uint8_t v = next();
-      if (v == 15) { uint8_t hi = next(), lo = next(); prev = hi << 4 | lo; }
-      else prev += (int)v - 7;
-      depth[q] = (uint8_t)prev;
-    }
-    for (int px = 0; px < 120; px++) {
-      int sx = px - shift;
-      if (sx < 0) sx = 0;
-      if (sx > 119) sx = 119;
-      int qx = sx < 60 ? 59 - sx : sx - 60;
-      unsigned idx = qy * 60 + qx, a = (pgm_read_byte(&TUNEL_ANGLE[idx / 4]) >> ((idx & 3) * 2)) & 3, z = depth[qx];
-      if (w.shape) z = pgm_read_byte(&TUNEL_SQUARE[qx > qy ? qx : qy]);
-      int sector = sx >= 60 ? (py >= 60 ? a : 15 - a) : (py >= 60 ? 7 - a : 8 + a);
-      uint16_t c = w.colors[((sector + rotation) & 15) / 4];
-      unsigned band = (z + phase) & 31;
-      if (band < 13) c = (c & 0xf7de) >> 1;  // metade do brilho: as faixas escuras
-      if (band == 0 || band == 16) c = w.accent;
-      row[px * 2] = row[px * 2 + 1] = c;
-    }
-    if (y >= y0) blit(0, y, row, 240, 1);
-    if (y + 1 < y1) blit(0, y + 1, row, 240, 1);
   }
 }
 
@@ -1350,7 +1101,6 @@ static void drawLayer(const Layer &L, const UiState &s, const char *txt) {
         }
       break;
     }
-    case L_WORLD3D: world3d->kind ? drawGrid(s) : drawTunnel(s); break;
     case L_MASCOT: mascot(L.x, L.y, L.size, L.var == 8 ? autoMood(s) : L.var); break;
     case L_PLANT: uiSprite(plantSprite(s.streak), L.x, L.y, L.size); break;
     case L_WEATHER:
@@ -1433,10 +1183,11 @@ void facePackRender(const UiState &s, bool full) {
     L.bw = nb.w;
     L.bh = nb.h;
   }
-  // Com cena 3D o desenho completo também vai em faixas fora da tela: a cena cobre tudo (sem apagar antes, a tela não
-  // pisca) e o texto "overlay" precisa dos pixels da cena na faixa para misturar a borda.
-  const bool scene = world3d && lay[0].sig;  // a cena é sempre a camada 0; com "when" ela pode estar escondida
-  if (full && scene) addDirty(dirty, nd, {0, 0, 240, 240});
+  // texto "overlay" só mistura a borda com o que já está numa faixa fora da tela: com ele, o desenho completo
+  // também vai em faixas (direto na tela a borda ficaria binária e diferente do incremental)
+  bool strips = false;
+  for (int i = 0; i < nLay && !strips; i++) strips = lay[i].ov && lay[i].sig;
+  if (full && strips) addDirty(dirty, nd, {0, 0, 240, 240});
   else if (full) {
     G->fillScreen(bgColor);
     for (int i = 0; i < nLay; i++)
@@ -1451,7 +1202,7 @@ void facePackRender(const UiState &s, bool full) {
   struct Area { Box d; const UiState *s; char *txt; } area = {{0, 0, 0, 0}, &s, txt};
   auto paint = [](void *p) {
     Area &a = *(Area *)p;
-    if (!world3d || !lay[0].sig) G->fillRect(a.d.x, a.d.y, a.d.w, a.d.h, bgColor);  // a cena 3D (camada 0) pinta tudo
+    G->fillRect(a.d.x, a.d.y, a.d.w, a.d.h, bgColor);
     for (int i = 0; i < nLay; i++) {
       const Layer &L = lay[i];
       Box lb = {L.bx, L.by, L.bw, L.bh};
