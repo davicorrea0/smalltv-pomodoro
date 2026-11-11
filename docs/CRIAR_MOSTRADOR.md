@@ -1,5 +1,7 @@
 # Como criar um mostrador
 
+Projetando o visual (tamanhos, cores, noite, animação, direitos e como compartilhar)? Veja as [diretrizes de design](PACOTES.md#diretrizes-de-design).
+
 Um mostrador é **um arquivo** em `smalltv-pomodoro/` e **uma linha** em `faces_list.h`. O resto sai sozinho: o número do tema, a galeria do painel (com prévia), os testes e as imagens do simulador.
 
 ## 1. Crie o arquivo

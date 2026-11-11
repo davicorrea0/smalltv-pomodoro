@@ -140,7 +140,7 @@ String hhmm(const struct tm &t) {
   int h = t.tm_hour;
   if (cfg.hour12) h = h % 12 == 0 ? 12 : h % 12;
   char buf[8];
-  snprintf(buf, sizeof(buf), "%02d:%02d", h, t.tm_min);
+  snprintf_P(buf, sizeof(buf), PSTR("%02d:%02d"), h, t.tm_min);
   return buf;
 }
 
@@ -300,6 +300,7 @@ void setup() {
   rtcTimeRestore();  // reinício por software: a hora de antes já vale (sem confirmar) enquanto o Wi-Fi conecta
   recoveryMode = boots + 1 >= 3;
   setBootCount(recoveryMode ? 0 : boots + 1);  // a recuperação vale uma vez; o próximo reinício é normal
+  wakeUntil = (millis() + 30000) | 1;  // boot (inclusive depois de OTA) aparece mesmo com o brilho noturno em 0
   updateBrightness(true);
 
   tft.init(240, 240, SPI_MODE3);
@@ -392,6 +393,10 @@ void loop() {
     warmPreviewUntil = 0;
     if (warmConj) warmSent = -1;
     warmConj = false;
+    updateBrightness();
+  }
+  if (wakeUntil && !wakeAtivo(wakeUntil, now)) {  // acabou o tempo da tela acesa à força: volta a apagar (se for o caso)
+    wakeUntil = 0;
     updateBrightness();
   }
   if (now - lastBriCheck > 5000) {
