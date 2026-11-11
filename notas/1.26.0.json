@@ -5,7 +5,8 @@
     "O painel abre mais rápido a partir da segunda vez, porque o navegador reaproveita o que já baixou",
     "Mais memória livre no relógio, que sobra para fotos, GIFs e mostradores",
     "Mostradores animados de pacote ocupam bem menos memória para carregar e enquanto rodam",
-    "Mostradores de pacote (formato 2): sprites em movimento, hora desenhada por cima do fundo e até 16 quadros por sprite (veja \"Globo\" e \"Quartinho\")"
+    "Mostradores de pacote (formato 2): sprites em movimento, hora desenhada por cima do fundo e até 16 quadros por sprite (veja \"Globo\" e \"Quartinho\")",
+    "Brilho à noite agora pode ser 0: a tela apaga de vez. Comandos, fim de foco/pausa e atualização acendem a tela por alguns segundos"
   ],
   "en": [
     "Test version: edit the rotation in one go, a faster-opening panel, more free memory and face packs with motion",
@@ -13,7 +14,8 @@
     "The panel opens faster from the second time on, because the browser reuses what it already downloaded",
     "More free memory on the clock, left over for photos, GIFs and faces",
     "Animated face packs use much less memory while loading and while running",
-    "Face packs (format 2): moving sprites, time drawn over the background and up to 16 frames per sprite (see \"Globo\" and \"Quartinho\")"
+    "Face packs (format 2): moving sprites, time drawn over the background and up to 16 frames per sprite (see \"Globo\" and \"Quartinho\")",
+    "Night brightness can now be 0: the screen goes fully dark. Commands, the end of a focus/break and updates light it for a few seconds"
   ],
   "es": [
     "Versión de prueba: rotación editada de una vez, panel más rápido de abrir, más memoria libre y esferas de paquete con movimiento",
@@ -21,6 +23,7 @@
     "El panel abre más rápido a partir de la segunda vez, porque el navegador reutiliza lo que ya descargó",
     "Más memoria libre en el reloj, que queda para fotos, GIF y esferas",
     "Las esferas animadas de paquete ocupan mucha menos memoria al cargar y mientras funcionan",
-    "Esferas de paquete (formato 2): sprites en movimiento, hora dibujada sobre el fondo y hasta 16 cuadros por sprite (mira \"Globo\" y \"Quartinho\")"
+    "Esferas de paquete (formato 2): sprites en movimiento, hora dibujada sobre el fondo y hasta 16 cuadros por sprite (mira \"Globo\" y \"Quartinho\")",
+    "El brillo nocturno ahora puede ser 0: la pantalla se apaga del todo. Los comandos, el fin del foco/descanso y las actualizaciones la encienden unos segundos"
   ]
 }
