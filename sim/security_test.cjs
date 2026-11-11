@@ -5,13 +5,21 @@ function fn(name){const a=source.indexOf(`void ${name}() {`),b=source.indexOf('\
 for(const name of ['handleUpload','handlePackUpload','handlePanelUpload'])
  if(!fn(name).includes('uploadAuthed()'))throw Error(`${name} bypasses upload throttle`);
 { // /api/crash (Limpar da última queda) é ação: POST com guard(), e a gravação só acontece em reinício anormal
- const i=source.indexOf('server.on("/api/crash", HTTP_POST'),blk=source.slice(i,source.indexOf('});',i));
+ const i=source.indexOf('server.on(F("/api/crash"), HTTP_POST'),blk=source.slice(i,source.indexOf('});',i));
  if(i<0||!blk.includes('if (!guard()) return;'))throw Error('/api/crash must be a guarded POST');
  const cl=fn('crashLoad');
  if(!cl.includes('REASON_EXCEPTION_RST')||!cl.includes('return;')||cl.indexOf('return;')>cl.indexOf('EEPROM.put'))throw Error('crashLoad must only write after an abnormal reset');
 }
 const recovery=fn('startRecovery');
 if(!recovery.includes('WiFi.mode(WIFI_AP);')||recovery.includes('WiFi.begin()'))throw Error('recovery must be AP-only');
+{ // migração 4M3M→4M2M (storage_stats.cpp): nunca formatar 0x100000 se o LittleFS antigo não montar
+ const fm=fn('fsMount');
+ const oldDecl=fm.indexOf('FS old('),oldBeg=fm.indexOf('old.begin()',oldDecl);
+ if(oldDecl<0||oldBeg<0)throw Error('fsMount: FS old() e old.begin() esperados');
+ const entre=fm.slice(oldDecl,oldBeg);
+ if(!entre.includes('ocfg.setAutoFormat(false);')||!entre.includes('old.setConfig(ocfg);'))
+  throw Error('fsMount must disable autoFormat on FS old before old.begin()');
+}
 { // portal de Wi-Fi (1.24.13): a estação para sem apagar a rede salva, a varredura não bloqueia e a rede nova volta com o padrão
  const portal=fn('startPortal'),save=portal.slice(portal.indexOf('"/save"'),portal.indexOf('onNotFound'));
  const stop=portal.indexOf('WiFi.disconnect(false, false);');
