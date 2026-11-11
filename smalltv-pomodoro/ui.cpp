@@ -685,11 +685,15 @@ static bool slideTo(const UiState &s, uint8_t t) {
 // Os dois mostradores têm a mesma moldura (retângulo arredondado verde-acinzentado e sombra interna); mudam
 // o miolo (x 10..229, y 28..207: os dígitos grandes do LCD retrô passam de x 14) e os rótulos de fora
 // (y < 24 e y >= 210), que nunca passam da moldura. Num LCD de verdade o segmento não acende nem apaga de
-// estalo: escurece e clareia em alguns degraus. O miolo faz isso em 5 quadros (~450 ms com os rótulos): o
-// antigo com 69 e 34 por cento da tinta, o novo com 34, 69 e 100 por cento, cada quadro um desenho completo recortado em
-// faixas de uiOffscreen (<= 8 KB, sem memória extra) cuja cor é puxada para o fundo do LCD depois de
-// pronta (inkFade). Os rótulos brancos de fora deslizam para o lado: o antigo sai pela esquerda e o novo
-// entra pela direita. Nenhum pixel da moldura é redesenhado.
+// estalo: escurece e clareia. Como na rolagem (slideTo), a troca é guiada pelo relógio, não por degraus
+// fixos: a cada volta o miolo é redesenhado com a tinta do instante (o antigo de 100 a 34 por cento em
+// 180 ms, o novo de 34 a 100 por cento até 360 ms) e os rótulos vão para a posição do instante (até 450 ms);
+// o número de quadros é o que o aparelho consegue desenhar nesse tempo. Cada quadro do miolo é um desenho
+// completo recortado em faixas de uiOffscreen (<= 8 KB, sem memória extra) cuja cor é puxada para o fundo
+// do LCD depois de pronta (inkFade). Os rótulos brancos de fora deslizam para o lado: o antigo sai pela
+// esquerda e o novo entra pela direita, redesenhados depois de cada quadro do miolo (antes, com 5 degraus
+// de 90 ms e 10 passos de 45 ms, os passos dos rótulos esperavam o miolo e saíam aos saltos). Nenhum pixel
+// da moldura é redesenhado.
 void (*uiStepHook)() = nullptr;  // fim de cada quadro da troca (o simulador guarda os quadros)
 struct LcdCtx { SlideCtx s; const UiState *st; int16_t a, dxOld, dxNew; uint8_t kOld, kNew; };
 // tinta (qualquer cor da faixa que não seja o preto de fora do vidro) a a/256 do caminho até o fundo do LCD
@@ -727,30 +731,37 @@ static void lcdLabelStrip(void *p) {
 static bool isLcd(int8_t t) { return t == THEME_LCD || t == THEME_FORECAST_LCD || t == THEME_WORLD || t == THEME_WORLD_WATCH; }
 static bool lcdPair(int8_t a, int8_t b) { return a != b && isLcd(a) && isLcd(b); }
 static bool lcdFade(const UiState &s, uint8_t from, uint8_t t) {
-  static const uint16_t AT[5] PROGMEM = {0, 90, 180, 270, 360};   // instante de cada quadro do miolo (ms)
-  static const uint16_t INK[5] PROGMEM = {176, 88, 88, 176, 256};  // tinta (256 = tinta toda); os 2 primeiros são do mostrador antigo
-  const int LS = 10, LMS = 45;  // rótulos: 10 passos de 45 ms
+  const int32_t HALF = 180, INK_END = 360, END = 450, INK_MIN = 88;  // ms; tinta mínima 88/256 (34 por cento)
   LcdCtx c = {{&s, from}, &s, 256, 0, 240, lcdKind(from), lcdKind(t)};
   uint32_t t0 = slideNow();
-  int me = 0, lk = 0;
-  while (me < 5 || lk <= LS) {
-    uint32_t e = slideNow() - t0;
-    if (me < 5 && e >= pgm_read_word(&AT[me])) {
-      c.s.t = me < 2 ? from : t;
-      c.a = pgm_read_word(&INK[me]);
-      me++;
+  int16_t drawnA = 256, drawnP = 0;  // tinta e posição dos rótulos na tela: no início, o mostrador antigo inteiro (já desenhado)
+  for (;;) {
+    int32_t e = slideNow() - t0;
+    if (e > END) e = END;
+    uint8_t face = e < HALF ? from : t;
+    int16_t a = e < HALF ? 256 - (256 - INK_MIN) * e / HALF : e < INK_END ? INK_MIN + (256 - INK_MIN) * (e - HALF) / (INK_END - HALF) : 256;
+    bool step = false;
+    if (face != c.s.t || a != drawnA) {
+      c.s.t = face;
+      c.a = drawnA = a;
       if (!uiOffscreen(10, 28, 220, 180, lcdFadeStrip, &c)) return false;
-    } else if (lk <= LS && e >= (uint32_t)(LMS * lk)) {
-      int x = lk * 1024 / LS, p = 240 * (x * x * (3072 - 2 * x) >> 20) / 1024;  // suaviza início e fim
+      step = true;
+      e = slideNow() - t0;  // os rótulos vão para o instante de agora, depois do miolo
+      if (e > END) e = END;
+    }
+    int x = e * 1024 / END;
+    int16_t p = 240 * (x * x * (3072 - 2 * x) >> 20) / 1024;  // suaviza início e fim
+    if (p != drawnP) {
       c.dxOld = -p;
       c.dxNew = 240 - p;
-      lk++;
+      drawnP = p;
       if (!uiOffscreen(0, 8, 240, 10, lcdLabelStrip, &c) || !uiOffscreen(0, 214, 240, 16, lcdLabelStrip, &c)) return false;
-    } else {
-      if (uiFrameHook) uiFrameHook();
-      continue;
+      step = true;
     }
-    if (uiStepHook) uiStepHook();
+    if (step) {
+      if (uiStepHook) uiStepHook();
+    } else if (e >= END) break;  // fim: miolo novo com a tinta toda e rótulos no lugar, já desenhados
+    else if (uiFrameHook) uiFrameHook();
   }
   return true;
 }
