@@ -6,7 +6,7 @@
     "O painel abre mais rápido a partir da segunda vez, porque o navegador reaproveita o que já baixou",
     "Mais memória livre no relógio, que sobra para fotos, GIFs e mostradores",
     "Mostradores animados de pacote ocupam bem menos memória para carregar e enquanto rodam",
-    "Mostradores de pacote (formato 2): sprites em movimento, hora desenhada por cima do fundo e até 16 quadros por sprite; novos Globo, Quartinho e Koi (peixes que cruzam o lago)",
+    "Mostradores de pacote (formato 2): sprites em movimento, hora desenhada por cima do fundo e até 16 quadros por sprite; novos Globo, Quartinho, Koi (peixes que cruzam o lago) e duas cenas de naves",
     "A troca entre os mostradores LCD (LCD retrô, Previsão LCD, Mundo e Mundo relógio) ficou mais suave, sem saltos",
     "Brilho à noite agora pode ser 0: a tela apaga de vez. Comandos, fim de foco/pausa e atualização acendem a tela por alguns segundos"
   ],
@@ -17,7 +17,7 @@
     "The panel opens faster from the second time on, because the browser reuses what it already downloaded",
     "More free memory on the clock, left over for photos, GIFs and faces",
     "Animated face packs use much less memory while loading and while running",
-    "Face packs (format 2): moving sprites, time drawn over the background and up to 16 frames per sprite; new Globo, Quartinho and Koi (fish that swim across the pond)",
+    "Face packs (format 2): moving sprites, time drawn over the background and up to 16 frames per sprite; new Globo, Quartinho, Koi (fish that swim across the pond) and two spaceship scenes",
     "Switching between the LCD faces (LCD retrô, Previsão LCD, Mundo and Mundo relógio) is smoother, without jumps",
     "Night brightness can now be 0: the screen goes fully dark. Commands, the end of a focus/break and updates light it for a few seconds"
   ],
@@ -28,7 +28,7 @@
     "El panel abre más rápido a partir de la segunda vez, porque el navegador reutiliza lo que ya descargó",
     "Más memoria libre en el reloj, que queda para fotos, GIF y esferas",
     "Las esferas animadas de paquete ocupan mucha menos memoria al cargar y mientras funcionan",
-    "Esferas de paquete (formato 2): sprites en movimiento, hora dibujada sobre el fondo y hasta 16 cuadros por sprite; nuevas Globo, Quartinho y Koi (peces que cruzan el estanque)",
+    "Esferas de paquete (formato 2): sprites en movimiento, hora dibujada sobre el fondo y hasta 16 cuadros por sprite; nuevas Globo, Quartinho, Koi (peces que cruzan el estanque) y dos escenas de naves",
     "El cambio entre las esferas LCD (LCD retrô, Previsão LCD, Mundo y Mundo relógio) es más suave, sin saltos",
     "El brillo nocturno ahora puede ser 0: la pantalla se apaga del todo. Los comandos, el fin del foco/descanso y las actualizaciones la encienden unos segundos"
   ]
