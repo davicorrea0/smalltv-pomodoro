@@ -137,6 +137,7 @@ Small pull requests, one topic each, are easiest to review. Every firmware chang
 - [uzlib](https://github.com/pfalcon/uzlib) (Paul Sokolovsky, zlib license, see `licenses/uzlib-LICENSE.txt`), the decompressor from the ESP8266 core, used to check compressed updates
 - [JPEGDEC](https://github.com/bitbank2/JPEGDEC) 1.8.4 (BitBank Software, Apache License 2.0, see `licenses/JPEGDEC-LICENSE.txt`), included in `smalltv-pomodoro/src/JPEGDEC` with one change: its color and range lookup tables (7.7 KB) are computed at the start of each decode and freed at the end instead of living in RAM all the time
 - [AnimatedGIF](https://github.com/bitbank2/AnimatedGIF) 2.2.3 (BitBank Software, Apache License 2.0, see `licenses/AnimatedGIF-LICENSE.txt`), included in `smalltv-pomodoro/src/AnimatedGIF` with a checked sequential parser and bounds checks in the standard LZW decoder; `gif.inl` is named `gif_inl.h` for Arduino builds. This firmware uses RAW scanline callbacks, without Turbo or a framebuffer.
+- `sinf`/`cosf` in `smalltv-pomodoro/trig.cpp`: fdlibm (Sun Microsystems, as converted to float in newlib; see `licenses/fdlibm-LICENSE.txt`), with the same results as the toolchain's math library up to 2^7·π/2 rad (every angle the clock uses), but without its 1 KB of RAM tables
 - Libraries: Adafruit GFX and ST7789, ArduinoJson
 
 GeekMagic and SmallTV are trademarks of their owners. This is an independent project, not affiliated with GeekMagic.
