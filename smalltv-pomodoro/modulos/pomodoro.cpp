@@ -62,6 +62,7 @@ void tickPomodoro() {
     remainingMs = 0;
     alertUntil = now + 4000;
     advance(true);
+    wakeScreen(15000);  // fim de foco/pausa aparece mesmo com a tela apagada à noite
   } else {
     remainingMs -= dt;
   }
@@ -75,6 +76,7 @@ uint8_t previewTheme = 0;
 uint32_t previewUntil = 0;
 
 void command(const String &c) {
+  if (c.length()) wakeScreen(10000);  // quem manda um comando precisa ver o resultado
   if (c == "start") {
     if (phase == IDLE) startPhase(WORK, true);
     else { running = true; lastTick = millis(); }
