@@ -18,10 +18,10 @@
 
 **A focus timer for your desk that isn't your phone.** Open-source firmware for the GeekMagic SmallTV Ultra (ESP8266): a Pomodoro timer with a pixel art tomato, clock faces, weather and a web panel. No account, no cloud, no cable to install.
 
-<!-- GIF here: replace docs/hero.gif with a ~6 s GIF cut from the video of the real clock (same file name, ~480 px wide, under 2 MB), and link the video below it. -->
-<p align="center"><img src="docs/hero.gif" width="360" alt="SmallTV Pomodoro screens in a loop: the tomato scene, a focus session with its progress ring, the end of a phase, rain on the way, the flip, neon, retro LCD and world faces"></p>
+<!-- GIF: rendered by the firmware simulator (same drawing code as the clock, 2x nearest neighbour). When the video of the real clock exists, replace docs/hero.gif (same name) and link the video below it. -->
+<p align="center"><img src="docs/hero.gif" width="327" alt="Simulated SmallTV Ultra running SmallTV Pomodoro, in a loop: a focus session ends and the short break starts; then the retro LCD, World, Flip (turning to the next minute), Nixie and Campfire faces"></p>
 
-<p align="center"><sub>Made from the project's simulator, which compiles the same drawing code as the firmware. A recording of a real clock is coming.</sub></p>
+<p align="center"><sub>Rendered by the firmware simulator: the same drawing code as the clock, pixel for pixel. A recording of a real clock is coming.</sub></p>
 
 <p align="center">
   <a href="https://davicorrea0.github.io/smalltv-pomodoro/en/gallery.html"><img src="https://img.shields.io/badge/Browse_the_clock_faces-ff5a47?style=for-the-badge&amp;logo=probot&amp;logoColor=white" alt="Browse the clock faces"></a>
@@ -118,7 +118,7 @@ There is more than one good way to use this clock. Pick what fits you.
 
 Bug reports, ideas and "it works on my unit" reports are welcome in [Issues](https://github.com/davicorrea0/smalltv-pomodoro/issues).
 
-- **New face without compiling:** a small `.json` package, see [docs/PACOTES.md](docs/PACOTES.md) (in Portuguese) and the [`faces/`](faces) folder.
+- **New face without compiling:** a small `.json` package, see [docs/PACOTES.md](docs/PACOTES.md) (in Portuguese) and the [`faces/`](faces) folder. Design and sharing guidelines: [docs/PACOTES.md#diretrizes-de-design](docs/PACOTES.md#diretrizes-de-design).
 - **Built-in face or code:** the [simulator](docs/TECHNICAL.md#screen-simulator) renders every screen on your PC without flashing; how to build and test is in [docs/TECHNICAL.md](docs/TECHNICAL.md#building).
 - **Pixel art:** each sprite is a text file in [`assets/`](assets) ([how](docs/TECHNICAL.md#asset-library)).
 

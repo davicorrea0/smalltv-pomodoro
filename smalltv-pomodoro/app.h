@@ -185,6 +185,9 @@ extern bool warmConj;
 extern uint8_t warmFrom, warmTo, warmNow, warmPreview;
 extern int16_t warmSent;
 extern uint32_t warmPreviewUntil;
+#include "noite.h"
+extern uint32_t wakeUntil;  // tela acesa à força (brilho noturno 0) até este millis(); ver wakeScreen()
+void wakeScreen(uint32_t ms);
 extern bool lcdViewActive;
 extern const char * PHASE_KEY[];
 extern Phase phase;
