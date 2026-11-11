@@ -11,6 +11,15 @@
       "size": 8548
     },
     {
+      "id": "aneis",
+      "name": "Anéis",
+      "author": "davicorrea0",
+      "desc": "Três anéis de progresso: focos do dia, minutos da hora e horas do dia",
+      "file": "aneis.json",
+      "preview": "aneis.png",
+      "size": 1718
+    },
+    {
       "id": "aquario",
       "name": "Aquário",
       "author": "davicorrea0",
@@ -18,6 +27,24 @@
       "file": "aquario.json",
       "preview": "aquario.png",
       "size": 12352
+    },
+    {
+      "id": "arcade",
+      "name": "Arcade",
+      "author": "davicorrea0",
+      "desc": "Uma fase em pixel art; a bandeira acende na meta diária.",
+      "file": "arcade.json",
+      "preview": "arcade.png",
+      "size": 5354
+    },
+    {
+      "id": "astronauta",
+      "name": "Astronauta",
+      "author": "davicorrea0",
+      "desc": "Astronauta em pixel art flutuando perto de um planeta",
+      "file": "astronauta.json",
+      "preview": "astronauta.png",
+      "size": 3524
     },
     {
       "id": "aurora",
@@ -74,6 +101,43 @@
       "size": 2694
     },
     {
+      "id": "cena-espacial",
+      "name": "Cena espacial",
+      "author": "SmallTV",
+      "desc": "Nave viaja entre estrelas e planeta",
+      "file": "cena-espacial.json",
+      "preview": "cena-espacial.png",
+      "size": 5929,
+      "fw": "1.26.0"
+    },
+    {
+      "id": "compasso",
+      "name": "Compasso",
+      "author": "davicorrea0",
+      "desc": "Analógico sereno, com ponteiros sem atualização por segundo.",
+      "file": "compasso.json",
+      "preview": "compasso.png",
+      "size": 1735
+    },
+    {
+      "id": "duna",
+      "name": "Duna",
+      "author": "davicorrea0",
+      "desc": "Sol e lua sobre dunas em tons de terracota.",
+      "file": "duna.json",
+      "preview": "duna.png",
+      "size": 2166
+    },
+    {
+      "id": "duo",
+      "name": "Duo",
+      "author": "davicorrea0",
+      "desc": "Hora e minutos gigantes, um em cima do outro",
+      "file": "duo.json",
+      "preview": "duo.png",
+      "size": 966
+    },
+    {
       "id": "estacao",
       "name": "Estação",
       "author": "davicorrea0",
@@ -81,6 +145,152 @@
       "file": "estacao.json",
       "preview": "estacao.png",
       "size": 2989
+    },
+    {
+      "id": "fitness",
+      "name": "Fitness",
+      "author": "davicorrea0",
+      "desc": "Estilo pulseira esportiva: hora grande e barras coloridas de progresso",
+      "file": "fitness.json",
+      "preview": "fitness.png",
+      "size": 2464
+    },
+    {
+      "id": "fogueira",
+      "name": "Fogueira",
+      "author": "davicorrea0",
+      "desc": "Uma fogueira acesa sob o céu estrelado, com fagulhas subindo",
+      "file": "fogueira.json",
+      "preview": "fogueira.png",
+      "size": 8747
+    },
+    {
+      "id": "gato-soneca",
+      "name": "Soneca",
+      "author": "davicorrea0",
+      "desc": "Um gato laranja dormindo na almofada, respirando devagar, com os Zzz subindo",
+      "file": "gato-soneca.json",
+      "preview": "gato-soneca.png",
+      "size": 13817
+    },
+    {
+      "id": "globo",
+      "name": "Globo",
+      "author": "SmallTV",
+      "desc": "A Terra girando de verdade, com o lado noturno aceso, a lua passando e a hora embaixo",
+      "file": "globo.json",
+      "preview": "globo.png",
+      "size": 9855,
+      "fw": "1.26.0"
+    },
+    {
+      "id": "gradiente",
+      "name": "Gradiente",
+      "author": "davicorrea0",
+      "desc": "Degradê radial suave com ponteiros brancos",
+      "file": "gradiente.json",
+      "preview": "gradiente.png",
+      "size": 2355
+    },
+    {
+      "id": "infografico",
+      "name": "Infográfico",
+      "author": "davicorrea0",
+      "desc": "Analógico com mostradores menores e dados nos quatro cantos",
+      "file": "infografico.json",
+      "preview": "infografico.png",
+      "size": 3083
+    },
+    {
+      "id": "inverno",
+      "name": "Inverno",
+      "author": "davicorrea0",
+      "desc": "Neve caindo sobre uma cabana com a lareira acesa, entre pinheiros",
+      "file": "inverno.json",
+      "preview": "inverno.png",
+      "size": 9941
+    },
+    {
+      "id": "janela",
+      "name": "Janela",
+      "author": "davicorrea0",
+      "desc": "Cidade na janela, com chuva conforme o clima real.",
+      "file": "janela.json",
+      "preview": "janela.png",
+      "size": 12111
+    },
+    {
+      "id": "jardim",
+      "name": "Jardim",
+      "author": "davicorrea0",
+      "desc": "Uma pequena estufa; a planta cresce com sua sequência.",
+      "file": "jardim.json",
+      "preview": "jardim.png",
+      "size": 2091
+    },
+    {
+      "id": "koi-classico",
+      "name": "Koi clássico",
+      "author": "davicorrea0",
+      "desc": "Um lago visto de cima; a flor aparece na meta.",
+      "file": "koi-classico.json",
+      "preview": "koi-classico.png",
+      "size": 14894
+    },
+    {
+      "id": "koi",
+      "name": "Koi",
+      "author": "davicorrea0",
+      "desc": "Um lago visto de cima: koi sempre nadando de um lado ao outro, ondulações que derivam, a lua à noite e a chuva na água; a flor aparece na meta.",
+      "file": "koi.json",
+      "preview": "koi.png",
+      "size": 19077,
+      "fw": "1.26.0"
+    },
+    {
+      "id": "listras",
+      "name": "Listras",
+      "author": "davicorrea0",
+      "desc": "Faixas diagonais coloridas com a hora num cartão preto",
+      "file": "listras.json",
+      "preview": "listras.png",
+      "size": 2116
+    },
+    {
+      "id": "mare",
+      "name": "Maré",
+      "author": "davicorrea0",
+      "desc": "Farol em pixel art, mar em faixas e focos na areia.",
+      "file": "mare.json",
+      "preview": "mare.png",
+      "size": 2661
+    },
+    {
+      "id": "memphis",
+      "name": "Memphis",
+      "author": "davicorrea0",
+      "desc": "Geometria dos anos 80 em coral, azul e amarelo.",
+      "file": "memphis.json",
+      "preview": "memphis.png",
+      "size": 1625
+    },
+    {
+      "id": "metro",
+      "name": "Metrô",
+      "author": "davicorrea0",
+      "desc": "Painel de trânsito com a rota preenchida pelos focos.",
+      "file": "metro.json",
+      "preview": "metro.png",
+      "size": 1956
+    },
+    {
+      "id": "modular",
+      "name": "Modular",
+      "author": "davicorrea0",
+      "desc": "Grade de complicações: hora, clima grande e três dados embaixo",
+      "file": "modular.json",
+      "preview": "modular.png",
+      "size": 3753
     },
     {
       "id": "mono",
@@ -92,6 +302,25 @@
       "size": 1862
     },
     {
+      "id": "nixie",
+      "name": "Nixie",
+      "author": "davicorrea0",
+      "desc": "Vidro, filamentos âmbar e segundos discretos.",
+      "file": "nixie.json",
+      "preview": "nixie.png",
+      "size": 3640
+    },
+    {
+      "id": "odisseia-estelar",
+      "name": "Odisseia estelar",
+      "author": "SmallTV",
+      "desc": "Uma frota explora planetas e cruza cometas e OVNIs",
+      "file": "odisseia-estelar.json",
+      "preview": "odisseia-estelar.png",
+      "size": 15744,
+      "fw": "1.26.0"
+    },
+    {
       "id": "orbita",
       "name": "Órbita",
       "author": "davicorrea0",
@@ -101,6 +330,43 @@
       "size": 2688
     },
     {
+      "id": "papel",
+      "name": "Papel",
+      "author": "davicorrea0",
+      "desc": "Tipografia editorial, papel creme e um círculo vermelho.",
+      "file": "papel.json",
+      "preview": "papel.png",
+      "size": 1609
+    },
+    {
+      "id": "pausa-cafe",
+      "name": "Pausa pro Café",
+      "author": "davicorrea0",
+      "desc": "O tomate relaxando ao lado de uma xícara fumegante",
+      "file": "pausa-cafe.json",
+      "preview": "pausa-cafe.png",
+      "size": 4614
+    },
+    {
+      "id": "pilula",
+      "name": "Pílula",
+      "author": "davicorrea0",
+      "desc": "Tela em cápsula de pulseira, hora empilhada e dados nas laterais",
+      "file": "pilula.json",
+      "preview": "pilula.png",
+      "size": 2479
+    },
+    {
+      "id": "quartinho",
+      "name": "Quartinho",
+      "author": "SmallTV",
+      "desc": "Um quartinho isométrico que acompanha o dia: a janela mostra dia, noite e chuva, com a Terra girando na mesa e o gato dormindo",
+      "file": "quartinho.json",
+      "preview": "quartinho.png",
+      "size": 13494,
+      "fw": "1.26.0"
+    },
+    {
       "id": "radar-analogico",
       "name": "Radar",
       "author": "davicorrea0",
@@ -108,6 +374,15 @@
       "file": "radar-analogico.json",
       "preview": "radar-analogico.png",
       "size": 3146
+    },
+    {
+      "id": "romano",
+      "name": "Romano",
+      "author": "davicorrea0",
+      "desc": "Mostrador creme clássico com algarismos romanos",
+      "file": "romano.json",
+      "preview": "romano.png",
+      "size": 3598
     },
     {
       "id": "synthwave",
@@ -128,204 +403,6 @@
       "size": 2762
     },
     {
-      "id": "aneis",
-      "name": "Anéis",
-      "author": "davicorrea0",
-      "desc": "Três anéis de progresso: focos do dia, minutos da hora e horas do dia",
-      "file": "aneis.json",
-      "preview": "aneis.png",
-      "size": 1718
-    },
-    {
-      "id": "modular",
-      "name": "Modular",
-      "author": "davicorrea0",
-      "desc": "Grade de complicações: hora, clima grande e três dados embaixo",
-      "file": "modular.json",
-      "preview": "modular.png",
-      "size": 3753
-    },
-    {
-      "id": "infografico",
-      "name": "Infográfico",
-      "author": "davicorrea0",
-      "desc": "Analógico com mostradores menores e dados nos quatro cantos",
-      "file": "infografico.json",
-      "preview": "infografico.png",
-      "size": 3083
-    },
-    {
-      "id": "romano",
-      "name": "Romano",
-      "author": "davicorrea0",
-      "desc": "Mostrador creme clássico com algarismos romanos",
-      "file": "romano.json",
-      "preview": "romano.png",
-      "size": 3598
-    },
-    {
-      "id": "duo",
-      "name": "Duo",
-      "author": "davicorrea0",
-      "desc": "Hora e minutos gigantes, um em cima do outro",
-      "file": "duo.json",
-      "preview": "duo.png",
-      "size": 966
-    },
-    {
-      "id": "gradiente",
-      "name": "Gradiente",
-      "author": "davicorrea0",
-      "desc": "Degradê radial suave com ponteiros brancos",
-      "file": "gradiente.json",
-      "preview": "gradiente.png",
-      "size": 2355
-    },
-    {
-      "id": "fitness",
-      "name": "Fitness",
-      "author": "davicorrea0",
-      "desc": "Estilo pulseira esportiva: hora grande e barras coloridas de progresso",
-      "file": "fitness.json",
-      "preview": "fitness.png",
-      "size": 2464
-    },
-    {
-      "id": "astronauta",
-      "name": "Astronauta",
-      "author": "davicorrea0",
-      "desc": "Astronauta em pixel art flutuando perto de um planeta",
-      "file": "astronauta.json",
-      "preview": "astronauta.png",
-      "size": 3524
-    },
-    {
-      "id": "listras",
-      "name": "Listras",
-      "author": "davicorrea0",
-      "desc": "Faixas diagonais coloridas com a hora num cartão preto",
-      "file": "listras.json",
-      "preview": "listras.png",
-      "size": 2116
-    },
-    {
-      "id": "pilula",
-      "name": "Pílula",
-      "author": "davicorrea0",
-      "desc": "Tela em cápsula de pulseira, hora empilhada e dados nas laterais",
-      "file": "pilula.json",
-      "preview": "pilula.png",
-      "size": 2479
-    },
-    {
-      "id": "mare",
-      "name": "Maré",
-      "author": "davicorrea0",
-      "desc": "Farol em pixel art, mar em faixas e focos na areia.",
-      "file": "mare.json",
-      "preview": "mare.png",
-      "size": 2661
-    },
-    {
-      "id": "jardim",
-      "name": "Jardim",
-      "author": "davicorrea0",
-      "desc": "Uma pequena estufa; a planta cresce com sua sequência.",
-      "file": "jardim.json",
-      "preview": "jardim.png",
-      "size": 2091
-    },
-    {
-      "id": "vinil",
-      "name": "Vinil",
-      "author": "davicorrea0",
-      "desc": "Sulcos de vinil e um anel que acompanha os segundos.",
-      "file": "vinil.json",
-      "preview": "vinil.png",
-      "size": 2280
-    },
-    {
-      "id": "duna",
-      "name": "Duna",
-      "author": "davicorrea0",
-      "desc": "Sol e lua sobre dunas em tons de terracota.",
-      "file": "duna.json",
-      "preview": "duna.png",
-      "size": 2166
-    },
-    {
-      "id": "papel",
-      "name": "Papel",
-      "author": "davicorrea0",
-      "desc": "Tipografia editorial, papel creme e um círculo vermelho.",
-      "file": "papel.json",
-      "preview": "papel.png",
-      "size": 1609
-    },
-    {
-      "id": "arcade",
-      "name": "Arcade",
-      "author": "davicorrea0",
-      "desc": "Uma fase em pixel art; a bandeira acende na meta diária.",
-      "file": "arcade.json",
-      "preview": "arcade.png",
-      "size": 5354
-    },
-    {
-      "id": "nixie",
-      "name": "Nixie",
-      "author": "davicorrea0",
-      "desc": "Vidro, filamentos âmbar e segundos discretos.",
-      "file": "nixie.json",
-      "preview": "nixie.png",
-      "size": 3640
-    },
-    {
-      "id": "koi",
-      "name": "Koi",
-      "author": "davicorrea0",
-      "desc": "Um lago visto de cima; a flor aparece na meta.",
-      "file": "koi.json",
-      "preview": "koi.png",
-      "size": 14868
-    },
-    {
-      "id": "janela",
-      "name": "Janela",
-      "author": "davicorrea0",
-      "desc": "Cidade na janela, com chuva conforme o clima real.",
-      "file": "janela.json",
-      "preview": "janela.png",
-      "size": 12111
-    },
-    {
-      "id": "metro",
-      "name": "Metrô",
-      "author": "davicorrea0",
-      "desc": "Painel de trânsito com a rota preenchida pelos focos.",
-      "file": "metro.json",
-      "preview": "metro.png",
-      "size": 1956
-    },
-    {
-      "id": "memphis",
-      "name": "Memphis",
-      "author": "davicorrea0",
-      "desc": "Geometria dos anos 80 em coral, azul e amarelo.",
-      "file": "memphis.json",
-      "preview": "memphis.png",
-      "size": 1625
-    },
-    {
-      "id": "compasso",
-      "name": "Compasso",
-      "author": "davicorrea0",
-      "desc": "Analógico sereno, com ponteiros sem atualização por segundo.",
-      "file": "compasso.json",
-      "preview": "compasso.png",
-      "size": 1735
-    },
-    {
       "id": "tomate-pulando",
       "name": "Tomate Pulando",
       "author": "davicorrea0",
@@ -335,40 +412,13 @@
       "size": 4522
     },
     {
-      "id": "gato-soneca",
-      "name": "Soneca",
+      "id": "vinil",
+      "name": "Vinil",
       "author": "davicorrea0",
-      "desc": "Um gato laranja dormindo na almofada, respirando devagar, com os Zzz subindo",
-      "file": "gato-soneca.json",
-      "preview": "gato-soneca.png",
-      "size": 13817
-    },
-    {
-      "id": "fogueira",
-      "name": "Fogueira",
-      "author": "davicorrea0",
-      "desc": "Uma fogueira acesa sob o céu estrelado, com fagulhas subindo",
-      "file": "fogueira.json",
-      "preview": "fogueira.png",
-      "size": 8747
-    },
-    {
-      "id": "inverno",
-      "name": "Inverno",
-      "author": "davicorrea0",
-      "desc": "Neve caindo sobre uma cabana com a lareira acesa, entre pinheiros",
-      "file": "inverno.json",
-      "preview": "inverno.png",
-      "size": 9941
-    },
-    {
-      "id": "pausa-cafe",
-      "name": "Pausa pro Café",
-      "author": "davicorrea0",
-      "desc": "O tomate relaxando ao lado de uma xícara fumegante",
-      "file": "pausa-cafe.json",
-      "preview": "pausa-cafe.png",
-      "size": 4614
+      "desc": "Sulcos de vinil e um anel que acompanha os segundos.",
+      "file": "vinil.json",
+      "preview": "vinil.png",
+      "size": 2280
     }
   ]
 }
