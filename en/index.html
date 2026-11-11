@@ -32,7 +32,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Silkscreen&display=swap">
-<link rel="stylesheet" href="../style.css?v=19">
+<link rel="stylesheet" href="../style.css?v=20">
 </head>
 <body>
 
@@ -95,38 +95,21 @@
 </section>
 
 <section id="up-close">
-  <div class="wrap">
-    <h2>Up close</h2>
-    <p class="section-lead">The clock's screens, rendered by the project's simulator with the same code as the firmware.</p>
-    <div class="viewer" id="viewer">
-      <div class="tabs" role="tablist" aria-label="Screens">
-        <button type="button" role="tab" data-shot="1" aria-selected="true" aria-pressed="true">Pomodoro</button>
-        <button type="button" role="tab" data-shot="0" aria-selected="false" aria-pressed="false">Tomato</button>
-        <button type="button" role="tab" data-shot="4" aria-selected="false" aria-pressed="false">Drawings</button>
-      </div>
-      <figure class="shot one pomo" role="tabpanel" data-shot="1">
-        <div class="anim" id="pomo-anim" role="img" aria-label="Animated Pomodoro screen" data-src="../img/pomodoro/en-" style="background-image:url(../img/pomodoro/en-foco.png);background-size:1200% 100%"></div>
-        <figcaption>
-          <div class="tabs states" role="group">
+  <div class="wrap split-media">
+    <div class="anim" id="pomo-anim" role="img" aria-label="Animated Pomodoro screen" data-src="../img/pomodoro/en-" style="background-image:url(../img/pomodoro/en-foco.png);background-size:1200% 100%"></div>
+    <div class="pomo-text">
+      <h2>A timer you catch from the corner of your eye</h2>
+      <p class="section-lead">A ring fills up to the end of the focus phase, the end time stays on screen and the tomato follows along. Tap a state to see the clock screen, rendered by the project simulator with the same code as the firmware.</p>
+      <div class="tabs states" role="group">
             <button type="button" data-state="foco" data-n="12" data-ms="350" data-cap="Focus: the red ring fills up until the end of the phase, with the countdown and the end time. The tomato concentrates next to the activity's object." data-sub="sped up" aria-pressed="true">Focus</button>
             <button type="button" data-state="pausa" data-n="12" data-ms="350" data-cap="Short break: a green ring and the tomato relaxing with a coffee." data-sub="sped up" aria-pressed="false">Break</button>
             <button type="button" data-state="longa" data-n="12" data-ms="350" data-cap="Long break: a blue ring, after finishing the cycle of focus sessions (the dots)." data-sub="sped up" aria-pressed="false">Long break</button>
             <button type="button" data-state="pausado" data-n="2" data-ms="1000" data-cap="Paused: the time blinks every second and the tomato naps until you resume." aria-pressed="false">Paused</button>
             <button type="button" data-state="fim" data-n="6" data-ms="160" data-cap="Phase done: the tomato jumps for joy and the next phase shows up." aria-pressed="false">Phase done</button>
           </div>
-          <p id="pomo-cap">Focus: the red ring fills up until the end of the phase, with the countdown and the end time. The tomato concentrates next to the activity's object. <span class="sub">(sped up)</span></p>
-          <p class="act-lead">In the panel you pick the focus activity, and its object shows up next to the tomato:</p>
-          <span class="acts"><span><img class="px" src="../img/icons/livro.svg" alt="">Read</span><span><img class="px" src="../img/icons/caderno.svg" alt="">Study</span><span><img class="px" src="../img/icons/notebook.svg" alt="">Code</span><span><img class="px" src="../img/icons/prancheta.svg" alt="">Tasks</span><span><img class="px" src="../img/icons/paleta.svg" alt="">Draw</span></span>
-        </figcaption>
-      </figure>
-      <figure class="shot" role="tabpanel" data-shot="0" hidden>
-        <img class="px" src="../img/tomate.png" alt="Tomato scene: day, night, rain, snow, heat and goal reached" width="1480" height="990" loading="lazy">
-        <figcaption>Tomato face: day, night, rain, cold, heat and the daily goal reached. The tomato opens its umbrella when rain is about to start.</figcaption>
-      </figure>
-      <figure class="shot" role="tabpanel" data-shot="4" hidden>
-        <img class="px" src="../img/assets.png" alt="Sheet with every pixel art drawing in the firmware" width="752" height="568" loading="lazy">
-        <figcaption>Every pixel art drawing is a text file in the repository, easy to edit.</figcaption>
-      </figure>
+      <p id="pomo-cap">Focus: the red ring fills up until the end of the phase, with the countdown and the end time. The tomato concentrates next to the activity's object. <span class="sub">(sped up)</span></p>
+      <p class="act-lead">In the panel you pick the focus activity, and its object shows up next to the tomato:</p>
+      <span class="acts"><span><img class="px" src="../img/icons/livro.svg" alt="">Read</span><span><img class="px" src="../img/icons/caderno.svg" alt="">Study</span><span><img class="px" src="../img/icons/notebook.svg" alt="">Code</span><span><img class="px" src="../img/icons/prancheta.svg" alt="">Tasks</span><span><img class="px" src="../img/icons/paleta.svg" alt="">Draw</span></span>
     </div>
   </div>
 </section>
@@ -250,6 +233,6 @@
 </footer>
 
 <script src="../faces.js?v=0b04f8b5"></script>
-<script src="../site.js?v=7"></script>
+<script src="../site.js?v=8"></script>
 </body>
 </html>

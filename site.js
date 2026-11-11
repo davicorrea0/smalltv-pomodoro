@@ -109,11 +109,11 @@
   }
 })();
 
-// Pomodoro animado ("Veja de perto"): cada estado é uma faixa de quadros do simulador
+// Pomodoro animado (seção do timer na home): cada estado é uma faixa de quadros do simulador
 (function () {
   var box = document.getElementById("pomo-anim");
   if (!box) return;
-  var cap = document.getElementById("pomo-cap"), buttons = box.parentNode.querySelectorAll("[data-state]");
+  var cap = document.getElementById("pomo-cap"), buttons = box.closest("section").querySelectorAll("[data-state]");
   var still = window.matchMedia("(prefers-reduced-motion: reduce)").matches, timer = null;
   function play(b) {
     var n = +b.dataset.n, ms = +b.dataset.ms, i = 0;
