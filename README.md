@@ -118,7 +118,7 @@ There is more than one good way to use this clock. Pick what fits you.
 
 Bug reports, ideas and "it works on my unit" reports are welcome in [Issues](https://github.com/davicorrea0/smalltv-pomodoro/issues).
 
-- **New face without compiling:** a small `.json` package, see [docs/PACOTES.md](docs/PACOTES.md) (in Portuguese) and the [`faces/`](faces) folder.
+- **New face without compiling:** a small `.json` package, see [docs/PACOTES.md](docs/PACOTES.md) (in Portuguese) and the [`faces/`](faces) folder. Design and sharing guidelines: [docs/PACOTES.md#diretrizes-de-design](docs/PACOTES.md#diretrizes-de-design).
 - **Built-in face or code:** the [simulator](docs/TECHNICAL.md#screen-simulator) renders every screen on your PC without flashing; how to build and test is in [docs/TECHNICAL.md](docs/TECHNICAL.md#building).
 - **Pixel art:** each sprite is a text file in [`assets/`](assets) ([how](docs/TECHNICAL.md#asset-library)).
 

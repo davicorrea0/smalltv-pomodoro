@@ -31,6 +31,9 @@ void fsMount() {
       {"/stats.bin", nullptr, 0}, {"/rotation.txt", nullptr, 0}, {"/hooks.txt", nullptr, 0}};
   {
     FS old(FSImplPtr(new littlefs_impl::LittleFSImpl(0x100000, 0x3FA000 - 0x100000, 256, 8192, 2)));
+    LittleFSConfig ocfg;
+    ocfg.setAutoFormat(false);
+    old.setConfig(ocfg);
     if (old.begin()) {
       for (Keep &k : keep) {
         File f = old.open(k.path, "r");

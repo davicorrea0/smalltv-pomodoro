@@ -12,6 +12,14 @@ for(const name of ['handleUpload','handlePackUpload','handlePanelUpload'])
 }
 const recovery=fn('startRecovery');
 if(!recovery.includes('WiFi.mode(WIFI_AP);')||recovery.includes('WiFi.begin()'))throw Error('recovery must be AP-only');
+{ // migração 4M3M→4M2M (storage_stats.cpp): nunca formatar 0x100000 se o LittleFS antigo não montar
+ const fm=fn('fsMount');
+ const oldDecl=fm.indexOf('FS old('),oldBeg=fm.indexOf('old.begin()',oldDecl);
+ if(oldDecl<0||oldBeg<0)throw Error('fsMount: FS old() e old.begin() esperados');
+ const entre=fm.slice(oldDecl,oldBeg);
+ if(!entre.includes('ocfg.setAutoFormat(false);')||!entre.includes('old.setConfig(ocfg);'))
+  throw Error('fsMount must disable autoFormat on FS old before old.begin()');
+}
 { // portal de Wi-Fi (1.24.13): a estação para sem apagar a rede salva, a varredura não bloqueia e a rede nova volta com o padrão
  const portal=fn('startPortal'),save=portal.slice(portal.indexOf('"/save"'),portal.indexOf('onNotFound'));
  const stop=portal.indexOf('WiFi.disconnect(false, false);');
