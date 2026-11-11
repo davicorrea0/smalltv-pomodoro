@@ -853,7 +853,7 @@ void setupWeb() {
     cfg.nightOn = argRange("non", cfg.nightOn, 0, 1);
     cfg.nightStart = argRange("nstart", cfg.nightStart, 0, 23);
     cfg.nightEnd = argRange("nend", cfg.nightEnd, 0, 23);
-    cfg.nightBri = argRange("nbri", cfg.nightBri, 1, 100);
+    cfg.nightBri = argRange("nbri", cfg.nightBri, 0, 100);
     cfg.nightSun = argRange("nsun", cfg.nightSun, 0, 1);
     cfg.warm = argRange("warm", cfg.warm, 0, 100);
     cfg.lcdGreen = argRange("lcdg", cfg.lcdGreen, 0, 1);
@@ -1262,6 +1262,7 @@ static const int PORTAL_LIST_MAX = 12;
 void startPortal() {
   newFormToken();
   portalMode = true;
+  updateBrightness(true);  // o portal precisa aparecer mesmo com o brilho noturno em 0
   // A estação para de procurar a rede salva (pode ser a do firmware original, ou lixo): enquanto procura em outros
   // canais, o ponto de acesso muda de canal junto (o celular cai) e a varredura falha. A rede continua gravada
   // (disconnect com eraseCredentials = false; o disconnect(false) do núcleo apagaria). Os dois ajustes ficam só na

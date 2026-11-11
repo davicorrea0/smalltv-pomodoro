@@ -9,6 +9,7 @@
 #  - ETag do painel no GET /: 304 só com o painel desta versão, carregador sem ETag, login antes (painel_etag_test.cjs);
 #  - cor quente (warm.h): os comandos do gama digital de dia, de noite e na prévia;
 #  - curva de brilho (bri_curva.h) contra a fórmula antiga com powf, em todas as entradas;
+#  - brilho noturno 0 (tela apagada) que acende para avisos e volta a apagar (noite.h);
 #  - sinf/cosf próprios (trig.cpp) iguais bit a bit aos do newlib (trig_test.cpp);
 #  - GIF e JPEG: as amostras válidas precisam decodificar e o fuzzing não pode achar erro de memória;
 #  - mostradores de pacote (facepack.cpp): os pacotes da galeria estragados de propósito, carregados e desenhados

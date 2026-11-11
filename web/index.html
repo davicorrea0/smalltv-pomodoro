@@ -268,7 +268,8 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
   <small id="suninfo"></small>
   <label class="fixh">Das (hora)<input data-k="nstart" type="number" min="0" max="23"></label>
   <label class="fixh">Até (hora)<input data-k="nend" type="number" min="0" max="23"></label>
-  <label>Brilho à noite<input data-k="nbri" type="range" min="1" max="100"></label>
+  <label>Brilho à noite<input data-k="nbri" type="range" min="0" max="100"></label>
+  <small id="nbrinfo"></small>
   <label>Cor quente à noite<input data-k="warm" type="range" min="0" max="100"></label>
   <small>0 desliga. À noite, a tela perde um pouco do azul (junto do brilho noturno), sem mudar a imagem.</small>
   <p><button class="btn" onclick="warmPrev()">Ver agora por 15 s</button> <button class="btn" onclick="warmPrev(1)">Ver agora (tabela invertida)</button></p>
@@ -692,7 +693,9 @@ function diagCopy(){if(!st||!st.diag)return;const a=$('dgt'),x=diagText(st,HW);a
   .then(r=>toast(t(r?'Diagnóstico copiado (sem dados pessoais)':'Não consegui copiar: selecione o texto abaixo')))}
 // data-neg: chave marcada = 0. "Inverter cores" é em relação ao normal (o painel IPS já liga com INVON)
 const ACI=['ler','estudar','codar','tarefas','desenhar'],actIc=v=>$('acth').setAttribute('href','#i-'+(ACI[v]||'ler'));
-document.querySelectorAll('[data-k]').forEach(e=>{e.onchange=()=>{const v=e.type=='checkbox'?(e.checked!=e.hasAttribute('data-neg')?1:0):e.value;if(e.dataset.k=='act')actIc(v);save({[e.dataset.k]:v}).then(()=>{toast(t('Salvo'));if(e.dataset.k=='beta')checkUpdate()})}});
+function nbriInfo(){const e=document.querySelector('[data-k=nbri]');$('nbrinfo').textContent=+e.value?'':t('Desligada: a tela apaga de vez à noite. Um comando, o fim do foco ou da pausa e a atualização acendem a tela por alguns segundos.')}
+document.querySelector('[data-k=nbri]').oninput=nbriInfo;
+document.querySelectorAll('[data-k]').forEach(e=>{e.onchange=()=>{if(e.dataset.k=='nbri')nbriInfo();const v=e.type=='checkbox'?(e.checked!=e.hasAttribute('data-neg')?1:0):e.value;if(e.dataset.k=='act')actIc(v);save({[e.dataset.k]:v}).then(()=>{toast(t('Salvo'));if(e.dataset.k=='beta')checkUpdate()})}});
 // ---------- estado ----------
 function beep(){try{actx=actx||new AudioContext();[0,.25,.5].forEach(d=>{const o=actx.createOscillator(),g=actx.createGain();
  o.frequency.value=880;g.gain.setValueAtTime(.2,actx.currentTime+d);g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+d+.2);
@@ -748,7 +751,7 @@ function load(s){if(s.cfg.lang!=null&&s.cfg.lang!=LG)setLang(s.cfg.lang);if(last
  $('fsinfo').textContent=s.fs.ok?t('{0} usados de {1}',kb(s.fs.used),kb(s.fs.total)):t('Memória de arquivos indisponível');
  $('fsbar').style.width=(s.fs.total?s.fs.used/s.fs.total*100:0)+'%';$('fmt').hidden=!!s.fs.ok;$('mig').classList.toggle('v',!!s.fs.mig);
  document.querySelectorAll('#grid div').forEach(e=>e.classList.toggle('on',e.dataset.n==s.showing));
- if(!filled){filled=true;document.querySelectorAll('[data-k]').forEach(e=>{const v=s.cfg[e.dataset.k];if(v===undefined)return;if(e.type=='checkbox')e.checked=!!v!=e.hasAttribute('data-neg');else e.value=v});actIc(s.cfg.act)}
+ if(!filled){filled=true;document.querySelectorAll('[data-k]').forEach(e=>{const v=s.cfg[e.dataset.k];if(v===undefined)return;if(e.type=='checkbox')e.checked=!!v!=e.hasAttribute('data-neg');else e.value=v});actIc(s.cfg.act);nbriInfo()}
  draw()}
 // anel do painel sendo desenhado em ms; com wait, só termina com o aviso do relógio (ou em 4 s, se ele não vier)
 function ringDraw(ms,rem,wait){holding=true;holdRem=rem;const r=document.querySelector('.ring');r.style.setProperty('--pd',ms+'ms');
