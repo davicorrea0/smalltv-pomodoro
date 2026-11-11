@@ -13,7 +13,7 @@ ESP8266WebServer server(80);
 // String contígua no heap. O pedaço vazio no fim fecha a resposta chunked (mesmo padrão de /api/storage).
 void jsonBegin() {
   server.setContentLength(CONTENT_LENGTH_UNKNOWN);
-  server.send(200, "application/json", "");
+  server.send(200, PSTR("application/json"), "");
 }
 
 void jsonFlush(String &chunk) {
@@ -36,11 +36,11 @@ String formToken;
 
 void newFormToken() {
   char token[33];
-  snprintf(token, sizeof token, "%08x%08x%08x%08x", ESP.random(), ESP.random(), ESP.random(), ESP.random());
+  snprintf_P(token, sizeof token, PSTR("%08x%08x%08x%08x"), ESP.random(), ESP.random(), ESP.random(), ESP.random());
   formToken = token;
 }
 
-String formTokenField() { return "<input type=hidden name=csrf value=\"" + formToken + "\">"; }
+String formTokenField() { return String(F("<input type=hidden name=csrf value=\"")) + formToken + "\">"; }
 
 extern "C" char _heap_start[];  // fim do BSS (linker): daqui até o fim da DRAM (0x3FFFC000) é o heap
 
@@ -176,7 +176,7 @@ static void diagJson(String &j, uint8_t frag) {
 static void crashJson(String &j) {
   if (!crashRec.magic) return;
   char b[112];
-  snprintf(b, sizeof b, ",\"crash\":{\"n\":%u,\"r\":%u,\"x\":%u,\"epc\":\"%08x\",\"va\":\"%08x\",\"up\":%u,\"ver\":\"%.7s\"}",
+  snprintf_P(b, sizeof b, PSTR(",\"crash\":{\"n\":%u,\"r\":%u,\"x\":%u,\"epc\":\"%08x\",\"va\":\"%08x\",\"up\":%u,\"ver\":\"%.7s\"}"),
            crashRec.n, crashRec.reason, crashRec.exc, (unsigned)crashRec.epc, (unsigned)crashRec.vaddr, (unsigned)crashRec.up, crashRec.ver);
   j += b;
 }
@@ -186,7 +186,7 @@ static void sendState() {
   struct tm t;
   String clock = localNow(t) ? hhmm(t) : "--:--";
   char color[8];
-  snprintf(color, sizeof(color), "#%02x%02x%02x", cfg.colR, cfg.colG, cfg.colB);
+  snprintf_P(color, sizeof(color), PSTR("#%02x%02x%02x"), cfg.colR, cfg.colG, cfg.colB);
   // LittleFS.info() percorre o sistema de arquivos inteiro (~100 ms com 1,5 MB de fotos) e o painel
   // pede o estado a cada segundo: isso travava os GIFs. Guarda o resultado; recalcula quando os
   // arquivos mudam (fsInfoAt = 0) ou depois de 1 minuto.
@@ -197,7 +197,7 @@ static void sendState() {
   }
   String j;
   j.reserve(704);
-  server.sendHeader("Cache-Control", "no-store");  // cidade, rede e ajustes: o navegador não guarda
+  server.sendHeader("Cache-Control", F("no-store"));  // cidade, rede e ajustes: o navegador não guarda
   jsonBegin();
   j += F("{\"phase\":\"");
   j += PHASE_KEY[phase];
@@ -391,7 +391,7 @@ static uint8_t argRange(const char *name, uint8_t cur, int lo, int hi) {
 
 // Caminho de mídia válido: só dentro de /image ou /gif, sem "..".
 static bool mediaPath(const String &p) {
-  return (p.startsWith("/image/") || p.startsWith("/gif/")) && p.indexOf("..") < 0;
+  return (p.startsWith(F("/image/")) || p.startsWith("/gif/")) && p.indexOf("..") < 0;
 }
 
 File uploadFile;
@@ -432,7 +432,7 @@ static void handleUpload() {
       return;
     }
     if (!LittleFS.exists("/image")) LittleFS.mkdir("/image");
-    uploadPath = "/image/" + name;
+    uploadPath = String(F("/image/")) + name;
     uploadFile = LittleFS.open(uploadPath, "w");
     if (!uploadFile) uploadError = F("Falha ao criar arquivo");
     else photoGate.begin(true, 3 * 1024 * 1024);
@@ -580,7 +580,7 @@ static void handlePanelUpload() {
     panelResult = "";
     if (!panelOk() || !uploadAuthed() || !fsOk) return;
     if (!LittleFS.exists("/www")) LittleFS.mkdir("/www");
-    panelUpload = LittleFS.open("/www/_novo", "w");
+    panelUpload = LittleFS.open(F("/www/_novo"), "w");
     if (!panelUpload) return;
     br_sha256_init(&panelSha);
     panelGate.begin(true, 65536);
@@ -589,7 +589,7 @@ static void handlePanelUpload() {
     if (!panelGate.take(up.currentSize) || panelUpload.write(up.buf, up.currentSize) != up.currentSize) {
       panelGate.stop();
       panelUpload.close();
-      LittleFS.remove("/www/_novo");
+      LittleFS.remove(F("/www/_novo"));
       return;
     }
     br_sha256_update(&panelSha, up.buf, up.currentSize);
@@ -598,7 +598,7 @@ static void handlePanelUpload() {
     panelGate.stop();
     if (panelUpload) panelUpload.close();
     if (!ok) {
-      LittleFS.remove("/www/_novo");
+      LittleFS.remove(F("/www/_novo"));
       return;
     }
     uint8_t d[32];
@@ -607,40 +607,47 @@ static void handlePanelUpload() {
     for (int i = 0; i < 12; i++) snprintf(hex + i * 2, 3, "%02x", d[i]);
     String name = String("/www/") + hex + ".gz";
     LittleFS.remove(name);
-    LittleFS.rename("/www/_novo", name);
+    LittleFS.rename(F("/www/_novo"), name);
     // guarda só o desta versão e o recém-chegado (o da próxima, durante uma atualização)
     Dir dir = LittleFS.openDir("/www");
     std::vector<String> old;
     while (dir.next())
-      if (dir.fileName() != String(hex) + ".gz" && dir.fileName() != PANEL_HASH ".gz") old.push_back(dir.fileName());
+      if (dir.fileName() != String(hex) + ".gz" && !dir.fileName().equals(F(PANEL_HASH ".gz"))) old.push_back(dir.fileName());
     for (const String &n : old) LittleFS.remove("/www/" + n);
     panelResult = hex;
   }
 }
 
+// ETag = PANEL_HASH: o navegador revalida sempre (no-cache) e, com o painel desta versão em cache, recebe 304 sem
+// corpo em vez dos ~30 KB. Depois de um OTA o hash é outro, então o If-None-Match antigo não bate e vem o painel
+// novo. O 304 só sai depois do login (readOk) e só com /www/<hash>.gz presente: o carregador não leva ETag.
+static void sendPanel() {
+  if (!readOk()) return;  // com senha, o navegador pede o login já ao abrir o painel
+  server.sendHeader("Cache-Control", "no-cache");  // depois de atualizar o firmware, o navegador busca o painel novo
+  File f = fsOk ? LittleFS.open("/www/" PANEL_HASH ".gz", "r") : File();
+  if (f) {
+    server.sendHeader(F("ETag"), F("\"" PANEL_HASH "\""));
+    if (!strcmp_P(server.header(F("If-None-Match")).c_str(), PSTR("\"" PANEL_HASH "\""))) server.send(304);
+    else server.streamFile(f, "text/html");  // .gz: o servidor manda "Content-Encoding: gzip"
+    f.close();
+    return;
+  }
+  server.sendHeader("Content-Encoding", "gzip");
+  server.send_P(200, "text/html", (PGM_P)LOADER_HTML_GZ, sizeof(LOADER_HTML_GZ));
+}
+
 void setupWeb() {
   server.collectHeaders("X-SmallTV", "Content-Length", "Authorization", "Origin", "X-Firmware-Sig");
   // painel: o desta versão na memória de arquivos ou, sem ele, o carregador que o instala
-  server.on("/", HTTP_GET, [] {
-    if (!readOk()) return;  // com senha, o navegador pede o login já ao abrir o painel
-    server.sendHeader("Cache-Control", "no-cache");  // depois de atualizar o firmware, o navegador busca o painel novo
-    File f = fsOk ? LittleFS.open("/www/" PANEL_HASH ".gz", "r") : File();
-    if (f) {
-      server.streamFile(f, "text/html");  // .gz: o servidor manda "Content-Encoding: gzip"
-      f.close();
-      return;
-    }
-    server.sendHeader("Content-Encoding", "gzip");
-    server.send_P(200, "text/html", (PGM_P)LOADER_HTML_GZ, sizeof(LOADER_HTML_GZ));
-  });
-  server.on("/api/panel", HTTP_POST, [] {
+  server.on("/", HTTP_GET, sendPanel);
+  server.on(F("/api/panel"), HTTP_POST, [] {
     if (!guard()) return;
     if (!panelResult.length()) server.send_P(400, PSTR("text/plain"), PSTR("Painel invalido"));
-    else server.send(200, "text/plain", panelResult == PANEL_HASH ? "ok" : "guardado " + panelResult);
+    else server.send(200, "text/plain", panelResult.equals(F(PANEL_HASH)) ? "ok" : String(F("guardado ")) + panelResult);
   }, handlePanelUpload);
-  server.on("/api/state", HTTP_GET, sendState);
-  server.on("/api/stats", HTTP_GET, sendStats);
-  server.on("/api/crash", HTTP_POST, [] {  // "Limpar" do painel
+  server.on(F("/api/state"), HTTP_GET, sendState);
+  server.on(F("/api/stats"), HTTP_GET, sendStats);
+  server.on(F("/api/crash"), HTTP_POST, [] {  // "Limpar" do painel
     if (!guard()) return;
     crashRec.magic = 0;
     EEPROM.put(CRASH_OFF, crashRec);
@@ -648,9 +655,9 @@ void setupWeb() {
     sendOk();
   });
   // avisos de fim de fase: GET lê, POST (w, b) grava, POST test=w|b chama o endereço e devolve o código
-  server.on("/api/hooks", HTTP_GET, [] {
+  server.on(F("/api/hooks"), HTTP_GET, [] {
     if (!guard()) return;  // os links levam o código da conta do serviço
-    server.sendHeader("Cache-Control", "no-store");
+    server.sendHeader("Cache-Control", F("no-store"));
     String j;
     j.reserve((hookWork.length() + hookBreak.length()) * 2 + 20);
     j = F("{\"w\":\"");
@@ -658,9 +665,9 @@ void setupWeb() {
     j += F("\",\"b\":\"");
     jsonEscapeAppend(j, hookBreak.c_str());
     j += F("\"}");
-    server.send(200, "application/json", j);
+    server.send(200, PSTR("application/json"), j);
   });
-  server.on("/api/hooks", HTTP_POST, [] {
+  server.on(F("/api/hooks"), HTTP_POST, [] {
     if (!guard()) return;
     if (server.hasArg("test")) {
       diagWhere = 2;
@@ -685,11 +692,11 @@ void setupWeb() {
       f.print(hookWork + "\n" + hookBreak + "\n");
       f.close();
     }
-    server.send(saved ? 200 : 500, "text/plain", saved ? "ok" : "falhou");
+    server.send_P(saved ? 200 : 500, PSTR("text/plain"), saved ? PSTR("ok") : PSTR("falhou"));
   });
-  server.on("/api/statsimport", HTTP_POST, handleStatsImport);
+  server.on(F("/api/statsimport"), HTTP_POST, handleStatsImport);
   // lista dos mostradores para a galeria do painel (vem de faces_list.h)
-  server.on("/api/faces", HTTP_GET, [] {
+  server.on(F("/api/faces"), HTTP_GET, [] {
     if (!readOk()) return;
     String j;
     j.reserve(704);
@@ -747,8 +754,8 @@ void setupWeb() {
         sendCode(404);
         return;
       }
-      server.sendHeader("Cache-Control", "max-age=300");
-      server.streamFile(f, "image/png");
+      server.sendHeader("Cache-Control", F("max-age=300"));
+      server.streamFile(f, F("image/png"));
       f.close();
       return;
     }
@@ -761,7 +768,7 @@ void setupWeb() {
     sendCode(302);
   });
   // anti-fantasma: v=0..63 aplica e mostra a estampa (3 min); save=1 guarda; stop=1 volta ao salvo
-  server.on("/api/vcom", HTTP_POST, [] {
+  server.on(F("/api/vcom"), HTTP_POST, [] {
     if (!guard()) return;
     if (server.hasArg("v")) {
       int v = server.arg("v").toInt();
@@ -778,10 +785,10 @@ void setupWeb() {
       saveSettings();
     }
     if (server.arg("save") == "1" || server.arg("stop") == "1") vcomTestUntil = millis();  // o loop encerra
-    server.send(200, "application/json", String(F("{\"vcom\":")) + cfg.vcom + "}");
+    server.send(200, PSTR("application/json"), String(F("{\"vcom\":")) + cfg.vcom + "}");
   });
   // cor quente à noite: v=0..100 mostra a aparência noturna por 15 s (sem salvar); v=0 ou stop=1 encerra
-  server.on("/api/warm", HTTP_POST, [] {
+  server.on(F("/api/warm"), HTTP_POST, [] {
     if (!guard()) return;
     int v = server.arg("v").toInt();
     warmPreview = v < 0 ? 0 : v > 100 ? 100 : v;
@@ -790,9 +797,9 @@ void setupWeb() {
     if (conj != warmConj) warmSent = -1;
     warmConj = conj;
     updateBrightness(true);
-    server.send(200, "application/json", String(F("{\"warm\":")) + cfg.warm + "}");
+    server.send(200, PSTR("application/json"), String(F("{\"warm\":")) + cfg.warm + "}");
   });
-  server.on("/api/cmd", HTTP_POST, [] {
+  server.on(F("/api/cmd"), HTTP_POST, [] {
     if (!guard()) return;
     if (server.arg("c") == "preview") {
       int t = server.arg("t").toInt();
@@ -810,7 +817,7 @@ void setupWeb() {
     command(server.arg("c"));
     sendState();
   });
-  server.on("/api/settings", HTTP_POST, [] {
+  server.on(F("/api/settings"), HTTP_POST, [] {
     if (!guard()) return;
     cfg.work = argRange("work", cfg.work, 1, 99);
     cfg.shortBreak = argRange("short", cfg.shortBreak, 1, 99);
@@ -907,9 +914,9 @@ void setupWeb() {
     }
     sendState();
   });
-  server.on("/api/files", HTTP_GET, sendFiles);
+  server.on(F("/api/files"), HTTP_GET, sendFiles);
   // instala um pacote de mostrador: valida no motor, usa o "id" do JSON como nome do arquivo
-  server.on("/api/faceinstall", HTTP_POST, [] {
+  server.on(F("/api/faceinstall"), HTTP_POST, [] {
     const bool ready = packFaceReady;
     packFaceReady = false;
     if (!guard()) return;
@@ -928,7 +935,7 @@ void setupWeb() {
       if (LittleFS.exists("/faces/_novo.png")) LittleFS.rename("/faces/_novo.png", "/faces/" + id + ".png");
       File t = LittleFS.open("/faces/" + id + ".txt", "w");  // metadados para a lista do painel
       if (t) {
-        t.printf("%s\n%s\n%s\n", facePackName(), facePackDesc(), facePackAuthor());
+        t.printf_P(PSTR("%s\n%s\n%s\n"), facePackName(), facePackDesc(), facePackAuthor());
         t.close();
       }
     } else {
@@ -937,7 +944,7 @@ void setupWeb() {
     }
     restoreActivePack();  // o teste carregou o pacote novo no motor; volta ao que estava ativo
     if (!ok) {
-      server.send(400, "text/plain", packUploadError.length() ? packUploadError : "Pacote invalido: " + msg);
+      server.send(400, "text/plain", packUploadError.length() ? packUploadError : String(F("Pacote invalido: ")) + msg);
       return;
     }
     String reply;
@@ -947,9 +954,9 @@ void setupWeb() {
     reply += F("\",\"name\":\"");
     jsonEscapeAppend(reply, name.c_str());
     reply += F("\"}");
-    server.send(200, "application/json", reply);
+    server.send(200, PSTR("application/json"), reply);
   }, handlePackUpload);
-  server.on("/api/facedelete", HTTP_POST, [] {
+  server.on(F("/api/facedelete"), HTTP_POST, [] {
     if (!guard()) return;
     const String &id = server.arg("pkg");
     if (!fsOk || !idOk(id) || !LittleFS.remove("/faces/" + id + ".json")) {
@@ -967,12 +974,12 @@ void setupWeb() {
     }
     sendOk();
   });
-  server.on("/api/upload", HTTP_POST, [] {
+  server.on(F("/api/upload"), HTTP_POST, [] {
     if (!guard()) return;
     if (uploadError.length()) server.send(400, "text/plain", uploadError);
     else sendOk();
   }, handleUpload);
-  server.on("/api/delete", HTTP_POST, [] {
+  server.on(F("/api/delete"), HTTP_POST, [] {
     if (!guard()) return;
     const String &f = server.arg("f");
     if (curFile == f) {
@@ -986,9 +993,9 @@ void setupWeb() {
     rebuildAlbum();
     sendOk();
   });
-  server.on("/api/storage", HTTP_GET, sendStorage);
+  server.on(F("/api/storage"), HTTP_GET, sendStorage);
   // apaga qualquer arquivo ou pasta da memória, menos o que o relógio precisa (fsKeep)
-  server.on("/api/fsdelete", HTTP_POST, [] {
+  server.on(F("/api/fsdelete"), HTTP_POST, [] {
     if (!guard()) return;
     String f = server.arg("f");
     if (!fsOk || !f.startsWith("/") || f.length() < 2 || f.length() > 96 || f.indexOf("..") >= 0 || f.indexOf("//") >= 0 ||
@@ -1006,9 +1013,9 @@ void setupWeb() {
     bool ok = dir ? fsRemoveAll(f, 0) : LittleFS.remove(f);
     fsInfoAt = 0;  // o uso da memória mudou
     rebuildAlbum();
-    server.send(ok ? 200 : 500, "text/plain", ok ? "ok" : "Nao foi possivel apagar");
+    server.send_P(ok ? 200 : 500, PSTR("text/plain"), ok ? PSTR("ok") : PSTR("Nao foi possivel apagar"));
   });
-  server.on("/api/show", HTTP_POST, [] {
+  server.on(F("/api/show"), HTTP_POST, [] {
     if (!guard()) return;
     const String &f = server.arg("f");
     if (phase != IDLE) {
@@ -1022,7 +1029,7 @@ void setupWeb() {
     viewUntil = millis() + cfg.albumDelay * 1000UL;
     sendOk();
   });
-  server.on("/api/migdone", HTTP_POST, [] {  // o painel restaurou (ou dispensou) o backup da migração
+  server.on(F("/api/migdone"), HTTP_POST, [] {  // o painel restaurou (ou dispensou) o backup da migração
     if (!guard()) return;
     if (fsMark.magic == FS_MAGIC && fsMark.pend) {
       fsMark.pend = 0;
@@ -1031,14 +1038,14 @@ void setupWeb() {
     }
     sendOk();
   });
-  server.on("/api/format", HTTP_POST, [] {
+  server.on(F("/api/format"), HTTP_POST, [] {
     if (!guard()) return;
     stopAlbum();
     LittleFS.end();
     fsOk = LittleFS.format() && LittleFS.begin();
     if (fsOk) LittleFS.mkdir("/image");
     rebuildAlbum();
-    server.send(fsOk ? 200 : 500, "text/plain", fsOk ? "ok" : "falhou");
+    server.send_P(fsOk ? 200 : 500, PSTR("text/plain"), fsOk ? PSTR("ok") : PSTR("falhou"));
   });
   // Arquivos de mídia para as miniaturas do painel
   server.on("/fs", HTTP_GET, [] {
@@ -1050,12 +1057,12 @@ void setupWeb() {
       server.send_P(404, PSTR("text/plain"), PSTR("nao encontrado"));
       return;
     }
-    server.sendHeader("Cache-Control", "max-age=86400");
-    server.streamFile(file, isGif(f) ? "image/gif" : "image/jpeg");
+    server.sendHeader("Cache-Control", F("max-age=86400"));
+    server.streamFile(file, isGif(f) ? F("image/gif") : F("image/jpeg"));
     file.close();
   });
   // Troca a senha do /update. Se já houver senha, exige a atual.
-  server.on("/api/otapass", HTTP_POST, [] {
+  server.on(F("/api/otapass"), HTTP_POST, [] {
     if (!guard()) return;
     if (cfg.otaPass[0] && server.arg("old") != cfg.otaPass) {
       server.send_P(403, PSTR("text/plain"), PSTR("Senha atual incorreta"));
@@ -1068,9 +1075,9 @@ void setupWeb() {
     }
     strlcpy(cfg.otaPass, p.c_str(), sizeof(cfg.otaPass));
     saveSettings();
-    server.send(200, "text/plain", p.length() ? "Senha definida (usuario: admin)" : "Senha removida");
+    server.send_P(200, PSTR("text/plain"), p.length() ? PSTR("Senha definida (usuario: admin)") : PSTR("Senha removida"));
   });
-  server.on("/api/wifireset", HTTP_POST, [] {
+  server.on(F("/api/wifireset"), HTTP_POST, [] {
     if (!guard()) return;
     sendOk();
     delay(300);
@@ -1079,7 +1086,7 @@ void setupWeb() {
     safeRestart();
   });
   setupUpdate();
-  server.on("/description.xml", HTTP_GET, sendHueDescription);  // Alexa (ponte Hue)
+  server.on(F("/description.xml"), HTTP_GET, sendHueDescription);  // Alexa (ponte Hue)
   server.onNotFound(alexaApi);                                   // /api/<usuário>/lights...
   server.begin();
 }
@@ -1350,7 +1357,7 @@ void startPortal() {
   });
   // qualquer outro endereço cai no formulário (portal cativo do celular)
   server.onNotFound([] {
-    server.sendHeader("Location", "http://192.168.4.1/");
+    server.sendHeader("Location", F("http://192.168.4.1/"));
     sendCode(302);
   });
   server.begin();

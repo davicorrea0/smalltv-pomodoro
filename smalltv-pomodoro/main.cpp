@@ -140,7 +140,7 @@ String hhmm(const struct tm &t) {
   int h = t.tm_hour;
   if (cfg.hour12) h = h % 12 == 0 ? 12 : h % 12;
   char buf[8];
-  snprintf(buf, sizeof(buf), "%02d:%02d", h, t.tm_min);
+  snprintf_P(buf, sizeof(buf), PSTR("%02d:%02d"), h, t.tm_min);
   return buf;
 }
 
