@@ -78,6 +78,7 @@ void loadSettings() {
   if (cfg.activity >= ACT_COUNT) cfg.activity = ACT_READ;
   if (cfg.lang > 2) cfg.lang = 0;
   if (cfg.nightSun > 1) cfg.nightSun = 0;
+  if (cfg.nightBri > 100) cfg.nightBri = 15;
   if (cfg.rotMin > 240) cfg.rotMin = 0;
   if (cfg.alexa > 1) cfg.alexa = 1;  // memória de unidades antigas (0xFF): ligado
   if (cfg.fahr > 1) cfg.fahr = 0;
