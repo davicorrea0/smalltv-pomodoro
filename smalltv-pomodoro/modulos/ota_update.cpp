@@ -222,6 +222,7 @@ void setupUpdate() {
       } else if (up.status == UPLOAD_FILE_WRITE && !ota.err.length()) {
         if (!ota.begun) {  // primeiro pedaço: .gz vai para o fim da área (tamanho do envio); .bin, para o espaço livre
           ota.begun = true;
+          wakeScreen(120000);
           ota.gz = up.currentSize > 1 && up.buf[0] == 0x1F && up.buf[1] == 0x8B;
           uint32_t size = ota.gz ? server.header("Content-Length").toInt() : (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000;
           if (!size || !Update.begin(size, U_FLASH)) ota.err = size ? Update.getErrorString() : String(F("tamanho desconhecido"));
@@ -272,6 +273,7 @@ void setupQrScreen(bool recovery) {
 
 void startRecovery() {
   newFormToken();
+  updateBrightness(true);  // a recuperação precisa aparecer mesmo com o brilho noturno em 0
   WiFi.mode(WIFI_AP);
   WiFi.softAP(RECOVERY_AP, cfg.apPass);
   setupQrShown = -1;

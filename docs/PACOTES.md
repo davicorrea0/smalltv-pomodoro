@@ -31,6 +31,52 @@ Exemplos prontos: [`faces/`](../faces) (`bebas-gigante.json`, `cafe-pixel.json`,
 
 A tela tem **240 × 240** pixels; `x` cresce para a direita e `y` para baixo.
 
+## Diretrizes de design
+
+Vale para qualquer mostrador, em qualquer formato. Os números de limite (camadas, sprites, bytes) ficam só em [Limites](#limites).
+
+| Assunto | Diretriz |
+|---|---|
+| Tela | IPS de 240 × 240, pequena, vista de uma mesa ou estante. Projete para 1 a 2 m, não para um celular. |
+| Área segura | Deixe o que precisa ser lido a pelo menos **12 px** das bordas: a moldura e os cantos da caixa comem a margem. Fundo e enfeites podem ir até a borda. |
+| Tamanhos mínimos | Hora com **40 px de altura ou mais** (`bebas`, `outfit`, `righteous`, `geo`, `dseg` ≥ 40; `pixel` tamanho ≥ 5; `dm` tamanho ≥ 6). Texto secundário em `pixel` tamanho 2 ou mais (12 × 16 px). `pixel` tamanho 1 só para enfeite. |
+| Contraste | Texto contra o fundo em cerca de 4,5:1 ou melhor. A hora deve ser a primeira coisa que se vê, a 2 m. |
+| Escuro primeiro | Comece por um `bg` escuro: poupa a vista à noite e fica melhor no IPS. Mostrador claro vale, mas confira à noite. |
+| Cores (RGB565) | A tela tem 5 bits de vermelho, 6 de verde e 5 de azul. `#rrggbb` é arredondado: vermelho e azul andam de uns 8 em 8, verde de 4 em 4. Degradê liso vira faixas e dois quase-pretos (`#101010`, `#141414`) podem virar a mesma cor. Deixe um degrau claro entre cores vizinhas e confira a prévia. |
+| À noite | O relógio pode tingir a tela de âmbar: **o vermelho fica e o azul perde até 45 %** (azul e brancos frios viram âmbar, cinzas esquentam). Texto azul puro perde brilho e pode quase sumir; prefira acentos quentes ou a cor `accent`. Teste com o tingimento ligado. |
+| Brilho baixo | À noite a luz de fundo fica bem baixa. Cinzas médios-escuros (`dim`, `card`) somem; deixe a hora bem mais clara que o fundo. |
+| Verde LCD | O verde de LCD antigo é um estilo dos mostradores retrô embutidos, aplicado só neles. Não conte com ele num pacote; se quiser esse visual, escolha as cores no próprio `.json`. |
+| Animação calma | No máximo **10 fps** (o relógio desenha 10 vezes por segundo). Movimento pequeno e lento. **Nunca piscar nem fazer strobe.** Camadas com `{SS}` ou ponteiro de segundos são redesenhadas a cada segundo: mantenha-as pequenas. |
+| Timer do foco | O timer do Pomodoro é o coração do projeto. Não desenhe por cima dele; deixe o meio livre durante o foco ou esconda camadas cheias com `"when"`. |
+| Identidade própria | Faça do seu jeito. Pixel art é muito bem-vinda. |
+| Direitos | Sem logos, marcas ou personagens que não sejam seus (jogos, filmes, marcas, animes…). Desenhado do zero e "inspirado em" pode; cópia não. |
+| Remix | Diga quem fez o original em `author`/`desc` e na postagem. |
+
+### Testar
+
+1. **Prévia no PC:** coloque o `.json` em [`faces/`](../faces) e rode `sh sim/build.sh` (veja [TECHNICAL.md](TECHNICAL.md#building)). Sai `faces/<id>.png` e a linha `pack-<id>  ok`, que confirma que o redesenho não deixa sobras.
+2. **Instalar:** no painel, *Relógio → Mais mostradores → Instalar de um arquivo* (o `.json` e, se tiver, o `.png`). Uma recusa traz a mensagem do que corrigir.
+3. **Prévia no relógio por 15 s:** o painel mostra o mostrador na tela do relógio por 15 s e depois volta ao anterior.
+4. Confira **dia e noite** (com o tingimento e com brilho baixo), **chuva e sem chuva** se usou `when`, e **sem Wi-Fi** (os `--` não podem quebrar o layout). Deixe rodar alguns minutos: nada deve piscar nem deixar marcas.
+
+### Compartilhar
+
+1. Abra a [issue #84](https://github.com/davicorrea0/smalltv-pomodoro/issues/84) e anexe o **`.json`** e **sempre uma imagem** (foto do relógio ou a prévia `.png`); diga o nome, o que mostra e o firmware em que testou.
+2. **Licença e crédito:** o crédito é seu (`author`). Ao enviar, você concorda que o mostrador seja distribuído e mostrado na galeria sob a GPL-3.0 (a licença do projeto), com crédito em `author`. Desenhos e imagens precisam ser seus ou de uso livre.
+
+### Checklist final
+
+1. A hora é a primeira coisa que se vê e dá para ler a 2 m.
+2. O texto importante fica a 12 px ou mais das bordas; o secundário é `pixel` tamanho 2 ou mais.
+3. Fundo escuro, ou conferido à noite se for claro.
+4. Fica bom com o tingimento âmbar e com brilho baixo.
+5. Nenhum par de cores que o RGB565 funda; sem faixas de degradê indesejadas.
+6. Animação calma: 10 fps no máximo, nada piscando.
+7. Não cobre o timer do foco.
+8. Sem logos, marcas ou personagens que não são seus; remix com crédito.
+9. Instala sem erro, funciona sem Wi-Fi e cabe nos [limites](#limites).
+10. `.json` mais imagem postados na [#84](https://github.com/davicorrea0/smalltv-pomodoro/issues/84), com seu nome e o firmware testado.
+
 ## Cores
 
 `"#rrggbb"` ou um nome da paleta: `accent` (a cor escolhida no painel), `text`, `muted`, `dim`, `card`, `card2`, `bg`, `work` (vermelho-tomate), `short` (verde), `long` (azul), `sun`, `cloud`, `rain`, ou `none` (não desenha).
