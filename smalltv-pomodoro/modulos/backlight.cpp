@@ -28,6 +28,14 @@ uint8_t warmFrom = 0, warmTo = 0, warmNow = 0, warmPreview = 0;
 
 int16_t warmSent = -1;
 
+uint32_t wakeUntil = 0;
+
+// Brilho noturno 0 = tela apagada. Acende no mínimo útil por ms quando algo precisa ser visto (aviso, comando, OTA...)
+void wakeScreen(uint32_t ms) {
+  wakeUntil = (millis() + ms) | 1;
+  updateBrightness();
+}
+
 uint32_t warmPreviewUntil = 0;  // prévia "ver agora" (aparência noturna) até este millis()
 
 bool lcdViewActive = false;  // tela realmente desenhada, não o mostrador salvo para depois do Pomodoro/álbum
@@ -69,6 +77,7 @@ void updateBrightness(bool force) {
     else if (s != e) night = s < e ? (h >= s && h < e) : (h >= s || h < e);  // horário fixo (ou sem o sol ainda)
   }
   if (night || preview) b = cfg.nightBri;
+  b = briEfetivo(b, preview || recoveryMode || portalMode || wakeAtivo(wakeUntil, millis()));  // tela apagada, mas algo precisa ser visto
   uint8_t wt = warmTarget(night, preview, cfg.warm, warmPreview);
   if (b == curBri && wt == curWarm && !force) return;
   curBri = b;

@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "../smalltv-pomodoro/bri_curva.h"
+#include "../smalltv-pomodoro/noite.h"
 
 const uint16_t BL_RANGE = 1023, BL_MIN = 10;
 // cópia da briDuty de modulos/backlight.cpp (sem float)
@@ -27,6 +28,13 @@ int main() {
   }
   if (briDuty(0) != 0 || briDuty(1) < BL_MIN || briDuty(100) != BL_RANGE) { printf("brilho_test: FALHA nos extremos\n"); return 1; }
   for (int b = 1; b <= 100; b++) if (briDuty(b) < briDuty(b - 1)) { printf("brilho_test: FALHA monotonia em %d\n", b); return 1; }
+  // brilho noturno 0 = apagado; tocar/avisar acende no mínimo útil e, passado o tempo, volta a apagar
+  uint32_t ate = 1000 + 10000;
+  if (briDuty(briEfetivo(0, wakeAtivo(0, 5000))) != 0) { printf("brilho_test: FALHA noite 0 sem aviso deve apagar\n"); return 1; }
+  if (briDuty(briEfetivo(0, wakeAtivo(ate, 5000))) < BL_MIN) { printf("brilho_test: FALHA aviso deve acender\n"); return 1; }
+  if (briDuty(briEfetivo(0, wakeAtivo(ate, ate))) != 0) { printf("brilho_test: FALHA depois do tempo deve apagar\n"); return 1; }
+  if (!wakeAtivo(0xFFFFFF00u + 0x1000u, 0xFFFFFF00u)) { printf("brilho_test: FALHA virada do millis\n"); return 1; }  // até depois da virada de 32 bits
+  for (int b = 1; b <= 100; b++) if (briEfetivo(b, true) != b || briEfetivo(b, false) != b) { printf("brilho_test: FALHA brilho %d mudou\n", b); return 1; }
   printf("brilho_test: ok (101 entradas, erro máximo %d)\n", pior);
   return 0;
 }
