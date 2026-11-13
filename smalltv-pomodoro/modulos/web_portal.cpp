@@ -921,7 +921,7 @@ void setupWeb() {
     packFaceReady = false;
     if (!guard()) return;
     String msg;
-    bool ok = ready && !packUploadError.length() && loadPackFile("/faces/_novo.json", msg);
+    bool ok = ready && !packUploadError.length() && loadPackFile("/faces/_novo.json", msg), renamed = false;
     String id = ok ? facePackId() : "", name = ok ? facePackName() : "";
     if (ok && id[0] == '_') {  // "_novo" e afins são os temporários do envio
       ok = false;
@@ -930,7 +930,7 @@ void setupWeb() {
     if (ok) {
       // sem remove antes: o rename do LittleFS (lfs_rename) troca o destino num commit só; apagar antes abria uma janela
       // em que a queda de energia deixava o mostrador sem nenhuma das duas versões
-      LittleFS.rename("/faces/_novo.json", "/faces/" + id + ".json");
+      renamed = LittleFS.rename("/faces/_novo.json", "/faces/" + id + ".json");
       LittleFS.remove("/faces/" + id + ".png");
       if (LittleFS.exists("/faces/_novo.png")) LittleFS.rename("/faces/_novo.png", "/faces/" + id + ".png");
       File t = LittleFS.open("/faces/" + id + ".txt", "w");  // metadados para a lista do painel
@@ -942,7 +942,9 @@ void setupWeb() {
       LittleFS.remove("/faces/_novo.json");
       LittleFS.remove("/faces/_novo.png");
     }
-    restoreActivePack();  // o teste carregou o pacote novo no motor; volta ao que estava ativo
+    // o teste carregou o pacote novo no motor; volta ao que estava ativo. Se o novo É o ativo e já está no disco, ele
+    // fica: recarregar o mesmo arquivo custava outra carga (~0,3 s) e, sem memória nesse instante, trocava o mostrador
+    if (!(renamed && cfg.theme == THEME_PACK && id == cfg.facePkg)) restoreActivePack();
     if (!ok) {
       server.send(400, "text/plain", packUploadError.length() ? packUploadError : String(F("Pacote invalido: ")) + msg);
       return;
