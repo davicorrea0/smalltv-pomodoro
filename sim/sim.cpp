@@ -421,7 +421,7 @@ static int testPackages(const UiState &pomo) {
     snprintf(path, sizeof path, "../faces/%s", e->d_name);
     FILE *fp = fopen(path, "rb");
     if (!fp) continue;
-    static char buf[16384];
+    static char buf[24577];
     size_t len = fread(buf, 1, sizeof buf - 1, fp);
     fclose(fp);
     buf[len] = 0;
@@ -473,11 +473,23 @@ static int testSpriteLimits() {
     }
     return r + "]";
   };
-  auto pack = [&](const std::string &spr) {
-    return "{\"format\":1,\"sprites\":{" + spr + "},\"layers\":[{\"type\":\"rect\",\"w\":10,\"h\":10}]}";
+  auto pack = [&](const std::string &spr, int fmt = 1) {
+    return "{\"format\":" + std::to_string(fmt) + ",\"sprites\":{" + spr + "},\"layers\":[{\"type\":\"rect\",\"w\":10,\"h\":10}]}";
   };
   auto sp = [&](const char *name, const std::string &fr, const char *extra = "") {
     return std::string("\"") + name + "\":{\"pal\":{\"a\":\"#fff\",\"b\":\"#f00\"},\"frames\":" + fr + extra + "}";
+  };
+  auto textos = [](int n, int tam) {
+    std::string r = "{\"format\":2,\"layers\":[";
+    for (int i = 0; i < n; i++) {
+      auto s = [&](int k) {
+        char p[8];
+        snprintf(p, sizeof p, "%03d_", i * 3 + k);
+        return (std::string(p) + std::string(tam, 'a' + (i + k) % 26)).substr(0, tam);
+      };
+      r += std::string(i ? "," : "") + "{\"type\":\"text\",\"text\":{\"pt\":\"" + s(0) + "\",\"en\":\"" + s(1) + "\",\"es\":\"" + s(2) + "\"}}";
+    }
+    return r + "]}";
   };
   struct { const char *nome; std::string json; bool ok; } T[] = {
     {"8 quadros 32x32", pack(sp("s", frames(8, 32, 32))), true},
@@ -490,6 +502,25 @@ static int testSpriteLimits() {
     {"33x33", pack(sp("s", frames(2, 33, 33))), false},
     {"total > 6144 bytes", pack(sp("a", frames(8, 32, 32)) + "," + sp("b", frames(8, 32, 32))), false},
     {"frames vazio", pack(sp("s", "[]")), false},
+    // formato 2 (1.26.0): até 16 quadros e 8.192 B crus; fps continua até 10 (o relógio desenha a 10 Hz)
+    {"f2 16 quadros", pack(sp("s", frames(16, 8, 8)), 2), true},
+    {"f2 17 quadros", pack(sp("s", frames(17, 8, 8)), 2), false},
+    {"f2 fps 11", pack(sp("s", frames(2, 8, 8), ",\"fps\":11"), 2), false},
+    {"f2 16 quadros 31x32", pack(sp("s", frames(16, 31, 32)), 2), true},
+    {"f2 total > 8192 bytes", pack(sp("a", frames(16, 32, 32)) + "," + sp("b", frames(1, 8, 8)), 2), false},
+    {"f2 sem novidade", pack(sp("s", frames(2, 8, 8)), 2), true},
+    {"f1 16 quadros", pack(sp("s", frames(16, 8, 8))), false},
+    {"f1 7 KB crus", pack(sp("a", frames(8, 32, 32)) + "," + sp("b", frames(8, 24, 24))), false},
+    {"formato 3", pack(sp("s", frames(2, 8, 8)), 3), false},
+    // arquivo acima de 16 KB (a 1.25.0 recusa): só no formato 2
+    {"f1 arquivo 17 KB", "{\"format\":1,\"desc\":\"" + std::string(17000, 'x') + "\",\"layers\":[{\"type\":\"rect\",\"w\":10,\"h\":10}]}", false},
+    {"f2 arquivo 17 KB", "{\"format\":2,\"desc\":\"" + std::string(17000, 'x') + "\",\"layers\":[{\"type\":\"rect\",\"w\":10,\"h\":10}]}", true},
+    // textos: até 47 B por texto (cabe em char txt[48]) e 1.536 B no pool do pacote
+    {"texto 47 B", "{\"format\":2,\"layers\":[{\"type\":\"text\",\"text\":\"" + std::string(47, 'x') + "\"}]}", true},
+    {"texto 48 B", "{\"format\":2,\"layers\":[{\"type\":\"text\",\"text\":\"" + std::string(48, 'x') + "\"}]}", false},
+    {"48 textos <= 1536 B", textos(48, 9), true},
+    {"48 textos > 1536 B", textos(48, 11), false},
+    {"48 textos 125 B", textos(48, 125), false},
   };
   for (auto &t : T) {
     char err[96] = "";
@@ -508,19 +539,261 @@ static int testSpriteLimits() {
         if (!q[0]) q[0] = nf, q[1] = w, q[2] = h;
       }
   auto um = [&](const char *nome, int b) { return sp(nome, frames(quadros[b][0], quadros[b][1], quadros[b][2])); };
-  for (int alvo : {6144, 6145}) {
+  for (int alvo : {6144, 6145, 8192, 8193}) {
+    const int fmt = alvo > 6145 ? 2 : 1, teto = fmt == 1 ? 6144 : 8192;
     std::string achado;
     for (int a = 4096; a >= 1 && achado.empty(); a--)
       for (int b = 1; b <= 4096 && quadros[a][0] && achado.empty(); b++) {
         int c = alvo - 3 * 34 - a - b;
-        if (quadros[b][0] && c >= 1 && c <= 4096 && quadros[c][0]) achado = pack(um("a", a) + "," + um("b", b) + "," + um("c", c));
+        if (quadros[b][0] && c >= 1 && c <= 4096 && quadros[c][0]) achado = pack(um("a", a) + "," + um("b", b) + "," + um("c", c), fmt);
       }
     char err[96] = "";
     bool ok = !achado.empty() && facePackLoad((char *)achado.c_str(), achado.size(), err, sizeof err);
     if (ok) facePackUnload();
-    if (achado.empty() || ok != (alvo == 6144)) { printf("sprite teto %d B          FALHOU (%s)\n", alvo, achado.empty() ? "sem combinacao" : ok ? "aceito" : err); fails++; }
+    if (achado.empty() || ok != (alvo == teto)) { printf("sprite teto %d B          FALHOU (%s)\n", alvo, achado.empty() ? "sem combinacao" : ok ? "aceito" : err); fails++; }
     else printf("sprite teto %d B          ok%s%s\n", alvo, ok ? "" : ": ", ok ? "" : err);
   }
+  return fails;
+}
+
+// "when" sem clima (sem Wi-Fi, API fora, hora ainda não sincronizada): day/night caem no 6h-18h e rain/dry em "seco",
+// sem ler dado ausente. Usa o quartinho da galeria, que muda a janela e o fundo conforme o clima.
+static int testSemClima() {
+  int fails = 0;
+  FILE *fp = fopen("../faces/quartinho.json", "rb");
+  if (!fp) { printf("sem clima: faces/quartinho.json ausente\n"); return 1; }
+  static char orig[24577], buf[24577];
+  size_t len = fread(orig, 1, sizeof orig - 1, fp);
+  fclose(fp);
+  orig[len] = 0;
+  char err[96];
+  auto render = [&](UiState st, Frame *f) {
+    memcpy(buf, orig, len + 1);
+    bool ok = facePackLoad(buf, len, err, sizeof err);
+    if (ok) { uiBegin(f); facePackRender(st, true); }
+    facePackUnload();
+    return ok;
+  };
+  // compara só a cena (y < 180): a hora de baixo muda com o relógio de cada caso
+  Frame *dia = new Frame(), *noite = new Frame(), *semHora = new Frame(), *apiFora = new Frame(), *chuva = new Frame(), *tmp = new Frame();
+  UiState s = base(12, 0, 0);
+  s.theme = THEME_PACK;
+  s.ms = 500;
+  s.weatherOn = false;  // sem clima: vale a hora
+  s.wx.ok = false;
+  bool ok = render(s, dia);
+  s.now.tm_hour = 23;
+  ok = ok && render(s, noite);
+  UiState h = base(23, 0, 0);  // hora não sincronizada: day (padrão do firmware)
+  h.theme = THEME_PACK; h.ms = 500; h.weatherOn = false; h.wx.ok = false; h.timeOk = false;
+  ok = ok && render(h, semHora);
+  UiState a = base(12, 0, 0);  // clima ligado mas a API não respondeu
+  a.theme = THEME_PACK; a.ms = 500; a.weatherOn = true; a.wx.ok = false;
+  ok = ok && render(a, apiFora);
+  UiState c = base(12, 0, 0);  // clima ok, chovendo, de dia
+  c.theme = THEME_PACK; c.ms = 500; c.weatherOn = true; c.wx.ok = true; c.wx.day = true; c.wx.code = 61;
+  ok = ok && render(c, chuva);
+  UiState d = c;  // clima ok, seco, de dia: igual ao sem clima ao meio-dia
+  d.wx.code = 0;
+  ok = ok && render(d, tmp);
+  if (!ok) { printf("sem clima FALHOU: pacote recusado (%s)\n", err); fails++; }
+  else {
+    if (!memcmp(dia->px, noite->px, 180 * 240 * 2)) { printf("sem clima FALHOU: meio-dia e 23h iguais\n"); fails++; }
+    if (memcmp(dia->px, apiFora->px, 180 * 240 * 2)) { printf("sem clima FALHOU: API fora deveria cair no horario (dia)\n"); fails++; }
+    if (memcmp(dia->px, semHora->px, 180 * 240 * 2)) { printf("sem clima FALHOU: hora nao sincronizada deveria valer dia\n"); fails++; }
+    if (!memcmp(dia->px, chuva->px, 180 * 240 * 2)) { printf("sem clima FALHOU: chuva nao mudou a janela\n"); fails++; }
+    if (memcmp(dia->px, tmp->px, 180 * 240 * 2)) { printf("sem clima FALHOU: clima seco de dia deveria igualar o sem clima ao meio-dia\n"); fails++; }
+  }
+  if (!fails) printf("sem clima: ok (API fora e hora nao sincronizada caem no horario 6h-18h; chuva muda a janela; seco = sem clima)\n");
+  delete dia; delete noite; delete semHora; delete apiFora; delete chuva; delete tmp;
+  return fails;
+}
+
+// Texto "overlay" sobre sprites (formato 2): o desenho incremental (só o que mudou, em faixas) fica igual ao completo quadro
+// a quadro, e os dígitos misturam a borda com o fundo. "world3d" (retirado da 1.26.0) é recusado com mensagem: um pacote
+// de terceiros com cena 3D não pode ser aceito pela metade.
+static int testOverlay() {
+  int fails = 0;
+  char err[96];
+  const std::string fundo = R"({"format":2,"bg":"#102040","sprites":{"s":{"fps":4,"pal":{"a":"#e0a030","b":"#30a0e0"},"frames":[["aab","aab","bbb"],["baa","baa","bbb"]]}},"layers":[{"type":"circle","x":120,"y":120,"r":90,"color":"#2a5a8a"},{"type":"sprite","sprite":"s","size":8,"motion":{"period":4000,"keys":[{"t":0,"x":20,"y":40},{"t":2000,"x":180,"y":90},{"t":4000,"x":20,"y":40}]}})";
+  const std::string texto = R"(,{"type":"text","x":120,"y":72,"font":"bebas","size":96,"align":"center","color":"#ecffff","overlay":true,"text":"{HH}:{MM}"}]})";
+  {
+    std::string j = fundo + texto;
+    if (!facePackLoad((char *)j.c_str(), j.size(), err, sizeof err)) { printf("overlay sobre sprites FALHOU: %s\n", err); return 1; }
+    Frame *inc = new Frame(), *fresh = new Frame();
+    UiState s = base(14, 37, 0);
+    s.theme = THEME_PACK;
+    uiBegin(inc);
+    facePackRender(s, true);
+    int diff = 0;
+    for (int k = 1; k <= 40; k++) {
+      s.ms = k * 125;
+      if (k == 20) s.now.tm_min = 38;
+      uiBegin(inc);
+      facePackRender(s, false);
+      uiBegin(fresh);
+      facePackRender(s, true);
+      if (memcmp(inc->px, fresh->px, sizeof inc->px)) diff++;
+    }
+    facePackUnload();
+    delete inc;
+    delete fresh;
+    if (diff) { printf("overlay incremental FALHOU: %d de 40 quadros diferentes do completo\n", diff); fails++; }
+  }
+  // fora dos dígitos o fundo fica igual; nos dígitos há tinta e borda misturada
+  {
+    std::string sem = fundo + "]}", com = fundo + texto;
+    Frame *a = new Frame(), *b = new Frame();
+    UiState st = base(14, 37, 0);
+    st.theme = THEME_PACK;
+    st.ms = 125;
+    auto render = [&](const std::string &js, Frame *f) {
+      bool ok = facePackLoad((char *)js.c_str(), js.size(), err, sizeof err);
+      if (ok) { uiBegin(f); facePackRender(st, true); }
+      facePackUnload();
+      return ok;
+    };
+    int same = 0, changed = 0, blended = 0;
+    uint16_t fg = uiRgb(236, 255, 255);
+    if (render(sem, a) && render(com, b))
+      for (int y = 72; y < 168; y++)
+        for (int x = 15; x < 225; x++) {
+          int i = y * 240 + x;
+          if (a->px[i] == b->px[i]) same++;
+          else { changed++; if (b->px[i] != fg) blended++; }
+        }
+    if (same < 100 || changed < 100 || blended < 10) { printf("overlay FALHOU: %d preservados, %d tinta, %d bordas (%s)\n", same, changed, blended, err); fails++; }
+    delete a;
+    delete b;
+  }
+  // "world3d" saiu do formato: recusado, com mensagem (túnel e corredor)
+  const char *velhos[] = {
+    R"({"format":2,"layers":[{"type":"world3d","geometry":"tunnel","fps":8,"speed":16,"colors":["#1188aa","#443399","#aa3366","#00bbaa"],"accent":"#ccffff"}]})",
+    R"({"format":2,"layers":[{"type":"world3d","geometry":"grid","fps":8,"map":["########","#......#","#......#","#......#","#......#","#......#","#......#","########"],"period":4000,"camera":[{"t":0,"x":150,"y":150,"yaw":0},{"t":4000,"x":150,"y":150,"yaw":0}]}]})",
+    R"({"format":1,"layers":[{"type":"world3d"}]})"};
+  int n = 0;
+  for (const char *js : velhos) {
+    std::string j = js;
+    err[0] = 0;
+    bool ok = facePackLoad((char *)j.c_str(), j.size(), err, sizeof err);
+    if (ok) facePackUnload();
+    if (ok || !err[0]) { printf("world3d recusa %d FALHOU (%s)\n", n, ok ? "aceito" : "sem mensagem"); fails++; }
+    n++;
+  }
+  if (!fails) printf("overlay: ok (incremental igual ao completo em 40 quadros, borda misturada, world3d recusado com mensagem)\n");
+  return fails;
+}
+
+// Metadados longos ("name", "desc", "author", "id" no topo, acima de 64 B crus) são encurtados, nunca trocados por 'x',
+// nos dois formatos; o corte não parte um escape \uXXXX nem um caractere UTF-8. Um texto longo continua recusado.
+static int testMetaLonga() {
+  int fails = 0;
+  char err[96];
+  const std::string camada = R"("layers":[{"type":"circle","x":120,"y":120,"r":90,"color":"#2a5a8a"}]})";
+  const std::string desc = "Um lago visto de cima: koi sempre nadando de um lado ao outro, ondula\xC3\xA7\xC3\xB5" "es que derivam, a lua";
+  // 'a' x 60 + escapes: o limite de 64 B cai no meio do segundo é (bytes 66..71)
+  const std::string esc = std::string(60, 'a') + "\\u00e9\\u00e9\\u00e9 fim";
+  const std::string nome = "Nome comprido de um pacote de terceiros que passa de sessenta e cinco bytes";
+  for (int fmt = 1; fmt <= 2; fmt++) {
+    std::string j = "{\"format\":" + std::to_string(fmt) + ",\"name\":\"" + nome + "\",\"author\":\"" + nome + "\",\"desc\":\"" + desc + "\"," + camada;
+    if (!facePackLoad((char *)j.c_str(), j.size(), err, sizeof err)) { printf("meta longa f%d FALHOU: %s\n", fmt, err); fails++; continue; }
+    std::string d = facePackDesc(), n = facePackName(), a = facePackAuthor(), id = facePackId();
+    facePackUnload();
+    if (d.find("xxxx") != std::string::npos || d.compare(0, 40, desc, 0, 40) || d.size() > 63) { printf("desc longa f%d FALHOU: \"%s\"\n", fmt, d.c_str()); fails++; }
+    if (n.compare(0, 20, nome, 0, 20) || a.compare(0, 20, nome, 0, 20)) { printf("nome/autor longo f%d FALHOU: \"%s\" \"%s\"\n", fmt, n.c_str(), a.c_str()); fails++; }
+    if (id.find("xxxx") != std::string::npos || id.compare(0, 4, "nome")) { printf("id do nome longo f%d FALHOU: \"%s\"\n", fmt, id.c_str()); fails++; }
+    j = "{\"format\":" + std::to_string(fmt) + ",\"desc\":\"" + esc + "\"," + camada;
+    if (!facePackLoad((char *)j.c_str(), j.size(), err, sizeof err)) { printf("desc com escape no corte f%d FALHOU: %s\n", fmt, err); fails++; continue; }
+    d = facePackDesc();
+    facePackUnload();
+    if (d.compare(0, 60, std::string(60, 'a')) || d.find('x') != std::string::npos) { printf("desc com escape f%d FALHOU: \"%s\"\n", fmt, d.c_str()); fails++; }
+  }
+  // "desc" repetida 200 vezes com valores longos distintos: só a 1ª é encurtada, as outras voltam ao 'x' (que deduplica
+  // no StringPool), então o pico da leitura não cresce com o número de repetições
+  {
+    std::string j = "{\"format\":2";
+    for (int k = 0; k < 200; k++) j += ",\"desc\":\"" + std::to_string(k) + std::string(70, 'd') + "\"";
+    j += "," + camada;
+    bool ok = facePackLoad((char *)j.c_str(), j.size(), err, sizeof err);
+    std::string d = ok ? facePackDesc() : "";
+    if (ok) facePackUnload();
+    if (!ok || d.find('d') != std::string::npos) { printf("desc repetida FALHOU: %s \"%s\"\n", ok ? "encurtou repetida" : err, d.c_str()); fails++; }
+  }
+  // texto de camada longo continua recusado (só os metadados do topo são encurtados)
+  std::string j = R"({"format":2,"layers":[{"type":"text","x":10,"y":10,"font":"bebas","size":24,"color":"#ffffff","text":")" + std::string(70, 'b') + "\"}]}";
+  bool ok = facePackLoad((char *)j.c_str(), j.size(), err, sizeof err);
+  if (ok) { facePackUnload(); printf("texto longo FALHOU: aceito\n"); fails++; }
+  if (!fails) printf("meta longa: ok (nome, desc, autor e id encurtados sem 'x' nos formatos 1 e 2, corte fora do escape; repetida volta ao 'x'; texto longo recusado)\n");
+  return fails;
+}
+
+// Movimento ("motion", formato 2, só em sprite): a posição segue os pontos, o desenho incremental fica igual ao
+// completo, e entradas inseguras são recusadas
+static int testMotion() {
+  int fails = 0;
+  auto pack = [](const std::string &mot, int fmt = 2, const char *tipo = "sprite", int n = 1) {
+    std::string js = "{\"format\":" + std::to_string(fmt) + R"(,"sprites":{"s":{"pal":{"a":"#ffcc00"},"frames":[["aaaa","a..a","aaaa"],["....","aaaa","...."]],"fps":5}},"layers":[)";
+    for (int i = 0; i < n; i++)
+      js += std::string(i ? "," : "") + "{\"type\":\"" + tipo + "\",\"sprite\":\"s\",\"w\":10,\"h\":10,\"size\":4,\"motion\":" + mot + "}";
+    return js + "]}";
+  };
+  const std::string ok = R"({"period":4000,"keys":[{"t":0,"x":10,"y":20},{"t":2000,"x":200,"y":150},{"t":4000,"x":10,"y":20}]})";
+  char err[96];
+  std::string js = pack(ok);
+  if (!facePackLoad((char *)js.c_str(), js.size(), err, sizeof err)) { printf("motion valido FALHOU: %s\n", err); return 1; }
+  Frame *inc = new Frame(), *fresh = new Frame();
+  UiState s = base(14, 37, 0);
+  s.theme = THEME_PACK;
+  uiBegin(inc);
+  facePackRender(s, true);
+  int diff = 0;
+  for (int k = 1; k <= 60; k++) {
+    s.ms = k * 100;
+    uiBegin(inc);
+    facePackRender(s, false);
+    uiBegin(fresh);
+    facePackRender(s, true);
+    if (memcmp(inc->px, fresh->px, sizeof inc->px)) diff++;
+  }
+  // em t = 1000 o sprite está no meio do caminho (105, 85), no quadro 1 (só a linha do meio): o pixel (105, 89) é dele
+  s.ms = 1000;
+  uiBegin(fresh);
+  facePackRender(s, true);
+  if (fresh->px[89 * 240 + 105] != uiRgb(255, 204, 0)) { printf("motion posicao FALHOU\n"); fails++; }
+  facePackUnload();
+  delete inc;
+  delete fresh;
+  if (diff) { printf("motion incremental FALHOU: %d de 60 quadros diferentes do completo\n", diff); fails++; }
+  struct { const char *nome; std::string js; } R[] = {
+    {"period 0", pack(R"({"period":0,"keys":[{"t":0,"x":0,"y":0},{"t":0,"x":0,"y":0}]})")},
+    {"period 60001", pack(R"({"period":60001,"keys":[{"t":0,"x":0,"y":0},{"t":60001,"x":0,"y":0}]})")},
+    {"7 pontos", pack(R"({"period":700,"keys":[{"t":0,"x":0,"y":0},{"t":100,"x":0,"y":0},{"t":200,"x":0,"y":0},{"t":300,"x":0,"y":0},{"t":400,"x":0,"y":0},{"t":500,"x":0,"y":0},{"t":700,"x":0,"y":0}]})")},
+    {"1 ponto", pack(R"({"period":1000,"keys":[{"t":0,"x":0,"y":0}]})")},
+    {"tempos fora de ordem", pack(R"({"period":1000,"keys":[{"t":0,"x":0,"y":0},{"t":600,"x":0,"y":0},{"t":500,"x":0,"y":0},{"t":1000,"x":0,"y":0}]})")},
+    {"tempo repetido", pack(R"({"period":1000,"keys":[{"t":0,"x":0,"y":0},{"t":500,"x":0,"y":0},{"t":500,"x":9,"y":0},{"t":1000,"x":0,"y":0}]})")},
+    {"primeiro t 5", pack(R"({"period":1000,"keys":[{"t":5,"x":0,"y":0},{"t":1000,"x":0,"y":0}]})")},
+    {"sem ponto final", pack(R"({"period":1000,"keys":[{"t":0,"x":0,"y":0},{"t":900,"x":0,"y":0}]})")},
+    {"x 481", pack(R"({"period":1000,"keys":[{"t":0,"x":481,"y":0},{"t":1000,"x":0,"y":0}]})")},
+    {"y -481", pack(R"({"period":1000,"keys":[{"t":0,"x":0,"y":-481},{"t":1000,"x":0,"y":0}]})")},
+    {"ponto sem y", pack(R"({"period":1000,"keys":[{"t":0,"x":0},{"t":1000,"x":0,"y":0}]})")},
+    {"keys em texto", pack(R"({"period":1000,"keys":"abc"})")},
+    {"motion em numero", pack("5")},
+    {"motion em texto", pack(R"({"type":"text","text":"x"})", 2, "text")},
+    {"motion no formato 1", pack(ok, 1)},
+    {"13 camadas com motion", pack(ok, 2, "sprite", 13)},
+  };
+  int recusas = 0;
+  for (auto &r : R) {
+    err[0] = 0;
+    bool aceito = facePackLoad((char *)r.js.c_str(), r.js.size(), err, sizeof err);
+    facePackUnload();
+    if (aceito || !err[0]) { printf("motion recusa \"%s\" FALHOU (%s)\n", r.nome, aceito ? "aceito" : "sem mensagem"); fails++; }
+    else recusas++;
+  }
+  js = pack(ok, 2, "sprite", 12);
+  if (!facePackLoad((char *)js.c_str(), js.size(), err, sizeof err)) { printf("motion 12 camadas FALHOU: %s\n", err); fails++; }
+  facePackUnload();
+  if (!fails) printf("motion: ok (posicao, incremental igual ao completo em 60 quadros, 12 camadas aceitas, %d entradas recusadas)\n", recusas);
   return fails;
 }
 
@@ -539,8 +812,9 @@ class FastFrame : public Frame {  // o mesmo Frame, com retângulos preenchidos 
   void fillScreen(uint16_t c) override { fillRect(0, 0, 240, 240, c); }
 };
 
-static int testSpriteOracle(int nPacks, int maxFrames, int maxFps) {
-  uint32_t seed = 0x5EED2026u;
+static int testSpriteOracle(int nPacks, int maxFrames, int maxFps, int fmt = 1) {
+  const long teto = fmt == 1 ? 6144 : 8192;  // teto cru do formato
+  uint32_t seed = fmt == 1 ? 0x5EED2026u : 0x5EED2027u;  // o formato 1 com a mesma semente do #78
   auto rnd = [&](int n) { seed ^= seed << 13; seed ^= seed >> 17; seed ^= seed << 5; return (int)(seed % (uint32_t)n); };
   static const char LETRAS[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   static const char VAZIO[] = ". #-";  // fora da paleta = transparente
@@ -596,7 +870,7 @@ static int testSpriteOracle(int nPacks, int maxFrames, int maxFps) {
     // JSON
     char hex[8];
     auto cor = [&](uint16_t c) { snprintf(hex, sizeof hex, "#%02x%02x%02x", (c >> 11) << 3, ((c >> 5) & 63) << 2, (c & 31) << 3); return std::string(hex); };
-    std::string js = "{\"format\":1,\"bg\":\"" + cor(bg) + "\",\"sprites\":{";
+    std::string js = "{\"format\":" + std::to_string(fmt) + ",\"bg\":\"" + cor(bg) + "\",\"sprites\":{";
     for (size_t i = 0; i < S.size(); i++) {
       Spr &s = S[i];
       js += (i ? ",\"s" : "\"s") + std::to_string(i) + "\":{\"pal\":{";
@@ -618,7 +892,7 @@ static int testSpriteOracle(int nPacks, int maxFrames, int maxFps) {
     js += "]}";
     char err[96] = "";
     bool ok = facePackLoad((char *)js.c_str(), js.size(), err, sizeof err);
-    if (ok != (raw <= 6144)) {
+    if (ok != (raw <= teto)) {
       if (fails++ < 5) printf("oraculo: pacote %d %s com %ld B crus (%s)\n", pk, ok ? "aceito" : "recusado", raw, err);
       if (ok) facePackUnload();
       continue;
@@ -671,8 +945,8 @@ static int testSpriteOracle(int nPacks, int maxFrames, int maxFps) {
     facePackUnload();
   }
   delete f;
-  printf("oraculo dos sprites: %d pacotes (%d aceitos, %d recusados pelo teto), %d quadros comparados pixel a pixel, %d falhas; sprites na RAM %ld B contra %ld B crus\n",
-         nPacks, aceitos, recusados, quadros, fails, somaRam, somaRaw);
+  printf("oraculo dos sprites (formato %d, ate %d quadros): %d pacotes (%d aceitos, %d recusados pelo teto), %d quadros comparados pixel a pixel, %d falhas; sprites na RAM %ld B contra %ld B crus\n",
+         fmt, maxFrames, nPacks, aceitos, recusados, quadros, fails, somaRam, somaRaw);
   return fails;
 }
 
@@ -875,6 +1149,11 @@ int main() {
   fails += testPackages(p);
   fails += testSpriteLimits();
   fails += testSpriteOracle(2000, 8, 10);
+  fails += testSpriteOracle(2000, 16, 10, 2);
+  fails += testOverlay();
+  fails += testMetaLonga();
+  fails += testSemClima();
+  fails += testMotion();
   fails += TintTest::run();
   return fails;
 }

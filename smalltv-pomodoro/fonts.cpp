@@ -488,7 +488,7 @@ static void vfSpan(uint8_t *cov, int n, int a, int b) {
   if (ib < n) cov[ib] += b & 15;
 }
 
-void vecText(const VecFont &f, int x, int y, int h, const char *s, uint16_t fg, uint16_t bg) {
+static void vecTextImpl(const VecFont &f, int x, int y, int h, const char *s, uint16_t fg, uint16_t bg, bool overlay) {
   int W = vecWidth(f, s, h);
   if (W > 240) W = 240;
   if (W <= 0 || h <= 0) return;
@@ -498,7 +498,9 @@ void vecText(const VecFont &f, int x, int y, int h, const char *s, uint16_t fg, 
   uint16_t *row = (uint16_t *)(cov + ((W + 1) & ~1));
   uint16_t pal[17];
   for (int i = 0; i <= 16; i++) pal[i] = mix16(bg, fg, i);
-  for (int r = 0; r < h; r++) {
+  int r0 = 0, r1 = h;
+  if (overlay && uiClip.on) { if (y < uiClip.y0) r0 = uiClip.y0 - y; if (y + r1 > uiClip.y1) r1 = uiClip.y1 - y; }
+  for (int r = r0; r < r1; r++) {
     memset(cov, 0, W);
     int ox = 0;
     for (const char *p = s; *p; ox += vfAdv(f, *p, h), p++) {
@@ -532,8 +534,10 @@ void vecText(const VecFont &f, int x, int y, int h, const char *s, uint16_t fg, 
         }
       }
     }
-    for (int i = 0; i < W; i++) row[i] = pal[(cov[i] > 64 ? 64 : cov[i]) / 4];
-    blit(x, y + r, row, W, 1);
+    if (overlay) uiBlendCoverage(x, y + r, cov, W, fg);
+    else { for (int i = 0; i < W; i++) row[i] = pal[(cov[i] > 64 ? 64 : cov[i]) / 4]; blit(x, y + r, row, W, 1); }
   }
   free(cov);
 }
+void vecText(const VecFont &f, int x, int y, int h, const char *s, uint16_t fg, uint16_t bg) { vecTextImpl(f, x, y, h, s, fg, bg, false); }
+void vecTextOver(const VecFont &f, int x, int y, int h, const char *s, uint16_t fg) { vecTextImpl(f, x, y, h, s, fg, 0, true); }
