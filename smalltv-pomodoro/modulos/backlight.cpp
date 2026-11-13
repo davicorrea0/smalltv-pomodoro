@@ -44,10 +44,15 @@ int16_t warmSent = -1;
 
 uint32_t wakeUntil = 0;
 
-// Brilho noturno 0 = tela apagada. Acende no mínimo útil por ms quando algo precisa ser visto (aviso, comando, OTA...)
+// Brilho noturno 0 = tela apagada. Acende no mínimo útil por ms quando algo precisa ser visto (aviso, comando, OTA...).
+// Apagada, acende na hora, sem rampa: durante o envio do OTA o loop não roda o briFade, e a rampa nem começava.
+// O force garante que o blBoot é usado agora (sem ele, a próxima mudança de brilho sairia sem rampa).
 void wakeScreen(uint32_t ms) {
   wakeUntil = (millis() + ms) | 1;
-  updateBrightness();
+  if (!blNow) {
+    blBoot = true;
+    updateBrightness(true);
+  } else updateBrightness();
 }
 
 uint32_t warmPreviewUntil = 0;  // prévia "ver agora" (aparência noturna) até este millis()
