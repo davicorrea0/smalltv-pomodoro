@@ -684,6 +684,49 @@ static int testOverlay() {
   return fails;
 }
 
+// Metadados longos ("name", "desc", "author", "id" no topo, acima de 64 B crus) são encurtados, nunca trocados por 'x',
+// nos dois formatos; o corte não parte um escape \uXXXX nem um caractere UTF-8. Um texto longo continua recusado.
+static int testMetaLonga() {
+  int fails = 0;
+  char err[96];
+  const std::string camada = R"("layers":[{"type":"circle","x":120,"y":120,"r":90,"color":"#2a5a8a"}]})";
+  const std::string desc = "Um lago visto de cima: koi sempre nadando de um lado ao outro, ondula\xC3\xA7\xC3\xB5" "es que derivam, a lua";
+  // 'a' x 60 + escapes: o limite de 64 B cai no meio do segundo é (bytes 66..71)
+  const std::string esc = std::string(60, 'a') + "\\u00e9\\u00e9\\u00e9 fim";
+  const std::string nome = "Nome comprido de um pacote de terceiros que passa de sessenta e cinco bytes";
+  for (int fmt = 1; fmt <= 2; fmt++) {
+    std::string j = "{\"format\":" + std::to_string(fmt) + ",\"name\":\"" + nome + "\",\"author\":\"" + nome + "\",\"desc\":\"" + desc + "\"," + camada;
+    if (!facePackLoad((char *)j.c_str(), j.size(), err, sizeof err)) { printf("meta longa f%d FALHOU: %s\n", fmt, err); fails++; continue; }
+    std::string d = facePackDesc(), n = facePackName(), a = facePackAuthor(), id = facePackId();
+    facePackUnload();
+    if (d.find("xxxx") != std::string::npos || d.compare(0, 40, desc, 0, 40) || d.size() > 63) { printf("desc longa f%d FALHOU: \"%s\"\n", fmt, d.c_str()); fails++; }
+    if (n.compare(0, 20, nome, 0, 20) || a.compare(0, 20, nome, 0, 20)) { printf("nome/autor longo f%d FALHOU: \"%s\" \"%s\"\n", fmt, n.c_str(), a.c_str()); fails++; }
+    if (id.find("xxxx") != std::string::npos || id.compare(0, 4, "nome")) { printf("id do nome longo f%d FALHOU: \"%s\"\n", fmt, id.c_str()); fails++; }
+    j = "{\"format\":" + std::to_string(fmt) + ",\"desc\":\"" + esc + "\"," + camada;
+    if (!facePackLoad((char *)j.c_str(), j.size(), err, sizeof err)) { printf("desc com escape no corte f%d FALHOU: %s\n", fmt, err); fails++; continue; }
+    d = facePackDesc();
+    facePackUnload();
+    if (d.compare(0, 60, std::string(60, 'a')) || d.find('x') != std::string::npos) { printf("desc com escape f%d FALHOU: \"%s\"\n", fmt, d.c_str()); fails++; }
+  }
+  // "desc" repetida 200 vezes com valores longos distintos: só a 1ª é encurtada, as outras voltam ao 'x' (que deduplica
+  // no StringPool), então o pico da leitura não cresce com o número de repetições
+  {
+    std::string j = "{\"format\":2";
+    for (int k = 0; k < 200; k++) j += ",\"desc\":\"" + std::to_string(k) + std::string(70, 'd') + "\"";
+    j += "," + camada;
+    bool ok = facePackLoad((char *)j.c_str(), j.size(), err, sizeof err);
+    std::string d = ok ? facePackDesc() : "";
+    if (ok) facePackUnload();
+    if (!ok || d.find('d') != std::string::npos) { printf("desc repetida FALHOU: %s \"%s\"\n", ok ? "encurtou repetida" : err, d.c_str()); fails++; }
+  }
+  // texto de camada longo continua recusado (só os metadados do topo são encurtados)
+  std::string j = R"({"format":2,"layers":[{"type":"text","x":10,"y":10,"font":"bebas","size":24,"color":"#ffffff","text":")" + std::string(70, 'b') + "\"}]}";
+  bool ok = facePackLoad((char *)j.c_str(), j.size(), err, sizeof err);
+  if (ok) { facePackUnload(); printf("texto longo FALHOU: aceito\n"); fails++; }
+  if (!fails) printf("meta longa: ok (nome, desc, autor e id encurtados sem 'x' nos formatos 1 e 2, corte fora do escape; repetida volta ao 'x'; texto longo recusado)\n");
+  return fails;
+}
+
 // Movimento ("motion", formato 2, só em sprite): a posição segue os pontos, o desenho incremental fica igual ao
 // completo, e entradas inseguras são recusadas
 static int testMotion() {
@@ -1108,6 +1151,7 @@ int main() {
   fails += testSpriteOracle(2000, 8, 10);
   fails += testSpriteOracle(2000, 16, 10, 2);
   fails += testOverlay();
+  fails += testMetaLonga();
   fails += testSemClima();
   fails += testMotion();
   fails += TintTest::run();

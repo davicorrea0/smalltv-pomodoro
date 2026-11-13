@@ -390,39 +390,57 @@ static bool loadFrom(In &in, Rew rewind, size_t size, char *err, size_t errLen) 
   bool hasMot = false, hasTxt = false;
   // Corta strings gigantes (> 64 B, ou textos >= MAX_TEXT / acima do pool) para 48 'x' antes de irem ao StringPool:
   // um pacote de 24 KB com 48 textos distintos estouraria os 15 KB já no deserializeJson; na validação, >= 48 B é recusado.
+  // Exceção: "name", "desc", "author" e "id" do topo (a 1ª vez de cada) são só encurtados para até 63 B (o pkDesc),
+  // num ponto que não parte escape nem caractere UTF-8, como era antes do formato 2 (com 'x' a descrição virava "xxxx").
   struct CapIn {
     In &in;
     char b[66], last = 0;
-    uint8_t i = 0, len = 0;
-    bool isTxt = false;
+    uint8_t i = 0, len = 0, depth = 0, seen = 0;
+    bool isTxt = false, isMeta = false;
     uint16_t tot = 0;
     int read() {
       if (i < len) return (uint8_t)b[i++];
       int c = in.read();
       if (c != '"') {
+        if (c == '{' || c == '[') depth++;
+        else if ((c == '}' || c == ']') && depth) depth--;
         if (c > ' ') last = c;
         return c;
       }
       i = len = 0;
       int d = -1;
+      uint8_t cut = 0, u = 0;  // cut: onde dá para fechar a string; u: dígitos que ainda faltam de um \uXXXX
       for (bool esc = false;;) {
         d = in.read();
         if (d < 0) break;
+        if (!esc && !u && (d & 0xC0) != 0x80 && len <= 63) cut = len;
         if (len <= 65) b[len++] = d;
-        if (esc) esc = false;
+        if (u) u--;
+        else if (esc) { esc = false; if (d == 'u') u = 4; }
         else if (d == '\\') esc = true;
         else if (d == '"') break;
       }
       uint8_t sLen = d == '"' && len ? len - 1 : len;
-      if (last == '{' || last == ',')
+      bool meta = false;
+      if (last == '{' || last == ',') {
         isTxt = (sLen == 2 && ((b[0] == 'p' && b[1] == 't') || (b[0] == 'e' && (b[1] == 'n' || b[1] == 's')))) ||
                 (sLen == 4 && (!memcmp(b, "text", 4) || !memcmp(b, "file", 4)));
-      else if (last == ':' && isTxt) {
-        tot += sLen + 1;
-        if (sLen >= MAX_TEXT || tot > MAX_POOL + 512) len = 66;
+        uint8_t m = depth != 1 ? 0 : sLen == 2 && !memcmp(b, "id", 2) ? 1 : sLen == 4 && !memcmp(b, "name", 4) ? 2 :
+                    sLen == 4 && !memcmp(b, "desc", 4) ? 4 : sLen == 6 && !memcmp(b, "author", 6) ? 8 : 0;
+        isMeta = m && !(seen & m);  // chave repetida volta ao 'x': no máximo 4 strings encurtadas por leitura
+        seen |= m;
+      } else if (last == ':') {
+        if (isTxt) {
+          tot += sLen + 1;
+          if (sLen >= MAX_TEXT || tot > MAX_POOL + 512) len = 66;
+        }
+        meta = isMeta && depth == 1;
       }
       last = '"';
-      if (len > 65) {
+      if (len > 65 && meta && d == '"') {
+        b[cut] = '"';
+        len = cut + 1;
+      } else if (len > 65) {
         memset(b, 'x', MAX_TEXT);
         b[MAX_TEXT] = '"';
         len = d < 0 ? MAX_TEXT : MAX_TEXT + 1;
