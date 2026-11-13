@@ -3,6 +3,7 @@
 #include <bearssl/bearssl_hash.h>
 #include <lwip/tcp.h>  // tcp_abort (tcpTwPurge)
 #include "../web.h"
+#include "../appdata.h"
 
 // respostas curtas repetidas nas rotas: um só corpo no binário em vez de três String temporárias em cada uso
 static void sendOk() { server.send_P(200, PSTR("text/plain"), PSTR("ok")); }
@@ -855,6 +856,15 @@ void setupWeb() {
     }
     command(server.arg("c"));
     sendState();
+  });
+  // EXPERIMENTO exp/dados-ha: dados empurrados (Home Assistant) para {x.campo} dos pacotes. Contrato: appdata.h
+  server.on(F("/api/apps/data"), HTTP_POST, [] {
+    if (!guard()) return;
+    const String &b = server.arg("plain");
+    if (b.length() > APPDATA_BODY_MAX) { server.send_P(413, PSTR("text/plain"), PSTR("corpo grande demais")); return; }
+    const char *err = appDataPut(b.c_str(), b.length(), millis());
+    if (err) server.send_P(400, PSTR("text/plain"), err);
+    else server.send_P(200, PSTR("application/json"), PSTR("{\"ok\":true}"));
   });
   server.on(F("/api/settings"), HTTP_POST, [] {
     if (!guard()) return;
