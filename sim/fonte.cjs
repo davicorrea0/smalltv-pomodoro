@@ -3,7 +3,7 @@
 // fn('void x(') achar a definição e não o protótipo.
 const fs = require('fs'), path = require('path');
 const dir = path.join(__dirname, '../smalltv-pomodoro');
-const skip = /^(face_|facepack|fonts|ui\.cpp|assets|web\.h|ota_key)/;
+const skip = /^(face_|facepack|appdata|fonts|ui\.cpp|assets|web\.h|ota_key)/;
 const files = [
   ...fs.readdirSync(dir).filter(f => /\.(cpp|h)$/.test(f) && !skip.test(f)),
   ...fs.readdirSync(path.join(dir, 'modulos')).filter(f => f.endsWith('.cpp')).map(f => 'modulos/' + f),
