@@ -499,7 +499,10 @@ static void vecTextImpl(const VecFont &f, int x, int y, int h, const char *s, ui
   uint16_t pal[17];
   for (int i = 0; i <= 16; i++) pal[i] = mix16(bg, fg, i);
   int r0 = 0, r1 = h;
-  if (overlay && uiClip.on) { if (y < uiClip.y0) r0 = uiClip.y0 - y; if (y + r1 > uiClip.y1) r1 = uiClip.y1 - y; }
+  // só as linhas dentro do recorte: numa faixa do uiOffscreen as de fora seriam jogadas fora pelo blit (antes, a hora
+  // grande de um pacote era rasterizada inteira em cada faixa que a tocava: o koi gastava 2,4 desenhos completos na
+  // troca de minuto, no simulador)
+  if (uiClip.on) { if (y < uiClip.y0) r0 = uiClip.y0 - y; if (y + r1 > uiClip.y1) r1 = uiClip.y1 - y; }
   for (int r = r0; r < r1; r++) {
     memset(cov, 0, W);
     int ox = 0;

@@ -249,6 +249,53 @@ static int checkSlide() {
   return fails;
 }
 
+// Rodízio entre pacotes (globo e gato-soneca têm texto overlay, koi e odisseia não): ao trocar de pacote o motor recarrega e
+// o primeiro quadro é completo; os incrementais seguintes (cada área suja desenhada em faixas, com as camadas fora da faixa
+// puladas, e o texto da hora com troca de minuto no meio) têm que dar o mesmo desenho completo, sem rastro do anterior.
+static bool carregaPacote(const char *id) {
+  char path[96], err[96];
+  snprintf(path, sizeof path, "../faces/%s.json", id);
+  FILE *fp = fopen(path, "rb");
+  if (!fp) return false;
+  std::string j;
+  char b[4096];
+  size_t n;
+  while ((n = fread(b, 1, sizeof b, fp)) > 0) j.append(b, n);
+  fclose(fp);
+  return !j.empty() && facePackLoad((char *)j.c_str(), j.size(), err, sizeof err);
+}
+static int checkRodizioPacotes() {
+  static const char *ids[] = {"globo", "koi", "odisseia-estelar", "gato-soneca", "globo", "koi"};
+  int fails = 0, trocas = 0;
+  Frame *inc = new Frame(), *fresh = new Frame();
+  UiState s = base(14, 37, 0);
+  s.theme = THEME_PACK;
+  uiBlit = nullptr;
+  for (const char *id : ids) {
+    if (!carregaPacote(id)) { printf("rodizio de pacotes: %s não carregou\n", id); fails++; continue; }
+    trocas++;
+    s.ms = 0;
+    s.now.tm_min = 37;
+    uiBegin(inc);
+    facePackRender(s, true);
+    int diff = 0;
+    for (int k = 1; k <= 60; k++) {
+      s.ms = k * 100;
+      if (k == 30) s.now.tm_min = 38;
+      uiBegin(inc);
+      facePackRender(s, false);
+      uiBegin(fresh);
+      facePackRender(s, true);
+      diff += memcmp(inc->px, fresh->px, sizeof inc->px) != 0;
+    }
+    if (diff) { printf("rodizio de pacotes: %s: %d de 60 quadros incrementais diferentes do completo\n", id, diff); fails++; }
+  }
+  facePackUnload();
+  if (!fails) printf("rodizio de pacotes (globo, koi, odisseia, gato-soneca, globo, koi): ok (%d trocas, incremental igual ao completo em 60 quadros cada, troca de minuto no 30o)\n", trocas);
+  delete inc; delete fresh;
+  return fails;
+}
+
 // Troca LCD retrô <-> Previsão LCD (ui.cpp, lcdFade): a moldura tem que ficar parada. Em todo quadro da
 // transição, os pixels fora do miolo (x 10..229, y 28..207) e dos rótulos de fora (y < 24 e y >= 210) são os
 // de antes (que são os mesmos do mostrador novo: a moldura é idêntica nos dois); no fim, a tela é igual a
@@ -1182,6 +1229,7 @@ int main() {
   fails += checkIncremental("pomodoro", p, true) != 0;
   fails += checkTransitions(p);
   fails += checkSlide();
+  fails += checkRodizioPacotes();
   fails += checkLcdCurtain();
   checkWorldCost();
   fails += testPackages(p);
