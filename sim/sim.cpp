@@ -727,6 +727,44 @@ static int testMetaLonga() {
   return fails;
 }
 
+// Muitas camadas mudando no mesmo quadro (12 com motion + 6 animadas + a hora: mais que as 12 áreas sujas): o incremental continua igual ao completo
+// quadro a quadro, com a hora grande cruzada pelos sprites (o caso do koi)
+static int testMuitasAreas() {
+  char err[96];
+  std::string js = R"({"format":2,"bg":"#143d40","sprites":{"s":{"fps":8,"pal":{"a":"#e0a030","b":"#30a0e0"},"frames":[["aab","abb"],["bba","baa"],["aba","bab"]]}},"layers":[)";
+  for (int i = 0; i < 12; i++) {  // 12 = teto de camadas com "motion"
+    int y0 = 20 + i * 12, y1 = 220 - i * 11, p = 3000 + i * 370;
+    js += std::string(i ? "," : "") + R"({"type":"sprite","sprite":"s","size":)" + std::to_string(2 + i % 3) + R"(,"motion":{"period":)" + std::to_string(p) +
+          R"(,"keys":[{"t":0,"x":-20,"y":)" + std::to_string(y0) + R"(},{"t":)" + std::to_string(p / 2) + R"(,"x":250,"y":)" + std::to_string(y1) +
+          R"(},{"t":)" + std::to_string(p) + R"(,"x":-20,"y":)" + std::to_string(y0) + "}]}}";
+  }
+  for (int i = 0; i < 6; i++)  // e 6 sprites parados que trocam de quadro (os brilhos do koi)
+    js += R"(,{"type":"sprite","sprite":"s","size":2,"x":)" + std::to_string(15 + i * 38) + R"(,"y":)" + std::to_string(i % 2 ? 30 : 200) + "}";
+  js += R"(,{"type":"text","x":120,"y":90,"font":"bebas","size":52,"align":"center","color":"#ecffff","text":"{HH}:{MM}"}]})";
+  if (!facePackLoad((char *)js.c_str(), js.size(), err, sizeof err)) { printf("muitas areas FALHOU ao carregar: %s\n", err); return 1; }
+  Frame *inc = new Frame(), *fresh = new Frame();
+  UiState s = base(14, 37, 0);
+  s.theme = THEME_PACK;
+  uiBegin(inc);
+  facePackRender(s, true);
+  int diff = 0;
+  for (int k = 1; k <= 80; k++) {
+    s.ms = k * 100;
+    if (k == 40) s.now.tm_min = 38;
+    uiBegin(inc);
+    facePackRender(s, false);
+    uiBegin(fresh);
+    facePackRender(s, true);
+    if (memcmp(inc->px, fresh->px, sizeof inc->px)) diff++;
+  }
+  facePackUnload();
+  delete inc;
+  delete fresh;
+  if (diff) { printf("muitas areas FALHOU: %d de 80 quadros incrementais diferentes do completo\n", diff); return 1; }
+  printf("muitas areas: ok (19 camadas mudando, 80 quadros: incremental igual ao completo)\n");
+  return 0;
+}
+
 // Movimento ("motion", formato 2, só em sprite): a posição segue os pontos, o desenho incremental fica igual ao
 // completo, e entradas inseguras são recusadas
 static int testMotion() {
@@ -1154,6 +1192,7 @@ int main() {
   fails += testMetaLonga();
   fails += testSemClima();
   fails += testMotion();
+  fails += testMuitasAreas();
   fails += TintTest::run();
   return fails;
 }
