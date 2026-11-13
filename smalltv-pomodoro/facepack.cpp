@@ -1242,7 +1242,10 @@ void facePackRender(const UiState &s, bool full) {
     for (int i = 0; i < nLay; i++) {
       const Layer &L = lay[i];
       Box lb = {L.bx, L.by, L.bw, L.bh};
-      if (!L.sig || !overlap(lb, a.d)) continue;
+      // a camada precisa tocar a área (que acabou de ser limpa) e a faixa que está sendo desenhada (uiClip): uma camada
+      // fora da faixa não pinta nada nela e só gastava CPU
+      Box cb = {uiClip.x0, uiClip.y0, (int16_t)(uiClip.x1 - uiClip.x0), (int16_t)(uiClip.y1 - uiClip.y0)};
+      if (!L.sig || !overlap(lb, a.d) || !overlap(lb, cb)) continue;
       if (L.type == L_TEXT) resolve(layerText(L), *a.s, a.txt, 48);
       drawLayer(L, *a.s, a.txt);
     }
