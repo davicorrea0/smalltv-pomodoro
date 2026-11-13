@@ -19,7 +19,7 @@
 **Um timer de foco na mesa que não é o celular.** Firmware de código aberto para o GeekMagic SmallTV Ultra (ESP8266): Pomodoro com um tomate em pixel art, mostradores, clima e um painel web. Sem conta, sem nuvem e sem cabo para instalar.
 
 <!-- GIF gerado pelo simulador do firmware (mesmo código de desenho do relógio, ampliado 2x sem suavizar). Quando houver o vídeo do relógio real, troque docs/hero-pt.gif (mesmo nome) e ponha o link do vídeo abaixo. -->
-<p align="center"><img src="hero-pt.gif" width="327" alt="Simulação do SmallTV Ultra com o SmallTV Pomodoro, em sequência: um foco termina e começa a pausa curta; depois os mostradores LCD retrô, Mundo, Flip (virando o minuto), Nixie e Fogueira"></p>
+<p align="center"><img src="hero-pt.gif" width="327" alt="Simulação do SmallTV Ultra com o SmallTV Pomodoro, em sequência: um foco termina e começa a pausa curta; o Mundo rola para o Flip (virando o minuto); depois os mostradores animados da 1.26.0: Globo, Quartinho, Koi e duas cenas de naves"></p>
 
 <p align="center"><sub>Gerado pelo simulador do firmware: o mesmo código de desenho do relógio, pixel por pixel. Uma gravação do relógio de verdade vem em breve.</sub></p>
 
