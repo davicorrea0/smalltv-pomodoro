@@ -8,8 +8,9 @@
 #    do "Copiar diagnóstico" do painel (telemetria_test.cjs);
 #  - ETag do painel no GET /: 304 só com o painel desta versão, carregador sem ETag, login antes (painel_etag_test.cjs);
 #  - cor quente (warm.h): os comandos do gama digital de dia, de noite e na prévia;
-#  - curva de brilho (bri_curva.h) contra a fórmula antiga com powf, em todas as entradas;
+#  - curva de brilho (bri_curva.h) contra a fórmula com powf, em todas as entradas;
 #    e o brilho noturno 0 (tela apagada) que acende para avisos e volta a apagar (noite.h);
+#  - brilho no loop (backlight.cpp real): sem vai e vem nem reescrita com o alvo parado, troca sigma-delta/nível fixo sem piscar;
 #  - sinf/cosf próprios (trig.cpp) iguais bit a bit aos do newlib (trig_test.cpp);
 #  - GIF e JPEG: as amostras válidas precisam decodificar e o fuzzing não pode achar erro de memória;
 #  - mostradores de pacote (facepack.cpp): os pacotes da galeria estragados de propósito, carregados e desenhados
@@ -29,9 +30,10 @@ if [ -z "${GEN:-}" ]; then
   node idioma_test.cjs "$G/idioma.cpp"
   node telemetria_test.cjs "$G/telemetria.cpp"
   node painel_etag_test.cjs "$G/painel_etag.cpp"
+  node brilho_loop_test.cjs "$G/brilho_loop.cpp"
 fi
 export ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1
-for t in sec stats jpg_nomem portal idioma telemetria painel_etag; do
+for t in sec stats jpg_nomem portal idioma telemetria painel_etag brilho_loop; do
   g++ -std=c++17 -fsanitize=address,undefined -g -w "$G/$t.cpp" -o "$T/$t"
   "$T/$t"
 done
