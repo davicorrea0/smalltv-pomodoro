@@ -1,6 +1,7 @@
 // Servidor web: Wi-Fi, portal de configuração, proteções, envios e rotas /api.
 #include "../app.h"
 #include <bearssl/bearssl_hash.h>
+#include <lwip/tcp.h>  // tcp_abort (tcpTwPurge)
 #include "../web.h"
 
 // respostas curtas repetidas nas rotas: um só corpo no binário em vez de três String temporárias em cada uso
@@ -71,6 +72,12 @@ static uint16_t diagWraps = 0;  // millis() volta a zero a cada ~49,7 dias
 // Voltas do laço por segundo (diag.lps): só um número para o "Copiar diagnóstico", sem % nem gráfico. O loop() não tem
 // ocioso, então isto mede o quanto ele desenha e atende, não "carga de CPU".
 static uint32_t diagLoops = 0, diagLps = 0, diagLpsAt = 0;
+
+// Conexões soltas da lista TIME_WAIT pelo tcpTwPurge() (diag.tw, desde que ligou) e a maior lista vista numa volta do
+// laço (diag.twmax, satura em 255). O limite do lwIP só corta acima de 5: twmax >= 5 quer dizer que a lista chegou ao
+// limite e o corte pode ter acontecido entre duas voltas do laço (o purge não o evita se o laço ficar preso).
+static uint32_t diagTw = 0;
+static uint8_t diagTwMax = 0;
 
 void diagLoop() {
   uint32_t now = millis(), h = ESP.getFreeHeap();
@@ -151,6 +158,10 @@ static void diagJson(String &j, uint8_t frag) {
   j += diagLps;
   j += F(",\"pack\":");  // ms da última carga de pacote de mostrador (0 = nenhuma)
   j += packLoadMs;
+  j += F(",\"tw\":");  // conexões soltas da lista TIME_WAIT desde que ligou (tcpTwPurge)
+  j += diagTw;
+  j += F(",\"twmax\":");  // maior lista TIME_WAIT vista numa volta do laço
+  j += diagTwMax;
   j += F(",\"nomem\":{\"jpg\":");  // faltas de memória: foto, GIF e faixa de desenho recusada
   j += diagNoMemN[0];
   j += F(",\"gif\":");
@@ -370,6 +381,34 @@ static void sendState() {
   crashJson(j);
   j += F(",\"ver\":\"" FW_VERSION "\"}");
   jsonEnd(j);
+}
+
+// ---------- lista TIME_WAIT do lwIP (contorno do core 3.1.2) ----------
+// O lwIP do core 3.1.2 limita a lista TIME_WAIT a 5 conexões (time-wait.patch) e, quando ela passa disso, pode
+// abortar justamente a conexão que o tcp_process() acabou de pôr ali e que o tcp_input() ainda está usando: o mesmo
+// tcp_pcb é liberado duas vezes e o heap se corrompe; a queda aparece depois, longe da causa
+// (esp8266/Arduino#9327; corrigido só no master, PR #9333 de 03/11/2026, sem release). O gatilho é o nosso uso: o
+// servidor fecha conexões keep-alive (2 s paradas, ou 30 ms se outro cliente espera) enquanto o navegador manda o
+// próximo pedido nelas. Contorno de sempre (esp8266/Arduino#4213): esvaziar a lista a cada volta do laço, em todos os
+// modos (portal e recuperação também), sem limiar, para ela nunca chegar ao limite. Abortar uma conexão em TIME_WAIT
+// só a solta (não manda RST). Sem lwip/priv/tcp_priv.h: numa unidade de compilação só, as macros dele (tcp_ack...)
+// vazariam para os módulos seguintes.
+#ifndef ARDUINO_ESP8266_RELEASE_3_1_2
+#error "core diferente do 3.1.2: revise o tcpTwPurge() (esp8266/Arduino#9327/#9333) e tire-o se o lwIP novo já corrige"
+#endif
+extern "C" {
+extern struct tcp_pcb *tcp_tw_pcbs;  // lista TIME_WAIT do lwIP (declarada em lwip/priv/tcp_priv.h)
+}
+
+void tcpTwPurge() {
+  uint8_t n = 0;
+  while (tcp_tw_pcbs) {
+    tcp_abort(tcp_tw_pcbs);  // tira da lista e libera
+    if (n < 255) n++;
+  }
+  if (!n) return;
+  diagTw += n;
+  if (n > diagTwMax) diagTwMax = n;
 }
 
 // "-23.5478" -> -23.5478. Lê só o que o painel manda (latitude/longitude), sem a leitura de decimais da newlib.
