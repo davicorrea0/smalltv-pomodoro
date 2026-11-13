@@ -12,6 +12,8 @@ for(const name of ['handleUpload','handlePackUpload','handlePanelUpload'])
 }
 const recovery=fn('startRecovery');
 if(!recovery.includes('WiFi.mode(WIFI_AP);')||recovery.includes('WiFi.begin()'))throw Error('recovery must be AP-only');
+if(!recovery.includes('tr("Instalar versao do Pomodoro", "Install Pomodoro version", "Instalar version de Pomodoro")'))
+ throw Error('recovery must label the /update button as installing a Pomodoro version');
 { // migração 4M3M→4M2M (storage_stats.cpp): nunca formatar 0x100000 se o LittleFS antigo não montar
  const fm=fn('fsMount');
  const oldDecl=fm.indexOf('FS old('),oldBeg=fm.indexOf('old.begin()',oldDecl);
@@ -37,6 +39,42 @@ const gzv=source.slice(source.indexOf('bool otaVerifyGz() {'),source.indexOf('\n
 if(!gzv.includes('cmd.args[2] - 4')||!gzv.includes('!= ota.got'))throw Error('otaVerifyGz must check the eboot size trailer');
 const update=fn('setupUpdate');
 if(!update.includes('!recoveryMode && !authed()'))throw Error('update page bypasses throttle');
+if(!update.includes('Nao desligue ate aparecer a tela nova (ate 1 min).')||!update.includes('Do not unplug until the new screen appears (up to 1 min).'))
+ throw Error('update success page must warn not to unplug for up to 1 min');
+if(!/#define\s+AP_NAME\s+"SmallTV-Pomodoro"/.test(fs.readFileSync(path.join(__dirname,'..','smalltv-pomodoro','app.h'),'utf8')))
+ throw Error('AP_NAME must stay "SmallTV-Pomodoro": the recovery warning looks for it inside the .bin');
+{ // aviso na recuperação (/update): confere a marca SmallTV-Pomodoro no arquivo e pede confirm() se ausente
+ const sc=update.match(/<script>([\s\S]+?)<\/script>/);
+ const js=sc?sc[1].replace(/"\s*"/g,''):'';
+ if(!js.includes("includes('SmallTV-Pomodoro')")||!js.includes('confirm(f.dataset.q)'))
+  throw Error('update script must check SmallTV-Pomodoro and ask confirm(f.dataset.q)');
+ const runScript=async(bytes,q,confirmAns,sigBytes)=>{
+  let confirmed=0,fetched=null;
+  const doc={forms:[{}],body:{innerHTML:''}};
+  const FormData=class{constructor(){this.entries=[];}append(k,v){this.entries.push([k,v]);}};
+  const fnJs=new Function('document','FormData','confirm','fetch','btoa',js);
+  fnJs(doc,FormData,msg=>{confirmed++;return confirmAns;},async(u,o)=>{fetched={u,o};return{text:async()=>'ok'};},s=>Buffer.from(s,'binary').toString('base64'));
+  const file= {slice:(a,b)=>({arrayBuffer:async()=>bytes.buffer.slice(bytes.byteOffset+a,bytes.byteOffset+b)}),text:async()=>new TextDecoder('utf-8').decode(bytes),arrayBuffer:async()=>bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength)};
+  const target={dataset:q?{q}:{},firmware:{files:[file]},sig:sigBytes?{files:[{arrayBuffer:async()=>sigBytes.buffer}]}:undefined};
+  await doc.forms[0].onsubmit({preventDefault(){},target});
+  return {confirmed,fetched};
+ };
+ (async()=>{
+  const factory=Buffer.from([0xe9,3,2,0x40,0xff,0xfe,...Buffer.from('Ultra-V9.0.50')]);
+  const pomo=Buffer.from([0xe9,3,2,0x40,0xff,0x80,...Buffer.from('SmallTV-Pomodoro\0v1.25.0'),0xfe]);
+  let r=await runScript(factory,'Aviso?',false);
+  if(r.confirmed!==1||r.fetched!==null)throw Error('foreign firmware in recovery must ask confirm and abort on cancel');
+  r=await runScript(factory,'Aviso?',true);
+  if(r.confirmed!==1||!r.fetched)throw Error('foreign firmware in recovery must proceed when confirmed');
+  r=await runScript(pomo,'Aviso?',false);
+  if(r.confirmed!==0||!r.fetched)throw Error('SmallTV-Pomodoro firmware must not ask confirm');
+  const gz=Buffer.from([0x1f,0x8b,8,0,1,2,3,4,5,6,7,8]);
+  r=await runScript(gz,'Aviso?',false);
+  if(r.confirmed!==0||!r.fetched)throw Error('.gz (caminho documentado da ponte) must not ask confirm');
+  r=await runScript(factory,'',false,new Uint8Array([1,2,3]));
+  if(r.confirmed!==0||!r.fetched||r.fetched.o.headers['X-Firmware-Sig']!=='AQID')throw Error('normal signed update must send X-Firmware-Sig without recovery confirm');
+ })().catch(e=>{console.error(e);process.exit(1);});
+}
 // Signed OTA (1.20.1): the signature travels apart from the file and is checked before Update.end(true)
 // schedules the swap, on both the .bin and the .bin.gz paths. Never the core's appended-signature scheme.
 if(/installSignature|UpdaterHashClass/.test(source))throw Error('do not use the core appended signature (it bricked 1.20.0)');
