@@ -32,14 +32,16 @@ fs.writeFileSync(out, `#include <cstdint>
 #define pgm_read_byte(a) (*(const uint8_t *)(a))
 #define HIGH 1
 #define LOW 0
-// bri_curva.h e warm.h embutidos (o .cpp gerado também roda no WSL, longe desta pasta)
+// bri_curva.h, warm.h e noite.h embutidos (o .cpp gerado também roda no WSL, longe desta pasta)
 ${fs.readFileSync(path.join(dir, 'bri_curva.h'), 'utf8')}
 ${fs.readFileSync(path.join(dir, 'warm.h'), 'utf8')}
+${fs.readFileSync(path.join(dir, 'noite.h'), 'utf8')}
 #define PIN_BL 5
 ${consts}
 // ---- o que o backlight.cpp usa do resto do firmware ----
 struct { uint8_t brightness = 60, nightOn = 0, nightStart = 22, nightEnd = 7, nightBri = 10, nightSun = 0, warm = 0, lcdGreen = 1; } cfg;
 int16_t sunRise = -1, sunSet = -1;
+bool recoveryMode = false, portalMode = false;  // brilho noturno 0: recuperação e portal sempre acesos
 static uint32_t simMs = 0;
 static uint32_t daySec0 = 0;  // hora local (segundos do dia) quando simMs = 0
 static uint32_t millis() { return simMs; }
@@ -198,6 +200,16 @@ int main() {
   for (int b : {0, 100, 0}) { cfg.brightness = (uint8_t)b; updateBrightness(true); roda(1000); }
   CONFERE(inversoes(0) == 2 && pwm.back().v == 0 && !sdPreso && pinoAlto, "%d inversões, termina em %d", inversoes(0), pwm.back().v);
 
+  // 7e) Brilho noturno 0 (tela apagada): nível fixo apagado; um aviso acende pelo sigma-delta no mínimo útil e, passado o
+  // tempo, volta ao nível fixo apagado (sem ficar preso ao sigma-delta)
+  cena = "noite 0 e aviso";
+  cfg = {}; cfg.brightness = 60; cfg.nightOn = 1; cfg.nightStart = 22; cfg.nightEnd = 7; cfg.nightBri = 0; boot(23, 0);
+  CONFERE(!sdPreso && pinoAlto, "no boot: sd %d alto %d", sdPreso, pinoAlto);
+  wakeScreen(10000); roda(2000);
+  CONFERE(sdPreso && BL_FULL - sdAlvo == duty(NIGHT_WAKE_BRI), "aceso: sd %d mostra %d (esperado %d)", sdPreso, BL_FULL - sdAlvo, duty(NIGHT_WAKE_BRI));
+  roda(70000);
+  CONFERE(!sdPreso && pinoAlto && pwm.back().v == 0, "depois do aviso: sd %d alto %d mostra %d", sdPreso, pinoAlto, pwm.back().v);
+
   // 8) Mostrador LCD com verde ligado: entrar na tela manda o gama uma vez; ficar nela não reenvia
   cena = "verde LCD";
   cfg = {}; cfg.brightness = 60; boot(10, 0);
@@ -220,7 +232,7 @@ int main() {
   CONFERE(gamaCmds == 300 * 3 + 299, "%d comandos de gama (esperado %d: 300 entradas e 299 saídas)", gamaCmds, 300 * 3 + 299);
 
   if (falhas) { printf("brilho_loop: %d falha(s)\\n", falhas); return 1; }
-  puts("brilho_loop: ok (dia, noite, troca por horário e pelo sol, prévia, salvar, slider, passagem por 100 % e verde LCD: sem vai e vem nem reescrita parada)");
+  puts("brilho_loop: ok (dia, noite, troca por horário e pelo sol, prévia, salvar, slider, passagem por 100 %, noite 0 com aviso e verde LCD: sem vai e vem nem reescrita parada)");
   return 0;
 }
 `);
