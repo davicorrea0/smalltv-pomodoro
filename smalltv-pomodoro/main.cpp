@@ -199,6 +199,7 @@ static UiState makeState() {
   s.accent = clockColor();
   s.ip = ipString();
   s.ms = millis();
+  appDataExpire(s.ms);  // exp/dados-ha: dado vencido é descartado já, senão a aritmética com sinal o reviveria após 24,8 dias
   s.celebrate = alertUntil != 0;  // fase acabou de terminar: animação de fim no Pomodoro
   return s;
 }
