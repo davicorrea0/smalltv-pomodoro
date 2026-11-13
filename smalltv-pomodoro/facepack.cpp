@@ -1165,6 +1165,12 @@ static Box unite(const Box &a, const Box &b) {
   int x1 = a.x + a.w > b.x + b.w ? a.x + a.w : b.x + b.w, y1 = a.y + a.h > b.y + b.h ? a.y + a.h : b.y + b.h;
   return {(int16_t)x0, (int16_t)y0, (int16_t)(x1 - x0), (int16_t)(y1 - y0)};
 }
+// Áreas sujas de um quadro incremental. Com 6, um pacote com muitas camadas mudando juntas (o koi: peixes, ondas,
+// brilhos) juntava o excesso na primeira área, que crescia até quase a tela inteira: o quadro custava um desenho
+// completo ou mais (436 ms no relógio, com o laço a 100 ms). 12 áreas (96 B de pilha) e, cheia, a nova área vai para
+// a que menos cresce com ela.
+static const int MAX_DIRTY = 12;
+static int32_t boxArea(const Box &b) { return (int32_t)b.w * b.h; }
 static void addDirty(Box *d, int &n, Box b) {
   if (b.w <= 0 || b.h <= 0) return;
   for (int i = 0; i < n; i++)
@@ -1172,8 +1178,20 @@ static void addDirty(Box *d, int &n, Box b) {
       d[i] = unite(d[i], b);
       return;
     }
-  if (n < 6) d[n++] = b;
-  else d[0] = unite(d[0], b);
+  if (n < MAX_DIRTY) {
+    d[n++] = b;
+    return;
+  }
+  int best = 0;
+  int32_t menor = INT32_MAX;
+  for (int i = 0; i < n; i++) {
+    int32_t cresce = boxArea(unite(d[i], b)) - boxArea(d[i]);
+    if (cresce < menor) {
+      menor = cresce;
+      best = i;
+    }
+  }
+  d[best] = unite(d[best], b);
 }
 
 void facePackRender(const UiState &s, bool full) {
@@ -1182,7 +1200,7 @@ void facePackRender(const UiState &s, bool full) {
     return;
   }
   char txt[48];
-  Box dirty[6];
+  Box dirty[MAX_DIRTY];
   int nd = 0;
   for (int i = 0; i < nLay; i++) {
     Layer &L = lay[i];
