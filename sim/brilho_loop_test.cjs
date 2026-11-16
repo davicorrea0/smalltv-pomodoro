@@ -8,6 +8,8 @@ const fs = require('fs'), path = require('path');
 const dir = path.join(__dirname, '../smalltv-pomodoro');
 const app = fs.readFileSync(path.join(dir, 'app.h'), 'utf8');
 const main = fs.readFileSync(path.join(dir, 'main.cpp'), 'utf8');
+// a prévia dura 15 s (web_portal.cpp, previewUntil): com noite 0 a tela acesa pelo comando também precisa durar 15 s
+if (!fs.readFileSync(path.join(dir, 'modulos/pomodoro.cpp'), 'utf8').includes('wakeScreen(c == "preview" ? 15000 : 10000)') || !fs.readFileSync(path.join(dir, 'modulos/web_portal.cpp'), 'utf8').includes('previewUntil = millis() + 15000')) throw Error('o command("preview") deve acender a tela pelo tempo da prévia (15 s)');
 let bl = fs.readFileSync(path.join(dir, 'modulos/backlight.cpp'), 'utf8');
 if (!bl.includes('#include "../app.h"')) throw Error('backlight.cpp sem o include de app.h');
 bl = bl.replace('#include "../app.h"', '');
@@ -209,6 +211,16 @@ int main() {
   CONFERE(sdPreso && BL_FULL - sdAlvo == duty(NIGHT_WAKE_BRI), "aceso: sd %d mostra %d (esperado %d)", sdPreso, BL_FULL - sdAlvo, duty(NIGHT_WAKE_BRI));
   roda(70000);
   CONFERE(!sdPreso && pinoAlto && pwm.back().v == 0, "depois do aviso: sd %d alto %d mostra %d", sdPreso, pinoAlto, pwm.back().v);
+  // 7f) Noite 0 e OTA: durante o envio o loop não roda (nem o briFade). wakeScreen tem de acender na hora, sem o loop;
+  // e a mudança de brilho seguinte continua com rampa (o acender direto não fica ligado à toa)
+  cena = "noite 0 e OTA";
+  cfg = {}; cfg.brightness = 60; cfg.nightOn = 1; cfg.nightStart = 22; cfg.nightEnd = 7; cfg.nightBri = 0; boot(23, 0);
+  wakeScreen(120000);  // sem roda(): o envio segura o loop
+  CONFERE(sdPreso && BL_FULL - sdAlvo == duty(NIGHT_WAKE_BRI), "sem o loop: sd %d mostra %d (esperado %d)", sdPreso, BL_FULL - sdAlvo, duty(NIGHT_WAKE_BRI));
+  roda(1000);
+  size_t n0 = pwm.size();
+  cfg.nightBri = 60; updateBrightness(true); roda(2000);
+  CONFERE(pwm.size() - n0 > 3 && pwm.back().v == duty(60), "depois de acordar, 10 -> 60 com %d escritas (esperada uma rampa), termina em %d", (int)(pwm.size() - n0), pwm.back().v);
 
   // 8) Mostrador LCD com verde ligado: entrar na tela manda o gama uma vez; ficar nela não reenvia
   cena = "verde LCD";
@@ -232,7 +244,7 @@ int main() {
   CONFERE(gamaCmds == 300 * 3 + 299, "%d comandos de gama (esperado %d: 300 entradas e 299 saídas)", gamaCmds, 300 * 3 + 299);
 
   if (falhas) { printf("brilho_loop: %d falha(s)\\n", falhas); return 1; }
-  puts("brilho_loop: ok (dia, noite, troca por horário e pelo sol, prévia, salvar, slider, passagem por 100 %, noite 0 com aviso e verde LCD: sem vai e vem nem reescrita parada)");
+  puts("brilho_loop: ok (dia, noite, troca por horário e pelo sol, prévia, salvar, slider, passagem por 100 %, noite 0 com aviso (e no OTA, sem o loop) e verde LCD: sem vai e vem nem reescrita parada)");
   return 0;
 }
 `);

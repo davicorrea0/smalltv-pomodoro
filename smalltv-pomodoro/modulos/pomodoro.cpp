@@ -76,7 +76,7 @@ uint8_t previewTheme = 0;
 uint32_t previewUntil = 0;
 
 void command(const String &c) {
-  if (c.length()) wakeScreen(10000);  // quem manda um comando precisa ver o resultado
+  if (c.length()) wakeScreen(c == "preview" ? 15000 : 10000);  // quem manda um comando precisa ver o resultado (a prévia dura 15 s)
   if (c == "start") {
     if (phase == IDLE) startPhase(WORK, true);
     else { running = true; lastTick = millis(); }
