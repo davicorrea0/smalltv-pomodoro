@@ -2,7 +2,6 @@
   "format": 2,
   "author": "davicorrea0",
   "id": "casa-tomadas",
-  "needs": "tm_1",
   "name": "Tomadas",
   "name_en": "Smart plugs",
   "name_es": "Enchufes",

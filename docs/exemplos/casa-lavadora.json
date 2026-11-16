@@ -2,7 +2,6 @@
   "format": 2,
   "author": "davicorrea0",
   "id": "casa-lavadora",
-  "needs": "lv_est",
   "name": "Lavadora",
   "name_en": "Washing machine",
   "name_es": "Lavadora",
