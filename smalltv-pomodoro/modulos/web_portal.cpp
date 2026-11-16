@@ -74,8 +74,8 @@ static uint16_t diagWraps = 0;  // millis() volta a zero a cada ~49,7 dias
 static uint32_t diagLoops = 0, diagLps = 0, diagLpsAt = 0;
 
 // Conexões soltas da lista TIME_WAIT pelo tcpTwPurge() (diag.tw, desde que ligou) e a maior lista vista numa volta do
-// laço (diag.twmax, satura em 255). O limite do lwIP só corta acima de 5: twmax >= 5 quer dizer que a lista chegou ao
-// limite e o corte pode ter acontecido entre duas voltas do laço (o purge não o evita se o laço ficar preso).
+// laço (diag.twmax, satura em 255). O lwIP só corta quando a 7ª conexão entra (ver tcpTwPurge): twmax >= 7 quer dizer
+// que o corte pode ter acontecido entre duas voltas do laço (o purge não o evita se o laço ficar preso).
 static uint32_t diagTw = 0;
 static uint8_t diagTwMax = 0;
 
@@ -384,8 +384,8 @@ static void sendState() {
 }
 
 // ---------- lista TIME_WAIT do lwIP (contorno do core 3.1.2) ----------
-// O lwIP do core 3.1.2 limita a lista TIME_WAIT a 5 conexões (time-wait.patch) e, quando ela passa disso, pode
-// abortar justamente a conexão que o tcp_process() acabou de pôr ali e que o tcp_input() ainda está usando: o mesmo
+// O lwIP do core 3.1.2 limita a lista TIME_WAIT (time-wait.patch: TCP_TW_LIMIT(5) corta enquanto tamanho - 1 > 5, ou
+// seja, quando a 7ª conexão entra) e pode abortar justamente a que o tcp_process() pôs ali e o tcp_input() usa: o mesmo
 // tcp_pcb é liberado duas vezes e o heap se corrompe; a queda aparece depois, longe da causa
 // (esp8266/Arduino#9327; corrigido só no master, PR #9333 de 03/11/2026, sem release). O gatilho é o nosso uso: o
 // servidor fecha conexões keep-alive (2 s paradas, ou 30 ms se outro cliente espera) enquanto o navegador manda o
