@@ -1,49 +1,40 @@
 {
-  "version": "1.26.0",
-  "date": "2026-11-13",
+  "version": "1.26.1",
+  "date": "2026-11-16",
   "file": "beta/smalltv-pomodoro.bin",
-  "size": 586080,
+  "size": 586560,
   "notes": {
     "pt": [
-      "Versão 1.26.0: rodízio editado de uma vez, painel mais rápido de abrir, mais memória livre, brilho noturno que apaga a tela e mostradores novos",
+      "Versão 1.26.1: correções da 1.26.0 na rede, na tela apagada à noite e nos mostradores animados",
       "Se o relógio está na 1.23 ou anterior: esta versão reorganiza a memória do relógio. Antes de atualizar, o painel salva um backup completo (fotos, GIFs e mostradores); depois, use Restaurar backup. Ajustes, Wi-Fi, histórico, rodízio e avisos ficam sozinhos",
-      "Rodízio: o botão \"Editar rodízio\", em Aparência, mostra os mostradores instalados para marcar ou desmarcar vários de uma vez; \"Tirar todos do rodízio\" esvazia a lista",
-      "O painel abre mais rápido a partir da segunda vez, porque o navegador reaproveita o que já baixou",
-      "Mais memória livre no relógio, que sobra para fotos, GIFs e mostradores",
-      "Mostradores animados de pacote ocupam bem menos memória para carregar e enquanto rodam",
-      "Mostradores de pacote (formato 2): sprites em movimento, hora desenhada por cima do fundo e até 16 quadros por sprite; novos Globo, Quartinho, Koi (peixes que cruzam o lago) e duas cenas de naves",
-      "A troca entre os mostradores LCD (LCD retrô, Previsão LCD, Mundo e Mundo relógio) ficou mais suave, sem saltos",
-      "Brilho à noite agora pode ser 0: a tela apaga de vez. Comandos, fim de foco/pausa e atualização acendem a tela por alguns segundos"
+      "Rede: contorno de um defeito do núcleo do ESP8266 que pode corromper a memória quando o navegador reaproveita conexões já fechadas (uma causa possível de reinícios com o painel aberto)",
+      "Tela apagada à noite: a atualização acende a tela na hora, e a prévia de mostrador fica acesa os 15 segundos inteiros",
+      "Mostradores animados de pacote desenham menos por quadro e travam menos",
+      "Reinstalar um mostrador de pacote por cima do que está em uso não troca mais para um mostrador embutido"
     ],
     "en": [
-      "Version 1.26.0: edit the rotation in one go, a faster-opening panel, more free memory, a night brightness that turns the screen off and new faces",
+      "Version 1.26.1: fixes for 1.26.0 in networking, the screen off at night and animated faces",
       "If the clock is on 1.23 or earlier: this version reorganizes the clock's storage. Before updating, the panel saves a full backup (photos, GIFs and faces); afterwards, use Restore backup. Settings, Wi-Fi, history, rotation and notifications stay on their own",
-      "Rotation: the \"Edit rotation\" button, under Appearance, lists your installed faces so you can tick or untick several at once; \"Remove all from rotation\" empties the list",
-      "The panel opens faster from the second time on, because the browser reuses what it already downloaded",
-      "More free memory on the clock, left over for photos, GIFs and faces",
-      "Animated face packs use much less memory while loading and while running",
-      "Face packs (format 2): moving sprites, time drawn over the background and up to 16 frames per sprite; new Globo, Quartinho, Koi (fish that swim across the pond) and two spaceship scenes",
-      "Switching between the LCD faces (LCD retrô, Previsão LCD, Mundo and Mundo relógio) is smoother, without jumps",
-      "Night brightness can now be 0: the screen goes fully dark. Commands, the end of a focus/break and updates light it for a few seconds"
+      "Network: a workaround for a bug in the ESP8266 core that can corrupt memory when the browser reuses connections that were already closed (a possible cause of restarts with the panel open)",
+      "Screen off at night: an update lights the screen right away, and a face preview stays lit for the full 15 seconds",
+      "Animated face packs draw less per frame and stutter less",
+      "Reinstalling a face pack over the one in use no longer switches to a built-in face"
     ],
     "es": [
-      "Versión 1.26.0: rotación editada de una vez, panel más rápido de abrir, más memoria libre, brillo nocturno que apaga la pantalla y esferas nuevas",
+      "Versión 1.26.1: correcciones de la 1.26.0 en la red, la pantalla apagada de noche y las esferas animadas",
       "Si el reloj está en la 1.23 o anterior: esta versión reorganiza la memoria del reloj. Antes de actualizar, el panel guarda una copia completa (fotos, GIF y esferas); después, usa Restaurar copia. Los ajustes, el Wi-Fi, el historial, la rotación y los avisos se mantienen solos",
-      "Rotación: el botón \"Editar rotación\", en Apariencia, muestra las esferas instaladas para marcar o desmarcar varias de una vez; \"Quitar todas de la rotación\" vacía la lista",
-      "El panel abre más rápido a partir de la segunda vez, porque el navegador reutiliza lo que ya descargó",
-      "Más memoria libre en el reloj, que queda para fotos, GIF y esferas",
-      "Las esferas animadas de paquete ocupan mucha menos memoria al cargar y mientras funcionan",
-      "Esferas de paquete (formato 2): sprites en movimiento, hora dibujada sobre el fondo y hasta 16 cuadros por sprite; nuevas Globo, Quartinho, Koi (peces que cruzan el estanque) y dos escenas de naves",
-      "El cambio entre las esferas LCD (LCD retrô, Previsão LCD, Mundo y Mundo relógio) es más suave, sin saltos",
-      "El brillo nocturno ahora puede ser 0: la pantalla se apaga del todo. Los comandos, el fin del foco/descanso y las actualizaciones la encienden unos segundos"
+      "Red: una solución para un fallo del núcleo del ESP8266 que puede corromper la memoria cuando el navegador reutiliza conexiones ya cerradas (una posible causa de reinicios con el panel abierto)",
+      "Pantalla apagada de noche: una actualización enciende la pantalla al instante, y la vista previa de una esfera queda encendida los 15 segundos completos",
+      "Las esferas animadas de paquete dibujan menos por cuadro y se traban menos",
+      "Reinstalar una esfera de paquete encima de la que está en uso ya no cambia a una esfera integrada"
     ]
   },
   "gz": "beta/smalltv-pomodoro.bin.gz",
-  "gzsize": 433072,
+  "gzsize": 433446,
   "layout": "4m2m",
-  "panel": "panel-75654dbdc3d892aa8456302f.html.gz",
-  "psri": "sha256-dWVNvcPYkqqEVjAvPyShUnt72cpefhgSaEoGBnG1Mog=",
-  "sig": "pbQ7S8tp62UvRPjWiyTILCX5zTzqtqsAKzSAj2JQkMjyJ2WaiivqKWa9UNSqpOMuf54U3YYjy2q91yakionKlzUAAOefHP+vpxMfzpWGNgxx400lf4ctXAudckL0BC7/urslDdeXGz0Ei3n5zEa4/MOkWjlBjp0xxsGDU3w2VYO2EkugOHo7+da8fhI3DOUTtg/oBsb6TcUYm7d4ASTyKWeQt9GaM0VOxpEj9VbZmG6JAQNVJSj8LZkUTV7gldEse0ucfhIbtl7X9d0oN/ZvKJDpiMLQNkL0cpVwPDNhHSWRwAKiDyU61tp+4CdNEBto02qrgx/OwysBUORyxz8ggg==",
-  "gzsig": "Gvhz+Tj1xeSAaROz8Evw98DJPX+FoxlzZvAXuDe+GD2Mg9t71fK8NOhSLJXk6a9kJP7q3eJa2t9L6yXyAoqjq9Cb63GrzUVXh/S5vD4QdDcmlOT+OiLBL1HcgiKm9oRSG6+kiGkovsk5DikWb5wZVbLOJmxtfdaEQ5iJjn397X+eUr/C64vOW0HT9TQGosO2I9U2KOVYIfHUIlW/jhvXv5WZ1+jlM3CORnXriFjRfRrEqHlP755cz5JeBUoztHZh6+vZdPjXyBdJOa3StqbRbw9iLP4HWgTu4w+JzrJrQbr/NTylYOXl9FDn2llEN6PZo1X9jTqO9tsNJ/s1i48WOA==",
+  "panel": "panel-81e329ecf37abddd63c09cd1.html.gz",
+  "psri": "sha256-geMp7PN6vd1jwJzRoNUCfQjxJNhL5xtS1bDizLeJdes=",
+  "sig": "aWxre7cQu6UQBwja5JQxX0NXnu/yU8cERLVRhBb7CWbC7+DSWmlx09HZI8IE7ZU4Kt86z/mJFbQF9cMmvy78mPs4un/hFjEBq5EEYx5Lz6J7voJehBoIW9tnJ2HZVkVttv6xjEF53FlvtJ7kLP4Z+27B8XSa8dNd+J9jj4mhNHnncsL5AdVERoriS61SUyxX1NGzMDP1vl464r8AMXiB+tM6f2UyPOaP4JergUC1i/RB2E9y6HqSzlvMfnXDxDVac9nszViNlI6VUtnYx5uBOmepo0j+59IeMXJOwGOr8rskzbyIusRMDjWFAGrJWeu3tH7Dx/k1u0oC4GcwWSQPOA==",
+  "gzsig": "fuo96nZdEgjKA76k1EfGbTT2nfa9TBJcdHftz4MmhnOUzSMInMu2PjyLDnLMUULRy6Kccfq+6sgmOjPBmLa9xpaX8pl4YtLpPRyluNeMJPJDXKilJ9UE6lRZh+w85L/4J2vDtujj7jJW6ZGNBRTJNMEqprcm9M2BpqM4aJivvDR6Rp6vBmHqvBcnx2yoYolQ/X9o5RHU9hs0e/LDVogb+QYYlICFyZZKVvjR2w/+PYqN4rqYfOWFiUyG0UfwHX9v/QVOgdwBWOHL183r71Haf4KQUe3uZ+D6QVHfaKIqTAPI+cSynx28/Iqn6MxjU7PjHh1/n6yXQgzNE+aancuKbQ==",
   "ponte": 1
 }
