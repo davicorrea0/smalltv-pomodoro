@@ -2,7 +2,6 @@
   "format": 2,
   "author": "davicorrea0",
   "id": "tokensmall",
-  "needs": "tk_c5",
   "name": "Uso de IA",
   "desc": "Limites de 5 h e 7 dias do Claude e do Codex, enviados pelo companheiro do PC",
   "name_en": "AI usage",
