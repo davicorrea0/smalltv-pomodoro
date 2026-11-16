@@ -323,14 +323,17 @@ static void exemplos(Tela *tela) {
     {"../docs/exemplos/casa-lavadora.json",
      {"{\"ttl\":60,\"values\":{\"lv_est\":\"LAVANDO\",\"lv_txt\":\"ENXAGUE\",\"lv_pct\":70,\"lv_min\":18}}",
       "{\"ttl\":60,\"values\":{\"lv_est\":\"PRONTA\",\"lv_txt\":\"AS 14:52\",\"lv_pct\":100,\"lv_min\":0}}",
-      "{\"ttl\":60,\"values\":{\"lv_est\":\"DESLIGADA\",\"lv_txt\":\"\",\"lv_pct\":0,\"lv_min\":0}}", nullptr}},
+      "{\"ttl\":60,\"values\":{\"lv_est\":\"DESLIGADA\",\"lv_txt\":\"\",\"lv_pct\":0,\"lv_min\":0}}",
+      "{\"ttl\":60,\"values\":{\"lv_est\":\"ERRO\",\"lv_txt\":\"E21\",\"lv_pct\":40,\"lv_min\":0}}"}},
     {"../docs/exemplos/casa-luzes.json",
      {"{\"ttl\":60,\"values\":{\"lz_n\":2,\"lz_1\":\"ACESA\",\"lz_2\":\"\",\"lz_3\":\"ACESA\"}}",
       "{\"ttl\":60,\"values\":{\"lz_n\":0,\"lz_1\":\"\",\"lz_2\":\"\",\"lz_3\":\"\"}}",
-      "{\"ttl\":60,\"values\":{\"lz_n\":1,\"lz_2\":\"ACESA\"}}", nullptr}},
+      "{\"ttl\":60,\"values\":{\"lz_n\":1,\"lz_2\":\"ACESA\"}}",
+      "{\"ttl\":60,\"values\":{\"lz_n\":1,\"lz_1\":\"ACESA\",\"lz_2\":\"SEM SINAL\",\"lz_3\":\"\"}}"}},
     {"../docs/exemplos/casa-tomadas.json",
      {"{\"ttl\":60,\"values\":{\"tm_1\":1,\"tm_w1\":640,\"tm_2\":0,\"tm_w2\":0}}",
-      "{\"ttl\":60,\"values\":{\"tm_1\":0,\"tm_w1\":0,\"tm_2\":1,\"tm_w2\":9}}", nullptr, nullptr}},
+      "{\"ttl\":60,\"values\":{\"tm_1\":0,\"tm_w1\":0,\"tm_2\":1,\"tm_w2\":9}}",
+      "{\"ttl\":60,\"values\":{\"tm_1\":\"SEM SINAL\",\"tm_w1\":0,\"tm_2\":1,\"tm_w2\":1200}}", nullptr}},
   };
   appDataClear();
   UiState st = estado();

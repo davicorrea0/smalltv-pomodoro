@@ -4,7 +4,11 @@ Três mostradores que desenham o que o Home Assistant manda ao relógio: a **lav
 **tomadas**. Eles ficam fora da galeria de propósito: sem o Home Assistant configurado, a tela fica em `--`, e os
 nomes dos cômodos e das tomadas estão escritos no próprio arquivo.
 
-![Lavadora (lavando, pronta, sem dados), luzes (2 acesas, apagadas, sem dados) e tomadas (café ligada, abajur ligado, sem dados)](casa.png)
+![Lavadora (lavando, pronta, erro, sem dados), luzes (2 acesas, apagadas, uma sem sinal, sem dados) e tomadas (café ligada, abajur ligado, uma sem sinal, sem dados)](casa.png)
+
+Desenho de painel de aparelho: um número grande, rótulos pequenos e fixos, fundo preto e cor só quando quer dizer
+algo (verde = pronta, âmbar = sem sinal, vermelho = erro). O texto principal tem pelo menos 21 px de altura, para ler
+a 1 m.
 
 Antes, siga a [receita do Home Assistant](../HOME-ASSISTANT.md): crie a chave no painel e o `rest_command`
 `smalltv_dados`. Depois, para cada mostrador que quiser:
@@ -19,7 +23,10 @@ no outro.
 
 ## Luzes (`casa-luzes.json`)
 
-`lz_n` é quantas estão acesas. `lz_1` a `lz_3` valem `ACESA`, ou vazio quando a luz está apagada.
+`lz_n` é quantas estão acesas. `lz_1` a `lz_3` valem `ACESA`, ou vazio quando a luz está apagada. A receita
+abaixo só manda esses dois. Se você mandar outro texto curto (por exemplo
+`{{ 'ACESA' if is_state('light.sala', 'on') else 'SEM SINAL' if is_state('light.sala', 'unavailable') else '' }}`),
+ele aparece em âmbar na linha do cômodo.
 
 ```yaml
 automation:
@@ -46,7 +53,8 @@ automation:
 ## Tomadas (`casa-tomadas.json`)
 
 `tm_1` e `tm_2` valem `1` (ligada) ou `0`. `tm_w1` e `tm_w2` são os watts. Se a tomada não mede consumo, tire os
-`tm_w`: o cartão mostra `--`.
+`tm_w`: no lugar dos watts aparece `--`. A receita abaixo só manda `1` ou `0`. Se você mandar um texto
+curto, entre aspas (por exemplo `"tm_1": "SEM SINAL"`), ele aparece em âmbar embaixo do nome.
 
 ```yaml
 automation:
@@ -77,15 +85,17 @@ Um sensor de potência que muda a cada segundo dispara a automação a cada segu
 
 Os campos e o que a tela mostra em cada estado:
 
-| Campo | LAVANDO | PRONTA | DESLIGADA |
-|---|---|---|---|
-| `lv_est` | `LAVANDO`: tambor girando | `PRONTA`: "PRONTA!" e o tomate comemorando | `DESLIGADA` |
-| `lv_txt` | a etapa (`ENXAGUE`) | a hora do fim (`AS 14:52`) | vazio |
-| `lv_pct` | quanto do ciclo já foi (barra) | 100 | 0 |
-| `lv_min` | minutos que faltam | 0 | 0 |
+| Campo | LAVANDO | PRONTA | DESLIGADA | ERRO (opcional) |
+|---|---|---|---|---|
+| `lv_est` | `LAVANDO`: tambor girando na barra de baixo | `PRONTA`: em verde, com "TIRE A ROUPA" | `DESLIGADA` | `ERRO`: em vermelho, com "VEJA A MAQUINA" |
+| `lv_txt` | a etapa (`ENXAGUE`) | a hora do fim (`AS 14:52`) | vazio | o código (`E21`) |
+| `lv_pct` | quanto do ciclo já foi (régua) | 100 (régua verde) | 0 | qualquer |
+| `lv_min` | minutos que faltam, em 7 segmentos | 0 | 0 | qualquer |
 
 A receita manda só enquanto a máquina lava ou está pronta. Parada, ela não manda nada, e o dado vence em 15 minutos:
-a tela mostra "SEM DADOS DA CASA". `DESLIGADA` continua no desenho para quem quiser mandar esse estado de outro jeito.
+a tela mostra "SEM DADOS" e "ESPERANDO O HA", com os segmentos apagados. `DESLIGADA` continua no desenho para quem
+quiser mandar esse estado de outro jeito. O `ERRO` também é opcional: se a sua integração expuser um código de erro,
+mande `"lv_est": "ERRO"` e o código em `lv_txt`.
 
 **Lavadora Midea** (conferido em 16/11/2026):
 
