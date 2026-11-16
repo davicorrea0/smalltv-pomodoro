@@ -154,6 +154,9 @@ int main(int argc, char **argv) {
       continue;
     }
     aceitos++;
+    char campos[100];  // a lista de campos de fora (4ª linha do .txt): nunca passa do tamanho, sempre termina em 0
+    facePackFields(campos, sizeof campos);
+    if (strlen(campos) >= sizeof campos) { printf("facepack_fuzz: lista de campos estourou no caso %ld\n", c); return 1; }
     UiState st;
     memset(&st, 0, sizeof st);
     st.theme = THEME_PACK;

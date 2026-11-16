@@ -20,6 +20,8 @@ const char *facePackId();
 const char *facePackName();
 const char *facePackDesc();
 const char *facePackAuthor();
+// campos de fora que o pacote carregado lê, "a,b,c" (vazio = mostrador comum; algum = miniapp)
+void facePackFields(char *out, size_t n);
 
 // Desenha o pacote carregado (chamado por uiRenderClock quando s.theme == THEME_PACK).
 void facePackRender(const UiState &s, bool full);

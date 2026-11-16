@@ -315,6 +315,30 @@ static void referencias(Tela *tela) {
   facePackUnload();
 }
 
+// a lista de campos de fora de cada pacote (4ª linha do .txt e "x" do /api/faces): when/value e {x.campo}, sem repetir
+static void campos() {
+  char err[96], l[100];
+  auto carrega = [&](const std::string &camadas) {
+    std::string js = "{\"format\":2,\"id\":\"c\",\"layers\":[" + camadas + "]}";
+    std::vector<char> b(js.begin(), js.end());
+    b.push_back(0);
+    bool ok = facePackLoad(b.data(), js.size(), err, sizeof err);
+    CHECK(ok, "campos: carga recusada: %s", err);
+    facePackFields(l, sizeof l);
+    facePackUnload();
+    return std::string(l);
+  };
+  auto texto = [](const char *t) { return std::string("{\"type\":\"text\",\"text\":\"") + t + "\"}"; };
+  CHECK(carrega(texto("{HH}:{MM}")) == "", "mostrador comum nao tem campos");
+  CHECK(carrega(texto("{x.temp} C") + "," + texto("{x.hum}% {x.temp}")) == "temp,hum", "texto: %s", l);
+  CHECK(carrega("{\"type\":\"rect\",\"w\":5,\"h\":5,\"when\":\"!x.lv_est=PRONTA\"}," + texto("{x.lv_est}") +
+                ",{\"type\":\"bar\",\"w\":9,\"h\":3,\"value\":\"x.lv_pct\"}") == "lv_est,lv_pct", "when/value: %s", l);
+  CHECK(carrega(texto("{x.} {x.Abc} {x.abcdefghi}") + "," + texto("{x.a-b} x.solto {x.ok}")) == "ok", "chaves invalidas: %s", l);
+  // não passa do tamanho dado
+  facePackFields(l, 1);
+  CHECK(l[0] == 0, "sem pacote: vazio");
+}
+
 static const char *PARTES[] = {"ttl", "values", "temp", "hum", "porta", "ABERTA", "a", "x", "900", "10", "86400", "-1", "1.5", "null", "[]", "{}", "\"\"", "true"};
 
 static void fuzz(long casos) {
@@ -366,6 +390,7 @@ int main(int argc, char **argv) {
   volta_do_millis();
   pacote(tela, arq);
   referencias(tela);
+  campos();
   fuzz(casos);
   delete tela;
   if (falhas) { printf("appdata_test: %d falha(s)\n", falhas); return 1; }

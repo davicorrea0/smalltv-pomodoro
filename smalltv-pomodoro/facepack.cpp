@@ -115,6 +115,34 @@ const char *facePackName() { return pkName; }
 const char *facePackDesc() { return pkDesc; }
 const char *facePackAuthor() { return pkAuthor; }
 
+// Campos de fora que o pacote carregado lê (when/value com "x." e {x.campo} nos textos), sem repetir, separados por
+// vírgula: "lv_est,lv_pct". Vazio = mostrador comum; com algum campo = miniapp. Para a lista do painel e o rodízio.
+void facePackFields(char *out, size_t n) {
+  size_t o = 0;
+  out[0] = 0;
+  auto add = [&](const char *k, size_t kl) {
+    for (const char *p = out; *p;) {  // já está na lista?
+      const char *e = strchr(p, ',');
+      size_t l = e ? (size_t)(e - p) : strlen(p);
+      if (l == kl && !memcmp(p, k, kl)) return;
+      p += l + (e ? 1 : 0);
+    }
+    if (o + (o ? 1 : 0) + kl + 1 > n) return;  // não cabe: fica de fora (a lista é só um índice)
+    if (o) out[o++] = ',';
+    memcpy(out + o, k, kl);
+    o += kl;
+    out[o] = 0;
+  };
+  for (uint8_t i = 0; i < nXref; i++) add(xref[i].k, strlen(xref[i].k));
+  for (uint16_t i = 0; i + 3 < poolUsed; i++) {
+    if (pool[i] != '{' || pool[i + 1] != 'x' || pool[i + 2] != '.') continue;
+    size_t kl = 0;
+    const char *k = pool + i + 3;
+    while (i + 3 + kl < poolUsed && kl <= APPDATA_NAME && ((k[kl] >= 'a' && k[kl] <= 'z') || (k[kl] >= '0' && k[kl] <= '9') || k[kl] == '_')) kl++;
+    if (kl >= 1 && kl <= APPDATA_NAME && i + 3 + kl < poolUsed && k[kl] == '}') add(k, kl);
+  }
+}
+
 void facePackUnload() {
   free(motPool);
   motPool = nullptr;

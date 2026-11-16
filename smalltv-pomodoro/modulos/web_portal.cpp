@@ -773,12 +773,13 @@ void setupWeb() {
       while (d.next()) {
         String fn = d.fileName();
         if (!fn.endsWith(".json") || fn.startsWith("_")) continue;
-        String id = fn.substring(0, fn.length() - 5), name = id, desc, author;
+        String id = fn.substring(0, fn.length() - 5), name = id, desc, author, campos;
         File t = LittleFS.open("/faces/" + id + ".txt", "r");
         if (t) {
           name = t.readStringUntil('\n');
           desc = t.readStringUntil('\n');
           author = t.readStringUntil('\n');
+          campos = t.readStringUntil('\n');  // instalado antes desta versão: vazio (aparece como mostrador comum)
           t.close();
         }
         j += F(",{\"n\":\"");
@@ -789,6 +790,12 @@ void setupWeb() {
         jsonEscapeAppend(j, author.c_str());
         j += F("\",\"pkg\":\"");
         j += id;
+        for (char c : campos)  // só [a-z0-9_,]: qualquer outra coisa no arquivo e a lista não vale
+          if (!((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_' || c == ',')) { campos = ""; break; }
+        if (campos.length()) {  // miniapp: os campos de fora que ele lê
+          j += F("\",\"x\":\"");
+          j += campos;
+        }
         j += F("\"}");
         if (j.length() > 640) jsonFlush(j);
       }
@@ -1062,7 +1069,9 @@ void setupWeb() {
       if (LittleFS.exists("/faces/_novo.png")) LittleFS.rename("/faces/_novo.png", "/faces/" + id + ".png");
       File t = LittleFS.open("/faces/" + id + ".txt", "w");  // metadados para a lista do painel
       if (t) {
-        t.printf_P(PSTR("%s\n%s\n%s\n"), facePackName(), facePackDesc(), facePackAuthor());
+        char campos[100];  // 4ª linha: os campos de fora que ele lê (miniapp); firmware antigo lê só as 3 primeiras
+        facePackFields(campos, sizeof campos);
+        t.printf_P(PSTR("%s\n%s\n%s\n%s\n"), facePackName(), facePackDesc(), facePackAuthor(), campos);
         t.close();
       }
     } else {
