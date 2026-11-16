@@ -4,6 +4,22 @@ const source=require('./fonte.cjs');
 function fn(name){const a=source.indexOf(`void ${name}() {`),b=source.indexOf('\n}',a);if(a<0||b<0)throw Error(name);return source.slice(a,b+2);}
 for(const name of ['handleUpload','handlePackUpload','handlePanelUpload'])
  if(!fn(name).includes('uploadAuthed()'))throw Error(`${name} bypasses upload throttle`);
+{ // dados de fora: POST /api/apps/data só com a chave (nunca a senha do painel), Host e X-SmallTV, espera por IP na
+ // chave errada, corpo limitado; desligado (403) sem /apps.key; a chave só sai num POST com guard() e fica fora do backup
+ const i=source.indexOf('server.on(F("/api/apps/data"), HTTP_POST'),blk=source.slice(i,source.indexOf('\n  });',i));
+ if(i<0)throw Error('/api/apps/data POST expected');
+ if(!blk.includes('if (!panelOk()) { deny(); return; }'))throw Error('/api/apps/data must check Host and X-SmallTV');
+ if(blk.includes('guard()')||blk.includes('authed()')||blk.includes('passOk'))throw Error('/api/apps/data must not accept the panel password');
+ const bl=blk.indexOf('authThrottle.blocked('),ld=blk.indexOf('appsKeyLoad(key)'),ck=blk.indexOf('appsBearerOk('),fl=blk.indexOf('authThrottle.fail('),pt=blk.indexOf('appDataPut(');
+ if(!(bl>=0&&bl<ld&&ld<ck&&ck<fl&&fl<pt))throw Error('/api/apps/data: throttle, key load, bearer check and fail before appDataPut');
+ if(!blk.includes('send_P(403')||!blk.includes('APPDATA_BODY_MAX'))throw Error('/api/apps/data: 403 without key and body limit');
+ const g=source.indexOf('server.on(F("/api/apps/data"), HTTP_GET'),gb=source.slice(g,source.indexOf('\n  });',g));
+ if(g<0||!gb.includes('if (!readOk()) return;')||gb.includes('j += key'))throw Error('/api/apps/data GET must be authed and never print the key');
+ const k=source.indexOf('server.on(F("/api/appskey"), HTTP_POST'),kb=source.slice(k,source.indexOf('\n  });',k));
+ if(k<0||!kb.includes('if (!guard()) return;'))throw Error('/api/appskey must be a guarded POST');
+ if(source.includes('server.on(F("/api/appskey"), HTTP_GET'))throw Error('the key must not leave in a GET');
+ const st=fn('sendState');if(st.includes('apps.key')||st.includes('appsKeyLoad'))throw Error('the key must stay out of /api/state (backup)');
+}
 { // /api/crash (Limpar da última queda) é ação: POST com guard(), e a gravação só acontece em reinício anormal
  const i=source.indexOf('server.on(F("/api/crash"), HTTP_POST'),blk=source.slice(i,source.indexOf('});',i));
  if(i<0||!blk.includes('if (!guard()) return;'))throw Error('/api/crash must be a guarded POST');
@@ -197,6 +213,17 @@ int main(){
  const char*bad[]={"http://a/\\r\\nInjected:1","http://a:65536/","http://a:0/","http://a:/","http://u@host/","https://a/","http://a/fragment#x","http://a/ space","http://a/\\t"};
  for(auto u:bad)assert(!safeHttpUrl(u,strlen(u)));
  const char nul[]="http://a/\\0hidden";assert(!safeHttpUrl(nul,sizeof(nul)-1));
+ { // chave dos dados de fora (/apps.key): 32 hex minúsculos; Bearer exato, comparação de todos os bytes
+  const char*k="0123456789abcdef0123456789abcdef";assert(appsKeyOk(k,32));
+  assert(!appsKeyOk(k,31)&&!appsKeyOk("0123456789ABCDEF0123456789abcdef",32)&&!appsKeyOk("0123456789abcdeg0123456789abcdef",32));
+  std::string b=std::string("Bearer ")+k;assert(appsBearerOk(b.c_str(),b.size(),k));
+  std::string x=b;x.back()='0';assert(!appsBearerOk(x.c_str(),x.size(),k));
+  x=b;x[7]='1';assert(!appsBearerOk(x.c_str(),x.size(),k));
+  std::string c=std::string("bearer ")+k;assert(!appsBearerOk(c.c_str(),c.size(),k));
+  std::string l=b+"0";assert(!appsBearerOk(l.c_str(),l.size(),k));assert(!appsBearerOk(b.c_str(),b.size()-1,k));
+  assert(!appsBearerOk(b.c_str(),b.size(),""));assert(!appsBearerOk("Bearer ",7,k));
+  std::string ruim=std::string("Bearer ")+"0123456789ABCDEF0123456789abcdef";assert(!appsBearerOk(ruim.c_str(),ruim.size(),"0123456789ABCDEF0123456789abcdef"));
+ }
  const char*hosts[]={"192.168.1.2","192.168.1.2:80","0.0.0.0","255.255.255.255:65535"};
  for(auto h:hosts)assert(safeIpv4Host(h,strlen(h)));
  const char*badHosts[]={"smalltv.local","999.1.1.1","1.2.3","1.2.3.4:0","1.2.3.4:65536","1.2.3.4:80:1","1.2.3.4 ",""};
