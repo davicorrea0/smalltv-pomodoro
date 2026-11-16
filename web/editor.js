@@ -14,31 +14,33 @@ const MODELS = [
   ['Duas linhas', [[12, 12, 216, 104, 'W'], [12, 124, 216, 104, 'W']]],
   ['Destaque e dois', [[12, 12, 216, 128, 'H'], [12, 148, 104, 80, 'S'], [124, 148, 104, 80, 'S']]]];
 // conteúdo: [nome, texto, texto na vaga pequena (0 = o mesmo), fontes (a primeira é a padrão)]
-// bebas só desenha 0-9 e ':' (o "-" da temperatura negativa fica em branco); letras vão em pixel
+// bebas só desenha 0-9 e ':': letras e o "-" de uma temperatura negativa vão em pixel (em bebas, -5° sairia "5°")
 const KINDS = {
   hora: ['Hora', '{HH}:{MM}', 0, ['bebas', 'pixel']],
   data: ['Data', '{WD} {DD} {MON}', '{DD}/{MO}', ['pixel']],
-  temp: ['Temperatura', '{TEMP}°', 0, ['bebas', 'pixel']],
+  temp: ['Temperatura', '{TEMP}°', 0, ['pixel']],
   texto: ['Texto', '', 0, ['pixel']]};
 // tamanho por tipo de vaga (F 216x216, W 216x104, H 216x128, S 104x80), [sem rótulo, com rótulo]:
 // pixel = escala da fonte 6x8, bebas = altura em px. O maior que cabe com o texto mais largo ("23:59", "-13°",
 // "QUA 31 OUT", TXTMAX letras); o simulador confere.
 const SZ = {
   'hora.bebas': {F: [84, 84], W: [84, 80], H: [84, 84], S: [40, 40]},
-  'hora.pixel': {F: [7, 7], W: [7, 7], H: [7, 7], S: [3, 3]},
-  'temp.bebas': {F: [120, 120], W: [104, 80], H: [120, 104], S: [56, 56]},
+  'hora.pixel': {F: [7, 7], W: [7, 7], H: [7, 7]},
   'temp.pixel': {F: [8, 8], W: [8, 8], H: [8, 8], S: [5, 5]},
   'data.pixel': {F: [3, 3], W: [3, 3], H: [3, 3], S: [3, 3]},
   'texto.pixel': {F: [4, 4], W: [3, 3], H: [3, 3], S: [2, 2]}};
 // letras do texto livre e do rótulo (pixel 2, em MUTED, no alto da vaga) por tipo de vaga
 const TXTMAX = {F: 9, W: 12, H: 12, S: 8}, LBLMAX = {F: 18, W: 18, H: 18, S: 8}, LBL = 24;  // rótulo: 16 px + 8 de vão
 const fontH = (f, s) => f == 'pixel' ? 8 * s : s;
+// fontes do conteúdo k numa vaga do tipo v: na vaga pequena a hora em pixel teria 24 px, abaixo do mínimo de 40 px
+// do guia (docs/PACOTES.md), então lá ela só vai em bebas
+const fonts = (k, v) => k == 'hora' && v == 'S' ? ['bebas'] : KINDS[k][3];
 // só o que a fonte do relógio desenha (ASCII e letras acentuadas, que viram a letra sem acento); sem { }, que
 // seriam lidos como variável
 const clean = s => String(s || '').replace(/[^\x20-\x7a|~°À-ÿ]/g, '').trim();
 // bloco com valores válidos para a vaga
 function block(d, i) {
-  const s = MODELS[d.m][1][i], b = d.b[i] || {}, k = KINDS[b.c] ? b.c : 'hora', K = KINDS[k], f = K[3].includes(b.f) ? b.f : K[3][0];
+  const s = MODELS[d.m][1][i], b = d.b[i] || {}, k = KINDS[b.c] ? b.c : 'hora', K = KINDS[k], F = fonts(k, s[4]), f = F.includes(b.f) ? b.f : F[0];
   const lb = clean(b.l).slice(0, LBLMAX[s[4]]);
   return {s, k, f, lb, size: SZ[k + '.' + f][s[4]][lb ? 1 : 0], color: COLORS.some(c => c[1] == b.k) ? b.k : INK,
     text: k == 'texto' ? clean(b.t).slice(0, TXTMAX[s[4]]) : s[4] == 'S' && K[2] || K[1]};
@@ -136,7 +138,7 @@ function open(P) {
       };
       sel('Mostra', Object.entries(KINDS).map(([k, K]) => [k, K[0]]), B.k, v => { b.c = v; });
       if (B.k == 'texto') inp('Texto', b.t, TXTMAX[s[4]], 'ex.: BOM DIA', v => { b.t = v; });
-      if (KINDS[B.k][3].length > 1) sel('Fonte', [['bebas', 'Números grandes'], ['pixel', 'Pixel']], B.f, v => { b.f = v; });
+      if (fonts(B.k, s[4]).length > 1) sel('Fonte', [['bebas', 'Números grandes'], ['pixel', 'Pixel']], B.f, v => { b.f = v; });
       sel('Cor', COLORS.map(([n, v]) => [v, n]), B.color, v => { b.k = v; });
       inp('Rótulo', b.l, LBLMAX[s[4]], 'opcional', v => { b.l = v; });
       w.append(box);
@@ -182,6 +184,7 @@ open.pack = pack;
 open.newId = newId;
 open.MODELS = MODELS;
 open.KINDS = KINDS;
+open.fonts = fonts;
 open.TXTMAX = TXTMAX;
 open.LBLMAX = LBLMAX;
 window.faceEditor = open;

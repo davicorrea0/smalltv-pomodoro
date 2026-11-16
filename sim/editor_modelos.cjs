@@ -10,7 +10,7 @@ const E = w.faceEditor, lines = [];
 // conteúdos e fontes do editor (o teste falha se o editor ganhar um e a lista não)
 const combos = [];
 for (const [k, K] of Object.entries(E.KINDS)) for (const f of K[3]) combos.push([k, f]);
-assert.strictEqual(combos.length, 6, 'conteúdo ou fonte nova no editor: confira a lista do teste');
+assert.strictEqual(combos.length, 5, 'conteúdo ou fonte nova no editor: confira a lista do teste');
 E.MODELS.forEach((M, m) => {
   for (const [k, f] of combos) for (const lbl of [false, true]) {
     // "W" é a letra mais larga da fonte pixel (todas avançam 6, mas W ocupa as 5 colunas)
@@ -19,6 +19,11 @@ E.MODELS.forEach((M, m) => {
     const texts = p.layers.map(l => l.text);
     assert.strictEqual(texts.length, M[1].length * (lbl ? 2 : 1));
     for (const x of texts) assert(Buffer.byteLength(x) <= 47, 'texto passa de 47 bytes: ' + x);
+    for (const l of p.layers) {
+      // bebas só desenha 0-9 e ':' (a temperatura negativa perderia o "-"); hora com 40 px ou mais (docs/PACOTES.md)
+      if (l.font == 'bebas') assert(/^(\{HH\}|\{MM\}|:)+$/.test(l.text), 'bebas com texto que ela não desenha: ' + l.text);
+      if (l.text == '{HH}:{MM}') assert(l.font == 'bebas' ? l.size >= 40 : l.size >= 5, 'hora pequena demais: ' + JSON.stringify(l));
+    }
     lines.push(M[1].map(s => s.slice(0, 4).join(',')).join(';') + '\t' + JSON.stringify(p));
   }
 });
@@ -28,7 +33,8 @@ E.MODELS.forEach((M, m) => {
   assert.strictEqual(p.name, 'Café  HH');
   assert.strictEqual(p.layers[0].text, 'ÁÉÍÓÚÇÃÕÂÊ°x');   // sem { } (seriam variável) e cortado em 12 letras
   assert(p.layers.every(l => Buffer.byteLength(l.text) <= 47));
-  assert.deepStrictEqual(p.layers.map(l => l.font), ['pixel', 'pixel', 'pixel', 'pixel']);
+  // a hora pedida em pixel numa vaga pequena sai em bebas (pixel 3 teria 24 px, abaixo do mínimo do guia)
+  assert.deepStrictEqual(p.layers.map(l => l.font), ['pixel', 'pixel', 'pixel', 'bebas']);
   assert.strictEqual(E.pack({m: 0, b: [{c: 'texto', t: '  '}]}).layers.length, 0);   // vazio: o editor não instala
 }
 fs.writeFileSync(process.argv[2], lines.join('\n') + '\n');
