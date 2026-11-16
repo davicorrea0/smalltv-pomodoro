@@ -64,12 +64,12 @@ echo "firmware: $size bytes, .gz $gz bytes, layout $LAYOUT (ainda pode crescer ~
 falhou=0
 ram=$(awk '{ for (i = 1; i <= NF; i++) if ($i ~ /^(DATA|RODATA|BSS)$/) s += $(i + 1) } END { print s + 0 }' build/compilar.log)
 if [ "$LIMITE_RAM" -gt 0 ] && [ "$ram" -gt "$LIMITE_RAM" ]; then
-  echo "ERRO firmware: RAM fixa (DATA+RODATA+BSS) = $ram bytes, acima do limite de $LIMITE_RAM (estoura em $(( ram - LIMITE_RAM )) bytes). Reduza a RAM, ou mude o limite com registro em DECISOES (LIMITE_RAM)."
+  echo "ERRO firmware: RAM fixa (DATA+RODATA+BSS) = $ram bytes, acima do limite de $LIMITE_RAM (estoura em $(( ram - LIMITE_RAM )) bytes). Reduza a RAM, ou mude o limite (LIMITE_RAM) justificando no PR."
   falhou=1
 fi
 folga=$(( 1048576 - need ))
 if [ "$LIMITE_JANELA_KB" -gt 0 ] && [ "$folga" -lt $(( LIMITE_JANELA_KB * 1024 )) ]; then
-  echo "ERRO firmware: folga na janela de 1 MB do layout antigo = $(( folga / 1024 )) KB ($folga bytes), abaixo do mínimo de $LIMITE_JANELA_KB KB (firmware $size bytes, .gz $gz bytes). Reduza o código, ou mude o limite com registro em DECISOES (LIMITE_JANELA_KB; 0 desliga)."
+  echo "ERRO firmware: folga na janela de 1 MB do layout antigo = $(( folga / 1024 )) KB ($folga bytes), abaixo do mínimo de $LIMITE_JANELA_KB KB (firmware $size bytes, .gz $gz bytes). Reduza o código, ou mude o limite (LIMITE_JANELA_KB; 0 desliga) justificando no PR."
   falhou=1
 fi
 [ $falhou -eq 0 ] || exit 1
