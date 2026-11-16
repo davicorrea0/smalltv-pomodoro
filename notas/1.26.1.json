@@ -1,0 +1,26 @@
+{
+  "pt": [
+    "Versão 1.26.1: correções da 1.26.0 na rede, na tela apagada à noite e nos mostradores animados",
+    "Se o relógio está na 1.23 ou anterior: esta versão reorganiza a memória do relógio. Antes de atualizar, o painel salva um backup completo (fotos, GIFs e mostradores); depois, use Restaurar backup. Ajustes, Wi-Fi, histórico, rodízio e avisos ficam sozinhos",
+    "Rede: contorno de um defeito do núcleo do ESP8266 que pode corromper a memória quando o navegador reaproveita conexões já fechadas (uma causa possível de reinícios com o painel aberto)",
+    "Tela apagada à noite: a atualização acende a tela na hora, e a prévia de mostrador fica acesa os 15 segundos inteiros",
+    "Mostradores animados de pacote desenham menos por quadro e travam menos",
+    "Reinstalar um mostrador de pacote por cima do que está em uso não troca mais para um mostrador embutido"
+  ],
+  "en": [
+    "Version 1.26.1: fixes for 1.26.0 in networking, the screen off at night and animated faces",
+    "If the clock is on 1.23 or earlier: this version reorganizes the clock's storage. Before updating, the panel saves a full backup (photos, GIFs and faces); afterwards, use Restore backup. Settings, Wi-Fi, history, rotation and notifications stay on their own",
+    "Network: a workaround for a bug in the ESP8266 core that can corrupt memory when the browser reuses connections that were already closed (a possible cause of restarts with the panel open)",
+    "Screen off at night: an update lights the screen right away, and a face preview stays lit for the full 15 seconds",
+    "Animated face packs draw less per frame and stutter less",
+    "Reinstalling a face pack over the one in use no longer switches to a built-in face"
+  ],
+  "es": [
+    "Versión 1.26.1: correcciones de la 1.26.0 en la red, la pantalla apagada de noche y las esferas animadas",
+    "Si el reloj está en la 1.23 o anterior: esta versión reorganiza la memoria del reloj. Antes de actualizar, el panel guarda una copia completa (fotos, GIF y esferas); después, usa Restaurar copia. Los ajustes, el Wi-Fi, el historial, la rotación y los avisos se mantienen solos",
+    "Red: una solución para un fallo del núcleo del ESP8266 que puede corromper la memoria cuando el navegador reutiliza conexiones ya cerradas (una posible causa de reinicios con el panel abierto)",
+    "Pantalla apagada de noche: una actualización enciende la pantalla al instante, y la vista previa de una esfera queda encendida los 15 segundos completos",
+    "Las esferas animadas de paquete dibujan menos por cuadro y se traban menos",
+    "Reinstalar una esfera de paquete encima de la que está en uso ya no cambia a una esfera integrada"
+  ]
+}
