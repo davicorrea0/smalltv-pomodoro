@@ -27,13 +27,14 @@ No `secrets.yaml` do Home Assistant, guarde o cabeçalho completo, com a palavra
 smalltv_auth: "Bearer COLE_A_CHAVE_AQUI"
 ```
 
-No `configuration.yaml`, use o **IP** do relógio (ele aparece em Ajustes → Sistema). O nome do roteador não serve, e o
-relógio responde 403.
+No `configuration.yaml`, o endereço é `smalltv.local`, o nome que o relógio anuncia na rede (com dois relógios, o
+segundo vira `smalltv-2.local`). Se o seu Home Assistant não resolver nomes `.local`, use o IP que aparece em Ajustes →
+Sistema. O nome que o roteador dá ao relógio não serve: o relógio responde 403.
 
 ```yaml
 rest_command:
   smalltv_dados:
-    url: "http://192.168.1.50/api/apps/data"
+    url: "http://smalltv.local/api/apps/data"   # ou o IP do relógio
     method: POST
     content_type: "application/json"
     headers:
@@ -63,7 +64,8 @@ automation:
               "porta": "{{ 'ABERTA' if is_state('binary_sensor.porta_entrada', 'on') else 'FECHADA' }}"}}
 ```
 
-- **Quando enviar:** quando o sensor muda, e a cada 5 minutos. Não mande a cada poucos segundos: o relógio atende
+- **Quando enviar:** quando o sensor muda, e a cada 5 minutos. O envio a cada 5 minutos também cobre um envio perdido
+  (o nome `.local` às vezes falha por um instante) antes de o valor vencer. Não mande a cada poucos segundos: o relógio atende
   um pedido por vez, junto com o painel e a tela.
 - **`has_value`** evita que um sensor indisponível vire 0 na tela. Sem envio, o relógio mostra `--` quando o prazo
   vence.
@@ -123,7 +125,7 @@ costume (ou ponha no rodízio).
 Teste rápido no terminal:
 
 ```bash
-curl -i -H "X-SmallTV: 1" -H "Authorization: Bearer SUA_CHAVE" -H "Content-Type: application/json" -d '{"ttl":120,"values":{"temp":22}}' http://192.168.1.50/api/apps/data
+curl -i -H "X-SmallTV: 1" -H "Authorization: Bearer SUA_CHAVE" -H "Content-Type: application/json" -d '{"ttl":120,"values":{"temp":22}}' http://smalltv.local/api/apps/data
 ```
 
 ## English summary
@@ -133,8 +135,9 @@ installed format-2 face draws them with `{x.field}`.
 
 1. In the clock panel, open **Settings → Home Assistant** and tap **Create key**. The key only writes data: it does not
    open the panel or change settings.
-2. Use the `rest_command` and automation above. Put `Bearer <key>` in `secrets.yaml`, use the clock's IP address, and
-   send the header `X-SmallTV: 1`.
+2. Use the `rest_command` and automation above. Put `Bearer <key>` in `secrets.yaml`, use `smalltv.local`
+   (or the clock's IP address if your Home Assistant does not resolve `.local` names), and send the header
+   `X-SmallTV: 1`.
 3. Body: `{"ttl": 10..86400, "values": {...}}`, 1 to 8 fields per request, names `[a-z0-9_]{1,8}`, values text up to
    15 bytes or a 32-bit integer, 512 bytes max. The clock keeps 16 fields in RAM, shared by all senders. Each field
    expires after its `ttl` and then shows `--`. Use a prefix per sender.
