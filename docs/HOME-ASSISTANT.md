@@ -85,6 +85,9 @@ Num pacote do **formato 2** (ver [PACOTES.md](PACOTES.md)), `{x.campo}` no texto
 Instale pelo painel, em Relógio → Mais mostradores → **Instalar de um arquivo**, e escolha o mostrador como de
 costume (ou ponha no rodízio).
 
+- **Estados e barras:** `"when": "x.porta=ABERTA"` mostra uma camada só nesse estado, `"!x.campo"` mostra outra
+  quando o valor não chegou, e `bar`/`arc` com `"value": "x.pct"` desenham o número (0 a `max`, padrão 100). Detalhes
+  em [PACOTES.md](PACOTES.md).
 - **Números:** use a fonte `pixel` ou mande inteiros. As fontes grandes (`outfit`, `bebas`, `righteous`) só têm
   dígitos: `21.5` vira `21 5`, e `--` e `%` somem.
 - Os acentos viram a letra sem acento na fonte do relógio.
