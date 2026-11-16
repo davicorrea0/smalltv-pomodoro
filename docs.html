@@ -32,8 +32,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Silkscreen&display=swap">
 <link rel="stylesheet" href="style.css?v=19">
+<link rel="stylesheet" href="docs.css?v=1">
 </head>
-<body>
+<body class="docs-page">
 
 <header class="top">
   <div class="wrap">
@@ -50,23 +51,60 @@
   </div>
 </header>
 
-<main>
+<div class="docs-layout">
+<aside class="docs-side">
+  <div class="docs-bar">
+   <button class="docs-btn" id="secoes" type="button" aria-expanded="false" aria-controls="docs-nav" hidden><span>Seções</span></button>
+   <div class="docs-find"><input id="busca" type="search" placeholder="Buscar na docs" aria-label="Buscar na documentação" autocomplete="off" spellcheck="false"><kbd>/</kbd></div>
+  </div>
+  <nav class="docs-nav" id="docs-nav" aria-label="Partes da documentação">
+   <div class="grp"><a href="#primeiros-passos">Primeiros passos</a>
+    <ul>
+     <li><a href="#instalar">Instalar o firmware</a></li>
+     <li><a href="#wifi">Conectar ao Wi-Fi</a></li>
+     <li><a href="#achar-painel">Achar o painel</a></li>
+    </ul>
+   </div>
+   <div class="grp"><a href="#dia-a-dia">O dia a dia</a>
+    <ul>
+     <li><a href="#pomodoro">Pomodoro</a></li>
+     <li><a href="#mostradores">Mostradores e galeria</a></li>
+     <li><a href="#fotos">Fotos e GIFs</a></li>
+     <li><a href="#clima">Clima e chuva</a></li>
+     <li><a href="#brilho">Brilho</a></li>
+     <li><a href="#lcd-verde">Tom verde dos LCDs</a></li>
+     <li><a href="#alexa">Alexa</a></li>
+     <li><a href="#idioma">Idioma</a></li>
+    </ul>
+   </div>
+   <div class="grp"><a href="#manutencao">Manutenção</a>
+    <ul>
+     <li><a href="#atualizacoes">Atualizações</a></li>
+     <li><a href="#backup">Backup e restauração</a></li>
+     <li><a href="#senha">Senha do painel</a></li>
+     <li><a href="#diagnostico">Diagnóstico</a></li>
+     <li><a href="#recuperacao">Modo de recuperação</a></li>
+     <li><a href="#voltar-original">Voltar ao original</a></li>
+    </ul>
+   </div>
+   <div class="grp"><a href="#faq">Perguntas frequentes</a></div>
+   <p class="docs-empty" id="docs-empty" role="status" hidden></p>
+  </nav>
+</aside>
+
+<main class="docs-main">
   <div class="page-head">
-    <div class="wrap">
-      <div class="eyebrow">Docs</div>
-      <h1>Como usar</h1>
-      <p>Do primeiro Wi-Fi à recuperação por cabo, em passos curtos. Cada ajuste citado aqui está no painel do relógio, na aba indicada.</p>
-      <nav class="toc" aria-label="Seções"><a href="#primeiros-passos">Primeiros passos</a><a href="#dia-a-dia">O dia a dia</a><a href="#manutencao">Manutenção</a><a href="#faq">Perguntas frequentes</a></nav>
-    </div>
+    <div class="eyebrow">Docs</div>
+    <h1>Como usar</h1>
+    <p>Do primeiro Wi-Fi à recuperação por cabo, em passos curtos. Cada ajuste citado aqui está no painel do relógio, na aba indicada.</p>
   </div>
 
 <section id="primeiros-passos" class="doc">
- <div class="wrap">
-  <div class="eyebrow">1 · Primeiros passos</div>
+  <div class="eyebrow">Primeiros passos</div>
   <h2>Do relógio de fábrica ao Pomodoro</h2>
   <p class="section-lead">Leva uns 10 minutos, sem cabo e sem abrir o relógio. Funciona só no <strong>SmallTV Ultra</strong> (ESP8266). Não grave no SmallTV Pro (ESP32) nem em outros modelos.</p>
 
-  <h3 class="sub">Instalar o firmware</h3>
+  <h3 class="sub" id="instalar">Instalar o firmware</h3>
   <ol class="steps"><li><h3>Baixe o arquivo</h3><p>Pegue o <code>.bin</code> mais recente na <a href="https://github.com/davicorrea0/smalltv-pomodoro/releases">página de versões</a> (ou no botão de download da <a href="./">página inicial</a>). Use a versão <strong>estável</strong>.</p></li><li><h3>Abra a página do relógio de fábrica</h3><p>No navegador, entre no endereço do relógio (o IP que aparece na tela dele) e abra <strong>Firmware Upgrade</strong>.</p></li><li><h3>Envie o arquivo</h3><p>Escolha o <code>.bin</code>, envie e espere o relógio reiniciar sozinho. As telas do Pomodoro aparecem em seguida.</p></li></ol>
   <div class="note warn"><p><strong>Deu ERROR[4]: Not Enough Space?</strong> O espaço de atualização de fábrica varia de um relógio para outro. Resolva em dois passos:</p>
    <ol style="margin:6px 0 0;padding-left:20px;color:var(--muted)">
@@ -75,7 +113,7 @@
    </ol></div>
   <div class="note"><p><strong>Fotos e GIFs do firmware de fábrica:</strong> a instalação formata a memória de arquivos, então as fotos do original <strong>não ficam</strong>. O Wi-Fi salvo fica; os ajustes começam do zero. Envie as fotos de novo pelo painel depois.</p></div>
 
-  <h3 class="sub">Conectar o relógio ao Wi-Fi</h3>
+  <h3 class="sub" id="wifi">Conectar o relógio ao Wi-Fi</h3>
   <p>Se o relógio já tinha o Wi-Fi de casa salvo pelo firmware de fábrica, ele entra sozinho e você pode pular para <a href="#achar-painel">achar o painel</a>. Se não entrou:</p>
   <ol class="steps"><li><h3>Escaneie o QR da tela</h3><p>A tela mostra <strong>ETAPA 1/2</strong> com um QR. Aponte a câmera do celular e confirme entrar na rede <code>SmallTV-Pomodoro</code>. O QR já leva a senha temporária dessa rede.</p><p class="m">Sem câmera ou o QR não leu? Entre na rede <code>SmallTV-Pomodoro</code> pelo Wi-Fi do celular e digite a senha de 8 caracteres que está na própria tela.</p></li><li><h3>Abra o portal</h3><p>Com o celular conectado, a tela muda para <strong>ETAPA 2/2</strong>. O portal costuma abrir sozinho. Se não abrir, escaneie o segundo QR ou abra <code>http://192.168.4.1/</code>.</p></li><li><h3>Escolha o Wi-Fi de casa</h3><p>Selecione a sua rede e digite a senha dela. Só funcionam redes de <strong>2,4 GHz</strong> (o relógio não tem 5 GHz). O relógio reinicia e mostra o endereço do painel.</p></li></ol>
   <div class="note"><p>Se o Wi-Fi não conectar, não tire da tomada para tentar de novo: 3 reinícios seguidos, com menos de 30 s ligado em cada um, abrem o <a href="#recuperacao">modo de recuperação</a> (seguro, mas confunde).</p></div>
@@ -95,12 +133,11 @@
    <p>Muitos roteadores não passam o multicast da rede de 2,4 GHz para a de 5 GHz. O relógio fica sempre no 2,4 GHz, então a resposta dele não chega ao computador (só uma cópia direta chega, e no Windows ela pode cair em outro programa, como o Chrome, em vez do sistema: por isso funciona só às vezes).</p>
    <ol><li>Ponha o computador na rede de <strong>2,4 GHz</strong>: aí funciona.</li><li>Ou use o <strong>IP</strong> nos favoritos (acima).</li><li>Alguns roteadores têm uma opção para isso: <em>IGMP snooping</em>, <em>multicast enhancement</em> ou <em>mDNS/Bonjour forwarding</em>.</li></ol>
   </details>
- </div>
+  <a class="next-part" href="#dia-a-dia"><span>Próxima parte</span>O dia a dia</a>
 </section>
 
 <section id="dia-a-dia" class="doc">
- <div class="wrap">
-  <div class="eyebrow">2 · O dia a dia</div>
+  <div class="eyebrow">O dia a dia</div>
   <h2>Usando o relógio</h2>
   <p class="section-lead">Tudo se ajusta no painel e <strong>salva sozinho</strong> ao mudar.</p>
 
@@ -159,12 +196,11 @@
   <div class="topic" id="idioma"><h3>Idioma</h3>
    <p>Em <strong>Ajustes → Idioma</strong> escolha português, inglês ou espanhol. O idioma vale para o painel <strong>e</strong> para a tela do relógio (datas, clima, Pomodoro, o mostrador Palavras).</p>
   </div>
- </div>
+  <a class="next-part" href="#manutencao"><span>Próxima parte</span>Manutenção</a>
 </section>
 
 <section id="manutencao" class="doc">
- <div class="wrap">
-  <div class="eyebrow">3 · Manutenção</div>
+  <div class="eyebrow">Manutenção</div>
   <h2>Atualizar, guardar e consertar</h2>
 
   <div class="topic" id="atualizacoes"><h3>Atualizações: estável × versões de teste</h3>
@@ -198,18 +234,21 @@
     <figure class="lcd"><img class="px" src="docs/img/rec-2.png" width="240" height="240" loading="lazy" alt="Tela do modo de recuperação com o QR que abre o painel"><figcaption>Recuperação, etapa 2/2</figcaption></figure>
    </div>
    <p><strong>A tela nem acende e a recuperação não abre?</strong></p>
-   <p>Dá para regravar por cabo, num adaptador USB-TTL de 3,3 V, <strong>sem perder fotos nem ajustes</strong> (em relógios que já estão na memória 4M2M). Resumo: ligue <code>GND</code>, <code>TXD0→RX</code>, <code>RXD0→TX</code> e <code>GPIO0→GND</code> (só na hora de ligar); faça uma cópia com <code>esptool read_flash 0x0 0x400000</code> e grave com <code>esptool write_flash 0x0 smalltv-pomodoro-vX.Y.Z.bin</code>. <code>erase_flash</code> só em último caso: apaga tudo. Sem adaptador USB-TTL há alternativas (NodeMCU/ESP32, Raspberry Pi, Arduino Uno). Passo a passo com fios, comandos e erros comuns: <a href="https://github.com/davicorrea0/smalltv-pomodoro/blob/main/docs/RECUPERACAO.md">guia de recuperação por cabo</a> (em inglês).</p>
+   <p>Dá para regravar por cabo, num adaptador USB-TTL de 3,3 V, <strong>sem perder fotos nem ajustes</strong> (em relógios que já estão na memória 4M2M). Ligue <code>GND</code>, <code>TXD0→RX</code>, <code>RXD0→TX</code> e <code>GPIO0→GND</code> (só na hora de ligar). Com o <code>esptool</code>, faça antes uma cópia da memória inteira (troque <code>COM5</code> pela sua porta; no Linux, <code>/dev/ttyUSB0</code>):</p>
+   <div class="code"><div class="bar"><span>Terminal</span></div><pre><code>esptool --port COM5 --baud 460800 read_flash 0x0 0x400000 backup-flash.bin</code></pre></div>
+   <p>Entre de novo no modo de gravação e grave o <code>.bin</code> da versão (o <code>.bin</code> comum, não o <code>.bin.gz</code>):</p>
+   <div class="code"><div class="bar"><span>Terminal</span></div><pre><code>esptool --port COM5 --baud 460800 write_flash 0x0 smalltv-pomodoro-vX.Y.Z.bin</code></pre></div>
+   <p><code>erase_flash</code> só em último caso: apaga tudo. Sem adaptador USB-TTL há alternativas (NodeMCU/ESP32, Raspberry Pi, Arduino Uno). Passo a passo com fios, comandos e erros comuns: <a href="https://github.com/davicorrea0/smalltv-pomodoro/blob/main/docs/RECUPERACAO.md">guia de recuperação por cabo</a> (em inglês).</p>
   </div>
 
   <div class="topic" id="voltar-original"><h3>Voltar ao firmware original</h3>
    <div class="note warn"><p><strong>Instrução suspensa até teste com cabo:</strong> desde a versão 1.24 (layout de memória 4M2M), a volta ao <a href="https://github.com/GeekMagicClock/smalltv-ultra">firmware original da GeekMagic</a> pelo modo de recuperação ainda não foi testada num relógio de verdade. Não tente voltar sem ter um adaptador USB-TTL de 3,3 V para <a href="#recuperacao">regravar por cabo</a> caso o firmware original não inicie.</p></div>
   </div>
- </div>
+  <a class="next-part" href="#faq"><span>Próxima parte</span>Perguntas frequentes</a>
 </section>
 
 <section id="faq" class="doc">
- <div class="wrap">
-  <div class="eyebrow">4 · Perguntas frequentes</div>
+  <div class="eyebrow">Perguntas frequentes</div>
   <h2>Problemas comuns</h2>
   <div class="faq">
    <details class="note"><summary>O <code>smalltv.local</code> não abre.</summary><p>Confira se digitou o <code>http://</code> na frente. Se o computador está na rede de 5 GHz, o relógio (sempre no 2,4 GHz) pode não ser visto: ponha o computador no 2,4 GHz ou use o IP que aparece na tela do relógio, de preferência reservado no roteador. No Android, use sempre o IP. Detalhes em <a href="#achar-painel">Achar o painel</a>.</p></details>
@@ -221,9 +260,9 @@
    <details class="note"><summary>O relógio não entra no Wi-Fi.</summary><p>Confirme que a rede é de <strong>2,4 GHz</strong> e que a senha está certa. Para escolher outra rede, use <em>Ajustes → Resetar Wi-Fi</em> (no painel) ou <em>esquecer o Wi-Fi</em> no <a href="#recuperacao">modo de recuperação</a>: o relógio reinicia e abre a configuração com QR de novo.</p></details>
    <details class="note"><summary>Clima ou atualização falham.</summary><p>Veja o <em>Sinal do Wi-Fi</em> no Diagnóstico: abaixo de −75 dBm é o motivo mais comum. Aproxime o relógio do roteador e confira se a cidade está escolhida em Clima.</p></details>
   </div>
- </div>
 </section>
 </main>
+</div>
 
 <footer>
   <div class="wrap">
@@ -252,5 +291,6 @@
   </div>
 </footer>
 
+<script src="docs.js?v=1" defer></script>
 </body>
 </html>
