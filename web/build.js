@@ -6,7 +6,8 @@
 //
 // O dicionário inglês/espanhol não vai na flash: o painel busca no site panel/i18n-<código>.json
 // (o código é um hash do web/i18n.json, trocado no lugar de __I18V__) e guarda no navegador.
-// O cartão de compartilhar (web/share.js) idem, como panel/share-<código>.js, baixado só na hora de compartilhar.
+// O cartão de compartilhar (web/share.js) idem, como panel/share-<código>.js, baixado só na hora de compartilhar,
+// e o editor de mostrador (web/editor.js), como panel/editor-<código>.js, baixado só ao abrir o editor.
 // A cada versão, publique os arquivos de web/out/ na pasta panel/ do site (gh-pages).
 const fs = require('fs'), path = require('path'), zlib = require('zlib'), crypto = require('crypto');
 const src = path.join(__dirname, 'index.html');
@@ -37,7 +38,14 @@ const out = path.join(__dirname, '..', 'smalltv-pomodoro', 'web.h');
   fs.writeFileSync(path.join(__dirname, 'out', `share-${shv}.js`), share);
   // SRI do arquivo publicado (já minificado): o navegador recusa rodar se o site servir outra coisa
   html = html.replace(/__SHI__/g, 'sha384-' + crypto.createHash('sha384').update(share).digest('base64'));
-  // posições do <script> só agora, depois de trocar os marcadores (a SRI é mais longa que __SHI__)
+  // editor de mostrador: web/editor.js vai para o site como panel/editor-<código>.js, igual ao cartão
+  let edit = fs.readFileSync(path.join(__dirname, 'editor.js'), 'utf8');
+  const edv = crypto.createHash('sha1').update(edit).digest('hex').slice(0, 10);
+  html = html.replace(/__EDV__/g, edv);
+  if (terser) edit = (await terser.minify(edit, { compress: { passes: 2 }, format: { comments: false } })).code;
+  fs.writeFileSync(path.join(__dirname, 'out', `editor-${edv}.js`), edit);
+  html = html.replace(/__EDI__/g, 'sha384-' + crypto.createHash('sha384').update(edit).digest('base64'));
+  // posições do <script> só agora, depois de trocar os marcadores (as SRI são mais longas que __SHI__/__EDI__)
   const a = html.indexOf('<script>') + 8, b = html.indexOf('</script>');
   if (terser) html = html.slice(0, a) + (await terser.minify(html.slice(a, b), { compress: { passes: 2 }, format: { comments: false } })).code + html.slice(b);
 
@@ -72,6 +80,6 @@ const out = path.join(__dirname, '..', 'smalltv-pomodoro', 'web.h');
   fs.writeFileSync(out, h);
   // para o latest.json e o scripts/publicar.sh ("site": os arquivos que vão para panel/ no site)
   fs.writeFileSync(path.join(__dirname, 'out', 'panel.json'), JSON.stringify({ panel: file, psri: sri, psize: gz.length,
-    site: [file, `i18n-${ver}.json`, `tz-${tzv}.json`, `share-${shv}.js`] }) + '\n');
-  console.log(`painel: ${(fs.statSync(src).size / 1024).toFixed(1)} KB -> ${(gz.length / 1024).toFixed(1)} KB (gzip) em ${file}; carregador na flash: ${loader.length} bytes; dicionário i18n-${ver}.json, fusos tz-${tzv}.json, cartão share-${shv}.js`);
+    site: [file, `i18n-${ver}.json`, `tz-${tzv}.json`, `share-${shv}.js`, `editor-${edv}.js`] }) + '\n');
+  console.log(`painel: ${(fs.statSync(src).size / 1024).toFixed(1)} KB -> ${(gz.length / 1024).toFixed(1)} KB (gzip) em ${file}; carregador na flash: ${loader.length} bytes; dicionário i18n-${ver}.json, fusos tz-${tzv}.json, cartão share-${shv}.js, editor editor-${edv}.js (${edit.length} bytes)`);
 })();

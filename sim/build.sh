@@ -27,6 +27,7 @@ fi
 GFX="${GFX:-$HOME/Documents/Arduino/libraries/Adafruit_GFX_Library}"
 mkdir -p out
 node tint_test.cjs out/tint_test.inc || exit 1
+node editor_modelos.cjs out/editor-modelos.txt || exit 1  # modelos do editor do painel, conferidos pelo simulador
 # Windows: executável Windows de 32 bits; Linux (também o build automático do GitHub): Linux de 32 bits, estático
 if [ -n "$LOCALAPPDATA" ]; then TARGET=x86-windows-gnu; BIN=sim.exe; else TARGET=x86-linux-musl; BIN=sim; fi
 # sem zig (Linux): o g++ de 32 bits (pacote g++-multilib), o mesmo dos testes de GIF e JPEG; com
