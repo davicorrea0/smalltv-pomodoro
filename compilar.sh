@@ -24,7 +24,7 @@
 #  - voltar ao firmware original: sem compressão até ~532 KB; acima disso, pelo .gz dele (compactar.js).
 cd "$(dirname "$0")"
 # ---- Limites de tamanho (a CI e o scripts/publicar.sh passam por aqui: estourar um deles faz o build FALHAR) ----
-# MUDAR ESTES VALORES EXIGE REGISTRO EM DECISOES (ver DECISOES.md do projeto): data, novo valor, porquê, PR.
+# MUDAR ESTES VALORES exige justificativa no PR que muda: data, novo valor, porquê.
 # Ajuste pontual ou desligar pelo ambiente (0 desliga), por exemplo LIMITE_JANELA_KB=0 depois que a ponte estável estiver no ar.
 LIMITE_JANELA_KB="${LIMITE_JANELA_KB:-8}"   # folga mínima na janela de 1 MB do layout antigo (firmware + .gz, a conta da ponte)
 LIMITE_RAM="${LIMITE_RAM:-39936}"           # RAM fixa máxima em bytes (DATA + RODATA + BSS); sobra o resto da 80 KB para pilha e heap
