@@ -6,7 +6,7 @@
 // teste (o sanitizer aborta). Pacote ruim só pode virar recusa com mensagem, nunca queda.
 // Com uma segunda pasta (sementes de dados de fora, sim/apps-seeds), entram também os pacotes com {x.campo}, "when" e
 // "value" ligados a campos; antes de cada desenho, um envio aleatório (ou nenhum) liga e desliga essas camadas.
-// Uso: facepack_fuzz <pasta dos pacotes> [casos] [pasta extra]
+// Uso: facepack_fuzz <pasta dos pacotes> [casos] [pastas extras...]
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -102,9 +102,8 @@ int main(int argc, char **argv) {
   long casos = argc > 2 ? atol(argv[2]) : 5000;
   std::vector<std::string> todos;
   for (const char *s : SEMENTES) todos.push_back(s);
-  const char *extra = argc > 3 ? argv[3] : nullptr;
-  for (const char *dir : {pasta, extra}) {
-    if (!dir) continue;
+  for (int a = 2; a < (argc > 3 ? argc : 3); a++) {
+    const char *dir = a == 2 ? pasta : argv[a];
     DIR *d = opendir(dir);
     std::vector<std::string> nomes;  // em ordem alfabética: a ordem do readdir muda de sistema para sistema e mudaria as mutações
     for (struct dirent *e; d && (e = readdir(d));) {
