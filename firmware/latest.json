@@ -1,45 +1,46 @@
 {
-  "version": "1.24.9",
-  "date": "2026-11-03",
+  "version": "1.26.1",
+  "date": "2026-11-16",
   "file": "smalltv-pomodoro.bin",
-  "size": 583760,
+  "size": 586560,
   "notes": {
     "pt": [
-      "Atenção: esta versão reorganiza a memória do relógio. Antes de atualizar, o painel salva um backup completo (fotos, GIFs e mostradores); depois, use Restaurar backup. Ajustes, Wi-Fi, histórico, rodízio e avisos ficam sozinhos",
-      "Espaço para o firmware crescer: até ~1 MB de programa; a memória de arquivos fica com 2 MB",
-      "Mostradores novos Mundo e Mundo relógio: mapa-múndi no visor de LCD com a faixa de dia e noite andando com a hora e a sua cidade piscando",
-      "Tom verde de LCD antigo nos mostradores LCD (liga e desliga no cartão do mostrador) e troca suave entre eles, como um LCD de verdade",
-      "Cor quente à noite (opcional, em Brilho): a tela tira o azul junto do brilho noturno",
-      "Configuração por QR code: sem Wi-Fi, a tela mostra um QR que conecta o celular ao relógio e outro que abre a página de configuração",
-      "smalltv.local mais rápido e confiável no Windows e também com o computador no 5 GHz; clima e avisos não congelam mais a tela quando a internet cai",
-      "Filtro na lista de mostradores do painel (Nativos, Baixados, Animados e estilos); Restaurar backup mostra o que entrou e o que falhou"
+      "Versão 1.26.1: reúne as novidades da 1.25 e da 1.26, com mostradores que se mexem, tela que apaga à noite, rodízio editado de uma vez e mais memória livre",
+      "Se o relógio está na 1.23 ou anterior: esta versão reorganiza a memória do relógio. Antes de atualizar, o painel salva um backup completo (fotos, GIFs e mostradores); depois, use Restaurar backup. Ajustes, Wi-Fi, histórico, rodízio e avisos ficam sozinhos",
+      "Brilho à noite pode ser 0: a tela apaga de vez. Comandos, fim de foco/pausa e atualização acendem a tela por alguns segundos",
+      "Mostradores de pacote (formato 2): sprites em movimento, hora por cima do fundo e até 16 quadros; novos Globo, Quartinho, Koi e duas cenas de naves, que entram na galeria nos próximos dias",
+      "Rodízio: \"Editar rodízio\", em Aparência, marca ou desmarca vários mostradores de uma vez; \"Tirar todos do rodízio\" esvazia a lista",
+      "Fuso horário escolhido pelo nome da cidade, com aviso quando o horário de verão não vai valer",
+      "Painel mais rápido de abrir, mais memória livre e mostradores animados mais leves; Ajustes → Sistema ganha gráficos de memória e Wi-Fi e o botão \"Copiar diagnóstico\"",
+      "Rede: contorno de um defeito do núcleo do ESP8266 que pode corromper a memória com o painel aberto (uma causa possível de reinícios)"
     ],
     "en": [
-      "Heads up: this version reorganizes the clock's storage. Before updating, the panel saves a full backup (photos, GIFs and faces); afterwards, use Restore backup. Settings, Wi-Fi, history, rotation and notifications stay on their own",
-      "Room for the firmware to grow: up to ~1 MB of program; the file storage becomes 2 MB",
-      "New World and World watch faces: a world map on the LCD with the day/night band moving with the time and your city blinking",
-      "Old-LCD green tint on the LCD faces (toggle on the face card) and a smooth switch between them, like a real LCD",
-      "Warm color at night (optional, under Brightness): the screen drops blue along with night brightness",
-      "QR code setup: without Wi-Fi, the screen shows a QR that connects your phone to the clock and another one that opens the setup page",
-      "smalltv.local is faster and more reliable on Windows and also with the computer on 5 GHz; weather and notifications no longer freeze the screen when the internet drops",
-      "Filter in the panel's face list (Built-in, Downloaded, Animated and styles); Restore backup shows what went in and what failed"
+      "Version 1.26.1: everything new in 1.25 and 1.26, with moving faces, a screen that turns off at night, rotation edited in one go and more free memory",
+      "If the clock is on 1.23 or earlier: this version reorganizes the clock's storage. Before updating, the panel saves a full backup (photos, GIFs and faces); afterwards, use Restore backup. Settings, Wi-Fi, history, rotation and notifications stay on their own",
+      "Night brightness can be 0: the screen goes fully dark. Commands, the end of a focus/break and updates light it for a few seconds",
+      "Face packs (format 2): moving sprites, the time drawn over the scene and up to 16 frames; new Globo, Quartinho, Koi and two spaceship scenes, coming to the gallery in the next few days",
+      "Rotation: \"Edit rotation\", under Appearance, ticks or unticks several faces at once; \"Remove all from rotation\" empties the list",
+      "Time zone picked by city name, with a warning when daylight saving time won't apply",
+      "A faster-opening panel, more free memory and lighter animated faces; Settings → System gets memory and Wi-Fi charts and a \"Copy diagnostics\" button",
+      "Network: a workaround for an ESP8266 core bug that can corrupt memory with the panel open (a possible cause of restarts)"
     ],
     "es": [
-      "Atención: esta versión reorganiza la memoria del reloj. Antes de actualizar, el panel guarda una copia completa (fotos, GIF y esferas); después, usa Restaurar copia. Los ajustes, el Wi-Fi, el historial, la rotación y los avisos se mantienen solos",
-      "Espacio para que el firmware crezca: hasta ~1 MB de programa; la memoria de archivos queda en 2 MB",
-      "Esferas nuevas Mundo y Mundo reloj: mapamundi en el visor LCD con la franja de día y noche avanzando con la hora y tu ciudad parpadeando",
-      "Tono verde de LCD antiguo en las esferas LCD (se activa en la tarjeta de la esfera) y cambio suave entre ellas, como un LCD de verdad",
-      "Color cálido de noche (opcional, en Brillo): la pantalla quita el azul junto con el brillo nocturno",
-      "Configuración por código QR: sin Wi-Fi, la pantalla muestra un QR que conecta el móvil al reloj y otro que abre la página de configuración",
-      "smalltv.local más rápido y fiable en Windows y también con el ordenador en 5 GHz; el clima y los avisos ya no congelan la pantalla cuando cae internet",
-      "Filtro en la lista de esferas del panel (Incluidas, Descargadas, Animadas y estilos); Restaurar copia muestra lo que entró y lo que falló"
+      "Versión 1.26.1: reúne lo nuevo de la 1.25 y la 1.26, con esferas que se mueven, pantalla que se apaga de noche, rotación editada de una vez y más memoria libre",
+      "Si el reloj está en la 1.23 o anterior: esta versión reorganiza la memoria del reloj. Antes de actualizar, el panel guarda una copia completa (fotos, GIF y esferas); después, usa Restaurar copia. Los ajustes, el Wi-Fi, el historial, la rotación y los avisos se mantienen solos",
+      "El brillo nocturno puede ser 0: la pantalla se apaga del todo. Los comandos, el fin del foco/descanso y las actualizaciones la encienden unos segundos",
+      "Esferas de paquete (formato 2): sprites en movimiento, hora sobre la escena y hasta 16 cuadros; nuevas Globo, Quartinho, Koi y dos escenas de naves, que llegan a la galería en los próximos días",
+      "Rotación: \"Editar rotación\", en Apariencia, marca o desmarca varias esferas de una vez; \"Quitar todas de la rotación\" vacía la lista",
+      "Huso horario elegido por el nombre de la ciudad, con aviso cuando el horario de verano no se aplicará",
+      "Panel más rápido de abrir, más memoria libre y esferas animadas más ligeras; Ajustes → Sistema suma gráficos de memoria y Wi-Fi y el botón \"Copiar diagnóstico\"",
+      "Red: una solución para un fallo del núcleo del ESP8266 que puede corromper la memoria con el panel abierto (una posible causa de reinicios)"
     ]
   },
   "gz": "smalltv-pomodoro.bin.gz",
-  "gzsize": 430082,
+  "gzsize": 433446,
   "layout": "4m2m",
-  "panel": "panel-68380550f5626f4cf9b60e16.html.gz",
-  "psri": "sha256-aDgFUPVib0z5tg4W4X3nvyMgqommbEQRwN/UU182pQY=",
-  "sig": "HwqE/booY8Qc2/JJEvr2Uu1SlwI+Y+gJan9WN+7FIeIpCLf4kVJzM6AXqnBdvfOnDvjZhYYtKgZvWnkW759NrcwEzu8FAC0TZvx5KLmovuVv1QtFA8fyLJ49Q8v6HPmWuhuMVVJoC2+x9zwwaB7vrbEMD8GpaA8OhtiMk9/nE1wEJk2RObJHee0Gm5HjXqfbtTNlXSNXbJya+IuHvG7xt5FMAfEzvjFVua3vZVK+W7xqfgiMdNxAa9ahIK7IKPQDtJRBj7jsj5/m0yfT9CmvJwiqERjP8TJsaQKBCewKIu5MR7jw8sPI0o5TxUsyhS2EDvvW/Anxc03v3kBG0rRJlA==",
-  "gzsig": "ndjbeAIEW0DxZhdrgnhn7YLfrbOJNUM461Gw6ojP8N8XFsqXE6kUUNSJv5DzgdF2uJjDXfiYeL4AshAqNOurPdtAl1FpSVNlrB0RTO9G2zQLlnIxel98RblvZEJuygRK4Y25V0mvXuKwL8b4DwEoSa9Ksjk2sExg8T1BOrivHAji7jBexz5X4jt7hpI/ITqoN62T+N5c2fgYSAhrR8vSitTxVa87c7iyDNtpn6JHwZFzIFcSIHSOWnTplD+xkJKojiEglJD2UC8BpSqjbGUoAR+kyXxoYhcnAWIpJAfO2rP3S4ahL/RqmSok6aDsuU2bCtQOYkviAKCYPJ2teFhKDg=="
+  "panel": "panel-81e329ecf37abddd63c09cd1.html.gz",
+  "psri": "sha256-geMp7PN6vd1jwJzRoNUCfQjxJNhL5xtS1bDizLeJdes=",
+  "sig": "aWxre7cQu6UQBwja5JQxX0NXnu/yU8cERLVRhBb7CWbC7+DSWmlx09HZI8IE7ZU4Kt86z/mJFbQF9cMmvy78mPs4un/hFjEBq5EEYx5Lz6J7voJehBoIW9tnJ2HZVkVttv6xjEF53FlvtJ7kLP4Z+27B8XSa8dNd+J9jj4mhNHnncsL5AdVERoriS61SUyxX1NGzMDP1vl464r8AMXiB+tM6f2UyPOaP4JergUC1i/RB2E9y6HqSzlvMfnXDxDVac9nszViNlI6VUtnYx5uBOmepo0j+59IeMXJOwGOr8rskzbyIusRMDjWFAGrJWeu3tH7Dx/k1u0oC4GcwWSQPOA==",
+  "gzsig": "fuo96nZdEgjKA76k1EfGbTT2nfa9TBJcdHftz4MmhnOUzSMInMu2PjyLDnLMUULRy6Kccfq+6sgmOjPBmLa9xpaX8pl4YtLpPRyluNeMJPJDXKilJ9UE6lRZh+w85L/4J2vDtujj7jJW6ZGNBRTJNMEqprcm9M2BpqM4aJivvDR6Rp6vBmHqvBcnx2yoYolQ/X9o5RHU9hs0e/LDVogb+QYYlICFyZZKVvjR2w/+PYqN4rqYfOWFiUyG0UfwHX9v/QVOgdwBWOHL183r71Haf4KQUe3uZ+D6QVHfaKIqTAPI+cSynx28/Iqn6MxjU7PjHh1/n6yXQgzNE+aancuKbQ==",
+  "ponte": 1
 }
