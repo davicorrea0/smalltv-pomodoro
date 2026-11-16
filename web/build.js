@@ -31,13 +31,14 @@ const out = path.join(__dirname, '..', 'smalltv-pomodoro', 'web.h');
   html = html.replace(/__SHV__/g, shv);
 
   // JavaScript minificado pelo terser, se estiver instalado (só renomeia o que é local: o HTML chama funções globais)
-  const a = html.indexOf('<script>') + 8, b = html.indexOf('</script>');
   let terser = null;
   try { terser = require('terser'); } catch (e) { console.log('aviso: sem o terser (npm install em web/), o painel fica ~1 KB maior'); }
   if (terser) share = (await terser.minify(share, { compress: { passes: 2 }, format: { comments: false } })).code;
   fs.writeFileSync(path.join(__dirname, 'out', `share-${shv}.js`), share);
   // SRI do arquivo publicado (já minificado): o navegador recusa rodar se o site servir outra coisa
   html = html.replace(/__SHI__/g, 'sha384-' + crypto.createHash('sha384').update(share).digest('base64'));
+  // posições do <script> só agora, depois de trocar os marcadores (a SRI é mais longa que __SHI__)
+  const a = html.indexOf('<script>') + 8, b = html.indexOf('</script>');
   if (terser) html = html.slice(0, a) + (await terser.minify(html.slice(a, b), { compress: { passes: 2 }, format: { comments: false } })).code + html.slice(b);
 
   // tira o que o navegador não usa antes de comprimir: comentários de linha inteira (HTML e JS) e indentação
