@@ -685,7 +685,7 @@ function ramBar(s){const r=$('spk').lastChild,f=s.diag.ramfix;r.hidden=f==null;i
  [f,u,s.heap].forEach((v,k)=>r.children[1].children[k].style.width=v*100/T+'%');r.firstChild.textContent=t('Memória (RAM)');r.lastChild.textContent=t('fixa')+' '+kb(f)+' · '+t('em uso')+' '+kb(u)+' · '+t('livre')+' '+kb(s.heap)}
 // "Copiar diagnóstico": LISTA BRANCA. Só estas chaves saem; nada de cfg (cidade, latitude, longitude, fuso, nome), IP (nem o da Alexa), rede ou arquivo.
 // q() ainda tira tudo que não seja letra, número, ponto ou hífen: um campo novo nunca vira texto livre.
-const DKEY=['rst','exc','epc','rssi','minheap','minblk','frag','stack','ramfix','lps','up','draw','pack','stall','stallAt'],NKEY=['jpg','gif','strip'],BKEY=['scr','wifi','wf','time','src','ntp'],CKEY=['n','r','x','epc','va','up','ver'],PKEY=['heap','blk','rssi'];
+const DKEY=['rst','exc','epc','rssi','minheap','minblk','frag','stack','ramfix','lps','up','draw','pack','stall','stallAt','tw','twmax'],NKEY=['jpg','gif','strip'],BKEY=['scr','wifi','wf','time','src','ntp'],CKEY=['n','r','x','epc','va','up','ver'],PKEY=['heap','blk','rssi'];
 function diagText(s,w){const q=v=>String(v==null?'':v).replace(/[^\w.-]/g,''),kv=(o,K)=>K.map(k=>k+'='+q((o||{})[k])).join(' '),d=s.diag||{};
  return['SmallTV Pomodoro '+q(s.ver),'heap='+q(s.heap)+' blk='+q(s.blk),'diag '+kv(d,DKEY),'nomem '+kv(d.nomem,NKEY),'boot '+kv(d.boot,BKEY)].concat(s.crash?['crash '+kv(s.crash,CKEY)]:[],['page-min '+kv(w,PKEY)]).join('\n')}
 function diagCopy(){if(!st||!st.diag)return;const a=$('dgt'),x=diagText(st,HW);a.value=x;a.hidden=false;a.rows=x.split('\n').length;a.select();  // o texto fica à vista: dá para conferir o que foi copiado

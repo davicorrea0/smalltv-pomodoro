@@ -363,6 +363,7 @@ void setup() {
 static uint32_t lastRender = 0, lastBriCheck = 0;
 
 void loop() {
+  tcpTwPurge();  // antes de tudo e em todos os modos: ver modulos/web_portal.cpp
   diagLoop();
   if (bootCount && millis() > 30000) setBootCount(0);  // ficou ligado: não foi uma inicialização curta
   if (recoveryMode) {

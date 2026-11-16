@@ -13,14 +13,14 @@ const cut = (sig, from = 0) => { const a = source.indexOf(sig, from); if (a < 0)
 
 // ---------- 1. campos aditivos ----------
 const OLD = ('phase running remaining total cycle today streak best clock showing wx ok t min max h rin tzn off loff rise set desc fs l2 mig used cfg work short long every bri auto h12 tz lock theme mode delay color non nstart nend nbri won fahr rain beta lat lon city bgr inv flip vcom wdown tok tund pkg goal act lang nsun warm lcdg alexa rotmin rot ago ip last pv name heap blk pdraw pseq pshown ver diag rst exc epc rssi minheap frag up draw stall stallAt boot scr wifi wf time src ntp crash n r x va').split(' ');
-const NEW = ['minblk', 'stack', 'ramfix', 'lps', 'pack', 'nomem', 'jpg', 'gif', 'strip'];
+const NEW = ['minblk', 'stack', 'ramfix', 'lps', 'pack', 'nomem', 'jpg', 'gif', 'strip', 'tw', 'twmax'];
 const sendState = cut('static void sendState() {'), diagJson = cut('static void diagJson('), crashJson = cut('static void crashJson(');
 const keys = new Set([...(sendState + diagJson + crashJson).matchAll(/\\"(\w+)\\":/g)].map(m => m[1]));
 for (const k of OLD) assert(keys.has(k), 'chave antiga sumiu do /api/state: ' + k + ' (painéis antigos leem esse JSON)');
-assert.deepStrictEqual([...keys].filter(k => !OLD.includes(k)).sort(), [...NEW].sort(), 'o /api/state só pode ganhar minblk, stack, ramfix, lps, pack e nomem{jpg,gif,strip}');
+assert.deepStrictEqual([...keys].filter(k => !OLD.includes(k)).sort(), [...NEW].sort(), 'o /api/state só pode ganhar minblk, stack, ramfix, lps, pack, nomem{jpg,gif,strip}, tw e twmax');
 // os campos novos ficam dentro de diag
 const d = sendState + diagJson;  // diag abre no sendState (\"diag\":{), os campos vêm no diagJson
-for (const k of ['minblk', 'stack', 'ramfix', 'lps', 'pack', 'nomem']) assert(d.includes('\\"' + k + '\\":'), k + ' fora de diag');
+for (const k of ['minblk', 'stack', 'ramfix', 'lps', 'pack', 'nomem', 'tw', 'twmax']) assert(d.includes('\\"' + k + '\\":'), k + ' fora de diag');
 
 // uma só varredura do heap por pedido (getHeapStats), nenhuma das duas chamadas antigas no pedido, nada no laço
 const heapFn = cut('static void diagHeap(');
@@ -59,7 +59,7 @@ const state = {
   phase: 'idle', ver: '1.25.0', heap: 31200, blk: 17600, showing: '/image/SEGREDO-ARQUIVO.jpg', name: 'SEGREDO-NOME', clock: '10:21',
   cfg: { city: 'SEGREDO-CIDADE', lat: -23.5478, lon: -46.6361, tz: 'SEGREDO-FUSO', lock: 1, pkg: 'SEGREDO-PKG', rot: 'SEGREDO-ROT', pass: 'SEGREDO-SENHA' },
   alexa: { ago: 5, ip: '192.168.77.5', last: 1, min: 0 }, wx: { tzn: 'SEGREDO-CIDADE', desc: 'SEGREDO-CIDADE' }, fs: { used: 1, total: 2 },
-  diag: { rst: 4, exc: 0, epc: '40201234', rssi: -61, minheap: 24100, minblk: 14200, frag: 12, stack: 3180, ramfix: 38496, lps: 58000, up: 3600, draw: 140, pack: 38, stall: 90, stallAt: 1,
+  diag: { rst: 4, exc: 0, epc: '40201234', rssi: -61, minheap: 24100, minblk: 14200, frag: 12, stack: 3180, ramfix: 38496, lps: 58000, up: 3600, draw: 140, pack: 38, stall: 90, stallAt: 1, tw: 37, twmax: 2,
     nomem: { jpg: 1, gif: 0, strip: 2 }, boot: { scr: 1200, wifi: 800, wf: 1, time: 900, src: 1, ntp: 700 },
     ip: '192.168.77.5', ssid: 'SEGREDO-NOME', city: 'SEGREDO-CIDADE', campoNovo: 'SEGREDO-CIDADE' },
   crash: { n: 1, r: 2, x: 29, epc: '40201234', va: '00000000', up: 120, ver: '1.24.9', ip: '192.168.77.5', msg: 'SEGREDO-CIDADE' },
@@ -68,7 +68,7 @@ const txt = diagText(state, { heap: 26000, blk: 14000, rssi: -74, ip: '192.168.7
 for (const s of SEN) assert(!txt.includes(s), 'a lista branca vazou: ' + s);
 assert(!/\b\d{1,3}(\.\d{1,3}){3}\b/.test(txt), 'IP no diagnóstico copiado');
 assert(!/cfg|city|(lat|lon)=|name|ssid|alexa|tz=|pkg|rot=|showing/i.test(txt), 'campo pessoal no diagnóstico copiado: ' + txt);
-for (const want of ['SmallTV Pomodoro 1.25.0', 'heap=31200 blk=17600', 'minheap=24100', 'minblk=14200', 'stack=3180', 'ramfix=38496', 'lps=58000', 'pack=38', 'nomem jpg=1 gif=0 strip=2', 'boot scr=1200', 'crash n=1 r=2 x=29 epc=40201234 va=00000000 up=120 ver=1.24.9', 'page-min heap=26000 blk=14000 rssi=-74'])
+for (const want of ['SmallTV Pomodoro 1.25.0', 'heap=31200 blk=17600', 'minheap=24100', 'minblk=14200', 'stack=3180', 'ramfix=38496', 'lps=58000', 'pack=38', 'tw=37', 'twmax=2', 'nomem jpg=1 gif=0 strip=2', 'boot scr=1200', 'crash n=1 r=2 x=29 epc=40201234 va=00000000 up=120 ver=1.24.9', 'page-min heap=26000 blk=14000 rssi=-74'])
   assert(txt.includes(want), 'faltou no diagnóstico: ' + want);
 // campo que o firmware ganhar um dia não entra sozinho, e valor de texto livre é limpo mesmo numa chave da lista
 assert.strictEqual(diagText({ ...state, diag: { ...state.diag, outro: 'x' } }, {}), diagText(state, {}), 'chave fora da lista branca entrou');
@@ -78,6 +78,13 @@ assert.doesNotThrow(() => diagText({ ver: '1.25.0' }, {}), 'firmware antigo (sem
 assert(html.includes('const T=81920,u=T-f-s.heap;') && html.includes('[f,u,s.heap]') && /0x3FFE8000u/.test(source) && /heap total = 81920 - ramfix/.test(source), 'conta da barra de RAM: fixa + (81920 - fixa - livre) + livre');
 // lps (voltas do laço por segundo): só em diag e no texto copiado; nada na tela, sem % nem gráfico
 assert(!/lps/.test(html.replace(/const DKEY=[^\n]*/, '')), 'lps não pode aparecer na tela do painel (só no texto copiado)');
+// tw/twmax (lista TIME_WAIT esvaziada pelo tcpTwPurge): idem, só no texto copiado
+assert(!/\.tw(max)?\b|['"]tw(max)?['"]/.test(html.replace(/const DKEY=[^\n]*/, '')),'tw/twmax não podem aparecer na tela do painel (só no texto copiado)');
+// contorno do TIME_WAIT (esp8266/Arduino#9327): primeira coisa do loop(), em todos os modos, sem o header privado do
+// lwIP (macros vazariam na unidade única) e travado no core 3.1.2
+assert(/void loop\(\) \{\n  tcpTwPurge\(\);/.test(source), 'tcpTwPurge() tem de ser a primeira coisa do loop()');
+assert(!/tcp_priv\.h>/.test(source), 'sem #include de lwip/priv/tcp_priv.h');
+assert(/#ifndef ARDUINO_ESP8266_RELEASE_3_1_2\n#error/.test(source), 'contorno do TIME_WAIT travado no core 3.1.2');
 // textos novos em en/es
 for (const k of ['pacote', 'mínimo', 'pilha livre', 'sem memória (foto/GIF/desenho)', 'Maior bloco', 'atual', 'pior', 'Memória (RAM)', 'fixa', 'livre', 'Copiar diagnóstico', 'Diagnóstico copiado (sem dados pessoais)', 'Não consegui copiar: selecione o texto abaixo',
   'Gráficos: histórico só desde que esta página abriu (até 10 min), guardado só neste navegador.'])
@@ -186,7 +193,7 @@ int main() {
   String j5; tail(j5); CHECK(num(j5.s, "jpg") == 255 && num(j5.s, "gif") == 2 && num(j5.s, "strip") == 2);
   // pior caso de tamanho do último pedaço (números de 10 dígitos onde couber) cabe no j.reserve(${reserve}) do sendState
   g_hFree = 99999; g_hMax = 99999; g_hFrag = 99; diagMinHeap = 4294967295u; g_rssi = -100; g_now = 4294967295u; diagStall = 4294967295u; diagStallAt = 2;
-  bootScreenMs = bootWifiMs = bootTimeMs = bootNtpMs = 4294967295u; fullDrawMs = packLoadMs = 65535; pomoDrawMs = phaseSeq = shownSeq = 65535; alexaMin = 255; uiOffscreenFail = 255;
+  bootScreenMs = bootWifiMs = bootTimeMs = bootNtpMs = 4294967295u; fullDrawMs = packLoadMs = 65535; diagTw = 4294967295u; diagTwMax = 255; pomoDrawMs = phaseSeq = shownSeq = 65535; alexaMin = 255; uiOffscreenFail = 255;
   crashRec.reason = crashRec.exc = 255; crashRec.epc = crashRec.vaddr = crashRec.up = 4294967295u; memcpy(crashRec.ver, "1.24.13", 8);
   String w; tail(w); CHECK(jsonOk((std::string("{\\"cfg\\":{\\"rot\\":\\"") + w.s).c_str()));
   printf("telemetria: JSON do diagnóstico ok; último pedaço do /api/state no pior caso = %zu bytes (j.reserve(${reserve}))\\n", w.s.size());

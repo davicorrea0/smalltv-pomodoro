@@ -319,6 +319,7 @@ void newFormToken();
 String formTokenField();
 void jsonEscapeAppend(String &o, const char *s);
 void diagLoop();
+void tcpTwPurge();            // esvazia a lista TIME_WAIT do lwIP a cada volta do laço (contorno do core 3.1.2; diag.tw)
 void diagBlkSample();         // amostra pontual do maior bloco livre (diag.minblk): só antes de foto, GIF, pacote e OTA
 void diagNoMem(uint8_t what);  // conta uma falta de memória: 0 foto, 1 GIF (diag.nomem)
 bool hostOk();
