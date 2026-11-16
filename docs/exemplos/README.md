@@ -163,7 +163,9 @@ automation:
             {% set pronta = is_state('input_boolean.lavadora_pronta', 'on') %}
             {"ttl": 900, "values": {
               "lv_est": "{{ 'LAVANDO' if lavando else 'PRONTA' if pronta else 'DESLIGADA' }}",
-              "lv_txt": "{{ (states('sensor.lavadora_progress') | upper | truncate(12, true, '')) if lavando
+              "lv_txt": "{{ (states('sensor.lavadora_progress') | upper | regex_replace('[ÁÀÂÃ]', 'A') | regex_replace('[ÉÊ]', 'E')
+                          | regex_replace('Í', 'I') | regex_replace('[ÓÔÕ]', 'O') | regex_replace('Ú', 'U') | regex_replace('Ç', 'C')
+                          | regex_replace('[^A-Z0-9 :%-]', '') | truncate(11, true, '')) if lavando
                           else ('AS ' ~ states('input_text.lavadora_fim')) if pronta else '' }}",
               "lv_pct": {{ ((tot - rem) * 100 / tot) | round(0) | int if lavando and tot > 0 else (100 if pronta else 0) }},
               "lv_min": {{ rem }}}}
@@ -174,5 +176,5 @@ automation:
 - **Lavadora sem integração**, numa tomada que mede consumo: o Home Assistant deduz o estado pelo consumo. Acima de
   ~10 W por 1 min, está `LAVANDO`; abaixo de ~3 W por 5 min, depois de lavar, está `PRONTA`. O tempo restante vira
   estimativa pela duração típica do seu ciclo.
-- Cada valor tem até 15 bytes. Uma letra acentuada ocupa 2, e o relógio a mostra sem acento; o `truncate(12)` deixa
-  folga para isso.
+- Cada valor tem até 15 bytes, e na linha da etapa cabem 11 letras. A receita tira os acentos (o relógio não os desenha
+  e cada letra acentuada ocupa 2 bytes) e corta em 11.
