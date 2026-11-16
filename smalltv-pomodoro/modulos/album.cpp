@@ -368,10 +368,20 @@ bool loadPack(const String &id) {
   return idOk(id) && loadPackFile("/faces/" + id + ".json", msg);
 }
 
-// Volta o motor ao pacote salvo nas configurações (ou o libera, se o ativo é um embutido).
+static uint32_t packRetryAt;  // próxima tentativa de packEnsureLoaded() depois de faltar memória
+
+// Volta o motor ao pacote salvo nas configurações (ou o libera, se o ativo é um embutido). Pacote ausente ou inválido
+// volta ao Matriz; se o que faltou foi memória agora, o mostrador fica e packEnsureLoaded() tenta de novo em 2 s (antes,
+// uma falta de RAM passageira depois de instalar um pacote trocava o mostrador da pessoa pelo Matriz).
 void restoreActivePack() {
-  if (cfg.theme == THEME_PACK && loadPack(cfg.facePkg)) return;
+  String msg;
+  if (cfg.theme == THEME_PACK && idOk(cfg.facePkg) && loadPackFile("/faces/" + String(cfg.facePkg) + ".json", msg)) return;
   facePackUnload();
+  if (cfg.theme == THEME_PACK && (msg.indexOf(F("sem memoria")) >= 0 || msg.indexOf(F("NoMemory")) >= 0)) {
+    packRetryAt = millis() + 2000;
+    uiInvalidate();
+    return;
+  }
   if (cfg.theme == THEME_PACK) cfg.theme = THEME_MATRIX;
   uiInvalidate();
 }
@@ -379,7 +389,6 @@ void restoreActivePack() {
 // Recarrega o pacote ativo que o álbum ou o OTA tiraram da RAM (só o relógio precisa dele). Diferente de
 // restoreActivePack(), nunca mexe em cfg.theme: se faltar memória agora, tenta de novo em 2 s e a tela mostra
 // "Pacote ausente" até lá. Pacote apagado de verdade já é tratado na hora da remoção (/api/facedelete).
-static uint32_t packRetryAt;
 
 void packEnsureLoaded() {
   if (cfg.theme != THEME_PACK || previewActive() || facePackLoaded()) return;

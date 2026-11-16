@@ -13,4 +13,7 @@ if (/LittleFS\.remove\([^)]*\.json"\)/.test(antes.replace(/LittleFS\.remove\("\/
 }
 // o rename do .json acontece antes de qualquer remove do .json de destino em todo o handler
 if (/LittleFS\.remove\("\/faces\/" \+ id \+ "\.json"\)/.test(h)) throw Error('o /api/faceinstall não deve apagar /faces/<id>.json');
-console.log('faceinstall: o .json novo substitui o antigo só pelo rename, sem remove antes');
+// reinstalar o pacote ativo: o motor já tem o novo; só pula a recarga se o .json foi mesmo trocado no disco
+if (h.indexOf('renamed = LittleFS.rename("/faces/_novo.json", "/faces/" + id + ".json")') < 0) throw Error('o /api/faceinstall deve guardar o resultado do rename do .json');
+if (h.indexOf('if (!(renamed && cfg.theme == THEME_PACK && id == cfg.facePkg)) restoreActivePack();') < 0) throw Error('o /api/faceinstall só pode pular o restoreActivePack com o rename feito e o pacote novo sendo o ativo');
+console.log('faceinstall: o .json novo substitui o antigo só pelo rename, sem remove antes; o ativo reinstalado não é recarregado');
