@@ -31,6 +31,7 @@ automation:
         entity_id: [light.sala, light.quarto, light.cozinha]
       - platform: time_pattern
         minutes: "/5"
+        seconds: "20"
     action:
       - service: rest_command.smalltv_dados
         data:
@@ -57,6 +58,7 @@ automation:
         entity_id: [switch.cafe, switch.abajur, sensor.cafe_potencia, sensor.abajur_potencia]
       - platform: time_pattern
         minutes: "/5"
+        seconds: "40"
     action:
       - service: rest_command.smalltv_dados
         data:
@@ -118,10 +120,9 @@ automation:
       - service: input_boolean.turn_off
         target: { entity_id: input_boolean.lavadora_pronta }
   - alias: "Lavadora: terminou"
-    trigger:
-      - platform: numeric_state
-        entity_id: sensor.lavadora_time_remaining
-        below: 1
+    trigger:  # com a máquina desligada o sensor pode ficar "unavailable": o int(0) conta isso como 0
+      - platform: template
+        value_template: "{{ states('sensor.lavadora_time_remaining') | int(0) < 1 }}"
         for: "00:01:00"
     condition: "{{ states('input_number.lavadora_total') | float(0) > 0 }}"
     action:
@@ -153,6 +154,7 @@ automation:
         entity_id: [sensor.lavadora_time_remaining, sensor.lavadora_progress, input_boolean.lavadora_pronta]
       - platform: time_pattern
         minutes: "/5"
+        seconds: "0"
     action:
       - service: rest_command.smalltv_dados
         data:
@@ -165,7 +167,7 @@ automation:
               "lv_est": "{{ 'LAVANDO' if lavando else 'PRONTA' if pronta else 'DESLIGADA' }}",
               "lv_txt": "{{ (states('sensor.lavadora_progress') | upper | regex_replace('[ÁÀÂÃ]', 'A') | regex_replace('[ÉÊ]', 'E')
                           | regex_replace('Í', 'I') | regex_replace('[ÓÔÕ]', 'O') | regex_replace('Ú', 'U') | regex_replace('Ç', 'C')
-                          | regex_replace('[^A-Z0-9 :%-]', '') | truncate(11, true, '')) if lavando
+                          | regex_replace('[^A-Z0-9 :%-]', ''))[:11] if lavando
                           else ('AS ' ~ states('input_text.lavadora_fim')) if pronta else '' }}",
               "lv_pct": {{ ((tot - rem) * 100 / tot) | round(0) | int if lavando and tot > 0 else (100 if pronta else 0) }},
               "lv_min": {{ rem }}}}
@@ -177,4 +179,7 @@ automation:
   ~10 W por 1 min, está `LAVANDO`; abaixo de ~3 W por 5 min, depois de lavar, está `PRONTA`. O tempo restante vira
   estimativa pela duração típica do seu ciclo.
 - Cada valor tem até 15 bytes, e na linha da etapa cabem 11 letras. A receita tira os acentos (o relógio não os desenha
-  e cada letra acentuada ocupa 2 bytes) e corta em 11.
+  e cada letra acentuada ocupa 2 bytes) e corta em 11 com `[:11]`. Não use `truncate(11)`: o Home Assistant deixa
+  passar até 5 letras a mais, e um valor acima de 15 bytes faz o relógio recusar o envio inteiro.
+- As três automações mandam a cada 5 minutos. Use segundos diferentes em cada `time_pattern` (`seconds: 0`, `20`,
+  `40`) para não chegarem as três no mesmo instante.
