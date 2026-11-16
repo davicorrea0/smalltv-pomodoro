@@ -1,5 +1,6 @@
 // Docs (docs.html e en/docs.html): menu de seções no celular, busca no menu,
 // marca no menu a parte que está na tela e o botão de copiar dos blocos de comando.
+// Atalho da busca: só "/" (Ctrl+K fica com o navegador).
 // Sem JS a página continua inteira: o menu é HTML comum e os links são âncoras.
 (function () {
   var html = document.documentElement, en = html.lang === "en";
@@ -62,7 +63,7 @@
   // ---------- busca no menu ----------
   // procura no título e no texto de cada parte; ignora acentos e maiúsculas
   var busca = document.getElementById("busca"), vazio = document.getElementById("docs-empty");
-  function norm(s) { return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase(); }
+  function norm(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase(); }
   function texto(a, el) {
     if (!el) return "";
     if (el.tagName === "H3") {            // subtítulo: dele até o próximo subtítulo
@@ -106,7 +107,7 @@
     });
     document.addEventListener("keydown", function (e) {
       var campo = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
-      if ((e.key === "/" && !campo) || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k")) {
+      if (e.key === "/" && !campo) {
         e.preventDefault();
         busca.focus();
       }
