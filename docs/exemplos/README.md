@@ -84,7 +84,8 @@ Os campos e o que a tela mostra em cada estado:
 | `lv_pct` | quanto do ciclo já foi (barra) | 100 | 0 |
 | `lv_min` | minutos que faltam | 0 | 0 |
 
-Sem dados, a tela mostra "SEM DADOS DA CASA".
+A receita manda só enquanto a máquina lava ou está pronta. Parada, ela não manda nada, e o dado vence em 15 minutos:
+a tela mostra "SEM DADOS DA CASA". `DESLIGADA` continua no desenho para quem quiser mandar esse estado de outro jeito.
 
 **Lavadora Midea** (conferido em 16/11/2026):
 
@@ -155,6 +156,8 @@ automation:
       - platform: time_pattern
         minutes: "/5"
         seconds: "0"
+    condition:  # só lavando ou pronta: parada, o dado vence sozinho e a lavadora sai de cena
+      - "{{ states('sensor.lavadora_time_remaining') | int(0) > 0 or is_state('input_boolean.lavadora_pronta', 'on') }}"
     action:
       - service: rest_command.smalltv_dados
         data:
@@ -164,12 +167,12 @@ automation:
             {% set lavando = rem > 0 %}
             {% set pronta = is_state('input_boolean.lavadora_pronta', 'on') %}
             {"ttl": 900, "values": {
-              "lv_est": "{{ 'LAVANDO' if lavando else 'PRONTA' if pronta else 'DESLIGADA' }}",
+              "lv_est": "{{ 'LAVANDO' if lavando else 'PRONTA' }}",
               "lv_txt": "{{ (states('sensor.lavadora_progress') | upper | regex_replace('[ÁÀÂÃ]', 'A') | regex_replace('[ÉÊ]', 'E')
                           | regex_replace('Í', 'I') | regex_replace('[ÓÔÕ]', 'O') | regex_replace('Ú', 'U') | regex_replace('Ç', 'C')
                           | regex_replace('[^A-Z0-9 :%-]', ''))[:11] if lavando
-                          else ('AS ' ~ states('input_text.lavadora_fim')) if pronta else '' }}",
-              "lv_pct": {{ ((tot - rem) * 100 / tot) | round(0) | int if lavando and tot > 0 else (100 if pronta else 0) }},
+                          else 'AS ' ~ states('input_text.lavadora_fim') }}",
+              "lv_pct": {{ ((tot - rem) * 100 / tot) | round(0) | int if lavando and tot > 0 else 100 if pronta else 0 }},
               "lv_min": {{ rem }}}}
 ```
 
