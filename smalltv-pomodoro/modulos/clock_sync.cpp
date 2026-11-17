@@ -15,7 +15,7 @@ uint32_t bootScreenMs = 0, bootWifiMs = 0, bootTimeMs = 0, bootNtpMs = 0;
 
 uint8_t bootTimeSrc = 0;   // de onde veio a primeira hora: 1 SNTP, 2 memória RTC (reinício por software), 3 cabeçalho do clima
 
-uint8_t bootWifiPath = 0;  // 0 rede salva (varredura completa), 1 canal e BSSID guardados, 2 o SDK já tinha conectado, 3 o rápido falhou
+uint8_t bootWifiPath = 0;  // 0 rede salva (varredura completa), 1 canal e BSSID guardados, 2 o SDK já tinha conectado, 3 o rápido falhou; + 8: conectou pelo IP com o SDK dizendo que não (waitWifi)
 
 uint32_t ntpAskAt = 0;  // quando o SNTP foi (re)configurado; 0 = ainda não
 
