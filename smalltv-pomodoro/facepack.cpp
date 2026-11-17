@@ -117,22 +117,45 @@ const char *facePackAuthor() { return pkAuthor; }
 
 // Campos de fora que o pacote carregado lê (when/value com "x." e {x.campo} nos textos), sem repetir, separados por
 // vírgula: "lv_est,lv_pct". Vazio = mostrador comum; com algum campo = miniapp. Para a lista do painel e o rodízio.
+// junta "a" à lista "a,b,c" de out (até n com o 0), sem repetir; o que não cabe fica de fora
+static void fieldAdd(char *out, size_t n, size_t &o, const char *k, size_t kl) {
+  for (const char *p = out; *p;) {
+    const char *e = strchr(p, ',');
+    size_t l = e ? (size_t)(e - p) : strlen(p);
+    if (l == kl && !memcmp(p, k, kl)) return;
+    p += l + (e ? 1 : 0);
+  }
+  if (o + (o ? 1 : 0) + kl + 1 > n) return;
+  if (o) out[o++] = ',';
+  memcpy(out + o, k, kl);
+  o += kl;
+  out[o] = 0;
+}
+
+void FieldScan::feed(char c) {
+  bool nome = (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_';
+  if (mode) {
+    if (nome && kl <= APPDATA_NAME) {
+      k[kl++] = c;
+      return;
+    }
+    if (kl >= 1 && kl <= APPDATA_NAME && (mode == 1 ? c == '}' : c == '"' || c == '=')) {
+      size_t oo = o;
+      fieldAdd(out, sizeof out, oo, k, kl);
+      o = (uint8_t)oo;
+    }
+    mode = 0;
+  }
+  w = w << 8 | (uint8_t)c;
+  if ((w & 0xFFFFFF) == ('{' << 16 | 'x' << 8 | '.')) mode = 1;
+  else if ((w & 0xFFFFFF) == ('"' << 16 | 'x' << 8 | '.') || w == ((uint32_t)'"' << 24 | '!' << 16 | 'x' << 8 | '.')) mode = 2;
+  if (mode) kl = 0;
+}
+
 void facePackFields(char *out, size_t n) {
   size_t o = 0;
   out[0] = 0;
-  auto add = [&](const char *k, size_t kl) {
-    for (const char *p = out; *p;) {  // já está na lista?
-      const char *e = strchr(p, ',');
-      size_t l = e ? (size_t)(e - p) : strlen(p);
-      if (l == kl && !memcmp(p, k, kl)) return;
-      p += l + (e ? 1 : 0);
-    }
-    if (o + (o ? 1 : 0) + kl + 1 > n) return;  // não cabe: fica de fora (a lista é só um índice)
-    if (o) out[o++] = ',';
-    memcpy(out + o, k, kl);
-    o += kl;
-    out[o] = 0;
-  };
+  auto add = [&](const char *k, size_t kl) { fieldAdd(out, n, o, k, kl); };
   for (uint8_t i = 0; i < nXref; i++) add(xref[i].k, strlen(xref[i].k));
   for (uint16_t i = 0; i + 3 < poolUsed; i++) {
     if (pool[i] != '{' || pool[i + 1] != 'x' || pool[i + 2] != '.') continue;

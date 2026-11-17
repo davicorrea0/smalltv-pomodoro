@@ -9,6 +9,8 @@
 #include <string.h>
 #include <string>
 #include <vector>
+#include <dirent.h>
+#include <set>
 #include "../smalltv-pomodoro/ui_kit.h"
 #include "../smalltv-pomodoro/facepack.h"
 #include "../smalltv-pomodoro/appdata.h"
@@ -339,6 +341,52 @@ static void campos() {
   CHECK(l[0] == 0, "sem pacote: vazio");
 }
 
+// o leitor do .json (FieldScan, para os .txt de antes da 4ª linha) acha os mesmos campos que o motor em cada pacote
+static std::set<std::string> lista(const char *l) {
+  std::set<std::string> r;
+  for (const char *p = l; *p;) { const char *e = strchr(p, ','); r.insert(std::string(p, e ? e - p : strlen(p))); p += (e ? e - p + 1 : strlen(p)); }
+  return r;
+}
+static void varredura() {
+  int n = 0, iguais = 0;
+  for (const char *pasta : {"../faces", "apps-seeds"}) {
+    DIR *d = opendir(pasta);
+    for (struct dirent *e; d && (e = readdir(d));) {
+      std::string nome = e->d_name;
+      if (nome.size() < 6 || nome.substr(nome.size() - 5) != ".json" || nome == "catalog.json") continue;
+      FILE *f = fopen((std::string(pasta) + "/" + nome).c_str(), "rb");
+      std::string s;
+      char b[4096];
+      for (size_t k; f && (k = fread(b, 1, sizeof b, f));) s.append(b, k);
+      if (f) fclose(f);
+      FieldScan sc;
+      sc.begin();
+      for (char c : s) sc.feed(c);
+      std::vector<char> buf(s.begin(), s.end());
+      buf.push_back(0);
+      char err[96], l[100];
+      if (!facePackLoad(buf.data(), s.size(), err, sizeof err)) continue;
+      facePackFields(l, sizeof l);
+      facePackUnload();
+      n++;
+      std::set<std::string> m = lista(l), v = lista(sc.out);
+      for (const std::string &k : m) CHECK(v.count(k), "varredura de %s perdeu %s (motor: %s, varredura: %s)", nome.c_str(), k.c_str(), l, sc.out);
+      if (m == v) iguais++;
+      else printf("appdata_test: varredura de %s achou a mais: %s (motor: %s)\n", nome.c_str(), sc.out, l);
+    }
+    if (d) closedir(d);
+  }
+  CHECK(n > 40, "varredura: poucos pacotes (%d)", n);
+  // casos à mão: chave longa, maiúscula, sem fechar, "!x.", "=valor", repetido
+  FieldScan sc;
+  sc.begin();
+  const char *t = "{\"layers\":[{\"text\":\"{x.temp} {x.Temp} {x.nomegrandedemais} {x.ab\"},{\"when\":\"!x.lv_est=PRONTA\"},"
+                  "{\"value\":\"x.pct\"},{\"when\":\"x.temp\"},{\"text\":\"ax.no x.no\"}]}";
+  for (const char *p = t; *p; p++) sc.feed(*p);
+  CHECK(!strcmp(sc.out, "temp,lv_est,pct"), "varredura a mao: %s", sc.out);
+  printf("appdata_test: varredura do .json igual ao motor em %d de %d pacotes\n", iguais, n);
+}
+
 static const char *PARTES[] = {"ttl", "values", "temp", "hum", "porta", "ABERTA", "a", "x", "900", "10", "86400", "-1", "1.5", "null", "[]", "{}", "\"\"", "true"};
 
 static void fuzz(long casos) {
@@ -391,6 +439,7 @@ int main(int argc, char **argv) {
   pacote(tela, arq);
   referencias(tela);
   campos();
+  varredura();
   fuzz(casos);
   delete tela;
   if (falhas) { printf("appdata_test: %d falha(s)\n", falhas); return 1; }
