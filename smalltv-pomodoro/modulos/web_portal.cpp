@@ -82,7 +82,8 @@ static uint8_t diagTwMax = 0;
 void diagLoop() {
   uint32_t now = millis(), h = ESP.getFreeHeap();
   diagLoops++;
-  if (now - diagLpsAt >= 1000) {
+  bool sec = now - diagLpsAt >= 1000;
+  if (sec) {
     diagLps = diagLoops * 1000UL / (now - diagLpsAt);
     diagLoops = 0;
     diagLpsAt = now;
@@ -92,6 +93,7 @@ void diagLoop() {
     diagStall = now - diagLastMs;
     diagStallAt = diagWhere;
   }
+  if (sec) crashUpTick((uint32_t)((((uint64_t)diagWraps << 32) | now) / 1000));  // depois da volta do millis(): mesmo relógio do diag.up
   diagWhere = 0;
   diagLastMs = now;
   if (h < diagMinHeap) diagMinHeap = h;
