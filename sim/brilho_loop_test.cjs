@@ -73,6 +73,7 @@ static void sigmaDeltaDetachPin(uint8_t pin) { sdPreso = false; marca(pin); }
 struct { void sendCommand(uint8_t, const uint8_t *, uint8_t) { gamaCmds++; } } tft;
 struct { void tick(time_t, uint32_t) {} } timeGuard;
 static void rtcTimeSave() {}
+static void dayRolloverTick() {}
 void updateBrightness(bool force = false);  // protótipos de app.h
 void briFade();
 void warmFlush();

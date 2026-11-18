@@ -83,7 +83,7 @@ void timeGuardBegin() {
       timeval w = {(time_t)want, 0};
       settimeofday(&w, nullptr);
     }
-    if (!timeGuard.confirmed && weatherConfirms()) wxBack.next = millis();  // confirma já pelo clima
+    if (!timeGuard.confirmed && weatherConfirms()) wxBack.now();  // confirma já pelo clima
   });
 }
 
