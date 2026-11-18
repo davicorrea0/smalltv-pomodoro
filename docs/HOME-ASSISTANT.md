@@ -87,6 +87,8 @@ Num pacote do **formato 2** (ver [PACOTES.md](PACOTES.md)), `{x.campo}` no texto
 Instale pelo painel, em Relógio → Mais mostradores → **Instalar de um arquivo**, e escolha o mostrador como de
 costume (ou ponha no rodízio).
 
+Mostradores prontos para lavadora, luzes e tomadas, com a automação de cada um: [exemplos/](exemplos/README.md).
+
 - **Estados e barras:** `"when": "x.porta=ABERTA"` mostra uma camada só nesse estado, `"!x.campo"` mostra outra
   quando o valor não chegou, e `bar`/`arc` com `"value": "x.pct"` desenham o número (0 a `max`, padrão 100). Detalhes
   em [PACOTES.md](PACOTES.md).
