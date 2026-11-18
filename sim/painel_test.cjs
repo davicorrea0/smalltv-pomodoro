@@ -58,10 +58,10 @@ const i = html.indexOf('async function runSteps('), runSteps = new Function('ret
   // desmarcados saem; chave sem cartão (pacote que não carregou ou foi removido) fica
   assert.deepStrictEqual(rotMerge(['t:1', 'p:velho', 'p:koi', 't:2'], known, ['t:2']), ['p:velho', 't:2']);
   assert.deepStrictEqual(rotMerge(['t:1', 'p:koi'], known, []), []);
-  // teto igual ao do firmware (as três ocorrências de 300 no rotSet)
+  // teto igual ao do firmware (as ocorrências de 300 no código do rotSet, sem comentários)
   const ROTMAX = +html.match(/const ROTMAX=(\d+);/)[1];
   const album = fs.readFileSync(path.join(__dirname, '../smalltv-pomodoro/modulos/album.cpp'), 'utf8');
-  const rs = album.slice(album.indexOf('void rotSet('), album.indexOf('void rotLoop('));
+  const rs = album.slice(album.indexOf('void rotSet('), album.indexOf('void rotLoop(')).replace(/\/\/.*$/gm, '');  // sem os comentários
   assert.deepStrictEqual(rs.match(/\b\d{3}\b/g), [String(ROTMAX), String(ROTMAX), String(ROTMAX)], 'ROTMAX do painel diferente do rotSet');
   // limite conferido no toque, ao salvar e no incluir de um: nunca grava pela metade
   const ed = html.slice(html.indexOf('function rotEdit('), html.indexOf('function rotToggle('));
