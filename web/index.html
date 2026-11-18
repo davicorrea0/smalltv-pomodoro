@@ -222,7 +222,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
   <input id="up" type="file" accept="image/*" multiple hidden>
   <p><button class="btn p" onclick="$('up').click()">Enviar fotos ou GIFs</button></p>
   <p><button class="btn" onclick="storage()">Ver o que ocupa espaço</button></p>
-  <small>Fotos são recortadas para 240×240 no seu navegador antes de enviar. GIFs vão como estão (ideal 240×240). Para exibir, escolha "Álbum" ou "Alternar" em Relógio → Aparência.</small>
+  <small>Fotos são recortadas para 240×240 no seu navegador antes de enviar. GIFs vão como estão: use no máximo 240×240 (acima disso o relógio mostra só o canto superior esquerdo; acima de 480×480 ele recusa). Para exibir, escolha "Álbum" ou "Alternar" em Relógio → Aparência.</small>
  </div>
 </section>
 
@@ -807,12 +807,20 @@ function photoSheet(x){const c=$('sheetc');c.innerHTML='';const s=document.creat
  r.append(a,d);c.append(s,h,r);$('sheet').classList.add('v')}
 async function prep(file){if(file.type=='image/gif')return{blob:file,name:file.name};
  const im=await createImageBitmap(file),c=document.createElement('canvas');c.width=c.height=240;
- const k=Math.max(240/im.width,240/im.height),w=im.width*k,h=im.height*k;c.getContext('2d').drawImage(im,(240-w)/2,(240-h)/2,w,h);
+ const k=Math.max(240/im.width,240/im.height),w=im.width*k,h=im.height*k,x=c.getContext('2d');x.imageSmoothingQuality='high';x.drawImage(im,(240-w)/2,(240-h)/2,w,h);  // 'high': sem serrilhado ao reduzir fotos grandes
  const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',.85));return{blob,name:file.name.replace(/\.[^.]+$/,'')+'.jpg'}}
-$('up').onchange=async e=>{const fs=[...e.target.files];e.target.value='';let ok=0;
- for(const file of fs){try{toast(t('Enviando {0}...',file.name));const p=await prep(file),fd=new FormData();fd.append('f',p.blob,p.name);
-  const r=await fetch('/api/upload',{method:'POST',body:fd});if(r.ok)ok++;else toast(t(await r.text()))}catch(x){toast(t('Falha: ')+file.name)}}
- if(ok)toast(t('{0} arquivo(s) enviado(s)',ok));files()};
+// o relógio não reduz GIF: mostra só o canto superior esquerdo de 240×240 (album.cpp) e recusa mais de 480×480 (gifcheck.h)
+async function gifDim(f){const v=new DataView(await f.slice(0,10).arrayBuffer());return v.byteLength<10?[0,0]:[v.getUint16(6,true),v.getUint16(8,true)]}
+$('up').onchange=async e=>{const fs=[...e.target.files];e.target.value='';let ok=0,sp=0,room=st&&st.fs&&st.fs.ok?st.fs.total-st.fs.used:1/0;const bad=[];  // room: espaço livre da memória de arquivos; sp: resposta ao aviso de espaço (0 não perguntou, 1 sim, 2 não); bad: GIFs recusados
+ for(const file of fs){try{toast(t('Enviando {0}...',file.name));const p=await prep(file),fd=new FormData();
+  if(p.blob==file){const[gw,gh]=await gifDim(file);
+   if(gw>480||gh>480){bad.push(file.name+': '+t('GIF de {0}×{1}: o relógio recusa acima de 480×480. Reduza o GIF antes de enviar.',gw,gh));continue}
+   if((gw>240||gh>240)&&!confirm(t('GIF de {0}×{1}: o relógio mostra só o canto superior esquerdo de 240×240. Enviar mesmo assim?',gw,gh)))continue}
+  const need=Math.ceil(p.blob.size/4096)*4096+16384;  // blocos de 4 KB e 16 KB de sobra (o relógio só exige os 16 KB antes de começar; encher até a borda atrapalha as outras gravações)
+  if(need>room&&sp!=1){if(sp==2||!confirm(t('Só {0} livres e {1} necessários. Enviar mesmo assim?',kb(Math.max(room,0)),kb(need)))){sp=2;continue}sp=1}
+  fd.append('f',p.blob,p.name);
+  const r=await fetch('/api/upload',{method:'POST',body:fd});if(r.ok){ok++;room-=need-16384}else toast(t(await r.text()))}catch(x){toast(t('Falha: ')+file.name)}}
+ if(ok)toast(t('{0} arquivo(s) enviado(s)',ok));if(bad.length)alert(bad.join('\n'));files()};
 $('op').onsubmit=e=>{e.preventDefault();const o=e.target;post('/api/otapass',new URLSearchParams(new FormData(o))).then(r=>r.text()).then(x=>{toast(t(x));o.reset()})};
 document.onkeydown=e=>{if(e.code=='Space'&&curTab==1&&!/INPUT|BUTTON|SELECT/.test(e.target.tagName)){e.preventDefault();cmd('toggle')}};
 function poll(){if(updating)return setTimeout(poll,1000);fetch('/api/state').then(r=>r.json()).then(load).catch(()=>$('net').className='off').finally(()=>setTimeout(poll,1000))}
