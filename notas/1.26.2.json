@@ -1,0 +1,26 @@
+{
+  "pt": [
+    "Versão 1.26.2 (teste): correções de estabilidade da 1.26.1",
+    "O painel não fica mais em branco até reiniciar o relógio",
+    "Uma atualização recusada não é mais aplicada depois, e o relógio deixa de aceitar tamanhos de arquivo inválidos",
+    "Relógio ligado por semanas: a virada do dia, o histórico e os prazos não se confundem mais",
+    "Painel: \"Compartilhar meu dia\" volta a abrir, e o painel avisa de GIFs que o relógio corta ou recusa",
+    "Validações mais firmes no rodízio e na limpeza de arquivos"
+  ],
+  "en": [
+    "Version 1.26.2 (test): stability fixes for 1.26.1",
+    "The panel no longer stays blank until the clock restarts",
+    "A refused update is no longer applied later, and the clock rejects invalid file sizes",
+    "Clock left on for weeks: the day rollover, the history and the timeouts no longer get confused",
+    "Panel: \"Share my day\" opens again, and the panel warns about GIFs the clock crops or refuses",
+    "Stricter checks in the rotation and in file cleanup"
+  ],
+  "es": [
+    "Versión 1.26.2 (prueba): correcciones de estabilidad de la 1.26.1",
+    "El panel ya no se queda en blanco hasta reiniciar el reloj",
+    "Una actualización rechazada ya no se aplica después, y el reloj deja de aceptar tamaños de archivo inválidos",
+    "Reloj encendido durante semanas: el cambio de día, el historial y los plazos ya no se confunden",
+    "Panel: \"Compartir mi día\" vuelve a abrirse, y el panel avisa de los GIF que el reloj recorta o rechaza",
+    "Validaciones más firmes en la rotación y en la limpieza de archivos"
+  ]
+}
