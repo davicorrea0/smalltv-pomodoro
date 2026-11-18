@@ -24,7 +24,7 @@ recebe percentuais e tempo até reiniciar.
 | `tk_c5`, `tk_c7` | Claude, janela de 5 h e de 7 dias |
 | `tk_x5`, `tk_x7` | Codex, janela de 5 h e de 7 dias |
 
-Cada valor é um texto curto, "percentual tempo-até-reiniciar": `42% 2h13`, `71% 3d`, `93% 38m`. Sem leitura de uma
+Cada valor é um texto curto, "percentual tempo-até-reiniciar" (o pacote lê o percentual do começo para desenhar a barra): `42% 2h13`, `71% 3d`, `93% 38m`. Sem leitura de uma
 janela, o campo vai como `--` (nunca `0%`). O companheiro manda sempre os 4 campos: o relógio guarda cada campo com a
 validade do envio que o trouxe, então um campo que simplesmente deixasse de ser enviado continuaria na tela até vencer.
 Se o PC parar de enviar por 15 minutos (`ttl`), tudo volta para `--`.
@@ -70,15 +70,21 @@ Precisa de um firmware com `POST /api/apps/data` e da chave de escrita criada.
    ```
    `--uma-vez` envia uma vez e sai; sem ele o programa fica rodando (lê a cada 60 s e reenvia a cada 5 min).
 
+## O que a tela mostra
+
+Duas linhas por assistente (5 horas e 7 dias), cada uma com o percentual **usado**, o tempo até reiniciar (`42% 2h13`) e uma barra que enche com o uso. Quando nada chega há 15 minutos, tudo volta para `--` e o rodapé troca para "SEM O PC" em âmbar.
+
+- **Leitura velha vira `--`.** O companheiro só reenvia uma leitura se ela for recente: até 1 hora para a janela de 5 h e até 12 horas para a de 7 dias (o Claude pela hora em que o `statusLine` gravou; o Codex pela hora do arquivo de sessão). Sem isso, um número de horas atrás continuaria na tela com cara de atual (por exemplo se você gastou o limite no claude.ai ou em outro PC).
+- **Chave recusada não trava o painel.** Se o relógio responde 401, 403, 404, 429 ou redirecionamento, o companheiro espera 10 minutos antes de tentar de novo (o relógio usa o mesmo limitador de senha errada para a rota de dados e para o painel, então insistir a cada minuto bloquearia o painel aberto neste PC). Erro de rede, como o Wi-Fi ainda subindo, tenta a cada volta.
+- **Dá para saber o que aconteceu sem terminal.** `enviar` grava uma linha em `ultimo.txt` na pasta de estado (`%LOCALAPPDATA%	okensmall` no Windows): horário e `enviado tk_c5,...`, `erro: ...` ou `sem leitura`. Nunca a chave nem os números.
+
 ## Limites desta versão
 
-- É só texto: a tela mostra números, sem barras. A rota já permite `"value": "x.tk_c5"` em `bar` e `arc` (lê o inteiro do
-  começo do texto, `42` em `42% 2h13`), então uma versão com barras é só mudar o pacote.
+- Só o percentual **usado** (o que o Claude Code e o TokenTV também mostram). A barra não muda de cor perto do limite: o pacote só compara valores por igualdade exata.
+- Dois assistentes (Claude e Codex): o relógio guarda 16 campos somados entre todos os miniapps, o tokensmall usa 4 (`tk_`) e, com os três exemplos da casa (12), fecha 16 de 16. Mais provedores pediriam mudar a rota de dados.
 - O Claude só aparece depois de uma sessão com `statusLine` ativo; o Codex depois de uma sessão que já gravou limites.
   Os arquivos de sessão do Codex não são um formato público: conferido em 16/11/2026 neste PC, pode mudar.
 - O relógio não guarda nada: religar mostra `--` até o próximo envio.
-- O armazém do relógio tem 16 campos somados entre todos os miniapps. O tokensmall usa 4 (`tk_`); com os três exemplos da
-  casa (12) fecha 16 de 16.
 
 ## Testes
 
