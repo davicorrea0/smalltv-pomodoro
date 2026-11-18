@@ -69,11 +69,12 @@ ${enumLine}${fn('JPEGDEC *jpgAlloc() {')}
 ${fn('JpgResult validJpg(')}
 ${fn('static void albumMakeRoom(')}
 static uint32_t packRetryAt;
+static bool packRetryWait;
 ${fn('JpgResult drawJpg(')}
 ${fn('bool showAlbumItem(')}
 ${fn('void packEnsureLoaded(')}
 #define CHECK(c) do { if (!(c)) { printf("FALHA linha %d: %s (msg='%s')\\n", __LINE__, #c, lastErr.c_str()); return 1; } } while (0)
-static void reset() { g_err = 0; g_unloads = g_loads = 0; g_packLoaded = g_packAtAlloc = g_isGif = g_preview = false; g_loadOk = true; g_now = 100000; packRetryAt = 0; cfg.theme = THEME_MATRIX; g_alloc = g_open = g_decode = true; g_maxBlock = 100000; lastErr.clear(); g_decodes = 0; }
+static void reset() { g_err = 0; g_unloads = g_loads = 0; g_packLoaded = g_packAtAlloc = g_isGif = g_preview = false; g_loadOk = true; g_now = 100000; packRetryAt = 0; packRetryWait = false; cfg.theme = THEME_MATRIX; g_alloc = g_open = g_decode = true; g_maxBlock = 100000; lastErr.clear(); g_decodes = 0; }
 int main() {
   reset(); CHECK(showAlbumItem("/a.jpg") && lastErr.empty() && g_decodes == 1);                    // arquivo bom: sem aviso
   reset(); g_alloc = false; CHECK(drawJpg("/a.jpg") == JPG_NOMEM);                                // new nothrow nulo
@@ -113,6 +114,8 @@ int main() {
   g_now += 1999; packEnsureLoaded(); CHECK(g_loads == 1);                                                      // antes de 2 s não tenta de novo
   g_now += 1; g_loadOk = true; packEnsureLoaded(); CHECK(g_loads == 2 && g_packLoaded && cfg.theme == THEME_PACK);
   packEnsureLoaded(); CHECK(g_loads == 2);                                                                     // já carregado: não relê
+  // ligado há 30 dias (> 24,8: (int32_t)(millis() - 0) é negativo): o 0 inicial não pode parecer prazo no futuro e travar a recarga
+  reset(); g_now = 30u * 86400000u; cfg.theme = THEME_PACK; packEnsureLoaded(); CHECK(g_loads == 1 && g_packLoaded);
   // ---- telemetria (diag.minblk, diag.nomem): amostra o maior bloco ANTES de gastá-lo e conta só a falta de memória ----
   reset(); g_samples = g_nomem[0] = g_nomem[1] = 0; g_alloc = false; showAlbumItem("/a.jpg"); CHECK(g_samples == 1 && g_nomem[0] == 1 && g_nomem[1] == 0);
   reset(); g_samples = g_nomem[0] = g_nomem[1] = 0; g_isGif = true; g_maxBlock = 100; showAlbumItem("/a.gif"); CHECK(g_samples == 1 && g_nomem[1] == 1 && g_nomem[0] == 0);

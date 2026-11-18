@@ -34,7 +34,9 @@ struct AuthThrottle {
   }
   bool blocked(uint32_t ip, uint32_t now, uint32_t *waitMs = nullptr) {
     Entry *e = find(ip, now, false);
-    bool yes = e && before(now, e->until);
+    // Só vale perto da falha: a espera é de no máximo 32 s depois de `last`; um `until` de mais de 24,8 dias atrás
+    // parece "no futuro" na conta com sinal e trancaria o IP até o millis() dar a volta.
+    bool yes = e && (uint32_t)(now - e->last) < 64000UL && before(now, e->until);
     if (waitMs) *waitMs = yes ? e->until - now : 0;
     return yes;
   }
@@ -414,11 +416,13 @@ struct RateLimit {
 // falha seguida; o sucesso zera. Sem isso, Wi-Fi sem internet fazia o relógio parar a cada tentativa.
 struct HttpBackoff {
   uint8_t fails = 0;
-  uint32_t next = 0;  // millis() da próxima tentativa
+  uint32_t at = 0, wait = 0;  // quando a última tentativa terminou e quanto esperar depois dela (tempo decorrido, não um prazo:
+                              // um prazo em millis() parece "no futuro" depois de 24,8 dias sem tentativas e nada mais era tentado)
   static uint32_t waitMs(uint8_t fails) { return (fails <= 1 ? 2UL : fails == 2 ? 4UL : fails == 3 ? 8UL : 15UL) * 60000UL; }
-  bool due(uint32_t ms) const { return (int32_t)(ms - next) >= 0; }
-  void ok(uint32_t ms, uint32_t afterMs) { fails = 0; next = ms + afterMs; }
-  void fail(uint32_t ms) { if (fails < 255) fails++; next = ms + waitMs(fails); }
+  bool due(uint32_t ms) const { return (uint32_t)(ms - at) >= wait; }
+  void ok(uint32_t ms, uint32_t afterMs) { fails = 0; at = ms; wait = afterMs; }
+  void fail(uint32_t ms) { if (fails < 255) fails++; at = ms; wait = waitMs(fails); }
+  void now() { wait = 0; }  // tenta já
 };
 
 // Cache de nomes (DNS) sem bloquear. A busca roda no lwIP (callback done()); get() só olha o cache e,

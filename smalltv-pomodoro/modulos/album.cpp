@@ -10,7 +10,10 @@
 // EEPROM (seria uma gravação a cada troca): vale o que estiver salvo ao reiniciar.
 String rotList;
 
-static uint32_t rotNext = 0;
+// Troca do rodízio: a espera é o tempo DECORRIDO desde a última troca (não um prazo em millis(), que parece "no futuro"
+// depois de 24,8 dias sem trocar, por exemplo se o rodízio for ligado só depois disso). Sem troca ainda, a primeira vale já.
+static uint32_t rotAt = 0;
+static bool rotArmed = false;
 
 std::vector<String> album;
 
@@ -288,7 +291,7 @@ bool showAlbumItem(const String &f) {
     }
     gifOffX = max(0, (240 - gif->getCanvasWidth()) / 2);
     gifOffY = max(0, (240 - gif->getCanvasHeight()) / 2);
-    nextFrameAt = 0;
+    nextFrameAt = millis();  // não 0: com mais de 24,8 dias ligado, (int32_t)(millis() - 0) é negativo e o GIF nunca tocava
   } else {
     diagBlkSample();  // minblk: o maior bloco antes da foto (e antes de albumMakeRoom soltar o pacote)
     albumMakeRoom(sizeof(JPEGDEC) + 1024 + 8192);  // o decodificador e, depois, as tabelas de ~7,7 KB
@@ -368,7 +371,8 @@ bool loadPack(const String &id) {
   return idOk(id) && loadPackFile("/faces/" + id + ".json", msg);
 }
 
-static uint32_t packRetryAt;  // próxima tentativa de packEnsureLoaded() depois de faltar memória
+static uint32_t packRetryAt;  // próxima tentativa de packEnsureLoaded() depois de faltar memória (só vale com packRetryWait)
+static bool packRetryWait;  // sem isso, o 0 inicial parecia "no futuro" depois de 24,8 dias ligado e o pacote nunca recarregava
 
 // Volta o motor ao pacote salvo nas configurações (ou o libera, se o ativo é um embutido). Pacote ausente ou inválido
 // volta ao Matriz; se o que faltou foi memória agora, o mostrador fica e packEnsureLoaded() tenta de novo em 2 s (antes,
@@ -379,6 +383,7 @@ void restoreActivePack() {
   facePackUnload();
   if (cfg.theme == THEME_PACK && (msg.indexOf(F("sem memoria")) >= 0 || msg.indexOf(F("NoMemory")) >= 0)) {
     packRetryAt = millis() + 2000;
+    packRetryWait = true;
     uiInvalidate();
     return;
   }
@@ -392,8 +397,9 @@ void restoreActivePack() {
 
 void packEnsureLoaded() {
   if (cfg.theme != THEME_PACK || previewActive() || facePackLoaded()) return;
-  if ((int32_t)(millis() - packRetryAt) < 0) return;
-  if (!loadPack(cfg.facePkg)) packRetryAt = millis() + 2000;
+  if (packRetryWait && (int32_t)(millis() - packRetryAt) < 0) return;
+  packRetryWait = false;
+  if (!loadPack(cfg.facePkg)) { packRetryAt = millis() + 2000; packRetryWait = true; }
 }
 
 File packUpload;
@@ -447,7 +453,8 @@ void rotSet(const String &v) {
     if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == ':' || c == ',' || c == '-' || c == '_') s += c;
   if (s.length() > 300) s = s.substring(0, s.lastIndexOf(',', 300));
   rotList = s;
-  rotNext = millis() + cfg.rotMin * 60000UL;
+  rotAt = millis();
+  rotArmed = true;
   if (!fsOk) return;
   if (!s.length()) LittleFS.remove("/rotation.txt");
   else {
@@ -461,8 +468,9 @@ void rotSet(const String &v) {
 
 void rotLoop() {
   if (!cfg.rotMin || !rotList.length() || phase != IDLE || previewActive() || inAlbum) return;
-  if ((int32_t)(millis() - rotNext) < 0) return;
-  rotNext = millis() + cfg.rotMin * 60000UL;
+  if (rotArmed && (uint32_t)(millis() - rotAt) < cfg.rotMin * 60000UL) return;
+  rotAt = millis();
+  rotArmed = true;
   // o item depois do mostrador atual (ou o primeiro, se o atual não está na lista)
   String cur = cfg.theme == THEME_PACK ? String("p:") + cfg.facePkg : String("t:") + cfg.theme, l = rotList + ",";
   int at = ("," + l).indexOf("," + cur + ","), start = at >= 0 ? at + cur.length() + 1 : 0;
