@@ -24,6 +24,13 @@ node ../assets/gerar.js || exit 1  # assets/*.txt -> smalltv-pomodoro/assets.h
 if grep -nE "%[-+ #0-9.]*[fFeEgG]|toFloat|atof|strtod|scanf" ../smalltv-pomodoro/*.cpp ../smalltv-pomodoro/modulos/*.cpp ../smalltv-pomodoro/*.h; then
   echo "use números inteiros ou String(x, casas) em vez de float no printf/scanf"; exit 1
 fi
+# ws_parse.h especializa métodos do servidor HTTP: só vale se uma única unidade de compilação (main.cpp) o instancia
+if grep -lE '#include <ESP8266WebServer.h>' ../smalltv-pomodoro/*.cpp ../smalltv-pomodoro/*.h ../smalltv-pomodoro/modulos/*.cpp | grep -vE '/(app|ws_parse)\.h$'; then
+  echo "só o app.h (via ws_parse.h) pode incluir ESP8266WebServer.h"; exit 1
+fi
+if grep -lE '#include "(\.\./)?app\.h"' ../smalltv-pomodoro/*.cpp ../smalltv-pomodoro/*.h | grep -vE '/main\.cpp$'; then
+  echo "só o main.cpp (que inclui os modulos/) pode incluir o app.h: outra unidade instanciaria o servidor sem o ws_parse.h"; exit 1
+fi
 GFX="${GFX:-$HOME/Documents/Arduino/libraries/Adafruit_GFX_Library}"
 mkdir -p out
 node tint_test.cjs out/tint_test.inc || exit 1

@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
+#include "ws_parse.h"  // analisador de requisições do core com limites (C1–C4 da auditoria), antes de qualquer uso do server
 #include <base64.h>
 #include <DNSServer.h>
 #include <EEPROM.h>
