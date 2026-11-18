@@ -135,6 +135,17 @@ static void checkDayRollover(const struct tm &t) {
   statsRollover(t);
 }
 
+// Virada do dia e histórico pendente sem depender do mostrador: o renderClock só roda com o relógio na tela, então com o
+// Pomodoro rodando, o álbum fixo (modo 1) ou o Pomodoro em pausa a virada não acontecia, o contador de hoje seguia
+// somando de ontem e o foco que fechava depois da meia-noite era gravado com a contagem de ontem (e apagado depois).
+// Chamado a cada 5 s no loop e antes de contar um foco (advance).
+void dayRolloverTick() {
+  struct tm t;
+  if (!localNow(t) || !timeTrusted()) return;  // só com a hora confirmada
+  checkDayRollover(t);
+  statsFlush(t);
+}
+
 // "14:05" para o painel web
 String hhmm(const struct tm &t) {
   int h = t.tm_hour;
@@ -328,6 +339,7 @@ void setup() {
   if (fsOk) {
     File rf = LittleFS.open("/rotation.txt", "r");
     if (rf) {
+      rf.setTimeout(0);  // readString termina no EOF do File sem acrescentar 1 s ao boot
       rotList = rf.readString();
       rf.close();
     }
@@ -405,6 +417,7 @@ void loop() {
     lastBriCheck = now;
     updateBrightness();
     timeGuard.tick(time(nullptr), now);
+    dayRolloverTick();
     rtcTimeSave();
   }
   briFade();
