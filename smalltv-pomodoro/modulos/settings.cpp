@@ -26,15 +26,28 @@ void crashLoad() {
   EEPROM.get(CRASH_OFF, crashRec);
   if (crashRec.magic != CRASH_MAGIC) crashRec.magic = 0;
   const rst_info *r = ESP.getResetInfoPtr();
-  if (!r || !(r->reason == REASON_WDT_RST || r->reason == REASON_EXCEPTION_RST || r->reason == REASON_SOFT_WDT_RST)) return;
   uint32_t v[2] = {0, 0};
-  ESP.rtcUserMemoryRead(RTC_CRASH_BLOCK, v, sizeof v);
-  uint8_t n = crashRec.magic ? crashRec.n : 0;
-  crashRec = {CRASH_MAGIC, (uint8_t)(n < 255 ? n + 1 : n), (uint8_t)r->reason, (uint8_t)r->exccause, 0,
-              r->epc1, r->excvaddr, v[0] == CRASH_RTC_TAG ? v[1] : 0, {}};
-  strlcpy(crashRec.ver, FW_VERSION, sizeof crashRec.ver);
-  EEPROM.put(CRASH_OFF, crashRec);
-  EEPROM.commit();
+  if (r && (r->reason == REASON_WDT_RST || r->reason == REASON_EXCEPTION_RST || r->reason == REASON_SOFT_WDT_RST)) {
+    ESP.rtcUserMemoryRead(RTC_CRASH_BLOCK, v, sizeof v);
+    uint8_t n = crashRec.magic ? crashRec.n : 0;
+    crashRec = {CRASH_MAGIC, (uint8_t)(n < 255 ? n + 1 : n), (uint8_t)r->reason, (uint8_t)r->exccause, 0,
+                r->epc1, r->excvaddr, v[0] == CRASH_RTC_TAG ? v[1] : 0, {}};
+    strlcpy(crashRec.ver, FW_VERSION, sizeof crashRec.ver);
+    EEPROM.put(CRASH_OFF, crashRec);
+    EEPROM.commit();
+  }
+  // todo início começa do zero: o que estiver ali é do início anterior (ou lixo, depois da tomada)
+  if (ebootPending()) return;
+  v[0] = CRASH_RTC_TAG;
+  v[1] = 0;
+  ESP.rtcUserMemoryWrite(RTC_CRASH_BLOCK, v, sizeof v);
+}
+
+// Segundos ligado na memória RTC (diagLoop, 1x/s): o crash.up do watchdog de hardware, que não chama o callback.
+void crashUpTick(uint32_t sec) {
+  if (ebootPending()) return;
+  uint32_t v[2] = {CRASH_RTC_TAG, sec};
+  ESP.rtcUserMemoryWrite(RTC_CRASH_BLOCK, v, sizeof v);
 }
 
 void setBootCount(uint8_t n) {
