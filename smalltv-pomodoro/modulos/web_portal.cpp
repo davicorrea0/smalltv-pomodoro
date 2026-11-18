@@ -82,7 +82,8 @@ static uint8_t diagTwMax = 0;
 void diagLoop() {
   uint32_t now = millis(), h = ESP.getFreeHeap();
   diagLoops++;
-  if (now - diagLpsAt >= 1000) {
+  bool sec = now - diagLpsAt >= 1000;
+  if (sec) {
     diagLps = diagLoops * 1000UL / (now - diagLpsAt);
     diagLoops = 0;
     diagLpsAt = now;
@@ -92,6 +93,7 @@ void diagLoop() {
     diagStall = now - diagLastMs;
     diagStallAt = diagWhere;
   }
+  if (sec) crashUpTick((uint32_t)((((uint64_t)diagWraps << 32) | now) / 1000));  // depois da volta do millis(): mesmo relógio do diag.up
   diagWhere = 0;
   diagLastMs = now;
   if (h < diagMinHeap) diagMinHeap = h;
@@ -938,7 +940,7 @@ void setupWeb() {
       sunRise = sunSet = -1;
       wx.version++;
       wxBack.fails = 0;
-      wxBack.next = millis();  // busca o clima já
+      wxBack.now();  // busca o clima já
     }
     saveSettings();
     updateBrightness(true);
@@ -1045,6 +1047,7 @@ void setupWeb() {
     if (!guard()) return;
     String f = server.arg("f");
     if (!fsOk || !f.startsWith("/") || f.length() < 2 || f.length() > 96 || f.indexOf("..") >= 0 || f.indexOf("//") >= 0 ||
+        f.indexOf("/.") >= 0 ||  // o littlefs ignora o componente ".": "/./stats.bin" é o stats.bin e passava pelo fsKeep
         f.endsWith("/") || fsKeep(f) || !LittleFS.exists(f)) {
       server.send_P(400, PSTR("text/plain"), PSTR("Nao foi possivel apagar"));
       return;

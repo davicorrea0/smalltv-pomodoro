@@ -39,10 +39,15 @@ void softTime(int64_t sec, uint8_t src) {
   bootNote(src);
 }
 
+// Atualização à espera do eboot (comando válido nos blocos 0-31): ninguém mexe na memória RTC até o reinício.
+bool ebootPending() {
+  eboot_command cmd;
+  return eboot_command_read(&cmd) == 0;
+}
+
 void rtcTimeSave() {
   if (!timeTrusted()) return;
-  eboot_command cmd;
-  if (eboot_command_read(&cmd) == 0) return;  // atualização à espera do eboot: não mexe na memória RTC agora
+  if (ebootPending()) return;
   RtcClock c = rtcClockMake((uint32_t)time(nullptr), system_get_rtc_time());
   ESP.rtcUserMemoryWrite(RTC_CLOCK_BLOCK, (uint32_t *)&c, sizeof c);
 }
@@ -83,7 +88,7 @@ void timeGuardBegin() {
       timeval w = {(time_t)want, 0};
       settimeofday(&w, nullptr);
     }
-    if (!timeGuard.confirmed && weatherConfirms()) wxBack.next = millis();  // confirma já pelo clima
+    if (!timeGuard.confirmed && weatherConfirms()) wxBack.now();  // confirma já pelo clima
   });
 }
 
