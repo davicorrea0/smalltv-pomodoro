@@ -939,7 +939,7 @@ void setupWeb() {
       cfg.weatherOn = won;
       wx.ok = false;
       wx.version++;
-      wxBack.next = millis();  // busca o clima já
+      wxBack.now();  // busca o clima já
     }
     saveSettings();
     updateBrightness(true);
