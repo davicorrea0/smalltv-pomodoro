@@ -12,6 +12,7 @@
 #    e o brilho noturno 0 (tela apagada) que acende para avisos e volta a apagar (noite.h);
 #  - brilho no loop (backlight.cpp real): sem vai e vem nem reescrita com o alvo parado, troca sigma-delta/nível fixo sem piscar;
 #  - sinf/cosf próprios (trig.cpp) iguais bit a bit aos do newlib (trig_test.cpp);
+#  - rodízio (rodizio.h): próximo item, tempos por item, miniapps sem dados e entradas malformadas (rodizio_test.cpp);
 #  - GIF e JPEG: as amostras válidas precisam decodificar e o fuzzing não pode achar erro de memória;
 #  - mostradores de pacote (facepack.cpp): os pacotes da galeria estragados de propósito, carregados e desenhados
 #    (facepack_fuzz.cpp); precisa das bibliotecas Adafruit GFX e ArduinoJson (GFX e JSON, como no sim/build.sh).
@@ -45,6 +46,8 @@ g++ -std=c++17 -fsanitize=address,undefined -g -w -Ishim brilho_test.cpp -o "$T/
 # sinf/cosf próprios (trig.cpp) contra o newlib, 1 float a cada 97 (todos: "$T/trig todos"); -O2 pelo tempo
 g++ -std=c++17 -O2 -pthread -fsanitize=undefined,float-cast-overflow -fno-sanitize-recover -w trig_test.cpp -o "$T/trig"
 "$T/trig"
+g++ -m32 -std=c++17 -fsanitize=address,undefined -g -w rodizio_test.cpp -o "$T/rodizio"
+"$T/rodizio"
 [ -n "${GEN:-}" ] || node ip_cache_test.cjs  # makeState sem toString() do IP a cada desenho
 [ -n "${GEN:-}" ] || node wifi_flash_test.cjs  # persistent do Wi-Fi só nas gravações de propósito (sem gravar a flash a cada ciclo)
 [ -n "${GEN:-}" ] || node faceinstall_test.cjs  # instalar mostrador por cima de outro: sem remove antes do rename

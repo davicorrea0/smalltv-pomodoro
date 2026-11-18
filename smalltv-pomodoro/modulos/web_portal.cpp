@@ -355,6 +355,12 @@ static void sendState() {
     server.sendContent(rotList);
     yield();
   }
+  j = F("\",\"rott\":\"");
+  jsonFlush(j);
+  if (rotTimes.length()) {
+    server.sendContent(rotTimes);
+    yield();
+  }
   j = F("\"},\"alexa\":{\"ago\":");  // segundos desde o último pedido de um Echo (-1 = nenhum)
   j += alexaSeen ? (long)((millis() - alexaSeen) / 1000) : -1L;
   j += F(",\"ip\":\"");
@@ -1033,6 +1039,7 @@ void setupWeb() {
     cfg.alexa = argRange("alexa", cfg.alexa, 0, 1);
     alexaBegin();  // ligada agora: começa a responder à descoberta sem reiniciar
     if (server.hasArg("rot")) rotSet(server.arg("rot"));
+    if (server.hasArg("rott")) rotTimesSet(server.arg("rott"));
     uint8_t won = argRange("won", cfg.weatherOn, 0, 1);
     uint8_t fahr = argRange("fahr", cfg.fahr, 0, 1), rain = argRange("rain", cfg.rainAlert, 0, 1);
     cfg.beta = argRange("beta", cfg.beta, 0, 1);

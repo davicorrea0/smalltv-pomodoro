@@ -89,6 +89,8 @@ const alb=fs.readFileSync(path.join(__dirname,'../smalltv-pomodoro/modulos/album
 if(alb.split(String.fromCharCode(10)).some(l=>l.trim().startsWith('nextFrameAt = 0;')))throw Error('album: nextFrameAt = 0 deixa o GIF parado depois de 24,8 dias ligado (use millis())');
 if(!alb.includes('packRetryWait')||alb.includes('if ((int32_t)(millis() - packRetryAt) < 0) return;'))throw Error('album: packRetryAt precisa de packRetryWait (0 inicial parece futuro)');
 if(/rotNext/.test(alb)||!alb.includes('rotArmed && (uint32_t)(millis() - rotAt)'))throw Error('album: o rodízio usa tempo decorrido (rotAt), não prazo em millis()');
+// 1.27: a espera do rodízio é calculada a cada volta (rotEspera), nunca guardada: mudar o 'Trocar de mostrador' vale na hora
+if(/rotWait/.test(alb)||!alb.includes('(uint32_t)(millis() - rotAt) < rotEspera()'))throw Error('album: a espera do rodízio não pode ficar guardada (rotEspera a cada volta)');
 // collectHeaders replaces the list: the normal server (setupWeb) and recovery (startRecovery) each set theirs once
 for(const [name,hs] of [['setupWeb',['Origin','X-Firmware-Sig','Authorization','X-SmallTV']],['startRecovery',['Authorization','X-SmallTV','Accept-Language']]]){
  const ch=[...fn(name).matchAll(/server\.collectHeaders\(([^)]*)\)/g)];

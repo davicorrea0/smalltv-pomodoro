@@ -479,25 +479,30 @@ function buildFaces(){FACES.forEach(f=>{const b=f.pkg==null&&LG&&BUILTIN[f.t];f.
  if(isApp(f)){const e=el('small','ast');e.dataset.x=f.x;b.appendChild(e)}(isApp(f)?a:f.pkg?d:g).appendChild(b)});
  $('appsnone').hidden=a.children.length>0;appsState();fchips()}
 const rotKeys=()=>st&&st.cfg.rot?st.cfg.rot.split(',').filter(Boolean):[];
+const rotTimes=()=>{const m={};(st&&st.cfg.rott||'').split(',').forEach(x=>{const p=x.lastIndexOf('=');if(p>0)m[x.slice(0,p)]=+x.slice(p+1)});return m};
 const ROTMAX=300;  // teto do rotSet (album.cpp): acima disso o relógio cortaria a lista em silêncio
 // rodízio novo: os que já estavam e seguem marcados ficam no lugar (chave sem cartão, como um pacote que não carregou, fica);
 // os recém-marcados entram no fim, na ordem do toque
 const rotMerge=(cur,known,sel)=>cur.filter(k=>sel.includes(k)||!known.includes(k)).concat(sel.filter(k=>!cur.includes(k)));
 const rotOver=l=>l.join(',').length>ROTMAX&&(toast(t('Não cabe mais no relógio')),true);  // passou do teto: avisa e não grava
+const rotTimeStr=(m,l)=>l.filter(k=>m[k]).map(k=>k+'='+m[k]).join(',');
+const rotTimeOver=s=>s.length>ROTMAX&&(toast(t('Não cabe mais no relógio')),true);
 // uma gravação por ação; confere o que o relógio guardou
-function rotPost(l,m){return save({rot:l}).then(s=>{closeSheet();toast(t(s.cfg.rot!=l?'O relógio não guardou. Tente de novo.':l&&!s.cfg.rotmin?'Rodízio salvo. Escolha o intervalo em "Trocar de mostrador".':m))})}
+function rotPost(l,tt,m){return save({rot:l,rott:tt}).then(s=>{closeSheet();toast(t(s.cfg.rot!=l||s.cfg.rott!=tt?'O relógio não guardou. Tente de novo.':l&&!s.cfg.rotmin?'Rodízio salvo. Escolha o intervalo em "Trocar de mostrador".':m))})}
 // lista vazia: o relógio para de trocar e fica no mostrador que está na tela
-function rotClear(){const n=rotKeys().length;if(n&&confirm(t('Tirar os {0} mostradores do rodízio? O relógio fica no atual.',n)))return rotPost('','Rodízio vazio')}
+function rotClear(){const n=rotKeys().length;if(n&&confirm(t('Tirar os {0} mostradores do rodízio? O relógio fica no atual.',n)))return rotPost('','','Rodízio vazio')}
 // vários de uma vez: os mostradores instalados com caixa de marcar; a lista é montada do estado na hora de salvar
-function rotEdit(){const c=$('sheetc'),known=FACES.map(fkey);let sel=rotKeys();c.innerHTML='';
+function rotEdit(){const c=$('sheetc'),known=FACES.map(fkey),old=st&&st.cfg.rott||'';let sel=rotKeys(),tm=rotTimes();c.innerHTML='';
  c.append(el('h3',null,t('Editar rodízio')),el('p',null,t('Os novos entram no fim, na ordem do toque.')));
- const g=el('div','stg');FACES.forEach(f=>{const k=fkey(f),r=el('label','it'),x=el('input');x.type='checkbox';x.checked=sel.includes(k);
-  x.onchange=()=>{if(!x.checked)sel=sel.filter(y=>y!=k);else if(rotOver(rotMerge(rotKeys(),known,sel.concat(k))))x.checked=false;else sel.push(k)};
-  r.append(img(f),el('span',null,f.n),...isApp(f)?[el('em','sel',t('miniapp'))]:[],x);g.appendChild(r)});
+ if(st&&!st.cfg.rotmin)c.append(el('small',null,t('Escolha o intervalo em "Trocar de mostrador": sem ele o rodízio fica parado e os tempos não valem.')));
+ const g=el('div','stg');FACES.forEach(f=>{const k=fkey(f),r=el('label','it'),x=el('input'),q=el('select'),v=tm[k]||0;x.type='checkbox';x.checked=sel.includes(k);
+  [[0,'Padrão'],[30,'30 s'],[60,'1 min'],[300,'5 min'],[900,'15 min']].concat(v&&![30,60,300,900].includes(v)?[[v,t('{0} s',v)]]:[]).forEach(o=>{const z=el('option',null,t(o[1]));z.value=o[0];q.appendChild(z)});q.value=v;q.hidden=!x.checked;q.onchange=()=>{if(q.value==0)delete tm[k];else tm[k]=+q.value};
+  x.onchange=()=>{if(!x.checked){sel=sel.filter(y=>y!=k);delete tm[k]}else if(rotOver(rotMerge(rotKeys(),known,sel.concat(k))))x.checked=false;else sel.push(k);q.hidden=!x.checked};
+  r.append(img(f),el('span',null,f.n),...isApp(f)?[el('em','sel',t('miniapp'))]:[],q,x);g.appendChild(r)});
  const r=el('div','row'),a=el('button','btn',t('Cancelar')),b=el('button','btn p',t('Salvar'));r.style.marginTop='12px';a.onclick=closeSheet;
- b.onclick=()=>{const l=rotMerge(rotKeys(),known,sel);if(l.join(',')==rotKeys().join(','))closeSheet();else if(!rotOver(l))rotPost(l.join(','),'Rodízio salvo')};
+ b.onclick=()=>{const l=rotMerge(rotKeys(),known,sel),ls=l.join(','),tt=rotTimeStr(tm,l);if(ls==rotKeys().join(',')&&tt==old)closeSheet();else if(!rotOver(l)&&!rotTimeOver(tt))rotPost(ls,tt,'Rodízio salvo')};
  r.append(a,b);c.append(g,r);$('sheet').classList.add('v')}
-function rotToggle(f){const k=fkey(f),l=rotKeys(),on=l.includes(k);if(!on&&rotOver(l.concat(k)))return;save({rot:(on?l.filter(x=>x!=k):l.concat(k)).join(',')}).then(()=>{closeSheet();toast(t(on?'Fora do rodízio':'Incluído no rodízio'))})}
+function rotToggle(f){const k=fkey(f),l=rotKeys(),on=l.includes(k),n=on?l.filter(x=>x!=k):l.concat(k);if(!on&&rotOver(n))return;save(on?{rot:n.join(','),rott:rotTimeStr(rotTimes(),n)}:{rot:n.join(',')}).then(()=>{closeSheet();toast(t(on?'Fora do rodízio':'Incluído no rodízio'))})}
 function faceSheet(f){const c=$('sheetc');c.innerHTML='';const s=el('div','scr');s.appendChild(img(f));c.appendChild(s);
  c.append(el('h3',null,f.n),el('p',null,f.d+(f.a?' · '+t('por')+' '+f.a:'')+(f.pkg?' · '+t('instalado'):'')));
  if(st&&st.phase!='idle')c.appendChild(el('p',null,t('Durante o Pomodoro o relógio mostra o timer; a prévia aparece quando ele parar.')));
@@ -818,7 +823,7 @@ let qt;$('q').oninput=()=>{clearTimeout(qt);const q=$('q').value.trim();if(q.len
 // ---------- armazenamento: tudo o que ocupa a memória de arquivos (/api/storage) ----------
 // Agrupa por tipo; "Outros" é o que o Pomodoro não usa (em relógios vindos do firmware original, os arquivos dele).
 // O relógio marca com k o que precisa para funcionar (sem botão de apagar).
-const STG=[['Fotos e GIFs',p=>p.startsWith('/image/')||p.startsWith('/gif/')],['Mostradores baixados',p=>p.startsWith('/faces/')],['Painel',p=>p.startsWith('/www/')],['Histórico e ajustes',p=>['/stats.bin','/hooks.txt','/rotation.txt','/apps.key'].includes(p)]];
+const STG=[['Fotos e GIFs',p=>p.startsWith('/image/')||p.startsWith('/gif/')],['Mostradores baixados',p=>p.startsWith('/faces/')],['Painel',p=>p.startsWith('/www/')],['Histórico e ajustes',p=>['/stats.bin','/hooks.txt','/rotation.txt','/rotime.txt','/apps.key'].includes(p)]];
 function storage(){fetch('/api/storage').then(r=>r.json()).then(j=>{const c=$('sheetc');c.innerHTML='';c.appendChild(el('h3',null,t('Memória de arquivos')));
  const fl=j.files.filter(x=>!x.d),sum=fl.reduce((a,x)=>a+x.s,0);c.appendChild(el('p',null,t('{0} usados de {1}',kb(j.used),kb(j.total))));
  const box=el('div','stg'),known=new Set(),mine=['/image','/gif','/faces','/www'];

@@ -269,7 +269,7 @@ uint32_t fsInfoAt = 0;  // quando o espaço livre foi medido para o painel (0 = 
 // (sem montar a lista inteira na RAM); /api/fsdelete apaga um arquivo ou uma pasta inteira, menos o que
 // o relógio precisa para funcionar (fsKeep).
 bool fsKeep(const String &p) {
-  if (p == "/stats.bin" || p == "/hooks.txt" || p == "/rotation.txt" || p == "/www" || p.startsWith("/www/")) return true;
+  if (p == "/stats.bin" || p == "/hooks.txt" || p == "/rotation.txt" || p == "/rotime.txt" || p == "/www" || p.startsWith("/www/")) return true;
   if (p == "/image" || p == "/gif" || p == "/faces") return true;  // as pastas ficam; o que está dentro pode sair
   return cfg.theme == THEME_PACK && p.startsWith(String("/faces/") + cfg.facePkg + ".");  // mostrador em uso
 }

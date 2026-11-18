@@ -13,7 +13,7 @@ const cut = (sig, from = 0) => { const a = source.indexOf(sig, from); if (a < 0)
 
 // ---------- 1. campos aditivos ----------
 const OLD = ('phase running remaining total cycle today streak best clock showing wx ok t min max h rin tzn off loff rise set desc fs l2 mig used cfg work short long every bri auto h12 tz lock theme mode delay color non nstart nend nbri won fahr rain beta lat lon city bgr inv flip vcom wdown tok tund pkg goal act lang nsun warm lcdg alexa rotmin rot ago ip last pv name heap blk pdraw pseq pshown ver diag rst exc epc rssi minheap frag up draw stall stallAt boot scr wifi wf time src ntp crash n r x va').split(' ');
-const NEW = ['minblk', 'stack', 'ramfix', 'lps', 'pack', 'nomem', 'jpg', 'gif', 'strip', 'tw', 'twmax'];
+const NEW = ['minblk', 'stack', 'ramfix', 'lps', 'pack', 'nomem', 'jpg', 'gif', 'strip', 'tw', 'twmax', 'rott'];
 const sendState = cut('static void sendState() {'), diagJson = cut('static void diagJson('), crashJson = cut('static void crashJson(');
 const keys = new Set([...(sendState + diagJson + crashJson).matchAll(/\\"(\w+)\\":/g)].map(m => m[1]));
 for (const k of OLD) assert(keys.has(k), 'chave antiga sumiu do /api/state: ' + k + ' (painéis antigos leem esse JSON)');
@@ -57,7 +57,7 @@ const diagText = new Function(html.slice(a, b) + '\nreturn diagText')();
 const SEN = ['SEGREDO-CIDADE', 'SEGREDO-NOME', '192.168.77.5', '-23.5478', 'SEGREDO-FUSO', 'SEGREDO-ARQUIVO', 'SEGREDO-SENHA', 'SEGREDO-ROT', 'SEGREDO-PKG'];
 const state = {
   phase: 'idle', ver: '1.25.0', heap: 31200, blk: 17600, showing: '/image/SEGREDO-ARQUIVO.jpg', name: 'SEGREDO-NOME', clock: '10:21',
-  cfg: { city: 'SEGREDO-CIDADE', lat: -23.5478, lon: -46.6361, tz: 'SEGREDO-FUSO', lock: 1, pkg: 'SEGREDO-PKG', rot: 'SEGREDO-ROT', pass: 'SEGREDO-SENHA' },
+  cfg: { city: 'SEGREDO-CIDADE', lat: -23.5478, lon: -46.6361, tz: 'SEGREDO-FUSO', lock: 1, pkg: 'SEGREDO-PKG', rot: 'SEGREDO-ROT', rott: 'SEGREDO-ROT', pass: 'SEGREDO-SENHA' },
   alexa: { ago: 5, ip: '192.168.77.5', last: 1, min: 0 }, wx: { tzn: 'SEGREDO-CIDADE', desc: 'SEGREDO-CIDADE' }, fs: { used: 1, total: 2 },
   diag: { rst: 4, exc: 0, epc: '40201234', rssi: -61, minheap: 24100, minblk: 14200, frag: 12, stack: 3180, ramfix: 38496, lps: 58000, up: 3600, draw: 140, pack: 38, stall: 90, stallAt: 1, tw: 37, twmax: 2,
     nomem: { jpg: 1, gif: 0, strip: 2 }, boot: { scr: 1200, wifi: 800, wf: 1, time: 900, src: 1, ntp: 700 },
@@ -67,7 +67,7 @@ const state = {
 const txt = diagText(state, { heap: 26000, blk: 14000, rssi: -74, ip: '192.168.77.5', nome: 'SEGREDO-NOME' });
 for (const s of SEN) assert(!txt.includes(s), 'a lista branca vazou: ' + s);
 assert(!/\b\d{1,3}(\.\d{1,3}){3}\b/.test(txt), 'IP no diagnóstico copiado');
-assert(!/cfg|city|(lat|lon)=|name|ssid|alexa|tz=|pkg|rot=|showing/i.test(txt), 'campo pessoal no diagnóstico copiado: ' + txt);
+assert(!/cfg|city|\b(lat|lon)=|name|ssid|alexa|tz=|pkg|rot=|rott=|showing/i.test(txt), 'campo pessoal no diagnóstico copiado: ' + txt);
 for (const want of ['SmallTV Pomodoro 1.25.0', 'heap=31200 blk=17600', 'minheap=24100', 'minblk=14200', 'stack=3180', 'ramfix=38496', 'lps=58000', 'pack=38', 'tw=37', 'twmax=2', 'nomem jpg=1 gif=0 strip=2', 'boot scr=1200', 'crash n=1 r=2 x=29 epc=40201234 va=00000000 up=120 ver=1.24.9', 'page-min heap=26000 blk=14000 rssi=-74'])
   assert(txt.includes(want), 'faltou no diagnóstico: ' + want);
 // campo que o firmware ganhar um dia não entra sozinho, e valor de texto livre é limpo mesmo numa chave da lista

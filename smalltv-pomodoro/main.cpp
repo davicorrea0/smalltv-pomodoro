@@ -283,12 +283,12 @@ void bootAnim(uint8_t done) {
   uiBootProgress(now, done);
 }
 
-static uint32_t colorTestUntil = 0;
+uint32_t colorTestUntil = 0;
 
 // ---------- setup / loop ----------
 // Depois de conectar, a tela de início fica uns segundos com o endereço do painel; o loop segue normal (painel,
 // SNTP, clima) em vez de travar num delay. Ela sai antes se alguém usar o relógio.
-static uint32_t bootHoldUntil = 0;
+uint32_t bootHoldUntil = 0;
 
 static bool bootTitleTime = false;  // o título já diz "Conectado" (a hora chegou)
 
@@ -343,6 +343,7 @@ void setup() {
       rotList = rf.readString();
       rf.close();
     }
+    rotTimesLoad();
   }
   hooksLoad();
   if (recoveryMode) {  // sem pacotes, álbum nem clima: só o necessário para consertar
