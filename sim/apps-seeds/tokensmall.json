@@ -6,25 +6,24 @@
   "desc": "Limites de 5 h e 7 dias do Claude e do Codex, enviados pelo companheiro do PC",
   "name_en": "AI usage",
   "desc_en": "5 h and 7-day limits for Claude and Codex, pushed by the PC companion",
-  "bg": "#0f0e12",
+  "name_es": "Uso de IA",
+  "desc_es": "Limites de 5 h y 7 dias de Claude y Codex, enviados por el companero del PC",
+  "bg": "#000000",
   "layers": [
-    { "type": "mascot", "x": 12, "y": 5, "size": 2, "mood": "auto" },
-    { "type": "text", "x": 52, "y": 14, "font": "pixel", "size": 2, "color": "#8a8aa0",
-      "text": { "pt": "USO DE IA", "en": "AI USAGE", "es": "USO DE IA" } },
-    { "type": "text", "x": 228, "y": 14, "font": "pixel", "size": 2, "color": "#8a8aa0", "text": "{HH}:{MM}", "align": "right" },
-
-    { "type": "rect", "x": 12, "y": 42, "w": 216, "h": 88, "r": 14, "color": "#d9774e" },
-    { "type": "text", "x": 24, "y": 50, "font": "pixel", "size": 2, "color": "#4a2110", "text": "CLAUDE" },
-    { "type": "text", "x": 24, "y": 75, "font": "pixel", "size": 2, "color": "#4a2110", "text": "5H" },
-    { "type": "text", "x": 216, "y": 71, "font": "pixel", "size": 3, "color": "#1f0e06", "text": "{x.tk_c5}", "align": "right", "bg": "#d9774e" },
-    { "type": "text", "x": 24, "y": 103, "font": "pixel", "size": 2, "color": "#4a2110", "text": "7D" },
-    { "type": "text", "x": 216, "y": 99, "font": "pixel", "size": 3, "color": "#1f0e06", "text": "{x.tk_c7}", "align": "right", "bg": "#d9774e" },
-
-    { "type": "rect", "x": 12, "y": 138, "w": 216, "h": 88, "r": 14, "color": "#e9e7e1" },
-    { "type": "text", "x": 24, "y": 146, "font": "pixel", "size": 2, "color": "#55534e", "text": "CODEX" },
-    { "type": "text", "x": 24, "y": 171, "font": "pixel", "size": 2, "color": "#55534e", "text": "5H" },
-    { "type": "text", "x": 216, "y": 167, "font": "pixel", "size": 3, "color": "#17171a", "text": "{x.tk_x5}", "align": "right", "bg": "#e9e7e1" },
-    { "type": "text", "x": 24, "y": 199, "font": "pixel", "size": 2, "color": "#55534e", "text": "7D" },
-    { "type": "text", "x": 216, "y": 195, "font": "pixel", "size": 3, "color": "#17171a", "text": "{x.tk_x7}", "align": "right", "bg": "#e9e7e1" }
+    {"type": "rect", "x": 12, "y": 100, "w": 216, "h": 1, "color": "#2c2a27"},
+    {"type": "text", "x": 12, "y": 12, "font": "pixel", "size": 2, "color": "#8c887f", "text": "CLAUDE"},
+    {"type": "text", "x": 228, "y": 12, "font": "pixel", "size": 2, "color": "#8c887f", "text": {"pt": "5 HORAS", "en": "5 HOURS", "es": "5 HORAS"}, "align": "right"},
+    {"type": "text", "x": 12, "y": 36, "font": "pixel", "size": 4, "color": "#f2eee6", "text": "{x.tk_c5}"},
+    {"type": "text", "x": 12, "y": 76, "font": "pixel", "size": 2, "color": "#8c887f", "text": {"pt": "SEMANA", "en": "WEEK", "es": "SEMANA"}},
+    {"type": "text", "x": 96, "y": 76, "font": "pixel", "size": 2, "color": "#f2eee6", "text": "{x.tk_c7}"},
+    {"type": "text", "x": 12, "y": 112, "font": "pixel", "size": 2, "color": "#8c887f", "text": "CODEX"},
+    {"type": "text", "x": 228, "y": 112, "font": "pixel", "size": 2, "color": "#8c887f", "text": {"pt": "5 HORAS", "en": "5 HOURS", "es": "5 HORAS"}, "align": "right"},
+    {"type": "text", "x": 12, "y": 136, "font": "pixel", "size": 4, "color": "#f2eee6", "text": "{x.tk_x5}"},
+    {"type": "text", "x": 12, "y": 176, "font": "pixel", "size": 2, "color": "#8c887f", "text": {"pt": "SEMANA", "en": "WEEK", "es": "SEMANA"}},
+    {"type": "text", "x": 96, "y": 176, "font": "pixel", "size": 2, "color": "#f2eee6", "text": "{x.tk_x7}"},
+    {"type": "rect", "x": 12, "y": 211, "w": 216, "h": 1, "color": "#2c2a27"},
+    {"type": "text", "x": 12, "y": 221, "font": "pixel", "size": 2, "color": "#8c887f", "text": {"pt": "USO DE IA", "en": "AI USAGE", "es": "USO DE IA"}, "when": "x.tk_c5"},
+    {"type": "text", "x": 12, "y": 221, "font": "pixel", "size": 2, "color": "#ffb020", "text": {"pt": "SEM O PC", "en": "NO PC", "es": "SIN EL PC"}, "when": "!x.tk_c5"},
+    {"type": "text", "x": 228, "y": 221, "font": "pixel", "size": 2, "color": "#8c887f", "text": "{HH}:{MM}", "align": "right"}
   ]
 }
