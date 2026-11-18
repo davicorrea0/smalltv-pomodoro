@@ -445,7 +445,10 @@ void rotSet(const String &v) {
   s.reserve(min((size_t)300, v.length()) + 1);
   for (char c : v)  // só o formato da lista: nada de aspas ou barras no JSON do estado
     if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == ':' || c == ',' || c == '-' || c == '_') s += c;
-  if (s.length() > 300) s = s.substring(0, s.lastIndexOf(',', 300));
+  if (s.length() > 300) {  // corta na última vírgula até o 300º; sem vírgula (lastIndexOf = -1, que o substring lê como "tudo") a lista é inválida
+    int cut = s.lastIndexOf(',', 300);
+    s = cut > 0 ? s.substring(0, cut) : String();
+  }
   rotList = s;
   rotNext = millis() + cfg.rotMin * 60000UL;
   if (!fsOk) return;
