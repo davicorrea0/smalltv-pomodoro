@@ -1,326 +1,42 @@
 {
- "format": 2,
- "author": "davicorrea0",
- "id": "casa-tomadas",
- "name": "Tomadas",
- "name_en": "Plugs",
- "name_es": "Enchufes",
- "desc": "Duas tomadas inteligentes: ligada e consumo, pelo Home Assistant",
- "desc_en": "Two smart plugs: on/off and power, from Home Assistant",
- "sprites": {
-  "casa": {
-   "pal": {
-    "r": "#ff5a47",
-    "w": "#ffd166",
-    "o": "#8a4a22",
-    "k": "#4cc9f0"
-   },
-   "px": [
-    ".....rr.....",
-    "....rrrr....",
-    "...rrrrrr...",
-    "..rrrrrrrr..",
-    ".rrrrrrrrrr.",
-    "rrrrrrrrrrrr",
-    ".wwwwwwwwww.",
-    ".wwwwwwwwww.",
-    ".wwoowwwwww.",
-    ".wwoowwkkww.",
-    ".wwoowwkkww.",
-    ".wwoowwwwww."
-   ]
+  "format": 2,
+  "author": "davicorrea0",
+  "id": "casa-tomadas",
+  "name": "Tomadas",
+  "name_en": "Smart plugs",
+  "name_es": "Enchufes",
+  "desc": "Duas tomadas: ligada ou desligada e os watts, pelo Home Assistant",
+  "desc_en": "Two plugs: on or off and the watts, from Home Assistant",
+  "desc_es": "Dos enchufes: prendido o apagado y los vatios, por Home Assistant",
+  "bg": "#000000",
+  "sprites": {
+    "casa": {"pal": {"m": "#8c887f"}, "px": ["....mm....", "...mmmm...", "..mmmmmm..", ".mmmmmmmm.", "mmmmmmmmmm", ".mm....mm.", ".mm.mm.mm.", ".mm.mm.mm.", ".mm.mm.mm.", ".mmmmmmmm."]}
   },
-  "plug": {
-   "pal": {
-    "w": "#6a6a7a",
-    "s": "#4a4a58",
-    "k": "#1c1c24"
-   },
-   "px": [
-    "....ssssss....",
-    "..sswwwwwwss..",
-    ".swwwwwwwwwws.",
-    ".swwwwwwwwwws.",
-    "swwwwwkkwwwwws",
-    "swwwwwkkwwwwws",
-    "swwwwwwwwwwwws",
-    "swwkkwwwwkkwws",
-    "swwkkwwwwkkwws",
-    "swwwwwwwwwwwws",
-    ".swwwwwwwwwws.",
-    ".swwwwwwwwwws.",
-    "..sswwwwwwss..",
-    "....ssssss...."
-   ]
-  },
-  "plug_on": {
-   "pal": {
-    "w": "#e8e8ee",
-    "s": "#2fd36b",
-    "k": "#2a2a35"
-   },
-   "px": [
-    "....ssssss....",
-    "..sswwwwwwss..",
-    ".swwwwwwwwwws.",
-    ".swwwwwwwwwws.",
-    "swwwwwkkwwwwws",
-    "swwwwwkkwwwwws",
-    "swwwwwwwwwwwws",
-    "swwkkwwwwkkwws",
-    "swwkkwwwwkkwws",
-    "swwwwwwwwwwwws",
-    ".swwwwwwwwwws.",
-    ".swwwwwwwwwws.",
-    "..sswwwwwwss..",
-    "....ssssss...."
-   ]
-  }
- },
- "bg": "#0e0e12",
- "layers": [
-  {
-   "type": "sprite",
-   "x": 14,
-   "y": 12,
-   "sprite": "casa",
-   "size": 2
-  },
-  {
-   "type": "text",
-   "x": 46,
-   "y": 18,
-   "font": "pixel",
-   "size": 2,
-   "color": "#f4f4f8",
-   "text": "TOMADAS",
-   "align": "left",
-   "bg": "#0e0e12"
-  },
-  {
-   "type": "text",
-   "x": 226,
-   "y": 18,
-   "font": "pixel",
-   "size": 2,
-   "color": "#8a8aa0",
-   "text": "{HH}:{MM}",
-   "align": "right",
-   "bg": "#0e0e12"
-  },
-  {
-   "type": "rect",
-   "x": 10,
-   "y": 44,
-   "w": 106,
-   "h": 186,
-   "color": "#1c1c24",
-   "r": 16,
-   "stroke": "#2fd36b",
-   "when": "x.tm_1=1"
-  },
-  {
-   "type": "rect",
-   "x": 10,
-   "y": 44,
-   "w": 106,
-   "h": 186,
-   "color": "#1c1c24",
-   "r": 16,
-   "stroke": "#3a3a48",
-   "when": "!x.tm_1=1"
-  },
-  {
-   "type": "sprite",
-   "x": 42,
-   "y": 58,
-   "sprite": "plug_on",
-   "size": 3,
-   "when": "x.tm_1=1"
-  },
-  {
-   "type": "sprite",
-   "x": 42,
-   "y": 58,
-   "sprite": "plug",
-   "size": 3,
-   "when": "!x.tm_1=1"
-  },
-  {
-   "type": "text",
-   "x": 63,
-   "y": 112,
-   "font": "pixel",
-   "size": 2,
-   "color": "#c8c8d8",
-   "text": "CAFE",
-   "align": "center",
-   "bg": "#1c1c24"
-  },
-  {
-   "type": "text",
-   "x": 63,
-   "y": 138,
-   "font": "pixel",
-   "size": 3,
-   "color": "#2fd36b",
-   "text": "ON",
-   "align": "center",
-   "when": "x.tm_1=1",
-   "bg": "#1c1c24"
-  },
-  {
-   "type": "text",
-   "x": 63,
-   "y": 138,
-   "font": "pixel",
-   "size": 3,
-   "color": "#5a5a6a",
-   "text": "OFF",
-   "align": "center",
-   "when": "x.tm_1=0",
-   "bg": "#1c1c24"
-  },
-  {
-   "type": "text",
-   "x": 63,
-   "y": 138,
-   "font": "pixel",
-   "size": 3,
-   "color": "#5a5a6a",
-   "text": "--",
-   "align": "center",
-   "when": "!x.tm_1",
-   "bg": "#1c1c24"
-  },
-  {
-   "type": "text",
-   "x": 63,
-   "y": 170,
-   "font": "pixel",
-   "size": 4,
-   "color": "#f4f4f8",
-   "text": "{x.tm_w1}",
-   "align": "center",
-   "bg": "#1c1c24"
-  },
-  {
-   "type": "text",
-   "x": 63,
-   "y": 206,
-   "font": "pixel",
-   "size": 2,
-   "color": "#8a8aa0",
-   "text": "WATTS",
-   "align": "center",
-   "bg": "#1c1c24"
-  },
-  {
-   "type": "rect",
-   "x": 124,
-   "y": 44,
-   "w": 106,
-   "h": 186,
-   "color": "#1c1c24",
-   "r": 16,
-   "stroke": "#2fd36b",
-   "when": "x.tm_2=1"
-  },
-  {
-   "type": "rect",
-   "x": 124,
-   "y": 44,
-   "w": 106,
-   "h": 186,
-   "color": "#1c1c24",
-   "r": 16,
-   "stroke": "#3a3a48",
-   "when": "!x.tm_2=1"
-  },
-  {
-   "type": "sprite",
-   "x": 156,
-   "y": 58,
-   "sprite": "plug_on",
-   "size": 3,
-   "when": "x.tm_2=1"
-  },
-  {
-   "type": "sprite",
-   "x": 156,
-   "y": 58,
-   "sprite": "plug",
-   "size": 3,
-   "when": "!x.tm_2=1"
-  },
-  {
-   "type": "text",
-   "x": 177,
-   "y": 112,
-   "font": "pixel",
-   "size": 2,
-   "color": "#c8c8d8",
-   "text": "ABAJUR",
-   "align": "center",
-   "bg": "#1c1c24"
-  },
-  {
-   "type": "text",
-   "x": 177,
-   "y": 138,
-   "font": "pixel",
-   "size": 3,
-   "color": "#2fd36b",
-   "text": "ON",
-   "align": "center",
-   "when": "x.tm_2=1",
-   "bg": "#1c1c24"
-  },
-  {
-   "type": "text",
-   "x": 177,
-   "y": 138,
-   "font": "pixel",
-   "size": 3,
-   "color": "#5a5a6a",
-   "text": "OFF",
-   "align": "center",
-   "when": "x.tm_2=0",
-   "bg": "#1c1c24"
-  },
-  {
-   "type": "text",
-   "x": 177,
-   "y": 138,
-   "font": "pixel",
-   "size": 3,
-   "color": "#5a5a6a",
-   "text": "--",
-   "align": "center",
-   "when": "!x.tm_2",
-   "bg": "#1c1c24"
-  },
-  {
-   "type": "text",
-   "x": 177,
-   "y": 170,
-   "font": "pixel",
-   "size": 4,
-   "color": "#f4f4f8",
-   "text": "{x.tm_w2}",
-   "align": "center",
-   "bg": "#1c1c24"
-  },
-  {
-   "type": "text",
-   "x": 177,
-   "y": 206,
-   "font": "pixel",
-   "size": 2,
-   "color": "#8a8aa0",
-   "text": "WATTS",
-   "align": "center",
-   "bg": "#1c1c24"
-  }
- ]
+  "layers": [
+    {"type": "rect", "x": 12, "y": 102, "w": 216, "h": 1, "color": "#2c2a27"},
+    {"type": "rect", "x": 12, "y": 16, "w": 12, "h": 12, "color": "#f2eee6", "when": "x.tm_1=1"},
+    {"type": "rect", "x": 12, "y": 16, "w": 12, "h": 12, "color": "#000000", "stroke": "#2c2a27", "when": "!x.tm_1=1"},
+    {"type": "text", "x": 34, "y": 12, "font": "pixel", "size": 3, "color": "#f2eee6", "text": "CAFE", "when": "x.tm_1=1"},
+    {"type": "text", "x": 34, "y": 12, "font": "pixel", "size": 3, "color": "#8c887f", "text": "CAFE", "when": "!x.tm_1=1"},
+    {"type": "text", "x": 12, "y": 46, "font": "pixel", "size": 2, "color": "#ffb020", "text": "{x.tm_1}", "when": "!x.tm_1=1"},
+    {"type": "rect", "x": 12, "y": 42, "w": 110, "h": 24, "color": "#000000", "when": "x.tm_1=0"},
+    {"type": "text", "x": 12, "y": 46, "font": "pixel", "size": 2, "color": "#8c887f", "text": {"pt": "DESLIGADA", "en": "OFF", "es": "APAGADO"}, "when": "x.tm_1=0"},
+    {"type": "text", "x": 204, "y": 64, "font": "pixel", "size": 2, "color": "#8c887f", "text": "--", "align": "right", "when": "x.tm_1=1"},
+    {"type": "text", "x": 204, "y": 42, "font": "bebas", "size": 56, "color": "#f2eee6", "text": "{x.tm_w1}", "align": "right", "bg": "#000000", "when": "x.tm_1=1"},
+    {"type": "text", "x": 208, "y": 77, "font": "pixel", "size": 3, "color": "#f2eee6", "text": "W", "when": "x.tm_1=1"},
+    {"type": "rect", "x": 12, "y": 116, "w": 12, "h": 12, "color": "#f2eee6", "when": "x.tm_2=1"},
+    {"type": "rect", "x": 12, "y": 116, "w": 12, "h": 12, "color": "#000000", "stroke": "#2c2a27", "when": "!x.tm_2=1"},
+    {"type": "text", "x": 34, "y": 112, "font": "pixel", "size": 3, "color": "#f2eee6", "text": "ABAJUR", "when": "x.tm_2=1"},
+    {"type": "text", "x": 34, "y": 112, "font": "pixel", "size": 3, "color": "#8c887f", "text": "ABAJUR", "when": "!x.tm_2=1"},
+    {"type": "text", "x": 12, "y": 146, "font": "pixel", "size": 2, "color": "#ffb020", "text": "{x.tm_2}", "when": "!x.tm_2=1"},
+    {"type": "rect", "x": 12, "y": 142, "w": 110, "h": 24, "color": "#000000", "when": "x.tm_2=0"},
+    {"type": "text", "x": 12, "y": 146, "font": "pixel", "size": 2, "color": "#8c887f", "text": {"pt": "DESLIGADA", "en": "OFF", "es": "APAGADO"}, "when": "x.tm_2=0"},
+    {"type": "text", "x": 204, "y": 164, "font": "pixel", "size": 2, "color": "#8c887f", "text": "--", "align": "right", "when": "x.tm_2=1"},
+    {"type": "text", "x": 204, "y": 142, "font": "bebas", "size": 56, "color": "#f2eee6", "text": "{x.tm_w2}", "align": "right", "bg": "#000000", "when": "x.tm_2=1"},
+    {"type": "text", "x": 208, "y": 177, "font": "pixel", "size": 3, "color": "#f2eee6", "text": "W", "when": "x.tm_2=1"},
+    {"type": "rect", "x": 12, "y": 211, "w": 216, "h": 1, "color": "#2c2a27"},
+    {"type": "sprite", "x": 12, "y": 221, "size": 1, "sprite": "casa"},
+    {"type": "text", "x": 30, "y": 221, "font": "pixel", "size": 2, "color": "#8c887f", "text": {"pt": "TOMADAS", "en": "PLUGS", "es": "ENCHUFES"}},
+    {"type": "text", "x": 228, "y": 221, "font": "pixel", "size": 2, "color": "#8c887f", "text": "{HH}:{MM}", "align": "right"}
+  ]
 }
