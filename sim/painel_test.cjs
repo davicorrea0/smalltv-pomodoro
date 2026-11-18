@@ -122,3 +122,59 @@ const i = html.indexOf('async function runSteps('), runSteps = new Function('ret
   assert.notStrictEqual(E.newId(safeId, 'koi'), 'koi');
   console.log('painel: editor de mostrador sob demanda com SRI, ' + keys.size + ' textos traduzidos e id próprio');
 }
+// Envio de GIF e de fotos (web/index.html): o relógio mostra só o canto superior esquerdo de GIF acima de 240×240 e
+// recusa acima de 480×480 (album.cpp, gifcheck.h); o painel avisa antes de enviar e confere o espaço livre.
+(async () => {
+  const j = html.indexOf('async function gifDim('), gifDim = new Function('return ' + html.slice(j, html.indexOf('\n', j)))();
+  const hdr = (w, h) => new Blob([Buffer.from([0x47, 0x49, 0x46, 0x38, 0x39, 0x61, w & 255, w >> 8, h & 255, h >> 8, 0, 0])]);
+  assert.deepStrictEqual(await gifDim(hdr(240, 240)), [240, 240]);
+  assert.deepStrictEqual(await gifDim(hdr(498, 280)), [498, 280]);
+  assert.deepStrictEqual(await gifDim(new Blob([Buffer.from('GIF89')])), [0, 0]);   // arquivo curto: sem aviso, o relógio decide
+  // a recusa e o aviso usam as mesmas medidas do firmware
+  const gifc = fs.readFileSync(path.join(__dirname, '../smalltv-pomodoro/modulos/album.cpp'), 'utf8'), h = fs.readFileSync(path.join(__dirname, '../smalltv-pomodoro/gifcheck.h'), 'utf8');
+  assert(/gifCheck\(gifCheckRead, &file, 480, 480\)/.test(gifc) && /int y = p->iY \+ p->y \+ gifOffY;\s+if \(y < 0 \|\| y >= 240\) return;/.test(gifc), 'o corte de GIF no relógio mudou: rever os avisos do painel');
+  assert(h.includes('static const char *gifCheck('));
+  const up = html.slice(html.indexOf("$('up').onchange="), html.indexOf("$('op').onsubmit="));
+  assert(up.includes('gw>480||gh>480') && up.includes('gw>240||gh>240') && up.includes('room'), 'envio sem os avisos de GIF e de espaço');
+  assert(html.includes("x.imageSmoothingQuality='high'"), 'foto reduzida sem suavização de qualidade');
+  // o fluxo do envio, com o painel simulado: GIF só passa de 480 se o relógio aceitar, de 240 só com confirmação, e o espaço é conferido
+  const flow = async (gifs, { free = 1e9, ok = true } = {}) => {
+    const log = { sent: [], toasts: [], asked: [], alerts: [], gifDimCalls: 0 };
+    const box = {};
+    const code = html.slice(html.indexOf("$('up').onchange="), html.indexOf("$('op').onsubmit=")).replace(/^\$\('up'\)\.onchange=/, 'box.h=').replace(/;\s*$/, '');
+    new Function('box', '$', 't', 'kb', 'toast', 'st', 'files', 'prep', 'fetch', 'confirm', 'gifDim', 'alert', code)(box, () => ({}), (s, ...a) => s.replace(/\{(\d)\}/g, (m, i) => a[i]),
+      n => Math.round(n / 1024) + ' KB', m => log.toasts.push(m), { fs: { ok: true, total: free, used: 0 } }, () => {}, async f => (f.foto ? { blob: new Blob([Buffer.alloc(3000)]), name: f.name } : { blob: f, name: f.name }),
+      async () => { log.sent.push(1); return { ok: true, text: async () => 'ok' }; }, m => (log.asked.push(m), ok), f => (log.gifDimCalls++, gifDim(f)), m => log.alerts.push(m));
+    await box.h({ target: { files: gifs } });
+    return log;
+  };
+  const g = (w, h, name = 'a.gif', size = 1000) => { const b = new Blob([Buffer.from([0x47, 0x49, 0x46, 0x38, 0x39, 0x61, w & 255, w >> 8, h & 255, h >> 8]), Buffer.alloc(size)]); b.name = name; return b; };
+  let r = await flow([g(498, 280)]);
+  assert.strictEqual(r.sent.length, 0); assert(r.alerts[0].includes('498×280') && r.alerts[0].includes('480×480'));   // recusado sem enviar
+  r = await flow([g(498, 280, 'grande.gif'), g(240, 240, 'bom.gif')]);
+  assert.strictEqual(r.sent.length, 1); assert(r.alerts[0].includes('grande.gif'));                                  // em lote, a recusa sobrevive ao "enviado" e ao próximo arquivo
+  const foto = Object.assign(new Blob([Buffer.alloc(10)]), { name: 'a.jpg', foto: true });
+  r = await flow([foto]);
+  assert.strictEqual(r.sent.length, 1); assert.strictEqual(r.gifDimCalls, 0); assert.strictEqual(r.asked.length, 0);  // foto: não lê cabeçalho de GIF nem pergunta
+  r = await flow([foto, foto, foto], { free: 16384, ok: true });
+  assert.strictEqual(r.sent.length, 3); assert.strictEqual(r.asked.length, 1);                                       // sem espaço: uma pergunta por lote
+  r = await flow([foto, foto, foto], { free: 16384, ok: false });
+  assert.strictEqual(r.sent.length, 0); assert.strictEqual(r.asked.length, 1);                                       // "não" vale para o resto do lote
+  r = await flow([g(300, 300)], { ok: false });
+  assert.strictEqual(r.sent.length, 0); assert.strictEqual(r.asked.length, 1);                                       // cortado: não confirmou, não envia
+  r = await flow([g(300, 300)], { ok: true });
+  assert.strictEqual(r.sent.length, 1);                                                                              // cortado: confirmou
+  r = await flow([g(240, 240)]);
+  assert.strictEqual(r.sent.length, 1); assert.strictEqual(r.asked.length, 0);                                       // cabe: envia direto
+  r = await flow([g(240, 240, 'a.gif', 40000)], { free: 30000, ok: false });
+  assert.strictEqual(r.sent.length, 0); assert(r.asked[0].includes('Enviar mesmo assim'));                           // sem espaço: pergunta
+  r = await flow([g(240, 240, 'a.gif', 5000), g(240, 240, 'b.gif', 5000)], { free: 16384 + 8192 + 4096, ok: false });
+  assert.strictEqual(r.sent.length, 1); assert.strictEqual(r.asked.length, 1);                                       // o 1º cabe, o 2º já não (espaço descontado)
+  const dict = JSON.parse(fs.readFileSync(path.join(__dirname, '../web/i18n.json'), 'utf8')).dict;
+  for (const k of ['GIF de {0}×{1}: o relógio recusa acima de 480×480. Reduza o GIF antes de enviar.',
+    'GIF de {0}×{1}: o relógio mostra só o canto superior esquerdo de 240×240. Enviar mesmo assim?', 'Só {0} livres e {1} necessários. Enviar mesmo assim?'])
+    assert(dict[k] && dict[k].length == 2 && dict[k].every(x => x), 'sem tradução: ' + k);
+  const note = [...html.matchAll(/<small>(Fotos são recortadas[^<]*)<\/small>/g)][0][1];
+  assert(dict[note] && dict[note].every(x => x), 'a nota do álbum precisa de tradução');
+  console.log('painel: avisa GIF acima de 240×240 (cortado) e de 480×480 (recusado), confere o espaço livre e reduz fotos com suavização alta');
+})();
