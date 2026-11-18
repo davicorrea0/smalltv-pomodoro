@@ -137,6 +137,7 @@ static void statsWrite(uint16_t day, uint8_t count) {
     for (uint16_t d = stats.lastDay + 1; d < day; d++) {  // dias com o relógio desligado: zero
       f.seek(sizeof(StatsHead) + d % STATS_DAYS);
       f.write((uint8_t)0);
+      yield();  // lacuna de semanas: cada seek+write no LittleFS apaga um bloco, e sem ceder tempo o watchdog reiniciava
     }
   f.seek(sizeof(StatsHead) + day % STATS_DAYS);
   f.write(count);
