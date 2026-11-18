@@ -32,6 +32,11 @@ if(!recovery.includes('WiFi.mode(WIFI_AP);')||recovery.includes('WiFi.begin()'))
  if(!save.includes('if (!formOk()) { deny(); return; }')||!save.includes('safeRestart();'))throw Error('/save must check the form token and restart');
  if(!portal.includes('server.collectHeaders("Accept-Language")')||portal.includes('<datalist'))throw Error('portal: Accept-Language header and visible list required (no datalist)');
 }
+// 1.26.1: a virada do dia não depende do mostrador (renderClock só roda com o relógio na tela)
+const adv=source.slice(source.indexOf('static void advance(bool completed) {'),source.indexOf('void tickPomodoro() {'));
+if(adv.indexOf('dayRolloverTick();')<0||adv.indexOf('dayRolloverTick();')>adv.indexOf('cfg.todayCount++'))throw Error('advance: dayRolloverTick() antes de contar o foco');
+const lp=source.slice(source.indexOf('now - lastBriCheck > 5000'),source.indexOf('briFade();',source.indexOf('now - lastBriCheck > 5000')));
+if(!lp.includes('dayRolloverTick();'))throw Error('loop: dayRolloverTick() no bloco de 5 s');
 // eboot uses the staged file's last 4 bytes as the image size: trailing data (the 1.20.0 signature) erased the bootloader
 const gzv=source.slice(source.indexOf('bool otaVerifyGz() {'),source.indexOf('\n}',source.indexOf('bool otaVerifyGz() {')));
 if(!gzv.includes('cmd.args[2] - 4')||!gzv.includes('!= ota.got'))throw Error('otaVerifyGz must check the eboot size trailer');
