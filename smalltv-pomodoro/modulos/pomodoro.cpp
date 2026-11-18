@@ -111,6 +111,7 @@ void command(const String &c) {
 void hooksLoad() {
   File f = fsOk ? LittleFS.open("/hooks.txt", "r") : File();
   if (!f) return;
+  f.setTimeout(0);  // File não recebe bytes depois do EOF; não espere 1 s se o '\n' final estiver ausente
   hookWork = f.readStringUntil('\n');
   hookBreak = f.readStringUntil('\n');
   f.close();
