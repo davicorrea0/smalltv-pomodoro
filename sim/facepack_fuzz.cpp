@@ -4,7 +4,9 @@
 // facePackLoad; as aceitas são desenhadas inteiras em alguns instantes e depois de forma incremental (áreas sujas e
 // faixas fora da tela), e descarregadas. Qualquer acesso fora do bloco, estouro ou comportamento indefinido para o
 // teste (o sanitizer aborta). Pacote ruim só pode virar recusa com mensagem, nunca queda.
-// Uso: facepack_fuzz <pasta dos pacotes> [casos]
+// Com uma segunda pasta (sementes de dados de fora, sim/apps-seeds), entram também os pacotes com {x.campo}, "when" e
+// "value" ligados a campos; antes de cada desenho, um envio aleatório (ou nenhum) liga e desliga essas camadas.
+// Uso: facepack_fuzz <pasta dos pacotes> [casos] [pasta extra]
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,6 +16,7 @@
 #include <algorithm>
 #include "../smalltv-pomodoro/ui_kit.h"
 #include "../smalltv-pomodoro/facepack.h"
+#include "../smalltv-pomodoro/appdata.h"
 
 class Tela : public Adafruit_GFX {
  public:
@@ -81,29 +84,46 @@ static void mutar(std::string &s, const std::vector<std::string> &todos) {
   if (s.size() > 24576) s.resize(24576);  // o firmware recusa arquivos maiores antes de carregar
 }
 
+// um envio aleatório de dados de fora: nomes que os pacotes de exemplo usam e outros, valores que ligam e desligam
+static void dados(uint32_t now) {
+  static const char *const NOMES[] = {"temp", "hum", "porta", "lv_est", "lv_txt", "lv_pct", "lv_min", "lz_n", "lz_1", "lz_2", "tm_1",
+                                      "tm_w1", "a", "b", "p", "c0"};
+  static const char *const VALS[] = {"\"LAVANDO\"", "\"PRONTA\"", "\"ACESA\"", "\"\"", "\"0\"", "\"1\"", "\"ON\"", "0", "1", "70", "-5",
+                                     "100000", "2147483647", "\"99999999999999\"", "\"42% 2h13\""};
+  std::string b = "{\"ttl\":" + std::to_string(10 + rnd(30)) + ",\"values\":{";
+  for (int i = 0, n = 1 + rnd(8); i < n; i++)
+    b += (i ? ",\"" : "\"") + std::string(NOMES[rnd(16)]) + "\":" + VALS[rnd(15)];
+  b += "}}";
+  appDataPut(b.c_str(), b.size(), now);  // repetido ou cheio: recusa sem mudar nada, também vale
+}
+
 int main(int argc, char **argv) {
   const char *pasta = argc > 1 ? argv[1] : "../faces";
   long casos = argc > 2 ? atol(argv[2]) : 5000;
   std::vector<std::string> todos;
   for (const char *s : SEMENTES) todos.push_back(s);
-  DIR *d = opendir(pasta);
-  std::vector<std::string> nomes;  // em ordem alfabética: a ordem do readdir muda de sistema para sistema e mudaria as mutações
-  for (struct dirent *e; d && (e = readdir(d));) {
-    size_t n = strlen(e->d_name);
-    if (n < 6 || strcmp(e->d_name + n - 5, ".json") || !strcmp(e->d_name, "catalog.json")) continue;
-    nomes.push_back(e->d_name);
+  const char *extra = argc > 3 ? argv[3] : nullptr;
+  for (const char *dir : {pasta, extra}) {
+    if (!dir) continue;
+    DIR *d = opendir(dir);
+    std::vector<std::string> nomes;  // em ordem alfabética: a ordem do readdir muda de sistema para sistema e mudaria as mutações
+    for (struct dirent *e; d && (e = readdir(d));) {
+      size_t n = strlen(e->d_name);
+      if (n < 6 || strcmp(e->d_name + n - 5, ".json") || !strcmp(e->d_name, "catalog.json")) continue;
+      nomes.push_back(e->d_name);
+    }
+    std::sort(nomes.begin(), nomes.end());
+    for (const std::string &nome : nomes) {
+      FILE *f = fopen((std::string(dir) + "/" + nome).c_str(), "rb");
+      if (!f) continue;
+      std::string s;
+      char b[4096];
+      for (size_t k; (k = fread(b, 1, sizeof b, f));) s.append(b, k);
+      fclose(f);
+      todos.push_back(s);
+    }
+    if (d) closedir(d);
   }
-  std::sort(nomes.begin(), nomes.end());
-  for (const std::string &nome : nomes) {
-    FILE *f = fopen((std::string(pasta) + "/" + nome).c_str(), "rb");
-    if (!f) continue;
-    std::string s;
-    char b[4096];
-    for (size_t k; (k = fread(b, 1, sizeof b, f));) s.append(b, k);
-    fclose(f);
-    todos.push_back(s);
-  }
-  if (d) closedir(d);
   if (todos.size() < 10) { printf("facepack_fuzz: poucos pacotes em %s\n", pasta); return 1; }
   Tela *tela = new Tela();
   uiBegin(tela);
@@ -146,10 +166,14 @@ int main(int argc, char **argv) {
     st.accent = (uint16_t)rnd(65536);
     uiSetLang(rnd(3));
     st.ms = rnd(1u << 31);
+    appDataClear();
+    dados(st.ms);
     facePackRender(st, true);
-    for (int k = 0; k < 4; k++) {  // incremental: o tempo anda, os segundos mudam
+    for (int k = 0; k < 4; k++) {  // incremental: o tempo anda, os segundos mudam, chegam (ou vencem) dados de fora
       st.ms += 37 + rnd(400);
       st.now.tm_sec = (st.now.tm_sec + 1) % 60;
+      if (rnd(3) == 0) dados(st.ms);
+      appDataExpire(st.ms);
       facePackRender(st, false);
     }
     facePackUnload();

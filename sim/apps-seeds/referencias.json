@@ -1,0 +1,18 @@
+{
+ "format": 2,
+ "id": "referencias",
+ "name": "Referencias",
+ "desc": "Semente de teste: when e value ligados a dados de fora",
+ "bg": "#0e0e12",
+ "layers": [
+  {"type": "rect", "x": 10, "y": 10, "w": 100, "h": 60, "color": "#2fd36b", "r": 8, "when": "x.lv_est=LAVANDO"},
+  {"type": "rect", "x": 10, "y": 10, "w": 100, "h": 60, "color": "#ff5a47", "r": 8, "when": "!x.lv_est=LAVANDO"},
+  {"type": "text", "x": 60, "y": 30, "font": "pixel", "size": 2, "color": "#ffffff", "text": "{x.lv_est}", "align": "center", "when": "x.lv_est"},
+  {"type": "text", "x": 60, "y": 30, "font": "pixel", "size": 2, "color": "#ffffff", "text": "--", "align": "center", "when": "!x.lv_est"},
+  {"type": "bar", "x": 10, "y": 90, "w": 220, "h": 12, "r": 6, "value": "x.lv_pct", "color": "#4cc9f0", "track": "#14303a"},
+  {"type": "arc", "x": 180, "y": 40, "r": 30, "size": 6, "value": "x.tm_w1", "max": 2000, "color": "#ffd166", "track": "#303030"},
+  {"type": "text", "x": 120, "y": 130, "font": "outfit", "size": 40, "color": "#ffffff", "text": "{x.lz_n}", "align": "center", "bg": "#0e0e12", "when": "x.lz_1=ACESA"},
+  {"type": "text", "x": 120, "y": 190, "font": "pixel", "size": 2, "color": "#8a8aa0", "text": "{x.lv_txt} {x.lv_min}", "align": "center", "when": "x.lv_txt="},
+  {"type": "text", "x": 120, "y": 210, "font": "pixel", "size": 2, "color": "#8a8aa0", "text": "{HH}:{MM}", "align": "center", "when": "!x.tm_1"}
+ ]
+}
