@@ -26,6 +26,9 @@ console.log('faceinstall: o .json novo substitui o antigo só pelo rename, sem r
   const f = source.slice(fa, fb), loop = f.indexOf('while (d.next())'), fim = f.indexOf('if (pend.length()) facesFieldsSave(pend);');
   if (!f.includes('bool velho = !t.available();') || !f.includes('campos = velho ? String() : t.readStringUntil'))
     throw Error('/api/faces: o .txt de 3 linhas tem de ser reconhecido pelo fim do arquivo');
+  // Stream::readStringUntil espera o timeout (1 s) quando o File acaba sem '\n': com 0, o fim do arquivo encerra na hora
+  if (!/t\.setTimeout\(0\);[^\n]*\n\s*name = t\.readStringUntil/.test(f))
+    throw Error('/api/faces: o .txt tem de ser lido com setTimeout(0), senão cada linha sem \\n no fim custa 1 s');
   if (loop < 0 || fim < 0 || fim < loop || f.slice(loop, fim).includes('LittleFS.open("/faces/" + id + ".txt", "a")'))
     throw Error('/api/faces: a 4ª linha é gravada só depois do laço do diretório');
   const sc = source.slice(source.indexOf('static String facesFieldsScan('), source.indexOf('static void facesFieldsSave('));

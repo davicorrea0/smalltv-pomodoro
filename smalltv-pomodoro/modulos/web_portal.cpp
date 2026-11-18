@@ -805,6 +805,7 @@ void setupWeb() {
         String id = fn.substring(0, fn.length() - 5), name = id, desc, author, campos;
         File t = LittleFS.open("/faces/" + id + ".txt", "r");
         if (t) {
+          t.setTimeout(0);  // em File o fim é definitivo: sem isso, linha sem '\n' no fim esperava 1 s do Stream
           name = t.readStringUntil('\n');
           desc = t.readStringUntil('\n');
           author = t.readStringUntil('\n');
