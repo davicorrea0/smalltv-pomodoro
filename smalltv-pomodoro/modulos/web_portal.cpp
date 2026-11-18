@@ -933,7 +933,7 @@ void setupWeb() {
       cfg.weatherOn = won;
       wx.ok = false;
       wx.version++;
-      wxBack.next = millis();  // busca o clima já
+      wxBack.now();  // busca o clima já
     }
     saveSettings();
     updateBrightness(true);
@@ -1040,6 +1040,7 @@ void setupWeb() {
     if (!guard()) return;
     String f = server.arg("f");
     if (!fsOk || !f.startsWith("/") || f.length() < 2 || f.length() > 96 || f.indexOf("..") >= 0 || f.indexOf("//") >= 0 ||
+        f.indexOf("/.") >= 0 ||  // o littlefs ignora o componente ".": "/./stats.bin" é o stats.bin e passava pelo fsKeep
         f.endsWith("/") || fsKeep(f) || !LittleFS.exists(f)) {
       server.send_P(400, PSTR("text/plain"), PSTR("Nao foi possivel apagar"));
       return;

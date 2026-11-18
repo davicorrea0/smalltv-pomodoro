@@ -2,6 +2,9 @@
 const fs=require('fs'),path=require('path');
 const source=require('./fonte.cjs');
 function fn(name){const a=source.indexOf(`void ${name}() {`),b=source.indexOf('\n}',a);if(a<0||b<0)throw Error(name);return source.slice(a,b+2);}
+// 1.26.1: /api/fsdelete não pode ser driblado por "/./" e o rodízio sem vírgula não passa do limite
+if(!source.includes('f.indexOf("/.") >= 0'))throw Error('/api/fsdelete: recusar "/." (o littlefs ignora o componente "." e o fsKeep comparava o texto)');
+if(!source.includes('int cut = s.lastIndexOf(',', 300);')||!source.includes('s = cut > 0 ? s.substring(0, cut) : String();'))throw Error('rotSet: sem vírgula, substring(0, -1) não corta nada');
 for(const name of ['handleUpload','handlePackUpload','handlePanelUpload'])
  if(!fn(name).includes('uploadAuthed()'))throw Error(`${name} bypasses upload throttle`);
 { // /api/crash (Limpar da última queda) é ação: POST com guard(), e a gravação só acontece em reinício anormal
@@ -32,6 +35,11 @@ if(!recovery.includes('WiFi.mode(WIFI_AP);')||recovery.includes('WiFi.begin()'))
  if(!save.includes('if (!formOk()) { deny(); return; }')||!save.includes('safeRestart();'))throw Error('/save must check the form token and restart');
  if(!portal.includes('server.collectHeaders("Accept-Language")')||portal.includes('<datalist'))throw Error('portal: Accept-Language header and visible list required (no datalist)');
 }
+// 1.26.1: a virada do dia não depende do mostrador (renderClock só roda com o relógio na tela)
+const adv=source.slice(source.indexOf('static void advance(bool completed) {'),source.indexOf('void tickPomodoro() {'));
+if(adv.indexOf('dayRolloverTick();')<0||adv.indexOf('dayRolloverTick();')>adv.indexOf('cfg.todayCount++'))throw Error('advance: dayRolloverTick() antes de contar o foco');
+const lp=source.slice(source.indexOf('now - lastBriCheck > 5000'),source.indexOf('briFade();',source.indexOf('now - lastBriCheck > 5000')));
+if(!lp.includes('dayRolloverTick();'))throw Error('loop: dayRolloverTick() no bloco de 5 s');
 // eboot uses the staged file's last 4 bytes as the image size: trailing data (the 1.20.0 signature) erased the bootloader
 const gzv=source.slice(source.indexOf('bool otaVerifyGz() {'),source.indexOf('\n}',source.indexOf('bool otaVerifyGz() {')));
 if(!gzv.includes('cmd.args[2] - 4')||!gzv.includes('!= ota.got'))throw Error('otaVerifyGz must check the eboot size trailer');
@@ -51,6 +59,11 @@ const sigOk=source.slice(source.indexOf('static bool otaSigOk() {'),source.index
 if(!sigOk.includes('if (recoveryMode) return true;')||!sigOk.includes('stack_thunk_add_ref();')||!sigOk.includes('getMaxFreeBlockSize()'))
  throw Error('otaSigOk: recovery escape, thunk stack and heap check are required');
 if(!update.includes('br_sha256_update(&otaHash, up.buf, up.currentSize);')||!update.includes('otaSigBegin();'))throw Error('upload must hash every byte');
+// 1.26.1: prazos em millis() guardados com 0 inicial parecem "no futuro" depois de 24,8 dias ligado (conta com sinal)
+const alb=fs.readFileSync(path.join(__dirname,'../smalltv-pomodoro/modulos/album.cpp'),'utf8');
+if(alb.split(String.fromCharCode(10)).some(l=>l.trim().startsWith('nextFrameAt = 0;')))throw Error('album: nextFrameAt = 0 deixa o GIF parado depois de 24,8 dias ligado (use millis())');
+if(!alb.includes('packRetryWait')||alb.includes('if ((int32_t)(millis() - packRetryAt) < 0) return;'))throw Error('album: packRetryAt precisa de packRetryWait (0 inicial parece futuro)');
+if(/rotNext/.test(alb)||!alb.includes('rotArmed && (uint32_t)(millis() - rotAt)'))throw Error('album: o rodízio usa tempo decorrido (rotAt), não prazo em millis()');
 // collectHeaders replaces the list: the normal server (setupWeb) and recovery (startRecovery) each set theirs once
 for(const [name,hs] of [['setupWeb',['Origin','X-Firmware-Sig','Authorization','X-SmallTV']],['startRecovery',['Authorization','X-SmallTV','Accept-Language']]]){
  const ch=[...fn(name).matchAll(/server\.collectHeaders\(([^)]*)\)/g)];
@@ -312,17 +325,24 @@ int main(){
   assert(k.onSntp(T-86400+60,181000,true)==T-86400+60);                // repetido 1 min depois: confirmado (sem clima, é o limite)
   TimeGuard w;w.confirm(T,4000000000u);assert(w.ok(T+400000,(uint32_t)(4000000000ull+400000000ull)));  // millis() voltando a zero
  }
+ {AuthThrottle old;old.fail(5,1000);assert(old.blocked(5,1500));  // uma senha errada e 30 dias ligado: o IP não fica trancado
+  uint32_t month=1000+30u*86400000u;assert(!old.blocked(5,month)&&!old.blocked(5,1000+64000UL));}
  {AuthThrottle a;assert(!a.blocked(7,1000));a.fail(7,1000);assert(a.blocked(7,1500)&&!a.blocked(8,1500)&&!a.blocked(7,2001));
   for(uint32_t ip=10;ip<20;ip++)a.fail(ip,3000+ip);assert(a.blocked(19,3100)&&!a.blocked(7,3100));}
  {RateLimit r;int n=0;for(int i=0;i<50;i++)n+=r.take(5000+i,4);assert(n==4);assert(r.take(6001,4));}
  { // espera crescente das chamadas HTTP: 2, 4, 8 e 15 min; o sucesso zera
   HttpBackoff b;assert(b.due(0));
   uint32_t t=1000,want[]={2,4,8,15,15,15};
-  for(int i=0;i<6;i++){b.fail(t);assert(b.next==t+want[i]*60000UL&&b.fails==i+1);assert(!b.due(t)&&!b.due(b.next-1)&&b.due(b.next));t=b.next;}
+  for(int i=0;i<6;i++){b.fail(t);uint32_t nx=b.at+b.wait;assert(nx==t+want[i]*60000UL&&b.fails==i+1);assert(!b.due(t)&&!b.due(nx-1)&&b.due(nx));t=nx;}
   b.ok(t,900000);assert(b.fails==0&&!b.due(t+899999)&&b.due(t+900000));
-  b.fail(t);assert(b.next==t+120000UL);                                // depois do sucesso recomeça em 2 min
-  HttpBackoff w;w.fails=255;w.fail(5);assert(w.fails==255&&w.next==5+900000UL);
+  b.fail(t);assert(b.at+b.wait==t+120000UL);                                // depois do sucesso recomeça em 2 min
+  HttpBackoff w;w.fails=255;w.fail(5);assert(w.fails==255&&w.at+w.wait==5+900000UL);
   HttpBackoff z;z.fail(4294900000u);assert(!z.due(4294900000u+119999)&&z.due(4294900000u+120000));  // millis() dando a volta
+  // depois de 24,8 dias parado (uptime de 30 dias, aviso que não disparou desde o início ou desde o último), o prazo não pode
+  // parecer "no futuro": antes, due() ficava falso e todo aviso era descartado até o millis() dar a volta
+  HttpBackoff d;assert(d.due(30u*86400000u));d.ok(1000,0);assert(d.due(1000)&&d.due(1000+30u*86400000u));
+  d.fail(1000);assert(!d.due(1000+119999)&&d.due(1000+120000)&&d.due(1000+3000000000u));
+  HttpBackoff n;n.fail(500);assert(!n.due(501));n.now();assert(n.due(501));  // "tenta já" (cidade nova, hora a confirmar)
  }
  { // cache de nomes: não bloqueia, vale 1 h, falha vira espera
   DnsCache c;uint32_t ip=0;int calls=0,mode=1;uint32_t got=0;
