@@ -232,6 +232,8 @@ static void sendState() {
   jsonEscapeAppend(j, curFile.c_str());
   j += F("\",\"wx\":{\"ok\":");
   j += wx.ok ? 1 : 0;
+  j += F(",\"fail\":");
+  j += wxBack.fails;
   j += F(",\"t\":");
   appendFixed(j, wx.t, 1);
   j += F(",\"min\":");
@@ -932,7 +934,10 @@ void setupWeb() {
     if (newPlace || won != cfg.weatherOn) {
       cfg.weatherOn = won;
       wx.ok = false;
+      wx.rainIn = 0;
+      sunRise = sunSet = -1;
       wx.version++;
+      wxBack.fails = 0;
       wxBack.next = millis();  // busca o clima já
     }
     saveSettings();
