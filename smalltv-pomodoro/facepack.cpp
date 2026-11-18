@@ -7,6 +7,7 @@
 // por cima todas as camadas que as tocam, na ordem — sem piscar a tela toda.
 
 #include "facepack.h"
+#include "appdata.h"
 #include "ui_kit.h"
 #include <ArduinoJson.h>
 #include <stdlib.h>
@@ -740,7 +741,10 @@ static void variable(const char *k, const UiState &s, char *v, size_t n) {
   v[0] = 0;
   bool t = s.timeOk, wx = s.weatherOn && s.wx.ok;
   const struct tm &m = s.now;
-  if (!strcmp_P(k, PSTR("HH"))) t ? snprintf_P(v, n, PSTR("%02d"), displayHour(s)) : snprintf_P(v, n, PSTR("--"));
+  if (k[0] == 'x' && k[1] == '.') {  // dado empurrado de fora (POST /api/apps/data); "--" se ausente ou vencido
+    const char *x = appDataGet(k + 2, s.ms);
+    snprintf_P(v, n, PSTR("%s"), x ? x : "--");
+  } else if (!strcmp_P(k, PSTR("HH"))) t ? snprintf_P(v, n, PSTR("%02d"), displayHour(s)) : snprintf_P(v, n, PSTR("--"));
   else if (!strcmp_P(k, PSTR("H"))) t ? snprintf_P(v, n, PSTR("%d"), displayHour(s)) : snprintf_P(v, n, PSTR("-"));
   else if (!strcmp_P(k, PSTR("MM"))) t ? snprintf_P(v, n, PSTR("%02d"), m.tm_min) : snprintf_P(v, n, PSTR("--"));
   else if (!strcmp_P(k, PSTR("SS"))) t ? snprintf_P(v, n, PSTR("%02d"), m.tm_sec) : snprintf_P(v, n, PSTR("--"));
@@ -769,8 +773,8 @@ static void resolve(const char *tpl, const UiState &s, char *out, size_t n) {
   size_t o = 0;
   for (const char *p = tpl; *p && o + 1 < n;) {
     const char *e = *p == '{' ? strchr(p, '}') : nullptr;
-    if (e && e - p - 1 < 8) {
-      char key[8], v[32];
+    if (e && e - p - 1 < 12) {  // "x." + nome de até 8 + folga
+      char key[12], v[32];
       memcpy(key, p + 1, e - p - 1);
       key[e - p - 1] = 0;
       variable(key, s, v, sizeof v);
