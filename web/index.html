@@ -165,6 +165,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
  <h2>Mais mostradores</h2>
  <div class="card">
   <p style="margin-top:0"><button class="btn p" onclick="catalog()">Ver a galeria online</button></p>
+  <p><button class="btn" onclick="editor()">Criar mostrador</button></p>
   <div class="faces" id="cat"></div>
   <label>Instalar de um arquivo<input id="pkf" type="file" multiple></label>
   <small>Escolha o .json do mostrador (e, se tiver, a prévia .png). Ele fica guardado no relógio, sem atualizar o firmware. Mais mostradores e como criar o seu: <a href="https://davicorrea0.github.io/smalltv-pomodoro/" target="_blank" rel="noopener">site do projeto</a>.</small>
@@ -514,6 +515,13 @@ function catSheet(e,inst){const c=$('sheetc');c.innerHTML='';const s=el('div','s
  const b=el('button','btn p',inst?t('Reinstalar e usar'):t('Instalar e usar no relógio'));
  b.onclick=async()=>{try{toast(t('Baixando...'));const j=await (await fetch(CATALOG+e.file)).blob();let p=null;try{const r=await fetch(CATALOG+e.preview);if(r.ok)p=await r.blob()}catch(x){}
   await install(j,p);closeSheet();catalog()}catch(x){toast(t('Falha ao baixar'))}};c.appendChild(b);$('sheet').classList.add('v')}
+// Editor de mostrador (web/editor.js): fica no site e só é baixado ao abrir, como o cartão de compartilhar.
+// O build troca __EDV__ pelo código do arquivo; sem ele (painel de teste), vem de /editor.js.
+const EDV='__EDV__',EDI='__EDI__';
+let edJs=null;
+async function editor(){if(!window.faceEditor){toast(t('Abrindo o editor...'));edJs=edJs||new Promise((ok,no)=>{const s=document.createElement('script');if(EDV[0]=='_')s.src='/editor.js';else{s.src=SITE+'panel/editor-'+EDV+'.js';s.integrity=EDI;s.crossOrigin='anonymous'}s.onload=ok;s.onerror=no;document.head.appendChild(s)});
+ try{await edJs}catch(e){edJs=null;return toast(t('Sem internet no navegador'))}}
+ faceEditor({t,el,toast,install,safeId,c:$('sheetc'),lang:LANGS[LG],accent:st?st.cfg.color:'#ff5a47'});$('sheet').classList.add('v')}
 function closeSheet(){$('sheet').classList.remove('v')}
 const SPR={"t_feliz":{"p":"Re8402f ra8261e hff9178 G60c454 g2e8034 k280e0c pffa0a0 wffffff m7a1010","r":["......gGGg......","....gGGGGGGg....","...rRRgGGgRRr...","..rRRRRggRRRRr..",".rRhhRRRRRRRRRr.",".rRhRRRRRRRRRRr.","rRRRRRRRRRRRRRRr","rRRRRRRRRRRRRRRr","rRRRRkRRRRkRRRRr","rRRRRkRRRRkRRRRr","rRRpRRRRRRRRpRRr",".rRRRRkRRkRRRRr.",".rRRRRRkkRRRRRr.","..rrRRRRRRRRrr..","....rrrrrrrr....","................"]},"t_comemorando":{"p":"Re8402f ra8261e hff9178 G60c454 g2e8034 k280e0c pffa0a0 wffffff m7a1010 Yffc428 B4f8dff","r":[".Y....gGGg....B.","....gGGGGGGg....","r..rRRgGGgRRr..r",".rrRRRRggRRRRrr.",".rRhhRRRRRRRRRr.","BrRhRRRRRRRRRRrY","rRRRRRRRRRRRRRRr","rRRRRRRRRRRRRRRr","rRRRRkRRRRkRRRRr","rRRRkRkRRkRkRRRr","rRRpRRRRRRRRpRRr",".rRRRRkkkkRRRRr.",".rRRRRkmmkRRRRr.","..rrRRRkkRRRrr..","....rrrrrrrr....","................"]},"chama":{"p":"oa8261e Rff5a2a Yffc83a wfff4c0","r":["...o....","...oo...","..oRo...","..oRRo.o",".oRRRooR",".oRYRRRo","oRRYYRRo","oRYYwYRo","oRYwwYRo",".oRYYRo.","..oooo.."]},"p_broto":{"p":"o3d2414 S7a4a2e sf0d58c g2e8034 G60c454 yffd23f cff8c1a v8fd16a V4f9a3a Re8402f ra8261e Dffcc33 dc48a12 wffffff","r":["................","................","................","................","................","................",".....gGg.gGg....","....gGGGgGGGg...",".....gggGggg....",".......gG.......",".......gG.......",".......gG.......","......oooo......",".....oSSSSo.....","....oSSSSSSo....","...oSSSSSSSSo..."]}};
 // ---------- sequência, horta, conquistas e cartão de compartilhar ----------

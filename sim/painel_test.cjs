@@ -91,6 +91,37 @@ const i = html.indexOf('async function runSteps('), runSteps = new Function('ret
     assert(dict[k] && dict[k].length == 2 && dict[k].every(x => x), 'sem tradução: ' + k);
   console.log('painel: rodízio em lote mantém a ordem, não duplica, preserva pacote sem cartão, respeita o teto de ' + ROTMAX + ' e confirma antes de esvaziar');
 }
+// Editor de mostrador (web/editor.js, baixado do site só ao abrir): o painel só tem o botão e o carregador com SRI;
+// todo texto do editor tem inglês e espanhol; o id é próprio (não substitui um pacote da galeria com o mesmo nome).
+// A tabela de tamanhos é conferida pelo simulador (sim/editor_modelos.cjs e testEditorModels no sim.cpp).
+{
+  const src = fs.readFileSync(path.join(__dirname, '../web/editor.js'), 'utf8'), w = {};
+  new Function('window', src)(w);
+  const E = w.faceEditor;
+  assert(html.includes('onclick="editor()">Criar mostrador</button>'), 'botão do editor em "Mais mostradores"');
+  const ld = html.slice(html.indexOf('async function editor('), html.indexOf('function closeSheet('));
+  assert(ld.includes("s.src=SITE+'panel/editor-'+EDV+'.js';s.integrity=EDI;s.crossOrigin='anonymous'"), 'editor vem do site com SRI');
+  assert(ld.includes("s.src='/editor.js'") && ld.includes('edJs=null'), 'painel de teste e nova tentativa sem internet');
+  // textos: os de t('...') e os nomes de modelos, conteúdos, cores e campos
+  const keys = new Set([...src.matchAll(/\bt\('([^']+)'/g)].map(m => m[1]));
+  E.MODELS.forEach(m => keys.add(m[0]));
+  Object.values(E.KINDS).forEach(k => keys.add(k[0]));
+  for (const m of src.matchAll(/\b(?:sel|inp)\('([^']+)'/g)) keys.add(m[1]);
+  for (const m of src.matchAll(/\['([^']+)', '(?:#|accent)/g)) keys.add(m[1]);   // cores
+  for (const m of src.matchAll(/\['(?:bebas|pixel)', '([A-Z][^']+)'\]/g)) keys.add(m[1]);   // nomes das fontes
+  keys.add('Abrindo o editor...');
+  const dict = JSON.parse(fs.readFileSync(path.join(__dirname, '../web/i18n.json'), 'utf8')).dict;
+  for (const k of keys) assert(dict[k] && dict[k].length == 2 && dict[k].every(x => x), 'sem tradução: ' + k);
+  assert(keys.size >= 30, 'textos do editor: ' + keys.size);
+  // id: "ed-" + nome + sufixo aleatório, dentro das regras do relógio (safeId, até 23)
+  const safeId = new Function('return ' + html.match(/const safeId=(s=>\{[^\n]*?return o\})/)[1])();
+  for (const n of ['Koi', 'Relógio da cozinha com nome bem comprido', '', '!!!']) {
+    const id = E.newId(safeId, n);
+    assert(/^ed-[a-z0-9-]{1,14}-[a-z0-9]{1,4}$/.test(id) && id.length <= 23 && safeId(id) == id, 'id: ' + id);
+  }
+  assert.notStrictEqual(E.newId(safeId, 'koi'), 'koi');
+  console.log('painel: editor de mostrador sob demanda com SRI, ' + keys.size + ' textos traduzidos e id próprio');
+}
 // Envio de GIF e de fotos (web/index.html): o relógio mostra só o canto superior esquerdo de GIF acima de 240×240 e
 // recusa acima de 480×480 (album.cpp, gifcheck.h); o painel avisa antes de enviar e confere o espaço livre.
 (async () => {

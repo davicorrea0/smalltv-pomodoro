@@ -508,6 +508,60 @@ static int testPackages(const UiState &pomo) {
 }
 
 
+// Modelos do editor de mostrador do painel (web/editor.js): out/editor-modelos.txt (sim/editor_modelos.cjs) traz cada
+// combinação de modelo, conteúdo e fonte com o texto mais largo. Desenhada pelo motor de verdade às 23:59 com -13°,
+// nenhum pixel pode sair das vagas do modelo: é o que confere a tabela de tamanhos do editor.
+static int testEditorModels() {
+  FILE *fp = fopen("out/editor-modelos.txt", "rb");
+  if (!fp) {
+    printf("editor: ERRO, out/editor-modelos.txt ausente (node editor_modelos.cjs)\n");
+    return 1;
+  }
+  int fails = 0, n = 0;
+  static char line[8192];
+  while (fgets(line, sizeof line, fp)) {
+    char *tab = strchr(line, '\t');
+    if (!tab) continue;
+    *tab = 0;
+    char *json = tab + 1;
+    int box[4][4], nb = 0;
+    for (char *p = line; p && nb < 4; p = strchr(p, ';') ? strchr(p, ';') + 1 : nullptr)
+      if (sscanf(p, "%d,%d,%d,%d", &box[nb][0], &box[nb][1], &box[nb][2], &box[nb][3]) == 4) nb++;
+    char err[96];
+    if (!facePackLoad(json, strlen(json), err, sizeof err)) {
+      printf("editor %-26s ERRO: %s\n", facePackId(), err);
+      fails++;
+      continue;
+    }
+    UiState st = base(23, 59, 0);
+    st.wx.t = -12.6f;  // "-13°": a temperatura mais larga
+    st.theme = THEME_PACK;
+    Frame *f = new Frame();
+    uiBegin(f);
+    uiRenderClock(st);
+    int out = 0, ox = 0, oy = 0, ink = 0;
+    for (int y = 0; y < 240; y++)
+      for (int x = 0; x < 240; x++) {
+        if (!f->px[y * 240 + x]) continue;
+        ink++;
+        bool in = false;
+        for (int b = 0; b < nb && !in; b++)
+          in = x >= box[b][0] && y >= box[b][1] && x < box[b][0] + box[b][2] && y < box[b][1] + box[b][3];
+        if (!in && !out++) { ox = x; oy = y; }
+      }
+    if (out || !ink) {
+      printf("editor %-26s ERRO: %d pixels fora das vagas (o primeiro em %d,%d)%s\n", facePackId(), out, ox, oy, ink ? "" : ", tela vazia");
+      fails++;
+    }
+    delete f;
+    facePackUnload();
+    n++;
+  }
+  fclose(fp);
+  printf("editor: %d modelos desenhados dentro das vagas%s\n", n, fails ? " (com erros)" : "");
+  return fails + !n;
+}
+
 // Limites dos sprites animados: cada JSON inválido precisa ser recusado com mensagem; os válidos, aceitos
 static int testSpriteLimits() {
   int fails = 0;
@@ -1233,6 +1287,7 @@ int main() {
   fails += checkLcdCurtain();
   checkWorldCost();
   fails += testPackages(p);
+  fails += testEditorModels();
   fails += testSpriteLimits();
   fails += testSpriteOracle(2000, 8, 10);
   fails += testSpriteOracle(2000, 16, 10, 2);
