@@ -11,7 +11,16 @@ for(const name of ['handleUpload','handlePackUpload','handlePanelUpload'])
  const i=source.indexOf('server.on(F("/api/crash"), HTTP_POST'),blk=source.slice(i,source.indexOf('});',i));
  if(i<0||!blk.includes('if (!guard()) return;'))throw Error('/api/crash must be a guarded POST');
  const cl=fn('crashLoad');
- if(!cl.includes('REASON_EXCEPTION_RST')||!cl.includes('return;')||cl.indexOf('return;')>cl.indexOf('EEPROM.put'))throw Error('crashLoad must only write after an abnormal reset');
+ // EEPROM (desgaste da flash) só depois de reset anormal: todo EEPROM.put/commit do crashLoad fica dentro do if da razão do reset
+ const ifa=cl.indexOf('if (r &&'),ob=cl.indexOf('{',ifa);let dp=0,ib=ob;for(;ib<cl.length;ib++){if(cl[ib]==='{')dp++;else if(cl[ib]==='}'&&--dp===0)break;}
+ if(ifa<0||!cl.slice(ifa,ob).includes('REASON_EXCEPTION_RST'))throw Error('crashLoad must only write after an abnormal reset');
+ for(const m of cl.matchAll(/EEPROM\.(put|commit)/g))if(m.index<ob||m.index>ib)throw Error('crashLoad must only write after an abnormal reset');
+ if(!cl.slice(ob,ib).includes('EEPROM.put')||!cl.slice(ob,ib).includes('EEPROM.commit'))throw Error('crashLoad must only write after an abnormal reset');
+ // memória RTC 32-33 (crash.up): nunca com comando do eboot pendente (a 1.23.2 quebrou a atualização assim) e fora dos blocos 0-31
+ for(const f of ['crashLoad','crashUpTick']){const a0=source.indexOf('void '+f+'('),b=source.slice(a0,source.indexOf('\n}',a0)+2),w=b.indexOf('rtcUserMemoryWrite');
+  if(a0<0||w<0||b.indexOf('ebootPending()')<0||b.indexOf('ebootPending()')>w)throw Error(f+': RTC write must be guarded by ebootPending()');
+  if(!/rtcUserMemoryWrite\(RTC_CRASH_BLOCK,/.test(b))throw Error(f+': RTC write must use RTC_CRASH_BLOCK');}
+ if(!/RTC_CRASH_BLOCK = (3[2-9]|[4-9]\d)\b/.test(source))throw Error('RTC_CRASH_BLOCK must be >= 32 (0-31 belong to eboot)');
 }
 const recovery=fn('startRecovery');
 if(!recovery.includes('WiFi.mode(WIFI_AP);')||recovery.includes('WiFi.begin()'))throw Error('recovery must be AP-only');
