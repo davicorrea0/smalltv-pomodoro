@@ -20,6 +20,21 @@ const char *facePackId();
 const char *facePackName();
 const char *facePackDesc();
 const char *facePackAuthor();
+// campos de fora que o pacote carregado lê, "a,b,c" (vazio = mostrador comum; algum = miniapp)
+void facePackFields(char *out, size_t n);
+// Os mesmos campos achados direto no texto do .json, sem carregar o pacote (para os .txt de antes da 4ª linha):
+// "{x.campo}" num texto e "x.campo" / "!x.campo" / "x.campo=..." no começo de uma string (when, value). Alimente byte a
+// byte; a lista fica em out. Pode achar a mais (um texto que começa com "x.campo"), nunca a menos que o motor.
+struct FieldScan {
+  char out[100];
+  void begin() { out[0] = 0; o = 0; w = 0; mode = 0; kl = 0; }
+  void feed(char c);
+ private:
+  uint32_t w;      // os 4 últimos bytes
+  uint8_t mode;    // 0 procurando; 1 depois de "{x." (fecha com '}'); 2 depois de "x. numa string (fecha com '"' ou '=')
+  uint8_t kl, o;
+  char k[10];
+};
 
 // Desenha o pacote carregado (chamado por uiRenderClock quando s.theme == THEME_PACK).
 void facePackRender(const UiState &s, bool full);

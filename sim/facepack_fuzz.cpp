@@ -154,6 +154,21 @@ int main(int argc, char **argv) {
       continue;
     }
     aceitos++;
+    char campos[100];  // a lista de campos de fora (4ª linha do .txt): nunca passa do tamanho, sempre termina em 0
+    facePackFields(campos, sizeof campos);
+    if (strlen(campos) >= sizeof campos) { printf("facepack_fuzz: lista de campos estourou no caso %ld\n", c); return 1; }
+    {  // o leitor do .json (para os .txt antigos) não perde nenhum campo que o motor achou
+      FieldScan sc;
+      sc.begin();
+      for (char ch : s) sc.feed(ch);
+      std::string v = std::string(",") + sc.out + ",";
+      for (const char *p = campos; *p;) {
+        const char *e = strchr(p, ',');
+        std::string k(p, e ? e - p : strlen(p));
+        if (v.find("," + k + ",") == std::string::npos) { printf("facepack_fuzz: varredura perdeu %s no caso %ld\n", k.c_str(), c); return 1; }
+        p += k.size() + (e ? 1 : 0);
+      }
+    }
     UiState st;
     memset(&st, 0, sizeof st);
     st.theme = THEME_PACK;
