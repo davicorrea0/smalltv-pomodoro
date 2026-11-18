@@ -328,7 +328,6 @@ void setup() {
   if (fsOk) {
     File rf = LittleFS.open("/rotation.txt", "r");
     if (rf) {
-      rf.setTimeout(0);  // readString termina no EOF do File sem acrescentar 1 s ao boot
       rotList = rf.readString();
       rf.close();
     }
