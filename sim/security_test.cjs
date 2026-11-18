@@ -2,6 +2,9 @@
 const fs=require('fs'),path=require('path');
 const source=require('./fonte.cjs');
 function fn(name){const a=source.indexOf(`void ${name}() {`),b=source.indexOf('\n}',a);if(a<0||b<0)throw Error(name);return source.slice(a,b+2);}
+// 1.26.1: /api/fsdelete não pode ser driblado por "/./" e o rodízio sem vírgula não passa do limite
+if(!source.includes('f.indexOf("/.") >= 0'))throw Error('/api/fsdelete: recusar "/." (o littlefs ignora o componente "." e o fsKeep comparava o texto)');
+if(!source.includes('int cut = s.lastIndexOf(',', 300);')||!source.includes('s = cut > 0 ? s.substring(0, cut) : String();'))throw Error('rotSet: sem vírgula, substring(0, -1) não corta nada');
 for(const name of ['handleUpload','handlePackUpload','handlePanelUpload'])
  if(!fn(name).includes('uploadAuthed()'))throw Error(`${name} bypasses upload throttle`);
 { // /api/crash (Limpar da última queda) é ação: POST com guard(), e a gravação só acontece em reinício anormal
