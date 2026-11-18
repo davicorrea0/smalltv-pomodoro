@@ -248,6 +248,15 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
  </div>
  </div>
  <div class="grp">
+ <h2>Home Assistant</h2>
+ <div class="card">
+  <span class="alx" id="hast"></span>
+  <label class="stk">Chave de escrita<input id="hakey" type="text" readonly spellcheck="false" placeholder="(sem chave)"></label>
+  <div class="row" style="margin:6px 0 10px"><button class="btn" id="hanew" onclick="appsKey('new')">Criar chave</button><button class="btn" onclick="appsCopy()">Copiar</button><button class="btn" onclick="appsKey('off')">Desligar</button></div>
+  <small>Para o Home Assistant (ou um script) mandar valores aos mostradores, como a temperatura da sala ou o estado da lavadora. A chave só envia dados: não abre o painel nem muda ajustes. Ela não vai no backup; ao restaurar em outro relógio, crie outra. <a href="https://github.com/davicorrea0/smalltv-pomodoro/blob/main/docs/HOME-ASSISTANT.md" target="_blank" rel="noopener">Como configurar</a></small>
+ </div>
+ </div>
+ <div class="grp">
  <h2>Clima</h2>
  <div class="card">
   <div id="wx" hidden><b id="wt"></b><div><div id="wd"></div><small id="wm"></small></div></div>
@@ -406,7 +415,7 @@ const post=(u,b)=>fetch(u,{method:'POST',body:b});
 const kb=n=>n>1048576?(n/1048576).toFixed(1)+' MB':Math.round(n/1024)+' KB';
 function toast(t){const e=$('toast');e.textContent=t;e.classList.add('v');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('v'),2200)}
 function tab(i){curTab=i;document.querySelectorAll('.tab').forEach((e,k)=>e.classList.toggle('on',k==i));document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t==i));
- try{localStorage.tab=i}catch(e){}if(i==2)files();if(i==3)hooksLoad();if(i==1&&!STATS)loadStats();window.scrollTo(0,0)}
+ try{localStorage.tab=i}catch(e){}if(i==2)files();if(i==3){hooksLoad();appsLoad()}if(i==1&&!STATS)loadStats();window.scrollTo(0,0)}
 const fkey=f=>f.pkg?'p:'+f.pkg:'t:'+f.t;  // embutido "t:N" ou pacote "p:id"
 const curKey=s=>s.cfg.theme==200?'p:'+s.cfg.pkg:'t:'+s.cfg.theme;
 const faceSrc=f=>f.src||(f.pkg?'/face?pkg='+encodeURIComponent(f.pkg):SITE+'img/faces/face-'+f.t+'.png');  // embutidos: prévia no site (não ocupa a flash)
@@ -632,6 +641,19 @@ $('rbk').onchange=async e=>{const file=e.target.files[0];e.target.value='';if(!f
  if(!R.bad.length)return toast(t('Backup restaurado'));
  alert(t('Backup restaurado com falhas.')+'\n\n'+t('Entrou: {0}',R.ok.map(n=>t(n)).join(', ')||'—')+'\n'+t('Falhou:')+'\n'+R.bad.map(([n,m])=>'• '+t(n)+': '+t(m)).join('\n'))};
 // ---------- avisos de fim de fase (endereços chamados pelo relógio) ----------
+// ---------- Home Assistant: chave de escrita dos dados de fora (/api/appskey) e o que chegou (/api/apps/data) ----------
+let HAKEY='';
+function appsShow(k){HAKEY=k;$('hakey').value=k;$('hanew').textContent=t(k?'Trocar chave':'Criar chave')}
+async function appsLoad(){const r=await post('/api/appskey',new URLSearchParams({c:'show'})).catch(()=>null);if(r&&r.ok)appsShow((await r.json()).key);
+ const d=await fetch('/api/apps/data').then(r=>r.ok?r.json():null).catch(()=>null),e=$('hast');e.textContent='';if(!d)return;
+ const f=d.f||[],m=s=>s<120?t('{0} s',s):t('{0} min',Math.round(s/60));e.className='alx'+(d.on?' ok':'');e.append(document.createElement('i'));
+ e.append(!d.on?t('Desligado: sem chave, o relógio recusa os dados.'):f.length?t('Ligado · {0} valores recebidos:',f.length)+' '+f.map(x=>x[0]+' = '+x[1]+' ('+t('vale mais {0}',m(x[2]))+')').join(' · '):t('Ligado · nenhum valor recebido ainda'))}
+async function appsKey(c){if(c=='new'&&HAKEY&&!confirm(t('Trocar a chave? O Home Assistant para de enviar até você colar a nova.')))return;
+ if(c=='off'&&!confirm(t('Desligar? A chave é apagada, os valores recebidos somem e o relógio passa a recusar os dados.')))return;
+ const r=await post('/api/appskey',new URLSearchParams({c})).catch(()=>null);if(!r||!r.ok)return toast(t('Falha: ')+(r?r.status:''));appsShow((await r.json()).key);appsLoad()}
+function appsCopy(){if(!HAKEY)return toast(t('Crie a chave primeiro'));const a=$('hakey');a.select();
+ (navigator.clipboard?navigator.clipboard.writeText(HAKEY).then(()=>1):Promise.reject()).catch(()=>{try{return document.execCommand('copy')}catch(e){return 0}})
+  .then(r=>toast(t(r?'Chave copiada':'Não consegui copiar: selecione o texto')))}
 function hooksLoad(){fetch('/api/hooks').then(r=>r.json()).then(h=>{$('hkw').value=h.w;$('hkb').value=h.b}).catch(()=>{})}
 function hooksSave(){return post('/api/hooks',new URLSearchParams({w:$('hkw').value,b:$('hkb').value})).then(r=>{toast(t(r.ok?'Salvo':'Falha: ')+(r.ok?'':r.status));hooksLoad()})}
 async function hookTest(e){await hooksSave();toast(t('Chamando o endereço...'));const c=+(await (await post('/api/hooks',new URLSearchParams({test:e}))).text());
@@ -785,7 +807,7 @@ let qt;$('q').oninput=()=>{clearTimeout(qt);const q=$('q').value.trim();if(q.len
 // ---------- armazenamento: tudo o que ocupa a memória de arquivos (/api/storage) ----------
 // Agrupa por tipo; "Outros" é o que o Pomodoro não usa (em relógios vindos do firmware original, os arquivos dele).
 // O relógio marca com k o que precisa para funcionar (sem botão de apagar).
-const STG=[['Fotos e GIFs',p=>p.startsWith('/image/')||p.startsWith('/gif/')],['Mostradores baixados',p=>p.startsWith('/faces/')],['Painel',p=>p.startsWith('/www/')],['Histórico e ajustes',p=>['/stats.bin','/hooks.txt','/rotation.txt'].includes(p)]];
+const STG=[['Fotos e GIFs',p=>p.startsWith('/image/')||p.startsWith('/gif/')],['Mostradores baixados',p=>p.startsWith('/faces/')],['Painel',p=>p.startsWith('/www/')],['Histórico e ajustes',p=>['/stats.bin','/hooks.txt','/rotation.txt','/apps.key'].includes(p)]];
 function storage(){fetch('/api/storage').then(r=>r.json()).then(j=>{const c=$('sheetc');c.innerHTML='';c.appendChild(el('h3',null,t('Memória de arquivos')));
  const fl=j.files.filter(x=>!x.d),sum=fl.reduce((a,x)=>a+x.s,0);c.appendChild(el('p',null,t('{0} usados de {1}',kb(j.used),kb(j.total))));
  const box=el('div','stg'),known=new Set(),mine=['/image','/gif','/faces','/www'];

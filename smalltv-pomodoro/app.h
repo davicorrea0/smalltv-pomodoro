@@ -27,6 +27,7 @@
 #include <coredecls.h>  // settimeofday_cb: avisa quando o SNTP muda a hora
 #include "ui.h"
 #include "facepack.h"
+#include "appdata.h"
 #include "src/AnimatedGIF/AnimatedGIF.h"
 extern "C" uint32_t _FS_start;
 
@@ -116,6 +117,8 @@ const uint32_t CRASH_RTC_TAG = 0x55505453;  // "UPTS"
 // Memória RTC de usuário: os blocos 0-31 (128 bytes) são do comando que a atualização deixa para o eboot
 // (Updater, eboot_command em 0x60001200). Escrever ali entre o fim da atualização e o reinício corrompe o
 // comando, e o eboot liga a versão antiga (foi o que a 1.23.2 fazia ao guardar a hora). Nossos dados: do 32 em diante.
+// O callback não roda no watchdog de hardware (o assert do SDK do Wi-Fi dentro da interrupção): por isso o diagLoop
+// renova os segundos ligado a cada segundo e o crashLoad zera os dois blocos em todo início.
 const uint32_t RTC_CRASH_BLOCK = 32;  // 2 blocos: marca e segundos ligado
 // A hora passa pelo reinício por software na memória RTC (fora dos blocos 0-31 do eboot e dos 32-33 da queda).
 // Volta como hora de reserva: aparece na hora, mas só o SNTP junto do clima a confirma.
@@ -246,6 +249,7 @@ extern uint16_t packLoadMs;  // ms da última carga de pacote de mostrador (modu
 // ---------- funções compartilhadas ----------
 void defaultSettings();
 void crashLoad();
+void crashUpTick(uint32_t sec);  // segundos ligado na memória RTC (diagLoop, 1x/s): crash.up no watchdog de hardware
 void setBootCount(uint8_t n);
 void safeRestart();
 void loadSettings();
@@ -253,6 +257,7 @@ void saveSettings();
 bool localNow(struct tm &t);
 void dayRolloverTick();  // main.cpp: virada do dia e histórico pendente, com a hora confirmada
 void softTime(int64_t sec, uint8_t src);
+bool ebootPending();  // comando do eboot à espera do reinício: não gravar na memória RTC
 void rtcTimeSave();
 void rtcTimeRestore();
 void applyTimezone(uint8_t rot = 0);
