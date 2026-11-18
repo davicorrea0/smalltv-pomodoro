@@ -168,6 +168,16 @@ static bool otaSigOk() {
   return ok;
 }
 
+// Desiste do envio. O Update.end() sem argumento NÃO é só "fechar": no núcleo 3.1.2, se todos os bytes pedidos já
+// foram gravados (isFinished), ele agenda a troca no eboot mesmo sem a assinatura conferida (Content-Length igual ao
+// tamanho do arquivo, ou o último pedaço que completa o envio logo antes de uma falha). Por isso o comando do eboot é
+// sempre apagado depois, em toda falha, em todo aborto e no início de cada envio autorizado (um segundo arquivo no
+// mesmo POST também passa por aqui e não pode herdar o comando do primeiro).
+static void otaCancel() {
+  Update.end();
+  eboot_command_clear();
+}
+
 void setupUpdate() {
   auto authOk = [] {
     if (!panelOk()) return false;
@@ -215,6 +225,7 @@ void setupUpdate() {
         otaSigBegin();
         if (!ota.authOk) ota.err = F("senha");
         else {
+          eboot_command_clear();  // nenhum comando de um envio anterior (ou de outra parte do mesmo POST) vale para este
           diagBlkSample();  // minblk: o maior bloco antes de o OTA soltar o álbum e o pacote
           if (inAlbum) stopAlbum();  // libera RAM e o LittleFS durante a gravação
           facePackUnload();  // dicionário de 8 KB do .gz e RSA (7,5 KB contíguos) precisam do heap; o relógio recarrega o pacote se o OTA falhar
@@ -224,29 +235,33 @@ void setupUpdate() {
           ota.begun = true;
           wakeScreen(120000);
           ota.gz = up.currentSize > 1 && up.buf[0] == 0x1F && up.buf[1] == 0x8B;
-          const String &cl = server.header("Content-Length");  // sem o cabeçalho, o toInt() leria os bytes do pedido anterior
-          uint32_t size = ota.gz ? (cl.length() ? cl.toInt() : 0) : (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000;
+          uint32_t room = (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000, size = room;
+          if (ota.gz) {  // negativo (Content-Length: -1) virava ~4 GB e o Updater arredondava para 0: gravaria por cima do LittleFS
+            const String &hdr = server.header("Content-Length");  // sem o cabeçalho, o toInt() leria os bytes do pedido anterior
+            long cl = hdr.length() ? hdr.toInt() : 0;
+            size = cl > 0 && (uint32_t)cl <= room ? (uint32_t)cl : 0;
+          }
           if (!size || !Update.begin(size, U_FLASH)) ota.err = size ? Update.getErrorString() : String(F("tamanho desconhecido"));
         }
         if (!ota.gz) otaConsume(up.buf, up.currentSize);
         br_sha256_update(&otaHash, up.buf, up.currentSize);
         if (!ota.err.length() && Update.write(up.buf, up.currentSize) != up.currentSize) ota.err = Update.getErrorString();
-        if (ota.err.length()) Update.end();  // desiste: o firmware atual continua
+        if (ota.err.length()) otaCancel();  // desiste: o firmware atual continua
       } else if (up.status == UPLOAD_FILE_END && !ota.err.length()) {
         if (!ota.begun) ota.err = F("arquivo vazio");
         else if (ota.gz) {
-          if (!otaSigOk()) Update.end();  // assinatura antes de agendar a troca: sem ela nada muda
+          if (!otaSigOk()) otaCancel();  // assinatura antes de agendar a troca: sem ela nada muda
           else if (!Update.end(true)) ota.err = Update.getErrorString();
           else otaVerifyGz();
         } else if (ota.got < 4120 || ota.got != ota.size) ota.err = F("arquivo incompleto");
         else if (ota.crc != ota.want) ota.err = F("arquivo corrompido (CRC)");
         else otaSigOk();
         if (ota.gz) {}
-        else if (ota.err.length()) Update.end();
+        else if (ota.err.length()) otaCancel();
         else if (!Update.end(true)) ota.err = Update.getErrorString();
         ota.finished = !ota.err.length();
       } else if (up.status == UPLOAD_FILE_ABORTED) {
-        Update.end();
+        if (ota.authOk) otaCancel();  // também depois do fim do arquivo: sem resposta nem reinício, a troca não pode ficar agendada
         ota.err = F("envio interrompido");
       }
       if (up.status == UPLOAD_FILE_END || up.status == UPLOAD_FILE_ABORTED) otaSigFree();
