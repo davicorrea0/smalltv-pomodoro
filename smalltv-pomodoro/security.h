@@ -54,6 +54,20 @@ struct AuthThrottle {
     for (Entry &e : entries) if (e.ip == ip) { e = Entry(); return; }
   }
 };
+// Chave de escrita dos dados de fora (/apps.key): 32 hex minúsculos, gerada pelo relógio.
+static bool appsKeyOk(const char *k, size_t n) {
+  if (n != 32) return false;
+  for (size_t i = 0; i < n; i++)
+    if (!((k[i] >= '0' && k[i] <= '9') || (k[i] >= 'a' && k[i] <= 'f'))) return false;
+  return true;
+}
+// "Bearer <chave>" do cabeçalho Authorization contra a chave guardada, em tempo constante (não para no 1º byte diferente)
+static bool appsBearerOk(const char *h, size_t hn, const char *key) {
+  if (hn != 7 + 32 || memcmp(h, "Bearer ", 7) || !appsKeyOk(key, strlen(key))) return false;
+  uint8_t d = 0;
+  for (size_t i = 0; i < 32; i++) d |= (uint8_t)(h[7 + i] ^ key[i]);
+  return d == 0;
+}
 static bool safeHttpUrl(const char *s, size_t n) {
   if (n < 8 || n > 400 || memcmp(s, "http://", 7)) return false;
   for (size_t i=0; i<n; i++) {
