@@ -207,5 +207,14 @@ void weatherLoop() {
   diagWhere = 1;
   bool ok = d > 0 && fetchWeather();
   if (ok) wxBack.ok(millis(), 15UL * 60000UL);
-  else wxBack.fail(millis());
+  else {
+    wxBack.fail(millis());
+    // Três falhas seguidas (~6 min pelo backoff): a leitura velha some da tela e o painel avisa. O nascer e o pôr do
+    // sol ficam: mudam 1 a 2 min por dia, e apagá-los faria o "seguir o sol" cair no horário fixo no meio da noite.
+    if (wxBack.fails >= 3 && wx.ok) {
+      wx.ok = false;
+      wx.rainIn = 0;
+      wx.version++;
+    }
+  }
 }
