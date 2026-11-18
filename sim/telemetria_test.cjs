@@ -13,14 +13,14 @@ const cut = (sig, from = 0) => { const a = source.indexOf(sig, from); if (a < 0)
 
 // ---------- 1. campos aditivos ----------
 const OLD = ('phase running remaining total cycle today streak best clock showing wx ok t min max h rin tzn off loff rise set desc fs l2 mig used cfg work short long every bri auto h12 tz lock theme mode delay color non nstart nend nbri won fahr rain beta lat lon city bgr inv flip vcom wdown tok tund pkg goal act lang nsun warm lcdg alexa rotmin rot ago ip last pv name heap blk pdraw pseq pshown ver diag rst exc epc rssi minheap frag up draw stall stallAt boot scr wifi wf time src ntp crash n r x va').split(' ');
-const NEW = ['minblk', 'stack', 'ramfix', 'lps', 'pack', 'nomem', 'jpg', 'gif', 'strip', 'tw', 'twmax'];
+const NEW = ['minblk', 'stack', 'ramfix', 'lps', 'pack', 'nomem', 'jpg', 'gif', 'strip', 'tw', 'twmax', 'psh', 'pshn', 'pcb', 'pcbmax'];
 const sendState = cut('static void sendState() {'), diagJson = cut('static void diagJson('), crashJson = cut('static void crashJson(');
 const keys = new Set([...(sendState + diagJson + crashJson).matchAll(/\\"(\w+)\\":/g)].map(m => m[1]));
 for (const k of OLD) assert(keys.has(k), 'chave antiga sumiu do /api/state: ' + k + ' (painéis antigos leem esse JSON)');
-assert.deepStrictEqual([...keys].filter(k => !OLD.includes(k)).sort(), [...NEW].sort(), 'o /api/state só pode ganhar minblk, stack, ramfix, lps, pack, nomem{jpg,gif,strip}, tw e twmax');
+assert.deepStrictEqual([...keys].filter(k => !OLD.includes(k)).sort(), [...NEW].sort(), 'o /api/state só pode ganhar minblk, stack, ramfix, lps, pack, nomem{jpg,gif,strip}, tw, twmax, psh, pshn, pcb e pcbmax');
 // os campos novos ficam dentro de diag
 const d = sendState + diagJson;  // diag abre no sendState (\"diag\":{), os campos vêm no diagJson
-for (const k of ['minblk', 'stack', 'ramfix', 'lps', 'pack', 'nomem', 'tw', 'twmax']) assert(d.includes('\\"' + k + '\\":'), k + ' fora de diag');
+for (const k of ['minblk', 'stack', 'ramfix', 'lps', 'pack', 'nomem', 'tw', 'twmax', 'psh', 'pshn', 'pcb', 'pcbmax']) assert(d.includes('\\"' + k + '\\":'), k + ' fora de diag');
 
 // uma só varredura do heap por pedido (getHeapStats), nenhuma das duas chamadas antigas no pedido, nada no laço
 const heapFn = cut('static void diagHeap(');

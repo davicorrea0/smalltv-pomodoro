@@ -37,7 +37,9 @@ static int strcmp_P(const char *a, const char *b) { return strcmp(a, b); }
 static const uint8_t LOADER_HTML_GZ[7] = {1, 2, 3, 4, 5, 6, 7};
 struct String : std::string { using std::string::string; String(const std::string &s) : std::string(s) {} };
 static int closes;
-struct File { bool live = false; operator bool() const { return live; } void close() { if (live) closes++; live = false; } };
+static size_t streamN = 30000;  // quanto o streamFile "manda"
+static uint16_t diagPanelShort, diagPanelShortN;
+struct File { bool live = false; size_t size() { return 30000; } size_t position() { return streamN; } operator bool() const { return live; } void close() { if (live) closes++; live = false; } };
 static bool fsOk = true, hasPanel = true, logged = true;
 static std::string opened;
 struct { File open(const char *p, const char *) { opened = p; return {hasPanel}; } } LittleFS;
@@ -50,7 +52,7 @@ struct {
   String header(const String &k) { assert(k == "If-None-Match"); return inm; }
   void send(int c) { assert(!r.code); r.code = c; }
   void send_P(int c, PGM_P, PGM_P p, size_t n) { assert(!r.code); r.code = c; r.body.assign(p, n); }
-  void streamFile(File &f, const char *) { assert(!r.code && f); r.code = 200; r.streamed = true; }
+  size_t streamFile(File &f, const char *) { assert(!r.code && f); r.code = 200; r.streamed = true; return streamN; }
 } server;
 static bool readOk() { if (logged) return true; r.code = 401; return false; }
 static void panelGet() {${body}
@@ -81,6 +83,14 @@ int main() {
     }
   }
   hasPanel = true; fsOk = true;
+  // envio do painel interrompido (aba fechada, travou no meio): conta e guarda quanto saiu; envio inteiro não conta
+  assert(diagPanelShort == 0);
+  streamN = 12345;
+  x = get("");
+  assert(x.code == 200 && diagPanelShort == 1 && diagPanelShortN == 12345);
+  streamN = 30000;
+  x = get("");
+  assert(diagPanelShort == 1);
   // com senha e sem login: o 401 sai antes, sem ETag nem 304 (o hash não vaza e o AuthThrottle conta)
   logged = false;
   x = get(et.c_str());

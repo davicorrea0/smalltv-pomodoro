@@ -80,6 +80,12 @@ static uint32_t diagLoops = 0, diagLps = 0, diagLpsAt = 0;
 static uint32_t diagTw = 0;
 static uint8_t diagTwMax = 0;
 
+// Painel travado depois de dias ligado (issue #44): o /api/state responde e o GET / completo não. psh = vezes em que o
+// streamFile do painel mandou menos que o arquivo (pshn = quanto mandou da última); pcb/pcbmax = conexões TCP ativas
+// agora e o maior número visto (o lwIP só tem 5: MEMP_NUM_TCP_PCB). pcb em 5 com o painel travado = pcb vazado.
+static uint16_t diagPanelShort = 0, diagPanelShortN = 0;
+static uint8_t diagPcb = 0, diagPcbMax = 0;
+
 void diagLoop() {
   uint32_t now = millis(), h = ESP.getFreeHeap();
   diagLoops++;
@@ -165,6 +171,14 @@ static void diagJson(String &j, uint8_t frag) {
   j += diagTw;
   j += F(",\"twmax\":");  // maior lista TIME_WAIT vista numa volta do laço
   j += diagTwMax;
+  j += F(",\"psh\":");  // GET / do painel que mandou menos que o arquivo, e quanto mandou da última
+  j += diagPanelShort;
+  j += F(",\"pshn\":");
+  j += diagPanelShortN;
+  j += F(",\"pcb\":");  // conexões TCP ativas na última volta do laço e o maior número visto
+  j += diagPcb;
+  j += F(",\"pcbmax\":");
+  j += diagPcbMax;
   j += F(",\"nomem\":{\"jpg\":");  // faltas de memória: foto, GIF e faixa de desenho recusada
   j += diagNoMemN[0];
   j += F(",\"gif\":");
@@ -401,9 +415,14 @@ static void sendState() {
 #endif
 extern "C" {
 extern struct tcp_pcb *tcp_tw_pcbs;  // lista TIME_WAIT do lwIP (declarada em lwip/priv/tcp_priv.h)
+extern struct tcp_pcb *tcp_active_pcbs;  // idem: conexões ativas
 }
 
 void tcpTwPurge() {
+  uint8_t c = 0;
+  for (tcp_pcb *p = tcp_active_pcbs; p && c < 255; p = p->next) c++;
+  diagPcb = c;
+  if (c > diagPcbMax) diagPcbMax = c;
   uint8_t n = 0;
   while (tcp_tw_pcbs) {
     tcp_abort(tcp_tw_pcbs);  // tira da lista e libera
@@ -683,7 +702,10 @@ static void sendPanel() {
   if (f) {
     server.sendHeader(F("ETag"), F("\"" PANEL_HASH "\""));
     if (!strcmp_P(server.header(F("If-None-Match")).c_str(), PSTR("\"" PANEL_HASH "\""))) server.send(304);
-    else server.streamFile(f, "text/html");  // .gz: o servidor manda "Content-Encoding: gzip"
+    else if (server.streamFile(f, "text/html") != f.size()) {  // .gz: o servidor manda "Content-Encoding: gzip"
+      diagPanelShort++;
+      diagPanelShortN = f.position();
+    }
     f.close();
     return;
   }
