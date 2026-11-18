@@ -224,7 +224,8 @@ void setupUpdate() {
           ota.begun = true;
           wakeScreen(120000);
           ota.gz = up.currentSize > 1 && up.buf[0] == 0x1F && up.buf[1] == 0x8B;
-          uint32_t size = ota.gz ? server.header("Content-Length").toInt() : (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000;
+          const String &cl = server.header("Content-Length");  // sem o cabeçalho, o toInt() leria os bytes do pedido anterior
+          uint32_t size = ota.gz ? (cl.length() ? cl.toInt() : 0) : (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000;
           if (!size || !Update.begin(size, U_FLASH)) ota.err = size ? Update.getErrorString() : String(F("tamanho desconhecido"));
         }
         if (!ota.gz) otaConsume(up.buf, up.currentSize);

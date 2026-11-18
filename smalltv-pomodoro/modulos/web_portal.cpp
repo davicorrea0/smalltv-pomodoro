@@ -666,7 +666,11 @@ static void sendPanel() {
   File f = fsOk ? LittleFS.open("/www/" PANEL_HASH ".gz", "r") : File();
   if (f) {
     server.sendHeader(F("ETag"), F("\"" PANEL_HASH "\""));
-    if (!strcmp_P(server.header(F("If-None-Match")).c_str(), PSTR("\"" PANEL_HASH "\""))) server.send(304);
+    // Comparar pelo tamanho também: o core 3.1.2 "limpa" o cabeçalho de um pedido para o outro com String::clear(),
+    // que só zera o tamanho e deixa os bytes. Pelo c_str(), um pedido sem If-None-Match via o ETag do pedido anterior
+    // e recebia 304 vazio (página em branco, até em aba anônima) até o relógio reiniciar.
+    const String &inm = server.header(F("If-None-Match"));
+    if (inm.length() == sizeof("\"" PANEL_HASH "\"") - 1 && !strcmp_P(inm.c_str(), PSTR("\"" PANEL_HASH "\""))) server.send(304);
     else server.streamFile(f, "text/html");  // .gz: o servidor manda "Content-Encoding: gzip"
     f.close();
     return;
@@ -1281,7 +1285,8 @@ static void htmlEscapeAppend(String &o, const String &s) {
 // não muda.
 uint8_t pageLang() {
   if (cfg.lang != 1) return cfg.lang;
-  uint8_t l = langFromAccept(server.header("Accept-Language").c_str());
+  const String &al = server.header("Accept-Language");  // tamanho zero = sem o cabeçalho (os bytes podem ser do pedido anterior)
+  uint8_t l = langFromAccept(al.length() ? al.c_str() : "");
   return l == 255 ? cfg.lang : l;
 }
 
