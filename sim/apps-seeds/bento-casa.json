@@ -1,0 +1,19 @@
+{
+ "format": 2,
+ "author": "davicorrea0",
+ "id": "bento-casa",
+ "name": "Bento casa",
+ "desc": "Bento com dados do Home Assistant (experimento)",
+ "bg": "#0e0e12",
+ "layers": [
+  {"type": "rect", "x": 8, "y": 8, "w": 224, "h": 112, "color": "#1c1c24", "r": 16},
+  {"type": "text", "x": 120, "y": 24, "font": "outfit", "size": 58, "color": "#f4f4f8", "text": "{HH}:{MM}", "align": "center"},
+  {"type": "text", "x": 120, "y": 94, "font": "pixel", "size": 2, "color": "#8a8aa0", "text": {"pt": "PORTA {x.porta}", "en": "DOOR {x.porta}", "es": "PUERTA {x.porta}"}, "align": "center", "bg": "#1c1c24"},
+  {"type": "rect", "x": 8, "y": 128, "w": 108, "h": 104, "color": "#ffd166", "r": 16},
+  {"type": "text", "x": 22, "y": 140, "font": "pixel", "size": 2, "color": "#5a4610", "text": {"pt": "SALA °C", "en": "ROOM °C", "es": "SALA °C"}},
+  {"type": "text", "x": 62, "y": 174, "font": "pixel", "size": 5, "color": "#1a1a1a", "text": "{x.temp}", "align": "center", "bg": "#ffd166"},
+  {"type": "rect", "x": 124, "y": 128, "w": 108, "h": 104, "color": "#4cc9f0", "r": 16},
+  {"type": "text", "x": 138, "y": 140, "font": "pixel", "size": 2, "color": "#0b3a4a", "text": {"pt": "UMIDADE", "en": "HUMIDITY", "es": "HUMEDAD"}},
+  {"type": "text", "x": 178, "y": 178, "font": "pixel", "size": 4, "color": "#ffffff", "text": "{x.hum}%", "align": "center", "bg": "#4cc9f0"}
+ ]
+}

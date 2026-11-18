@@ -96,6 +96,12 @@ Vale para qualquer mostrador, em qualquer formato. Os números de limite (camada
 
 `°` pode ser escrito direto no texto (`"{TEMP}°"`).
 
+**Valores de fora** (formato 2, beta 1.27.0+): `{x.campo}` mostra um valor que o Home Assistant ou um script mandou
+ao relógio (`POST /api/apps/data`), por exemplo `"{x.temp}°"`. Mostra `--` quando o valor nunca chegou, venceu (cada
+envio tem prazo) ou o campo não existe. O nome tem até 8 caracteres `a-z`, `0-9` e `_`, e o valor até 15 bytes.
+Números grandes ficam melhor na fonte `pixel`: `outfit`, `bebas` e `righteous` só têm dígitos, e `--`, `.` e `%`
+somem nelas. Como configurar o Home Assistant e o contrato completo: [HOME-ASSISTANT.md](HOME-ASSISTANT.md).
+
 **Texto em 3 idiomas** (firmware 1.10.0+): em vez de uma string, `text` aceita um objeto com uma versão por idioma, e o relógio mostra a do idioma escolhido no painel. `en` e `es` são opcionais (sem eles, vale o `pt`):
 
 ```json

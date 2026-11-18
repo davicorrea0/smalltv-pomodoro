@@ -3,6 +3,7 @@
 #include <bearssl/bearssl_hash.h>
 #include <lwip/tcp.h>  // tcp_abort (tcpTwPurge)
 #include "../web.h"
+#include "../appdata.h"
 
 // respostas curtas repetidas nas rotas: um só corpo no binário em vez de três String temporárias em cada uso
 static void sendOk() { server.send_P(200, PSTR("text/plain"), PSTR("ok")); }
@@ -599,6 +600,19 @@ bool guard() { return (panelOk() || deny()) && authed(); }   // ações (POST)
 
 bool readOk() { return (hostOk() || deny()) && authed(); }   // leituras
 
+// chave de escrita dos dados de fora (/apps.key, ver /api/apps/data); false, e out vazio, se não existe ou está estragada
+static bool appsKeyLoad(char out[33]) {
+  out[0] = 0;
+  File f = fsOk ? LittleFS.open(F("/apps.key"), "r") : File();
+  if (!f) return false;
+  size_t n = f.read((uint8_t *)out, 32);
+  f.close();
+  out[n] = 0;
+  if (appsKeyOk(out, n)) return true;
+  out[0] = 0;
+  return false;
+}
+
 // ---------- painel na memória de arquivos ----------
 // O painel (~19 KB comprimido) não ocupa a flash do programa: fica em /www/<hash>.gz, onde <hash> são os
 // 24 primeiros hex do SHA-256 do arquivo, calculado aqui ao receber. O firmware só serve o arquivo com o
@@ -857,6 +871,80 @@ void setupWeb() {
     }
     command(server.arg("c"));
     sendState();
+  });
+  // Dados empurrados de fora (Home Assistant, scripts) para os {x.campo} dos pacotes. Contrato: appdata.h e
+  // docs/HOME-ASSISTANT.md. Só com a chave de escrita (/apps.key, criada no painel), nunca com a senha do painel: quem
+  // tem a chave só escreve dados. Sem a chave, a rota fica desligada (403).
+  server.on(F("/api/apps/data"), HTTP_POST, [] {
+    if (!panelOk()) { deny(); return; }  // Host = IP ou o .local do relógio, e X-SmallTV: 1
+    uint32_t ip = requestIp(), wait = 0;
+    if (authThrottle.blocked(ip, millis(), &wait)) {
+      server.sendHeader(F("Retry-After"), String((wait + 999) / 1000));
+      server.send_P(429, PSTR("text/plain"), PSTR("Tente novamente em alguns segundos"));
+      return;
+    }
+    char key[33];
+    if (!appsKeyLoad(key)) { server.send_P(403, PSTR("text/plain"), PSTR("desligado: crie a chave no painel")); return; }
+    const String &h = server.header(F("Authorization"));
+    bool ok = appsBearerOk(h.c_str(), h.length(), key);
+    memset(key, 0, sizeof key);
+    if (!ok) {
+      authThrottle.fail(ip, millis());
+      server.send_P(401, PSTR("text/plain"), PSTR("chave invalida"));
+      return;
+    }
+    const String &b = server.arg("plain");
+    if (b.length() > APPDATA_BODY_MAX) { server.send_P(413, PSTR("text/plain"), PSTR("corpo grande demais")); return; }
+    const char *err = appDataPut(b.c_str(), b.length(), millis());
+    if (err) server.send_P(400, PSTR("text/plain"), err);
+    else server.send_P(200, PSTR("application/json"), PSTR("{\"ok\":true}"));
+  });
+  // valores guardados agora (painel e depuração): {"on":1,"f":[["temp","22",840],...]}, o último número em segundos
+  server.on(F("/api/apps/data"), HTTP_GET, [] {
+    if (!readOk()) return;
+    char key[33];
+    String j = F("{\"on\":");
+    j += appsKeyLoad(key) ? '1' : '0';
+    memset(key, 0, sizeof key);
+    j += F(",\"f\":[");
+    const char *k, *v;
+    uint32_t left, now = millis();
+    for (int i = 0; appDataAt(i, now, &k, &v, &left); i++) {
+      j += i ? F(",[\"") : F("[\"");
+      j += k;
+      j += F("\",\"");
+      jsonEscapeAppend(j, v);
+      j += F("\",");
+      j += left;
+      j += ']';
+    }
+    j += F("]}");
+    server.send(200, F("application/json"), j);
+  });
+  // chave de escrita: c=show devolve a atual, c=new cria ou troca, c=off apaga (desliga a rota). Fica só em /apps.key,
+  // fora da EEPROM e do backup do painel. POST com guard() também para mostrar: a chave não sai num GET.
+  server.on(F("/api/appskey"), HTTP_POST, [] {
+    if (!guard()) return;
+    const String c = server.arg("c");
+    bool ok = fsOk;
+    if (ok && c == "new") {
+      char k[33];
+      snprintf_P(k, sizeof k, PSTR("%08x%08x%08x%08x"), ESP.random(), ESP.random(), ESP.random(), ESP.random());
+      File f = LittleFS.open(F("/apps.key"), "w");
+      ok = f && f.print(k) == 32;
+      if (f) f.close();
+      memset(k, 0, sizeof k);
+      if (!ok) LittleFS.remove(F("/apps.key"));
+    } else if (ok && c == "off") {
+      LittleFS.remove(F("/apps.key"));
+      appDataClear();
+    }
+    char key[33];
+    String j = F("{\"key\":\"");
+    if (appsKeyLoad(key)) j += key;
+    memset(key, 0, sizeof key);
+    j += F("\"}");
+    server.send(ok ? 200 : 500, F("application/json"), j);
   });
   server.on(F("/api/settings"), HTTP_POST, [] {
     if (!guard()) return;

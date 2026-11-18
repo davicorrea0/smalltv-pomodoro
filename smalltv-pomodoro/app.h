@@ -27,6 +27,7 @@
 #include <coredecls.h>  // settimeofday_cb: avisa quando o SNTP muda a hora
 #include "ui.h"
 #include "facepack.h"
+#include "appdata.h"
 #include "src/AnimatedGIF/AnimatedGIF.h"
 extern "C" uint32_t _FS_start;
 
