@@ -40,6 +40,7 @@ static void advance(bool completed) {
   if (completed) hookPending = phase == WORK ? 0 : 1;
   if (phase == WORK) {
     if (completed) {
+      dayRolloverTick();  // o foco que termina depois da meia-noite conta no dia novo (antes herdava a contagem de ontem)
       cycleDone++;
       cfg.todayCount++;
       saveSettings();

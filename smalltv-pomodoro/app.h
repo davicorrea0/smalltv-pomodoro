@@ -254,6 +254,7 @@ void safeRestart();
 void loadSettings();
 void saveSettings();
 bool localNow(struct tm &t);
+void dayRolloverTick();  // main.cpp: virada do dia e histórico pendente, com a hora confirmada
 void softTime(int64_t sec, uint8_t src);
 bool ebootPending();  // comando do eboot à espera do reinício: não gravar na memória RTC
 void rtcTimeSave();
