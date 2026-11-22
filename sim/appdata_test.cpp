@@ -387,6 +387,58 @@ static void varredura() {
   printf("appdata_test: varredura do .json igual ao motor em %d de %d pacotes\n", iguais, n);
 }
 
+// os miniapps de docs/exemplos: cada um carrega e, numa sequência de envios como a do Home Assistant (estados que
+// trocam, campos que vencem, os três dividindo o armazém), o incremental bate com o quadro cheio e a tela muda
+static void exemplos(Tela *tela) {
+  struct Caso { const char *arq; const char *envios[4]; };
+  const Caso casos[] = {
+    {"../docs/exemplos/casa-lavadora.json",
+     {"{\"ttl\":60,\"values\":{\"lv_est\":\"LAVANDO\",\"lv_txt\":\"ENXAGUE\",\"lv_pct\":70,\"lv_min\":18}}",
+      "{\"ttl\":60,\"values\":{\"lv_est\":\"PRONTA\",\"lv_txt\":\"AS 14:52\",\"lv_pct\":100,\"lv_min\":0}}",
+      "{\"ttl\":60,\"values\":{\"lv_est\":\"DESLIGADA\",\"lv_txt\":\"\",\"lv_pct\":0,\"lv_min\":0}}",
+      "{\"ttl\":60,\"values\":{\"lv_est\":\"ERRO\",\"lv_txt\":\"E21\",\"lv_pct\":40,\"lv_min\":0}}"}},
+    {"../docs/exemplos/casa-luzes.json",
+     {"{\"ttl\":60,\"values\":{\"lz_n\":2,\"lz_1\":\"ACESA\",\"lz_2\":\"\",\"lz_3\":\"ACESA\"}}",
+      "{\"ttl\":60,\"values\":{\"lz_n\":0,\"lz_1\":\"\",\"lz_2\":\"\",\"lz_3\":\"\"}}",
+      "{\"ttl\":60,\"values\":{\"lz_n\":1,\"lz_2\":\"ACESA\"}}",
+      "{\"ttl\":60,\"values\":{\"lz_n\":1,\"lz_1\":\"ACESA\",\"lz_2\":\"SEM SINAL\",\"lz_3\":\"\"}}"}},
+    {"../docs/exemplos/casa-tomadas.json",
+     {"{\"ttl\":60,\"values\":{\"tm_1\":1,\"tm_w1\":640,\"tm_2\":0,\"tm_w2\":0}}",
+      "{\"ttl\":60,\"values\":{\"tm_1\":0,\"tm_w1\":0,\"tm_2\":1,\"tm_w2\":9}}",
+      "{\"ttl\":60,\"values\":{\"tm_1\":\"SEM SINAL\",\"tm_w1\":0,\"tm_2\":1,\"tm_w2\":1200}}", nullptr}},
+  };
+  appDataClear();
+  UiState st = estado();
+  st.ms = 0xFFFF0000u;  // atravessa a volta do millis()
+  for (const Caso &c : casos) {
+    if (!carregar(c.arq)) { falhas++; continue; }
+    facePackRender(st, true);
+    uint32_t antes = hash(tela->px), primeiro = 0;
+    for (int i = 0; i < 4 && c.envios[i]; i++) {
+      const char *e = put(c.envios[i], st.ms);
+      CHECK(!e, "%s, envio %d recusado: %s", c.arq, i, e ? e : "");
+      st.ms += 1000;
+      appDataExpire(st.ms);
+      facePackRender(st, false);
+      uint32_t inc = hash(tela->px);
+      facePackRender(st, true);
+      CHECK(inc == hash(tela->px), "%s, envio %d: incremental != quadro cheio", c.arq, i);
+      if (i == 0) primeiro = inc;
+    }
+    CHECK(primeiro != antes, "%s: os valores nao mudaram a tela", c.arq);
+    st.ms += 61000;  // tudo vence: volta ao desenho sem dados
+    appDataExpire(st.ms);
+    facePackRender(st, false);
+    uint32_t inc = hash(tela->px);
+    facePackRender(st, true);
+    CHECK(inc == hash(tela->px) && inc == antes, "%s: vencido deveria voltar ao sem dados", c.arq);
+    facePackUnload();
+  }
+  // os três juntos cabem no armazém (12 dos 16 campos)
+  appDataClear();
+  for (const Caso &c : casos) CHECK(!put(c.envios[0], st.ms), "%s nao coube junto com os outros", c.arq);
+}
+
 static const char *PARTES[] = {"ttl", "values", "temp", "hum", "porta", "ABERTA", "a", "x", "900", "10", "86400", "-1", "1.5", "null", "[]", "{}", "\"\"", "true"};
 
 static void fuzz(long casos) {
@@ -440,6 +492,7 @@ int main(int argc, char **argv) {
   referencias(tela);
   campos();
   varredura();
+  exemplos(tela);
   fuzz(casos);
   delete tela;
   if (falhas) { printf("appdata_test: %d falha(s)\n", falhas); return 1; }
