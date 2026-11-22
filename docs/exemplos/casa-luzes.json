@@ -1,279 +1,44 @@
 {
- "format": 2,
- "author": "davicorrea0",
- "id": "casa-luzes",
- "name": "Luzes",
- "name_en": "Lights",
- "name_es": "Luces",
- "desc": "Quais luzes estao acesas, pelo Home Assistant",
- "desc_en": "Which lights are on, from Home Assistant",
- "sprites": {
-  "casa_lcd": {
-   "pal": {
-    "r": "#20281a",
-    "w": "#20281a",
-    "o": "#a9b88f",
-    "k": "#a9b88f"
-   },
-   "px": [
-    ".....rr.....",
-    "....rrrr....",
-    "...rrrrrr...",
-    "..rrrrrrrr..",
-    ".rrrrrrrrrr.",
-    "rrrrrrrrrrrr",
-    ".wwwwwwwwww.",
-    ".wwwwwwwwww.",
-    ".wwoowwwwww.",
-    ".wwoowwkkww.",
-    ".wwoowwkkww.",
-    ".wwoowwwwww."
-   ]
+  "format": 2,
+  "author": "davicorrea0",
+  "id": "casa-luzes",
+  "name": "Luzes",
+  "name_en": "Lights",
+  "name_es": "Luces",
+  "desc": "Quais luzes estao acesas, pelo Home Assistant",
+  "desc_en": "Which lights are on, from Home Assistant",
+  "desc_es": "Que luces estan prendidas, por Home Assistant",
+  "bg": "#000000",
+  "sprites": {
+    "casa": {"pal": {"m": "#8c887f"}, "px": ["....mm....", "...mmmm...", "..mmmmmm..", ".mmmmmmmm.", "mmmmmmmmmm", ".mm....mm.", ".mm.mm.mm.", ".mm.mm.mm.", ".mm.mm.mm.", ".mmmmmmmm."]}
   },
-  "lamp_on": {
-   "pal": {
-    "d": "#20281a",
-    "c": "#4a5638"
-   },
-   "px": [
-    "...dddd...",
-    "..dddddd..",
-    ".dddddddd.",
-    ".dddddddd.",
-    ".dddddddd.",
-    ".dddddddd.",
-    "..dddddd..",
-    "...dddd...",
-    "...cccc...",
-    "...dddd...",
-    "...cccc...",
-    "....dd...."
-   ]
-  },
-  "lamp_off": {
-   "pal": {
-    "d": "#8f9c78"
-   },
-   "px": [
-    "...dddd...",
-    "..d....d..",
-    ".d......d.",
-    ".d......d.",
-    ".d......d.",
-    ".d......d.",
-    "..d....d..",
-    "...d..d...",
-    "...dddd...",
-    "...dddd...",
-    "...dddd...",
-    "....dd...."
-   ]
-  }
- },
- "bg": "#0e1210",
- "layers": [
-  {
-   "type": "rect",
-   "x": 8,
-   "y": 8,
-   "w": 224,
-   "h": 224,
-   "color": "#a9b88f",
-   "r": 16,
-   "stroke": "#6f7d5a"
-  },
-  {
-   "type": "sprite",
-   "x": 20,
-   "y": 18,
-   "sprite": "casa_lcd",
-   "size": 2
-  },
-  {
-   "type": "text",
-   "x": 52,
-   "y": 22,
-   "font": "pixel",
-   "size": 2,
-   "color": "#20281a",
-   "text": "LUZES",
-   "align": "left",
-   "bg": "#a9b88f"
-  },
-  {
-   "type": "text",
-   "x": 220,
-   "y": 22,
-   "font": "pixel",
-   "size": 2,
-   "color": "#20281a",
-   "text": "{HH}:{MM}",
-   "align": "right",
-   "bg": "#a9b88f"
-  },
-  {
-   "type": "rect",
-   "x": 20,
-   "y": 50,
-   "w": 92,
-   "h": 24,
-   "color": "#20281a",
-   "r": 3
-  },
-  {
-   "type": "text",
-   "x": 28,
-   "y": 55,
-   "font": "pixel",
-   "size": 2,
-   "color": "#a9b88f",
-   "text": "ACESAS",
-   "align": "left",
-   "bg": "#20281a"
-  },
-  {
-   "type": "text",
-   "x": 150,
-   "y": 46,
-   "font": "dm",
-   "size": 6,
-   "color": "#20281a",
-   "text": "{x.lz_n}",
-   "align": "center"
-  },
-  {
-   "type": "text",
-   "x": 178,
-   "y": 66,
-   "font": "pixel",
-   "size": 2,
-   "color": "#20281a",
-   "text": "/3",
-   "align": "left",
-   "bg": "#a9b88f"
-  },
-  {
-   "type": "rect",
-   "x": 20,
-   "y": 98,
-   "w": 200,
-   "h": 2,
-   "color": "#8f9c78",
-   "r": 0
-  },
-  {
-   "type": "sprite",
-   "x": 24,
-   "y": 108,
-   "sprite": "lamp_on",
-   "size": 2,
-   "when": "x.lz_1=ACESA"
-  },
-  {
-   "type": "sprite",
-   "x": 24,
-   "y": 108,
-   "sprite": "lamp_off",
-   "size": 2,
-   "when": "!x.lz_1=ACESA"
-  },
-  {
-   "type": "text",
-   "x": 56,
-   "y": 112,
-   "font": "pixel",
-   "size": 2,
-   "color": "#20281a",
-   "text": "SALA",
-   "align": "left",
-   "bg": "#a9b88f"
-  },
-  {
-   "type": "text",
-   "x": 216,
-   "y": 112,
-   "font": "pixel",
-   "size": 2,
-   "color": "#20281a",
-   "text": "{x.lz_1}",
-   "align": "right",
-   "bg": "#a9b88f"
-  },
-  {
-   "type": "sprite",
-   "x": 24,
-   "y": 146,
-   "sprite": "lamp_on",
-   "size": 2,
-   "when": "x.lz_2=ACESA"
-  },
-  {
-   "type": "sprite",
-   "x": 24,
-   "y": 146,
-   "sprite": "lamp_off",
-   "size": 2,
-   "when": "!x.lz_2=ACESA"
-  },
-  {
-   "type": "text",
-   "x": 56,
-   "y": 150,
-   "font": "pixel",
-   "size": 2,
-   "color": "#20281a",
-   "text": "QUARTO",
-   "align": "left",
-   "bg": "#a9b88f"
-  },
-  {
-   "type": "text",
-   "x": 216,
-   "y": 150,
-   "font": "pixel",
-   "size": 2,
-   "color": "#20281a",
-   "text": "{x.lz_2}",
-   "align": "right",
-   "bg": "#a9b88f"
-  },
-  {
-   "type": "sprite",
-   "x": 24,
-   "y": 184,
-   "sprite": "lamp_on",
-   "size": 2,
-   "when": "x.lz_3=ACESA"
-  },
-  {
-   "type": "sprite",
-   "x": 24,
-   "y": 184,
-   "sprite": "lamp_off",
-   "size": 2,
-   "when": "!x.lz_3=ACESA"
-  },
-  {
-   "type": "text",
-   "x": 56,
-   "y": 188,
-   "font": "pixel",
-   "size": 2,
-   "color": "#20281a",
-   "text": "COZINHA",
-   "align": "left",
-   "bg": "#a9b88f"
-  },
-  {
-   "type": "text",
-   "x": 216,
-   "y": 188,
-   "font": "pixel",
-   "size": 2,
-   "color": "#20281a",
-   "text": "{x.lz_3}",
-   "align": "right",
-   "bg": "#a9b88f"
-  }
- ]
+  "layers": [
+    {"type": "text", "x": 12, "y": 12, "font": "pixel", "size": 2, "color": "#8c887f", "text": {"pt": "LUZES ACESAS", "en": "LIGHTS ON", "es": "LUCES PRENDIDAS"}},
+    {"type": "text", "x": 18, "y": 66, "font": "pixel", "size": 4, "color": "#8c887f", "text": "--", "when": "!x.lz_n"},
+    {"type": "text", "x": 12, "y": 34, "font": "bebas", "size": 96, "color": "#f2eee6", "text": "{x.lz_n}", "bg": "#000000", "when": "x.lz_n"},
+    {"type": "text", "x": 12, "y": 34, "font": "bebas", "size": 96, "color": "#8c887f", "text": "{x.lz_n}", "bg": "#000000", "when": "x.lz_n=0"},
+    {"type": "text", "x": 74, "y": 108, "font": "pixel", "size": 3, "color": "#8c887f", "text": {"pt": "DE 3", "en": "OF 3", "es": "DE 3"}},
+    {"type": "rect", "x": 12, "y": 136, "w": 216, "h": 1, "color": "#2c2a27"},
+    {"type": "rect", "x": 12, "y": 144, "w": 10, "h": 10, "color": "#ffd25a", "when": "x.lz_1=ACESA"},
+    {"type": "rect", "x": 12, "y": 144, "w": 10, "h": 10, "color": "#000000", "stroke": "#2c2a27", "when": "!x.lz_1=ACESA"},
+    {"type": "text", "x": 32, "y": 142, "font": "pixel", "size": 2, "color": "#f2eee6", "text": "SALA", "when": "x.lz_1=ACESA"},
+    {"type": "text", "x": 32, "y": 142, "font": "pixel", "size": 2, "color": "#8c887f", "text": "SALA", "when": "!x.lz_1=ACESA"},
+    {"type": "text", "x": 228, "y": 142, "font": "pixel", "size": 2, "color": "#ffb020", "text": "{x.lz_1}", "align": "right", "when": "!x.lz_1=ACESA"},
+    {"type": "rect", "x": 12, "y": 160, "w": 216, "h": 1, "color": "#2c2a27"},
+    {"type": "rect", "x": 12, "y": 168, "w": 10, "h": 10, "color": "#ffd25a", "when": "x.lz_2=ACESA"},
+    {"type": "rect", "x": 12, "y": 168, "w": 10, "h": 10, "color": "#000000", "stroke": "#2c2a27", "when": "!x.lz_2=ACESA"},
+    {"type": "text", "x": 32, "y": 166, "font": "pixel", "size": 2, "color": "#f2eee6", "text": "QUARTO", "when": "x.lz_2=ACESA"},
+    {"type": "text", "x": 32, "y": 166, "font": "pixel", "size": 2, "color": "#8c887f", "text": "QUARTO", "when": "!x.lz_2=ACESA"},
+    {"type": "text", "x": 228, "y": 166, "font": "pixel", "size": 2, "color": "#ffb020", "text": "{x.lz_2}", "align": "right", "when": "!x.lz_2=ACESA"},
+    {"type": "rect", "x": 12, "y": 184, "w": 216, "h": 1, "color": "#2c2a27"},
+    {"type": "rect", "x": 12, "y": 192, "w": 10, "h": 10, "color": "#ffd25a", "when": "x.lz_3=ACESA"},
+    {"type": "rect", "x": 12, "y": 192, "w": 10, "h": 10, "color": "#000000", "stroke": "#2c2a27", "when": "!x.lz_3=ACESA"},
+    {"type": "text", "x": 32, "y": 190, "font": "pixel", "size": 2, "color": "#f2eee6", "text": "COZINHA", "when": "x.lz_3=ACESA"},
+    {"type": "text", "x": 32, "y": 190, "font": "pixel", "size": 2, "color": "#8c887f", "text": "COZINHA", "when": "!x.lz_3=ACESA"},
+    {"type": "text", "x": 228, "y": 190, "font": "pixel", "size": 2, "color": "#ffb020", "text": "{x.lz_3}", "align": "right", "when": "!x.lz_3=ACESA"},
+    {"type": "rect", "x": 12, "y": 211, "w": 216, "h": 1, "color": "#2c2a27"},
+    {"type": "sprite", "x": 12, "y": 221, "size": 1, "sprite": "casa"},
+    {"type": "text", "x": 30, "y": 221, "font": "pixel", "size": 2, "color": "#8c887f", "text": {"pt": "LUZES", "en": "LIGHTS", "es": "LUCES"}},
+    {"type": "text", "x": 228, "y": 221, "font": "pixel", "size": 2, "color": "#8c887f", "text": "{HH}:{MM}", "align": "right"}
+  ]
 }
