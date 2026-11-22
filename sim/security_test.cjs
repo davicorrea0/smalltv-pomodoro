@@ -89,9 +89,20 @@ const end=update.slice(update.indexOf('UPLOAD_FILE_END'),update.indexOf('UPLOAD_
 const ends=[...end.matchAll(/Update\.end\(true\)/g)].map(m=>m.index);
 if(ends.length!==2)throw Error('expected two Update.end(true) in the upload end');
 const gzEnd=end.slice(end.indexOf('if (ota.gz) {'),ends[0]);
-if(!gzEnd.includes('if (!otaSigOk()) Update.end();'))throw Error('.bin.gz swap scheduled without the signature check');
+if(!gzEnd.includes('if (!otaSigOk()) otaCancel();'))throw Error('.bin.gz swap scheduled without the signature check');
 const binEnd=end.slice(end.indexOf('arquivo corrompido (CRC)'),ends[1]);
-if(!binEnd.includes('else otaSigOk();')||!binEnd.includes('if (ota.err.length()) Update.end();'))throw Error('.bin swap scheduled without the signature check');
+if(!binEnd.includes('else otaSigOk();')||!binEnd.includes('if (ota.err.length()) otaCancel();'))throw Error('.bin swap scheduled without the signature check');
+// 1.26.1: Update.end() sem argumento agenda o eboot quando o envio já está completo (isFinished), mesmo sem a assinatura.
+// Toda desistência passa por otaCancel (Update.end + eboot_command_clear), o início de um envio autorizado apaga o comando
+// de antes e Content-Length negativo ou maior que a área não chega ao Update.begin.
+if(/Update\.end\(\);/.test(update))throw Error('upload: Update.end() solto deixa o eboot agendado; use otaCancel()');
+const cancel=source.slice(source.indexOf('static void otaCancel() {'),source.indexOf('\n}',source.indexOf('static void otaCancel() {')));
+if(!/Update\.end\(\);\s*eboot_command_clear\(\);/.test(cancel))throw Error('otaCancel must clear the eboot command after Update.end()');
+const start=update.slice(update.indexOf('UPLOAD_FILE_START'),update.indexOf('UPLOAD_FILE_WRITE'));
+if(!/else \{[^]*eboot_command_clear\(\);/.test(start))throw Error('upload start (authorized) must clear a pending eboot command');
+const abort=update.slice(update.indexOf('UPLOAD_FILE_ABORTED'));
+if(!abort.includes('otaCancel();'))throw Error('aborted upload must cancel the staged swap');
+if(!update.includes('long cl = server.header("Content-Length").toInt();')||!update.includes('cl > 0 && (uint32_t)cl <= room'))throw Error('Content-Length must be checked as signed and bounded before Update.begin');
 const sigOk=source.slice(source.indexOf('static bool otaSigOk() {'),source.indexOf('\n}',source.indexOf('static bool otaSigOk() {')));
 if(!sigOk.includes('if (recoveryMode) return true;')||!sigOk.includes('stack_thunk_add_ref();')||!sigOk.includes('getMaxFreeBlockSize()'))
  throw Error('otaSigOk: recovery escape, thunk stack and heap check are required');
