@@ -223,11 +223,11 @@ firmware. Works on 1.26.1 and later.
 5. Not run on a real clock or Home Assistant by the author. Checked against the firmware source and the Home
    Assistant documentation of 22/11/2026. Brightness and other settings are deliberately outside this contract.
 
-### Focus sessions
+### Focus plans
 
 The YAML in “Sessões Deep focus e Gentle focus” applies each template with `POST /api/settings`, then sends `c=reset` and
 `c=start`, in that order. Deep focus is 50/10/25 minutes, every 3 focuses, 3 focuses total; Gentle focus is 25/5/20,
 every 2, 2 focuses total. Both send `auto=1`, use `application/x-www-form-urlencoded`, `X-SmallTV: 1`, and the same Basic
-authentication as the command example. In state, `cfg.cycles` is the session limit (`0` means unlimited), `sess` is the
-number of completed focuses in the current session, and `sdone` is `1` after the session ends. Alexa cannot start these
-sessions: its three exposed lights remain the fixed Pomodoro, Short break, and Long break controls.
+authentication as the command example. In state, `cfg.cycles` is the plan limit (`0` means unlimited), `sess` is the
+number of completed focuses in the current plan, and `sdone` is `1` after the plan ends. Alexa cannot start these
+plans: its three exposed lights remain the fixed Pomodoro, Short break, and Long break controls.
