@@ -28,6 +28,7 @@ small{color:var(--mut)}.face .ast{display:block;padding:2px 4px 0;font-size:12px
 .hero .scr{width:132px;flex:none}.hero b{font-size:20px;display:block}.hero p{margin:4px 0 0;color:var(--mut)}
 .faces{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
 .face{text-align:left;padding:0}.face .scr{border-width:5px}.face span{display:block;padding:8px 4px 0;font-weight:600}
+#apps{grid-template-columns:minmax(0,1fr)}.face.app{width:100%;min-width:0}.appmain{display:flex;gap:12px}.appmain .scr{width:120px;flex:0 0 120px}.appi{min-width:0}.face.app span{padding:4px 0 0}.face.app .reads{display:block;padding-top:6px;font-size:11px;color:var(--mut)}.face.app .ast{padding:4px 0 0}.states{overflow-x:auto;margin-top:10px}.states img{display:block;width:auto;max-width:none;height:84px}
 .face.cur .scr{border-color:var(--ac)}.face.rot span::before{content:'↻ ';color:var(--mut)}.face.cur span::after{content:var(--inuse,' · em uso');color:var(--ac);font-weight:400;font-size:13px}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 2px}.chip{padding:6px 12px;border-radius:999px;background:var(--card2);border:1px solid var(--line);color:var(--mut);font-size:13px}.chip.on{background:var(--ac);border-color:transparent;color:#fff;font-weight:600}
 .noimg{aspect-ratio:1;display:flex;align-items:center;justify-content:center;color:var(--mut);font-size:13px}
@@ -441,11 +442,9 @@ function pump(){if(imgBusy||!imgQ.length)return;imgBusy=true;const t=imgQ.shift(
  t.i.onload=()=>{imgBusy=false;pump()};
  t.i.onerror=()=>{imgBusy=false;if(++t.tries<3)setTimeout(()=>{imgQ.push(t);pump()},300);else t.fail();pump()};
  t.i.src=t.src}
-function img(f){const i=new Image();i.alt=f.n;
- const tile=()=>{const d=document.createElement('div');d.className='noimg';d.textContent=f.n;i.replaceWith(d)};
- if(f.src||!f.pkg){i.onerror=tile;i.src=faceSrc(f);return i}  // imagem do site: o navegador baixa direto
- // sem prévia guardada no relógio: tenta a do site (mesmo id); se não houver, mostra o nome
- qload(i,faceSrc(f),f.pkg?()=>{i.onerror=tile;i.src=CATALOG+encodeURIComponent(f.pkg)+'.png'}:tile);return i}
+function img(f){const i=new Image();i.alt=f.n;const u=faceImgs(f);
+ const tile=()=>{const d=document.createElement('div');d.className='noimg';d.textContent=f.n;i.replaceWith(d)},next=()=>{const s=u.shift();if(!s)return tile();i.onerror=next;i.src=s};
+ if(f.src||!f.pkg)next();else qload(i,u.shift(),next);return i}
 // mesmo id que o relógio calcula (facepack.cpp: safeId)
 const safeId=s=>{let o='';for(let c of String(s||'').toLowerCase()){if(/[a-z0-9_-]/.test(c))o+=c;else if(c==' '&&o&&!o.endsWith('-'))o+='-';if(o.length>=23)break}return o}
 function el(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
@@ -476,9 +475,10 @@ function fchips(){const k=fcur(),c=$('fchips');c.innerHTML='';
  const none=!cards.some(b=>!b.hidden);$('fnone').hidden=!none;if(none)$('fnone').textContent=t($('cat').children.length?'Nenhum mostrador neste filtro.':'Nenhum mostrador neste filtro ainda. Abra a galeria online logo abaixo para ver mais.')}
 // miniapp: pacote que lê dados de fora (o relógio devolve os campos em "x"); fica na página Miniapps, não em Relógio
 const isApp=f=>!!f.x;
-function buildFaces(){FACES.forEach(f=>{const b=f.pkg==null&&LG&&BUILTIN[f.t];f.n=b?b[LG-1][0]:f.n0;f.d=b?b[LG-1][1]:f.d0});const g=$('faces'),d=$('dl'),a=$('apps');g.innerHTML='';d.innerHTML='';a.innerHTML='';FACES.forEach(f=>{const b=el('button','face');b.dataset.k=fkey(f);b.dataset.f=ftok(f);
- const s=el('div','scr');s.appendChild(img(f));b.appendChild(s);b.appendChild(el('span',null,f.n));b.onclick=()=>faceSheet(f);
- if(isApp(f)){const e=el('small','ast');e.dataset.x=f.x;b.appendChild(e)}(isApp(f)?a:f.pkg?d:g).appendChild(b)});
+const faceImgs=f=>f.src||!f.pkg?[faceSrc(f),null]:[faceSrc(f),...(isApp(f)?[SITE+'miniapps/'+encodeURIComponent(f.pkg)+'.png']:[]),CATALOG+encodeURIComponent(f.pkg)+'.png',null];
+function buildFaces(){FACES.forEach(f=>{const b=f.pkg==null&&LG&&BUILTIN[f.t];f.n=b?b[LG-1][0]:f.n0;f.d=b?b[LG-1][1]:f.d0});const g=$('faces'),d=$('dl'),a=$('apps');g.innerHTML='';d.innerHTML='';a.innerHTML='';FACES.forEach(f=>{const b=el('button','face'),s=el('div','scr');b.dataset.k=fkey(f);b.dataset.f=ftok(f);s.appendChild(img(f));
+ if(isApp(f)){b.classList.add('app');const m=el('div','appmain'),i=el('div','appi'),e=el('small','ast'),w=el('div','states'),si=new Image();e.dataset.x=f.x;i.append(el('span',null,f.n),el('small','reads',t('Lê')+': '+f.x.split(',').join(' · ')),e);m.append(s,i);si.loading='lazy';si.decoding='async';si.alt='';si.onerror=()=>w.remove();si.src=SITE+'miniapps/'+encodeURIComponent(f.pkg)+'-estados.png';w.appendChild(si);b.append(m,w)}else b.append(s,el('span',null,f.n));b.onclick=()=>faceSheet(f);
+ (isApp(f)?a:f.pkg?d:g).appendChild(b)});
  $('appsnone').hidden=a.children.length>0;appsState();fchips()}
 const rotKeys=()=>st&&st.cfg.rot?st.cfg.rot.split(',').filter(Boolean):[];
 const ROTMAX=300;  // teto do rotSet (album.cpp): acima disso o relógio cortaria a lista em silêncio
@@ -518,7 +518,7 @@ $('pkf').onchange=$('apf').onchange=e=>{const fl=[...e.target.files];e.target.va
  if(!j)return toast(t('Escolha o arquivo .json do mostrador'));
  // só o .json: busca a prévia no site pelo id, para o relógio guardar junto (funciona sem internet depois)
  if(p)return install(j,p);j.text().then(async t=>{let pv=null;try{const k=JSON.parse(t),id=safeId(k.id||k.name);
-  if(id){const r=await fetch(CATALOG+id+'.png');if(r.ok)pv=await r.blob()}}catch(x){}install(j,pv)})};
+   if(id)for(const u of [CATALOG+id+'.png',SITE+'miniapps/'+id+'.png']){const r=await fetch(u).catch(()=>null);if(r&&r.ok){pv=await r.blob();break}}}catch(x){}install(j,pv)})};
 // o pacote pede uma versão mínima do firmware (campo fw do catálogo)?
 const vnum=v=>String(v||'0').split('.').reduce((a,x)=>a*1000+(+x||0),0),old=e=>e.fw&&st&&vnum(st.ver)<vnum(e.fw);
 function catalog(){toast(t('Carregando a galeria...'));fetch(CATALOG+'index.json',{cache:'no-store'}).then(r=>r.json()).then(c=>{const g=$('cat');g.innerHTML='';
