@@ -20,6 +20,7 @@ O `<footer>` é o mesmo em todas as páginas e vem de `scripts/site-rodape.cjs` 
 | `faces.js` | Os mostradores embutidos (mesma ordem de `faces_list.h` na `main`), com nomes em PT e EN (gerado) |
 | `sitemap.xml` | Páginas em PT e EN para os buscadores (gerado; enviar no Google Search Console) |
 | `catalog/` | Pacotes de mostradores instaláveis e `index.json` (formato em `catalog/README.md`) |
+| `miniapps/` | Capa (`<id>.png`, 240×240) e tira de estados (`<id>-estados.png`) dos miniapps, geradas pelo simulador (`sim/previas_miniapps.js` na `main`). O painel do relógio usa quando o miniapp foi instalado sem imagem e mostra a tira no cartão da página Miniapps |
 | `firmware/` | `latest.json` + `smalltv-pomodoro.bin`: o painel do relógio (v1.8.0+) lê daqui para avisar e instalar atualizações. Formato em `firmware/README.md` |
 | `img/` | Imagens copiadas de `docs/` da `main` (`img/hero-sim.gif` = `docs/hero.gif`, provisório até o vídeo do relógio real); `img/icons/` são ícones em pixel art (SVG) feitos dos sprites de `assets/` |
 
