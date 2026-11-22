@@ -1,0 +1,42 @@
+{
+  "format": 2,
+  "author": "davicorrea0",
+  "id": "casa-tomadas",
+  "name": "Tomadas",
+  "name_en": "Smart plugs",
+  "name_es": "Enchufes",
+  "desc": "Duas tomadas: ligada ou desligada e os watts, pelo Home Assistant",
+  "desc_en": "Two plugs: on or off and the watts, from Home Assistant",
+  "desc_es": "Dos enchufes: prendido o apagado y los vatios, por Home Assistant",
+  "bg": "#000000",
+  "sprites": {
+    "casa": {"pal": {"m": "#8c887f"}, "px": ["....mm....", "...mmmm...", "..mmmmmm..", ".mmmmmmmm.", "mmmmmmmmmm", ".mm....mm.", ".mm.mm.mm.", ".mm.mm.mm.", ".mm.mm.mm.", ".mmmmmmmm."]}
+  },
+  "layers": [
+    {"type": "rect", "x": 12, "y": 102, "w": 216, "h": 1, "color": "#2c2a27"},
+    {"type": "rect", "x": 12, "y": 16, "w": 12, "h": 12, "color": "#f2eee6", "when": "x.tm_1=1"},
+    {"type": "rect", "x": 12, "y": 16, "w": 12, "h": 12, "color": "#000000", "stroke": "#2c2a27", "when": "!x.tm_1=1"},
+    {"type": "text", "x": 34, "y": 12, "font": "pixel", "size": 3, "color": "#f2eee6", "text": "CAFE", "when": "x.tm_1=1"},
+    {"type": "text", "x": 34, "y": 12, "font": "pixel", "size": 3, "color": "#8c887f", "text": "CAFE", "when": "!x.tm_1=1"},
+    {"type": "text", "x": 12, "y": 46, "font": "pixel", "size": 2, "color": "#ffb020", "text": "{x.tm_1}", "when": "!x.tm_1=1"},
+    {"type": "rect", "x": 12, "y": 42, "w": 110, "h": 24, "color": "#000000", "when": "x.tm_1=0"},
+    {"type": "text", "x": 12, "y": 46, "font": "pixel", "size": 2, "color": "#8c887f", "text": {"pt": "DESLIGADA", "en": "OFF", "es": "APAGADO"}, "when": "x.tm_1=0"},
+    {"type": "text", "x": 204, "y": 64, "font": "pixel", "size": 2, "color": "#8c887f", "text": "--", "align": "right", "when": "x.tm_1=1"},
+    {"type": "text", "x": 204, "y": 42, "font": "bebas", "size": 56, "color": "#f2eee6", "text": "{x.tm_w1}", "align": "right", "bg": "#000000", "when": "x.tm_1=1"},
+    {"type": "text", "x": 208, "y": 77, "font": "pixel", "size": 3, "color": "#f2eee6", "text": "W", "when": "x.tm_1=1"},
+    {"type": "rect", "x": 12, "y": 116, "w": 12, "h": 12, "color": "#f2eee6", "when": "x.tm_2=1"},
+    {"type": "rect", "x": 12, "y": 116, "w": 12, "h": 12, "color": "#000000", "stroke": "#2c2a27", "when": "!x.tm_2=1"},
+    {"type": "text", "x": 34, "y": 112, "font": "pixel", "size": 3, "color": "#f2eee6", "text": "ABAJUR", "when": "x.tm_2=1"},
+    {"type": "text", "x": 34, "y": 112, "font": "pixel", "size": 3, "color": "#8c887f", "text": "ABAJUR", "when": "!x.tm_2=1"},
+    {"type": "text", "x": 12, "y": 146, "font": "pixel", "size": 2, "color": "#ffb020", "text": "{x.tm_2}", "when": "!x.tm_2=1"},
+    {"type": "rect", "x": 12, "y": 142, "w": 110, "h": 24, "color": "#000000", "when": "x.tm_2=0"},
+    {"type": "text", "x": 12, "y": 146, "font": "pixel", "size": 2, "color": "#8c887f", "text": {"pt": "DESLIGADA", "en": "OFF", "es": "APAGADO"}, "when": "x.tm_2=0"},
+    {"type": "text", "x": 204, "y": 164, "font": "pixel", "size": 2, "color": "#8c887f", "text": "--", "align": "right", "when": "x.tm_2=1"},
+    {"type": "text", "x": 204, "y": 142, "font": "bebas", "size": 56, "color": "#f2eee6", "text": "{x.tm_w2}", "align": "right", "bg": "#000000", "when": "x.tm_2=1"},
+    {"type": "text", "x": 208, "y": 177, "font": "pixel", "size": 3, "color": "#f2eee6", "text": "W", "when": "x.tm_2=1"},
+    {"type": "rect", "x": 12, "y": 211, "w": 216, "h": 1, "color": "#2c2a27"},
+    {"type": "sprite", "x": 12, "y": 221, "size": 1, "sprite": "casa"},
+    {"type": "text", "x": 30, "y": 221, "font": "pixel", "size": 2, "color": "#8c887f", "text": {"pt": "TOMADAS", "en": "PLUGS", "es": "ENCHUFES"}},
+    {"type": "text", "x": 228, "y": 221, "font": "pixel", "size": 2, "color": "#8c887f", "text": "{HH}:{MM}", "align": "right"}
+  ]
+}

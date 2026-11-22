@@ -58,10 +58,10 @@ const i = html.indexOf('async function runSteps('), runSteps = new Function('ret
   // desmarcados saem; chave sem cartão (pacote que não carregou ou foi removido) fica
   assert.deepStrictEqual(rotMerge(['t:1', 'p:velho', 'p:koi', 't:2'], known, ['t:2']), ['p:velho', 't:2']);
   assert.deepStrictEqual(rotMerge(['t:1', 'p:koi'], known, []), []);
-  // teto igual ao do firmware (as duas ocorrências de 300 no rotSet)
+  // teto igual ao do firmware (as ocorrências de 300 no código do rotSet, sem comentários)
   const ROTMAX = +html.match(/const ROTMAX=(\d+);/)[1];
   const album = fs.readFileSync(path.join(__dirname, '../smalltv-pomodoro/modulos/album.cpp'), 'utf8');
-  const rs = album.slice(album.indexOf('void rotSet('), album.indexOf('void rotLoop('));
+  const rs = album.slice(album.indexOf('void rotSet('), album.indexOf('void rotLoop(')).replace(/\/\/.*$/gm, '');  // sem os comentários
   assert.deepStrictEqual(rs.match(/\b\d{3}\b/g), [String(ROTMAX), String(ROTMAX), String(ROTMAX)], 'ROTMAX do painel diferente do rotSet');
   // limite conferido no toque, ao salvar e no incluir de um: nunca grava pela metade
   const ed = html.slice(html.indexOf('function rotEdit('), html.indexOf('function rotToggle('));
@@ -121,6 +121,33 @@ const i = html.indexOf('async function runSteps('), runSteps = new Function('ret
   }
   assert.notStrictEqual(E.newId(safeId, 'koi'), 'koi');
   console.log('painel: editor de mostrador sob demanda com SRI, ' + keys.size + ' textos traduzidos e id próprio');
+}
+// Página Miniapps (web/index.html): os pacotes que leem dados de fora ("x" do /api/faces) saem de Relógio e vão para a
+// aba própria, logo abaixo de Relógio no menu; o cartão do Home Assistant mora lá; o mesmo envio de arquivo serve às duas
+// páginas; o "Editar rodízio" lista os dois com um selo; e os textos novos têm inglês e espanhol.
+{
+  const isApp = new Function('return ' + html.match(/const isApp=(f=>[^;]*);/)[1])();
+  assert(isApp({ x: 'lv_est,lv_pct' }) && !isApp({ x: '' }) && !isApp({}), 'isApp: só com campos de fora');
+  const bf = html.slice(html.indexOf('function buildFaces()'), html.indexOf('const rotKeys='));
+  assert(bf.includes("(isApp(f)?a:f.pkg?d:g).appendChild(b)"), 'buildFaces: miniapp vai para #apps, não para Relógio');
+  assert(html.includes("x:f.x||''"), 'loadFaces guarda os campos de fora de cada pacote');
+  // aba: seção t4 depois da t3 (o tab() acende pela ordem das seções) e botão logo depois de Relógio no menu
+  const t3 = html.indexOf('<section class="tab" id="t3">'), t4 = html.indexOf('<section class="tab" id="t4">');
+  assert(t3 > 0 && t4 > t3 && html.indexOf('<section class="tab"', t3 + 10) == t4, 'a seção dos miniapps vem logo depois de Ajustes');
+  const nav = html.slice(html.indexOf('<nav>'), html.indexOf('</nav>'));
+  assert(nav.indexOf('data-t="0"') < nav.indexOf('data-t="4"') && nav.indexOf('data-t="4"') < nav.indexOf('data-t="1"'), 'Miniapps logo abaixo de Relógio');
+  const pg = html.slice(t4, html.indexOf('</section>', t4));
+  for (const id of ['id="apps"', 'id="appsnone"', 'id="apf"', 'id="hakey"', 'HOME-ASSISTANT.md']) assert(pg.includes(id), 'página Miniapps sem ' + id);
+  assert(!html.slice(t3, t4).includes('id="hakey"'), 'o cartão do Home Assistant saiu de Ajustes');
+  assert(html.includes("$('pkf').onchange=$('apf').onchange="), 'um envio só para mostrador e miniapp');
+  assert(html.includes("if(i==4)appsLoad()"), 'a aba carrega o estado ao abrir');
+  assert(html.includes("isApp(f)?[el('em','sel',t('miniapp'))]:[]"), 'selo de miniapp no Editar rodízio');
+  const dict = JSON.parse(fs.readFileSync(path.join(__dirname, '../web/i18n.json'), 'utf8')).dict;
+  for (const k of ['Miniapps', 'miniapp', 'recebendo dados', 'sem dados agora', 'Instalar miniapp de um arquivo',
+    'Nenhum miniapp instalado. Um miniapp mostra no relógio dados da casa que o Home Assistant manda, como a lavadora, as luzes ou as tomadas.',
+    'Escolha o .json do miniapp. Toque num miniapp para usar agora ou pôr no rodízio, que é o mesmo dos mostradores.'])
+    assert(dict[k] && dict[k].length == 2 && dict[k].every(x => x), 'sem tradução: ' + k);
+  console.log('painel: página Miniapps abaixo de Relógio, com o cartão do Home Assistant; Relógio sem miniapps; rodízio com selo');
 }
 // Envio de GIF e de fotos (web/index.html): o relógio mostra só o canto superior esquerdo de GIF acima de 240×240 e
 // recusa acima de 480×480 (album.cpp, gifcheck.h); o painel avisa antes de enviar e confere o espaço livre.

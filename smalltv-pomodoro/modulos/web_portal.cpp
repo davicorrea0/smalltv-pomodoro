@@ -691,6 +691,34 @@ static void sendPanel() {
   server.send_P(200, "text/html", (PGM_P)LOADER_HTML_GZ, sizeof(LOADER_HTML_GZ));
 }
 
+// Miniapp instalado com um firmware anterior: o <id>.txt tem só 3 linhas, sem os campos de fora. Acha os campos lendo
+// o .json em pedaços de 64 B, sem carregar o pacote no motor (o que trocaria o mostrador ativo). Só lê: quem chama
+// grava a 4ª linha depois de percorrer o diretório (facesFieldsSave), uma vez só por pacote.
+static String facesFieldsScan(const String &id) {
+  File j = LittleFS.open("/faces/" + id + ".json", "r");
+  if (!j) return String();
+  FieldScan sc;
+  sc.begin();
+  uint8_t b[64];
+  for (int n; (n = j.read(b, sizeof b)) > 0;)
+    for (int i = 0; i < n; i++) sc.feed((char)b[i]);
+  j.close();
+  return String(sc.out);
+}
+
+// grava a 4ª linha dos .txt antigos achados na listagem: "id\tcampos\n" por pacote. Mostrador comum também
+// ganha a linha (vazia), e da próxima listagem em diante nada é lido nem gravado de novo.
+static void facesFieldsSave(const String &pend) {
+  for (int a = 0, e; (e = pend.indexOf('\n', a)) > a; a = e + 1) {
+    int tab = pend.indexOf('\t', a);
+    File t = LittleFS.open("/faces/" + pend.substring(a, tab) + ".txt", "a");
+    if (!t) continue;
+    t.print(pend.substring(tab + 1, e));
+    t.print('\n');
+    t.close();
+  }
+}
+
 void setupWeb() {
   server.collectHeaders("X-SmallTV", "Content-Length", "Authorization", "Origin", "X-Firmware-Sig");
   // painel: o desta versão na memória de arquivos ou, sem ele, o carregador que o instala
@@ -769,19 +797,27 @@ void setupWeb() {
       j += F("\"}");
       if (j.length() > 640) jsonFlush(j);
     }
-    // pacotes instalados: nome/descrição/autor vêm do <id>.txt gravado na instalação
+    // pacotes instalados: nome/descrição/autor (e os campos de fora, na 4ª linha) vêm do <id>.txt gravado na instalação
     if (fsOk) {
+      String pend;  // .txt antigos: a 4ª linha é gravada depois do laço, não durante a leitura do diretório
       Dir d = LittleFS.openDir("/faces");
       while (d.next()) {
         String fn = d.fileName();
         if (!fn.endsWith(".json") || fn.startsWith("_")) continue;
-        String id = fn.substring(0, fn.length() - 5), name = id, desc, author;
+        String id = fn.substring(0, fn.length() - 5), name = id, desc, author, campos;
         File t = LittleFS.open("/faces/" + id + ".txt", "r");
         if (t) {
+          t.setTimeout(0);  // em File o fim é definitivo: sem isso, linha sem '\n' no fim esperava 1 s do Stream
           name = t.readStringUntil('\n');
           desc = t.readStringUntil('\n');
           author = t.readStringUntil('\n');
+          bool velho = !t.available();  // .txt de antes da 4ª linha (instalado com um firmware anterior)
+          campos = velho ? String() : t.readStringUntil('\n');
           t.close();
+          if (velho) {
+            campos = facesFieldsScan(id);
+            pend += id + '\t' + campos + '\n';
+          }
         }
         j += F(",{\"n\":\"");
         jsonEscapeAppend(j, name.c_str());
@@ -791,9 +827,16 @@ void setupWeb() {
         jsonEscapeAppend(j, author.c_str());
         j += F("\",\"pkg\":\"");
         j += id;
+        for (char c : campos)  // só [a-z0-9_,]: qualquer outra coisa no arquivo e a lista não vale
+          if (!((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_' || c == ',')) { campos = ""; break; }
+        if (campos.length()) {  // miniapp: os campos de fora que ele lê
+          j += F("\",\"x\":\"");
+          j += campos;
+        }
         j += F("\"}");
         if (j.length() > 640) jsonFlush(j);
       }
+      if (pend.length()) facesFieldsSave(pend);
     }
     j += "]";
     jsonEnd(j);
@@ -1064,7 +1107,9 @@ void setupWeb() {
       if (LittleFS.exists("/faces/_novo.png")) LittleFS.rename("/faces/_novo.png", "/faces/" + id + ".png");
       File t = LittleFS.open("/faces/" + id + ".txt", "w");  // metadados para a lista do painel
       if (t) {
-        t.printf_P(PSTR("%s\n%s\n%s\n"), facePackName(), facePackDesc(), facePackAuthor());
+        char campos[100];  // 4ª linha: os campos de fora que ele lê (miniapp); firmware antigo lê só as 3 primeiras
+        facePackFields(campos, sizeof campos);
+        t.printf_P(PSTR("%s\n%s\n%s\n%s\n"), facePackName(), facePackDesc(), facePackAuthor(), campos);
         t.close();
       }
     } else {

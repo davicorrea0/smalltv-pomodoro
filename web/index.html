@@ -20,7 +20,7 @@ button:active{transform:scale(.97)}
 .ic:active,#go:active,nav button:active{transform:none;opacity:.7}
 .btn{width:100%;padding:13px;border-radius:12px;background:var(--card2);border:1px solid var(--line)}.btn.p{background:var(--ac);border-color:transparent;color:#fff;font-weight:600}
 .row{display:flex;gap:8px}.row>*{flex:1}
-small{color:var(--mut)}
+small{color:var(--mut)}.face .ast{display:block;padding:2px 4px 0;font-size:12px;color:var(--mut)}.face .ast.ok{color:var(--short)}em.sel{font-style:normal;font-size:11px;color:var(--mut);margin-right:6px}
 /* galeria */
 .hero{display:flex;gap:16px;align-items:center}
 .scr{position:relative;border-radius:16px;overflow:hidden;background:#000;border:6px solid #2b2b30;box-shadow:0 10px 30px -12px #000}
@@ -248,15 +248,6 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
  </div>
  </div>
  <div class="grp">
- <h2>Home Assistant</h2>
- <div class="card">
-  <span class="alx" id="hast"></span>
-  <label class="stk">Chave de escrita<input id="hakey" type="text" readonly spellcheck="false" placeholder="(sem chave)"></label>
-  <div class="row" style="margin:6px 0 10px"><button class="btn" id="hanew" onclick="appsKey('new')">Criar chave</button><button class="btn" onclick="appsCopy()">Copiar</button><button class="btn" onclick="appsKey('off')">Desligar</button></div>
-  <small>Para o Home Assistant (ou um script) mandar valores aos mostradores, como a temperatura da sala ou o estado da lavadora. A chave só envia dados: não abre o painel nem muda ajustes. Ela não vai no backup; ao restaurar em outro relógio, crie outra. <a href="https://github.com/davicorrea0/smalltv-pomodoro/blob/main/docs/HOME-ASSISTANT.md" target="_blank" rel="noopener">Como configurar</a></small>
- </div>
- </div>
- <div class="grp">
  <h2>Clima</h2>
  <div class="card">
   <div id="wx" hidden><b id="wt"></b><div><div id="wd"></div><small id="wm"></small></div></div>
@@ -344,16 +335,37 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
  </div>
  </div>
 </section>
+<section class="tab" id="t4">
+ <div class="grp">
+ <h2>Miniapps</h2>
+ <div class="faces" id="apps"></div>
+ <small id="appsnone">Nenhum miniapp instalado. Um miniapp mostra no relógio dados da casa que o Home Assistant manda, como a lavadora, as luzes ou as tomadas.</small>
+ <div class="card" style="margin-top:16px">
+  <label>Instalar miniapp de um arquivo<input id="apf" type="file" multiple></label>
+  <small>Escolha o .json do miniapp. Toque num miniapp para usar agora ou pôr no rodízio, que é o mesmo dos mostradores.</small>
+ </div>
+ </div>
+ <div class="grp">
+ <h2>Home Assistant</h2>
+ <div class="card">
+  <span class="alx" id="hast"></span>
+  <label class="stk">Chave de escrita<input id="hakey" type="text" readonly spellcheck="false" placeholder="(sem chave)"></label>
+  <div class="row" style="margin:6px 0 10px"><button class="btn" id="hanew" onclick="appsKey('new')">Criar chave</button><button class="btn" onclick="appsCopy()">Copiar</button><button class="btn" onclick="appsKey('off')">Desligar</button></div>
+  <small>Para o Home Assistant (ou um script) mandar valores aos mostradores, como a temperatura da sala ou o estado da lavadora. A chave só envia dados: não abre o painel nem muda ajustes. Ela não vai no backup; ao restaurar em outro relógio, crie outra. <a href="https://github.com/davicorrea0/smalltv-pomodoro/blob/main/docs/HOME-ASSISTANT.md" target="_blank" rel="noopener">Como configurar</a></small>
+ </div>
+ </div>
+</section>
 </main>
 
 <!--vec-->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="v-zerar" viewBox="0 0 24 24"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3L4.5 9"/><path d="M4.5 4.5V9H9"/></symbol><symbol id="v-tocar" viewBox="0 0 24 24"><path class="a" d="M8 5.5v13l10.5-6.5z"/></symbol><symbol id="v-pausar" viewBox="0 0 24 24"><path class="a" d="M7.5 5h2a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/><path class="a" d="M14.5 5h2a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/></symbol><symbol id="v-pular" viewBox="0 0 24 24"><path class="a" d="M5.5 6.5v11l8.5-5.5z"/><path d="M18.5 6v12"/></symbol></svg>
 <!--/vec-->
 <!--icons-->
-<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="i-relogio" viewBox="0 0 16 16"><path class="f" d="M5 1h6v1h-6zM3 2h4v1h-4zM9 2h4v1h-4zM2 3h2v1h-2zM6 3h8v1h-8zM2 4h1v1h-1zM4 4h3v3h-3zM8 4h6v1h-6zM1 5h2v2h-2zM8 5h7v2h-7zM1 7h1v2h-1zM3 7h4v2h-4zM8 7h5v1h-5zM14 7h1v2h-1zM12 8h1v1h-1zM1 9h14v2h-14zM2 11h12v2h-12zM3 13h4v1h-4zM9 13h4v1h-4zM5 14h6v1h-6z"/><path class="w" d="M4 3h2v1h-2zM3 4h1v3h-1z"/><path class="c" d="M7 2h2v1h-2zM2 7h1v2h-1zM13 7h1v2h-1zM7 13h2v1h-2z"/><path class="k" d="M7 4h1v4h-1zM7 8h5v1h-5z"/><path d="M5 0h6v1h-6zM3 1h2v1h-2zM11 1h2v1h-2zM2 2h1v1h-1zM13 2h1v1h-1zM1 3h1v2h-1zM14 3h1v2h-1zM0 5h1v6h-1zM15 5h1v6h-1zM1 11h1v2h-1zM14 11h1v2h-1zM2 13h1v1h-1zM13 13h1v1h-1zM3 14h2v1h-2zM11 14h2v1h-2zM5 15h6v1h-6z"/></symbol><symbol id="i-foco" viewBox="0 0 16 16"><path class="f" d="M5 4h6v1h-6zM3 5h1v1h-1zM6 5h7v1h-7zM2 6h1v2h-1zM5 6h9v1h-9zM4 7h10v1h-10zM1 8h14v4h-14zM2 12h12v1h-12zM3 13h10v1h-10zM4 14h8v1h-8z"/><path class="w" d="M4 5h2v1h-2zM3 6h2v1h-2zM3 7h1v1h-1z"/><path class="v" d="M7 0h2v1h-2zM5 1h6v1h-6zM3 2h3v1h-3zM7 2h2v1h-2zM10 2h3v1h-3z"/><path d="M5 3h6v1h-6zM3 4h2v1h-2zM11 4h2v1h-2zM2 5h1v1h-1zM13 5h1v1h-1zM1 6h1v2h-1zM14 6h1v2h-1zM0 8h1v4h-1zM15 8h1v4h-1zM1 12h1v1h-1zM14 12h1v1h-1zM2 13h1v1h-1zM13 13h1v1h-1zM3 14h1v1h-1zM12 14h1v1h-1zM4 15h8v1h-8z"/></symbol><symbol id="i-fotos" viewBox="0 0 16 16"><path class="f" d="M2 2h12v1h-12zM1 3h14v1h-14zM1 4h9v2h-9zM12 4h3v2h-3zM1 6h14v1h-14zM1 7h4v1h-4zM6 7h9v1h-9zM1 8h3v1h-3zM7 8h8v1h-8zM1 9h2v1h-2zM8 9h3v1h-3zM12 9h3v1h-3zM1 10h1v1h-1zM9 10h1v1h-1zM13 10h2v1h-2zM14 11h1v1h-1zM2 13h12v1h-12z"/><path class="k" d="M10 4h2v2h-2zM5 7h1v1h-1zM4 8h3v1h-3zM3 9h5v1h-5zM11 9h1v1h-1zM2 10h7v1h-7zM10 10h3v1h-3zM1 11h13v1h-13zM1 12h14v1h-14z"/><path d="M2 1h12v1h-12zM1 2h1v1h-1zM14 2h1v1h-1zM0 3h1v10h-1zM15 3h1v10h-1zM1 13h1v1h-1zM14 13h1v1h-1zM2 14h12v1h-12z"/></symbol><symbol id="i-ajustes" viewBox="0 0 16 16"><path class="f" d="M9 3h2v2h-2zM3 7h2v2h-2zM7 11h2v2h-2z"/><path class="k" d="M1 3h7v2h-7zM12 3h3v2h-3zM1 7h1v2h-1zM6 7h9v2h-9zM1 11h5v2h-5zM10 11h5v2h-5z"/><path d="M9 2h2v1h-2zM8 3h1v2h-1zM11 3h1v2h-1zM9 5h2v1h-2zM3 6h2v1h-2zM2 7h1v2h-1zM5 7h1v2h-1zM3 9h2v1h-2zM7 10h2v1h-2zM6 11h1v2h-1zM9 11h1v2h-1zM7 13h2v1h-2z"/></symbol><symbol id="i-ler" viewBox="0 0 16 16"><path class="f" d="M1 2h2v1h-2zM13 2h2v1h-2zM1 3h4v1h-4zM11 3h4v1h-4zM1 4h6v2h-6zM9 4h6v2h-6zM1 6h1v1h-1zM6 6h1v1h-1zM9 6h1v1h-1zM14 6h1v1h-1zM1 7h6v1h-6zM9 7h6v1h-6zM1 8h1v1h-1zM6 8h1v1h-1zM9 8h1v1h-1zM14 8h1v1h-1zM1 9h6v1h-6zM9 9h6v1h-6zM1 10h1v1h-1zM6 10h1v1h-1zM9 10h1v1h-1zM14 10h1v1h-1zM1 11h6v1h-6zM9 11h6v1h-6zM3 12h4v1h-4zM9 12h4v1h-4zM5 13h2v1h-2zM9 13h2v1h-2z"/><path class="c" d="M2 6h4v1h-4zM10 6h4v1h-4zM2 8h4v1h-4zM10 8h4v1h-4zM2 10h4v1h-4zM10 10h4v1h-4z"/><path d="M1 1h2v1h-2zM13 1h2v1h-2zM0 2h1v10h-1zM3 2h2v1h-2zM11 2h2v1h-2zM15 2h1v10h-1zM5 3h2v1h-2zM9 3h2v1h-2zM7 4h2v10h-2zM1 12h2v1h-2zM13 12h2v1h-2zM3 13h2v1h-2zM11 13h2v1h-2zM5 14h2v1h-2zM9 14h2v1h-2z"/></symbol><symbol id="i-codar" viewBox="0 0 16 16"><path class="f" d="M2 1h12v1h-12zM2 2h1v7h-1zM13 2h1v7h-1zM2 9h12v1h-12zM1 12h14v2h-14z"/><path class="c" d="M3 2h10v1h-10zM3 3h2v1h-2zM6 3h2v1h-2zM9 3h1v1h-1zM11 3h2v1h-2zM3 4h1v1h-1zM5 4h3v1h-3zM9 4h2v1h-2zM12 4h1v1h-1zM4 5h3v1h-3zM8 5h4v1h-4zM3 6h1v1h-1zM5 6h2v1h-2zM8 6h3v1h-3zM12 6h1v1h-1zM3 7h2v1h-2zM6 7h1v1h-1zM8 7h2v1h-2zM11 7h2v1h-2zM3 8h10v1h-10z"/><path d="M2 0h12v1h-12zM1 1h1v9h-1zM14 1h1v9h-1zM5 3h1v1h-1zM8 3h1v2h-1zM10 3h1v1h-1zM4 4h1v1h-1zM11 4h1v1h-1zM3 5h1v1h-1zM7 5h1v3h-1zM12 5h1v1h-1zM4 6h1v1h-1zM11 6h1v1h-1zM5 7h1v1h-1zM10 7h1v1h-1zM2 10h12v1h-12zM1 11h14v1h-14zM0 12h1v2h-1zM15 12h1v2h-1zM1 14h14v1h-14z"/></symbol><symbol id="i-estudar" viewBox="0 0 16 16"><path class="f" d="M3 1h11v2h-11zM5 3h9v1h-9zM3 4h4v1h-4zM12 4h2v1h-2zM3 5h11v1h-11zM5 6h9v1h-9zM3 7h4v1h-4zM12 7h2v1h-2zM3 8h11v1h-11zM5 9h9v1h-9zM3 10h4v1h-4zM12 10h2v1h-2zM3 11h11v1h-11zM5 12h9v1h-9zM3 13h11v2h-11z"/><path class="k" d="M1 3h4v1h-4zM7 4h5v1h-5zM1 6h4v1h-4zM7 7h5v1h-5zM1 9h4v1h-4zM7 10h5v1h-5zM1 12h4v1h-4z"/><path d="M3 0h11v1h-11zM2 1h1v2h-1zM14 1h1v14h-1zM2 4h1v2h-1zM2 7h1v2h-1zM2 10h1v2h-1zM2 13h1v2h-1zM3 15h11v1h-11z"/></symbol><symbol id="i-tarefas" viewBox="0 0 16 16"><path class="f" d="M5 1h6v1h-6zM5 2h1v1h-1zM10 2h1v1h-1zM2 3h12v3h-12zM2 6h2v1h-2zM6 6h1v1h-1zM12 6h2v1h-2zM2 7h12v2h-12zM2 9h2v1h-2zM6 9h1v1h-1zM12 9h2v1h-2zM2 10h12v2h-12zM2 12h2v1h-2zM6 12h1v1h-1zM12 12h2v1h-2zM2 13h12v2h-12z"/><path class="c" d="M6 2h4v1h-4z"/><path class="k" d="M4 6h2v1h-2zM7 6h5v1h-5zM4 9h2v1h-2zM7 9h5v1h-5zM4 12h2v1h-2zM7 12h5v1h-5z"/><path d="M5 0h6v1h-6zM4 1h1v1h-1zM11 1h1v1h-1zM2 2h3v1h-3zM11 2h3v1h-3zM1 3h1v12h-1zM14 3h1v12h-1zM2 15h12v1h-12z"/></symbol><symbol id="i-desenhar" viewBox="0 0 16 16"><path class="f" d="M5 4h4v1h-4zM3 5h6v1h-6zM2 6h2v1h-2zM6 6h2v1h-2zM10 6h2v1h-2zM1 7h3v1h-3zM6 7h7v1h-7zM1 8h6v1h-6zM9 8h4v2h-4zM1 9h1v2h-1zM4 9h3v1h-3zM4 10h9v1h-9zM1 11h8v1h-8zM11 11h2v1h-2zM2 12h1v1h-1zM5 12h4v1h-4zM5 13h3v1h-3zM5 14h4v1h-4z"/><path class="k" d="M13 1h2v1h-2zM12 2h2v1h-2zM11 3h2v1h-2zM10 4h2v1h-2zM9 5h2v1h-2zM3 12h2v2h-2z"/><path class="v" d="M7 8h2v2h-2z"/><path class="b" d="M4 6h2v2h-2z"/><path class="y" d="M8 6h2v1h-2zM2 9h2v2h-2z"/><path d="M13 0h2v1h-2zM12 1h1v1h-1zM15 1h1v1h-1zM11 2h1v1h-1zM14 2h1v1h-1zM5 3h4v1h-4zM10 3h1v1h-1zM13 3h1v1h-1zM3 4h2v1h-2zM9 4h1v1h-1zM12 4h1v1h-1zM2 5h1v1h-1zM11 5h1v1h-1zM1 6h1v1h-1zM12 6h1v1h-1zM0 7h1v5h-1zM13 7h1v5h-1zM9 11h2v1h-2zM1 12h1v1h-1zM9 12h1v1h-1zM11 12h2v1h-2zM2 13h1v1h-1zM8 13h1v1h-1zM3 14h2v1h-2zM9 14h1v1h-1zM5 15h4v1h-4z"/></symbol></svg>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="i-relogio" viewBox="0 0 16 16"><path class="f" d="M5 1h6v1h-6zM3 2h4v1h-4zM9 2h4v1h-4zM2 3h2v1h-2zM6 3h8v1h-8zM2 4h1v1h-1zM4 4h3v3h-3zM8 4h6v1h-6zM1 5h2v2h-2zM8 5h7v2h-7zM1 7h1v2h-1zM3 7h4v2h-4zM8 7h5v1h-5zM14 7h1v2h-1zM12 8h1v1h-1zM1 9h14v2h-14zM2 11h12v2h-12zM3 13h4v1h-4zM9 13h4v1h-4zM5 14h6v1h-6z"/><path class="w" d="M4 3h2v1h-2zM3 4h1v3h-1z"/><path class="c" d="M7 2h2v1h-2zM2 7h1v2h-1zM13 7h1v2h-1zM7 13h2v1h-2z"/><path class="k" d="M7 4h1v4h-1zM7 8h5v1h-5z"/><path d="M5 0h6v1h-6zM3 1h2v1h-2zM11 1h2v1h-2zM2 2h1v1h-1zM13 2h1v1h-1zM1 3h1v2h-1zM14 3h1v2h-1zM0 5h1v6h-1zM15 5h1v6h-1zM1 11h1v2h-1zM14 11h1v2h-1zM2 13h1v1h-1zM13 13h1v1h-1zM3 14h2v1h-2zM11 14h2v1h-2zM5 15h6v1h-6z"/></symbol><symbol id="i-foco" viewBox="0 0 16 16"><path class="f" d="M5 4h6v1h-6zM3 5h1v1h-1zM6 5h7v1h-7zM2 6h1v2h-1zM5 6h9v1h-9zM4 7h10v1h-10zM1 8h14v4h-14zM2 12h12v1h-12zM3 13h10v1h-10zM4 14h8v1h-8z"/><path class="w" d="M4 5h2v1h-2zM3 6h2v1h-2zM3 7h1v1h-1z"/><path class="v" d="M7 0h2v1h-2zM5 1h6v1h-6zM3 2h3v1h-3zM7 2h2v1h-2zM10 2h3v1h-3z"/><path d="M5 3h6v1h-6zM3 4h2v1h-2zM11 4h2v1h-2zM2 5h1v1h-1zM13 5h1v1h-1zM1 6h1v2h-1zM14 6h1v2h-1zM0 8h1v4h-1zM15 8h1v4h-1zM1 12h1v1h-1zM14 12h1v1h-1zM2 13h1v1h-1zM13 13h1v1h-1zM3 14h1v1h-1zM12 14h1v1h-1zM4 15h8v1h-8z"/></symbol><symbol id="i-fotos" viewBox="0 0 16 16"><path class="f" d="M2 2h12v1h-12zM1 3h14v1h-14zM1 4h9v2h-9zM12 4h3v2h-3zM1 6h14v1h-14zM1 7h4v1h-4zM6 7h9v1h-9zM1 8h3v1h-3zM7 8h8v1h-8zM1 9h2v1h-2zM8 9h3v1h-3zM12 9h3v1h-3zM1 10h1v1h-1zM9 10h1v1h-1zM13 10h2v1h-2zM14 11h1v1h-1zM2 13h12v1h-12z"/><path class="k" d="M10 4h2v2h-2zM5 7h1v1h-1zM4 8h3v1h-3zM3 9h5v1h-5zM11 9h1v1h-1zM2 10h7v1h-7zM10 10h3v1h-3zM1 11h13v1h-13zM1 12h14v1h-14z"/><path d="M2 1h12v1h-12zM1 2h1v1h-1zM14 2h1v1h-1zM0 3h1v10h-1zM15 3h1v10h-1zM1 13h1v1h-1zM14 13h1v1h-1zM2 14h12v1h-12z"/></symbol><symbol id="i-apps" viewBox="0 0 16 16"><path class="f" d="M2 1h4v1h-4zM10 1h4v1h-4zM1 2h2v1h-2zM4 2h3v1h-3zM9 2h6v4h-6zM1 3h1v2h-1zM3 3h4v2h-4zM1 5h6v1h-6zM2 6h4v1h-4zM10 6h4v1h-4zM2 9h4v1h-4zM10 9h4v1h-4zM1 10h6v4h-6zM9 10h6v1h-6zM9 11h2v2h-2zM13 11h2v2h-2zM9 13h6v1h-6zM2 14h4v1h-4zM10 14h4v1h-4z"/><path class="w" d="M3 2h1v1h-1zM2 3h1v2h-1z"/><path class="c" d="M11 11h2v2h-2z"/><path d="M2 0h4v1h-4zM10 0h4v1h-4zM1 1h1v1h-1zM6 1h1v1h-1zM9 1h1v1h-1zM14 1h1v1h-1zM0 2h1v4h-1zM7 2h2v4h-2zM15 2h1v4h-1zM1 6h1v1h-1zM6 6h1v1h-1zM9 6h1v1h-1zM14 6h1v1h-1zM2 7h4v2h-4zM10 7h4v2h-4zM1 9h1v1h-1zM6 9h1v1h-1zM9 9h1v1h-1zM14 9h1v1h-1zM0 10h1v4h-1zM7 10h2v4h-2zM15 10h1v4h-1zM1 14h1v1h-1zM6 14h1v1h-1zM9 14h1v1h-1zM14 14h1v1h-1zM2 15h4v1h-4zM10 15h4v1h-4z"/></symbol><symbol id="i-ajustes" viewBox="0 0 16 16"><path class="f" d="M9 3h2v2h-2zM3 7h2v2h-2zM7 11h2v2h-2z"/><path class="k" d="M1 3h7v2h-7zM12 3h3v2h-3zM1 7h1v2h-1zM6 7h9v2h-9zM1 11h5v2h-5zM10 11h5v2h-5z"/><path d="M9 2h2v1h-2zM8 3h1v2h-1zM11 3h1v2h-1zM9 5h2v1h-2zM3 6h2v1h-2zM2 7h1v2h-1zM5 7h1v2h-1zM3 9h2v1h-2zM7 10h2v1h-2zM6 11h1v2h-1zM9 11h1v2h-1zM7 13h2v1h-2z"/></symbol><symbol id="i-ler" viewBox="0 0 16 16"><path class="f" d="M1 2h2v1h-2zM13 2h2v1h-2zM1 3h4v1h-4zM11 3h4v1h-4zM1 4h6v2h-6zM9 4h6v2h-6zM1 6h1v1h-1zM6 6h1v1h-1zM9 6h1v1h-1zM14 6h1v1h-1zM1 7h6v1h-6zM9 7h6v1h-6zM1 8h1v1h-1zM6 8h1v1h-1zM9 8h1v1h-1zM14 8h1v1h-1zM1 9h6v1h-6zM9 9h6v1h-6zM1 10h1v1h-1zM6 10h1v1h-1zM9 10h1v1h-1zM14 10h1v1h-1zM1 11h6v1h-6zM9 11h6v1h-6zM3 12h4v1h-4zM9 12h4v1h-4zM5 13h2v1h-2zM9 13h2v1h-2z"/><path class="c" d="M2 6h4v1h-4zM10 6h4v1h-4zM2 8h4v1h-4zM10 8h4v1h-4zM2 10h4v1h-4zM10 10h4v1h-4z"/><path d="M1 1h2v1h-2zM13 1h2v1h-2zM0 2h1v10h-1zM3 2h2v1h-2zM11 2h2v1h-2zM15 2h1v10h-1zM5 3h2v1h-2zM9 3h2v1h-2zM7 4h2v10h-2zM1 12h2v1h-2zM13 12h2v1h-2zM3 13h2v1h-2zM11 13h2v1h-2zM5 14h2v1h-2zM9 14h2v1h-2z"/></symbol><symbol id="i-codar" viewBox="0 0 16 16"><path class="f" d="M2 1h12v1h-12zM2 2h1v7h-1zM13 2h1v7h-1zM2 9h12v1h-12zM1 12h14v2h-14z"/><path class="c" d="M3 2h10v1h-10zM3 3h2v1h-2zM6 3h2v1h-2zM9 3h1v1h-1zM11 3h2v1h-2zM3 4h1v1h-1zM5 4h3v1h-3zM9 4h2v1h-2zM12 4h1v1h-1zM4 5h3v1h-3zM8 5h4v1h-4zM3 6h1v1h-1zM5 6h2v1h-2zM8 6h3v1h-3zM12 6h1v1h-1zM3 7h2v1h-2zM6 7h1v1h-1zM8 7h2v1h-2zM11 7h2v1h-2zM3 8h10v1h-10z"/><path d="M2 0h12v1h-12zM1 1h1v9h-1zM14 1h1v9h-1zM5 3h1v1h-1zM8 3h1v2h-1zM10 3h1v1h-1zM4 4h1v1h-1zM11 4h1v1h-1zM3 5h1v1h-1zM7 5h1v3h-1zM12 5h1v1h-1zM4 6h1v1h-1zM11 6h1v1h-1zM5 7h1v1h-1zM10 7h1v1h-1zM2 10h12v1h-12zM1 11h14v1h-14zM0 12h1v2h-1zM15 12h1v2h-1zM1 14h14v1h-14z"/></symbol><symbol id="i-estudar" viewBox="0 0 16 16"><path class="f" d="M3 1h11v2h-11zM5 3h9v1h-9zM3 4h4v1h-4zM12 4h2v1h-2zM3 5h11v1h-11zM5 6h9v1h-9zM3 7h4v1h-4zM12 7h2v1h-2zM3 8h11v1h-11zM5 9h9v1h-9zM3 10h4v1h-4zM12 10h2v1h-2zM3 11h11v1h-11zM5 12h9v1h-9zM3 13h11v2h-11z"/><path class="k" d="M1 3h4v1h-4zM7 4h5v1h-5zM1 6h4v1h-4zM7 7h5v1h-5zM1 9h4v1h-4zM7 10h5v1h-5zM1 12h4v1h-4z"/><path d="M3 0h11v1h-11zM2 1h1v2h-1zM14 1h1v14h-1zM2 4h1v2h-1zM2 7h1v2h-1zM2 10h1v2h-1zM2 13h1v2h-1zM3 15h11v1h-11z"/></symbol><symbol id="i-tarefas" viewBox="0 0 16 16"><path class="f" d="M5 1h6v1h-6zM5 2h1v1h-1zM10 2h1v1h-1zM2 3h12v3h-12zM2 6h2v1h-2zM6 6h1v1h-1zM12 6h2v1h-2zM2 7h12v2h-12zM2 9h2v1h-2zM6 9h1v1h-1zM12 9h2v1h-2zM2 10h12v2h-12zM2 12h2v1h-2zM6 12h1v1h-1zM12 12h2v1h-2zM2 13h12v2h-12z"/><path class="c" d="M6 2h4v1h-4z"/><path class="k" d="M4 6h2v1h-2zM7 6h5v1h-5zM4 9h2v1h-2zM7 9h5v1h-5zM4 12h2v1h-2zM7 12h5v1h-5z"/><path d="M5 0h6v1h-6zM4 1h1v1h-1zM11 1h1v1h-1zM2 2h3v1h-3zM11 2h3v1h-3zM1 3h1v12h-1zM14 3h1v12h-1zM2 15h12v1h-12z"/></symbol><symbol id="i-desenhar" viewBox="0 0 16 16"><path class="f" d="M5 4h4v1h-4zM3 5h6v1h-6zM2 6h2v1h-2zM6 6h2v1h-2zM10 6h2v1h-2zM1 7h3v1h-3zM6 7h7v1h-7zM1 8h6v1h-6zM9 8h4v2h-4zM1 9h1v2h-1zM4 9h3v1h-3zM4 10h9v1h-9zM1 11h8v1h-8zM11 11h2v1h-2zM2 12h1v1h-1zM5 12h4v1h-4zM5 13h3v1h-3zM5 14h4v1h-4z"/><path class="k" d="M13 1h2v1h-2zM12 2h2v1h-2zM11 3h2v1h-2zM10 4h2v1h-2zM9 5h2v1h-2zM3 12h2v2h-2z"/><path class="v" d="M7 8h2v2h-2z"/><path class="b" d="M4 6h2v2h-2z"/><path class="y" d="M8 6h2v1h-2zM2 9h2v2h-2z"/><path d="M13 0h2v1h-2zM12 1h1v1h-1zM15 1h1v1h-1zM11 2h1v1h-1zM14 2h1v1h-1zM5 3h4v1h-4zM10 3h1v1h-1zM13 3h1v1h-1zM3 4h2v1h-2zM9 4h1v1h-1zM12 4h1v1h-1zM2 5h1v1h-1zM11 5h1v1h-1zM1 6h1v1h-1zM12 6h1v1h-1zM0 7h1v5h-1zM13 7h1v5h-1zM9 11h2v1h-2zM1 12h1v1h-1zM9 12h1v1h-1zM11 12h2v1h-2zM2 13h1v1h-1zM8 13h1v1h-1zM3 14h2v1h-2zM9 14h1v1h-1zM5 15h4v1h-4z"/></symbol></svg>
 <!--/icons-->
 <nav><div>
  <button data-t="0" onclick="tab(0)"><svg class="pi" aria-hidden="true"><use href="#i-relogio"/></svg>Relógio</button>
+ <button data-t="4" onclick="tab(4)"><svg class="pi" aria-hidden="true"><use href="#i-apps"/></svg>Miniapps</button>
  <button data-t="1" onclick="tab(1)"><svg class="pi" aria-hidden="true"><use href="#i-foco"/></svg>Foco</button>
  <button data-t="2" onclick="tab(2)"><svg class="pi" aria-hidden="true"><use href="#i-fotos"/></svg>Fotos</button>
  <button data-t="3" onclick="tab(3)"><svg class="pi" aria-hidden="true"><use href="#i-ajustes"/></svg>Ajustes</button>
@@ -415,7 +427,7 @@ const post=(u,b)=>fetch(u,{method:'POST',body:b});
 const kb=n=>n>1048576?(n/1048576).toFixed(1)+' MB':Math.round(n/1024)+' KB';
 function toast(t){const e=$('toast');e.textContent=t;e.classList.add('v');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('v'),2200)}
 function tab(i){curTab=i;document.querySelectorAll('.tab').forEach((e,k)=>e.classList.toggle('on',k==i));document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t==i));
- try{localStorage.tab=i}catch(e){}if(i==2)files();if(i==3){hooksLoad();appsLoad()}if(i==1&&!STATS)loadStats();window.scrollTo(0,0)}
+ try{localStorage.tab=i}catch(e){}if(i==2)files();if(i==3)hooksLoad();if(i==4)appsLoad();if(i==1&&!STATS)loadStats();window.scrollTo(0,0)}
 const fkey=f=>f.pkg?'p:'+f.pkg:'t:'+f.t;  // embutido "t:N" ou pacote "p:id"
 const curKey=s=>s.cfg.theme==200?'p:'+s.cfg.pkg:'t:'+s.cfg.theme;
 const faceSrc=f=>f.src||(f.pkg?'/face?pkg='+encodeURIComponent(f.pkg):SITE+'img/faces/face-'+f.t+'.png');  // embutidos: prévia no site (não ocupa a flash)
@@ -437,7 +449,7 @@ function img(f){const i=new Image();i.alt=f.n;
 const safeId=s=>{let o='';for(let c of String(s||'').toLowerCase()){if(/[a-z0-9_-]/.test(c))o+=c;else if(c==' '&&o&&!o.endsWith('-'))o+='-';if(o.length>=23)break}return o}
 function el(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
 // ---------- mostradores ----------
-function loadFaces(){return fetch('/api/faces').then(r=>r.json()).then(j=>{let t=0;FACES=j.map(f=>({n0:f.n,d0:f.d,n:f.n,d:f.d,a:f.a||'',pkg:f.pkg,t:f.pkg?null:t++}));buildFaces();$('curimg').dataset.k='';if(st)load(st);
+function loadFaces(){return fetch('/api/faces').then(r=>r.json()).then(j=>{let t=0;FACES=j.map(f=>({n0:f.n,d0:f.d,n:f.n,d:f.d,a:f.a||'',pkg:f.pkg,x:f.x||'',t:f.pkg?null:t++}));buildFaces();$('curimg').dataset.k='';if(st)load(st);
  // estilos e animação dos pacotes instalados vêm do catálogo do site (uma vez por visita; sem internet vale o último guardado)
  if(!metaTried&&FACES.some(f=>f.pkg)){metaTried=true;fetch(CATALOG+'index.json',{cache:'no-store'}).then(r=>r.json()).then(setMeta).catch(()=>{})}})}
 // ---------- filtro dos mostradores ----------
@@ -461,9 +473,12 @@ function fchips(){const k=fcur(),c=$('fchips');c.innerHTML='';
  const any=g=>!![...$(g).children].some(b=>!b.hidden),pk=$('dl').children.length>0,all=k=='all'||k=='dl';
  $('hnat').hidden=!any('faces');$('hdl').hidden=!(any('dl')||!pk&&all);$('dlnone').hidden=pk||!all;
  const none=!cards.some(b=>!b.hidden);$('fnone').hidden=!none;if(none)$('fnone').textContent=t($('cat').children.length?'Nenhum mostrador neste filtro.':'Nenhum mostrador neste filtro ainda. Abra a galeria online logo abaixo para ver mais.')}
-function buildFaces(){FACES.forEach(f=>{const b=f.pkg==null&&LG&&BUILTIN[f.t];f.n=b?b[LG-1][0]:f.n0;f.d=b?b[LG-1][1]:f.d0});const g=$('faces'),d=$('dl');g.innerHTML='';d.innerHTML='';FACES.forEach(f=>{const b=el('button','face');b.dataset.k=fkey(f);b.dataset.f=ftok(f);
- const s=el('div','scr');s.appendChild(img(f));b.appendChild(s);b.appendChild(el('span',null,f.n));b.onclick=()=>faceSheet(f);(f.pkg?d:g).appendChild(b)});
- fchips()}
+// miniapp: pacote que lê dados de fora (o relógio devolve os campos em "x"); fica na página Miniapps, não em Relógio
+const isApp=f=>!!f.x;
+function buildFaces(){FACES.forEach(f=>{const b=f.pkg==null&&LG&&BUILTIN[f.t];f.n=b?b[LG-1][0]:f.n0;f.d=b?b[LG-1][1]:f.d0});const g=$('faces'),d=$('dl'),a=$('apps');g.innerHTML='';d.innerHTML='';a.innerHTML='';FACES.forEach(f=>{const b=el('button','face');b.dataset.k=fkey(f);b.dataset.f=ftok(f);
+ const s=el('div','scr');s.appendChild(img(f));b.appendChild(s);b.appendChild(el('span',null,f.n));b.onclick=()=>faceSheet(f);
+ if(isApp(f)){const e=el('small','ast');e.dataset.x=f.x;b.appendChild(e)}(isApp(f)?a:f.pkg?d:g).appendChild(b)});
+ $('appsnone').hidden=a.children.length>0;appsState();fchips()}
 const rotKeys=()=>st&&st.cfg.rot?st.cfg.rot.split(',').filter(Boolean):[];
 const ROTMAX=300;  // teto do rotSet (album.cpp): acima disso o relógio cortaria a lista em silêncio
 // rodízio novo: os que já estavam e seguem marcados ficam no lugar (chave sem cartão, como um pacote que não carregou, fica);
@@ -479,7 +494,7 @@ function rotEdit(){const c=$('sheetc'),known=FACES.map(fkey);let sel=rotKeys();c
  c.append(el('h3',null,t('Editar rodízio')),el('p',null,t('Os novos entram no fim, na ordem do toque.')));
  const g=el('div','stg');FACES.forEach(f=>{const k=fkey(f),r=el('label','it'),x=el('input');x.type='checkbox';x.checked=sel.includes(k);
   x.onchange=()=>{if(!x.checked)sel=sel.filter(y=>y!=k);else if(rotOver(rotMerge(rotKeys(),known,sel.concat(k))))x.checked=false;else sel.push(k)};
-  r.append(img(f),el('span',null,f.n),x);g.appendChild(r)});
+  r.append(img(f),el('span',null,f.n),...isApp(f)?[el('em','sel',t('miniapp'))]:[],x);g.appendChild(r)});
  const r=el('div','row'),a=el('button','btn',t('Cancelar')),b=el('button','btn p',t('Salvar'));r.style.marginTop='12px';a.onclick=closeSheet;
  b.onclick=()=>{const l=rotMerge(rotKeys(),known,sel);if(l.join(',')==rotKeys().join(','))closeSheet();else if(!rotOver(l))rotPost(l.join(','),'Rodízio salvo')};
  r.append(a,b);c.append(g,r);$('sheet').classList.add('v')}
@@ -498,7 +513,7 @@ function faceSheet(f){const c=$('sheetc');c.innerHTML='';const s=el('div','scr')
 // ---------- instalar pacotes (sem atualizar o firmware) ----------
 function install(json,png){const fd=new FormData();fd.append('face',json,'face.json');if(png)fd.append('preview',png,'preview.png');toast(t('Instalando no relógio... (alguns segundos)'));
  return fetch('/api/faceinstall',{method:'POST',body:fd}).then(async r=>{const x=await r.text();if(!r.ok)throw x;const j=JSON.parse(x);await save({pkg:j.id});toast(j.name+' '+t('instalado e em uso'));return loadFaces()}).catch(e=>toast(t(String(e))))}
-$('pkf').onchange=e=>{const fl=[...e.target.files];e.target.value='';const p=fl.find(f=>/\.png$/i.test(f.name)),j=fl.find(f=>/\.json$/i.test(f.name))||fl.find(f=>f!==p);  // celular pode salvar como .json.txt: o relógio valida o conteúdo
+$('pkf').onchange=$('apf').onchange=e=>{const fl=[...e.target.files];e.target.value='';const p=fl.find(f=>/\.png$/i.test(f.name)),j=fl.find(f=>/\.json$/i.test(f.name))||fl.find(f=>f!==p);  // celular pode salvar como .json.txt: o relógio valida o conteúdo
  if(!j)return toast(t('Escolha o arquivo .json do mostrador'));
  // só o .json: busca a prévia no site pelo id, para o relógio guardar junto (funciona sem internet depois)
  if(p)return install(j,p);j.text().then(async t=>{let pv=null;try{const k=JSON.parse(t),id=safeId(k.id||k.name);
@@ -643,10 +658,14 @@ $('rbk').onchange=async e=>{const file=e.target.files[0];e.target.value='';if(!f
 // ---------- avisos de fim de fase (endereços chamados pelo relógio) ----------
 // ---------- Home Assistant: chave de escrita dos dados de fora (/api/appskey) e o que chegou (/api/apps/data) ----------
 let HAKEY='';
+// estado de cada miniapp: "recebendo" se algum dos seus campos está guardado agora (GET /api/apps/data)
+let APPD=null;
+function appsState(){document.querySelectorAll('#apps .ast').forEach(e=>{const on=APPD&&e.dataset.x.split(',').some(k=>APPD.includes(k));
+ e.textContent=t(APPD==null?'':on?'recebendo dados':'sem dados agora');e.classList.toggle('ok',!!on)})}
 function appsShow(k){HAKEY=k;$('hakey').value=k;$('hanew').textContent=t(k?'Trocar chave':'Criar chave')}
 async function appsLoad(){const r=await post('/api/appskey',new URLSearchParams({c:'show'})).catch(()=>null);if(r&&r.ok)appsShow((await r.json()).key);
  const d=await fetch('/api/apps/data').then(r=>r.ok?r.json():null).catch(()=>null),e=$('hast');e.textContent='';if(!d)return;
- const f=d.f||[],m=s=>s<120?t('{0} s',s):t('{0} min',Math.round(s/60));e.className='alx'+(d.on?' ok':'');e.append(document.createElement('i'));
+ const f=d.f||[],m=s=>s<120?t('{0} s',s):t('{0} min',Math.round(s/60));APPD=(d.f||[]).map(x=>x[0]);appsState();e.className='alx'+(d.on?' ok':'');e.append(document.createElement('i'));
  e.append(!d.on?t('Desligado: sem chave, o relógio recusa os dados.'):f.length?t('Ligado · {0} valores recebidos:',f.length)+' '+f.map(x=>x[0]+' = '+x[1]+' ('+t('vale mais {0}',m(x[2]))+')').join(' · '):t('Ligado · nenhum valor recebido ainda'))}
 async function appsKey(c){if(c=='new'&&HAKEY&&!confirm(t('Trocar a chave? O Home Assistant para de enviar até você colar a nova.')))return;
  if(c=='off'&&!confirm(t('Desligar? A chave é apagada, os valores recebidos somem e o relógio passa a recusar os dados.')))return;
