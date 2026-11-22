@@ -6,6 +6,9 @@ o pedido vai direto do Home Assistant ao relógio, pela rede da casa.
 
 Funciona a partir da versão que trouxer esta página nas notas (beta 1.27.0).
 
+Para **ler o estado do Pomodoro e mandar comandos** (iniciar, pausar, pular) pelo Home Assistant, veja
+[HOME-ASSISTANT-RELOGIO.md](HOME-ASSISTANT-RELOGIO.md).
+
 *English summary at the end.*
 
 ## 1. Crie a chave no relógio
