@@ -36,10 +36,10 @@ Se o PC parar de enviar por 15 minutos (`ttl`), tudo volta para `--`.
 | Lê o JSON que o Claude Code entrega ao `statusLine` e guarda só `rate_limits` (percentual e horário) | Abrir `auth.json`, `.credentials.json`, Keychain ou cookies |
 | Lê só as linhas `rate_limits` das sessões recentes do Codex em `~/.codex/sessions` | Chamar API de assinatura (nem `api.anthropic.com`, nem `chatgpt.com`) |
 | Envia 4 textos curtos a um IP da rede local | Guardar ou enviar token de login, caminho de projeto, nome de cliente ou texto de conversa |
-| Usa a **chave de escrita do relógio** (32 hex, criada por você no painel) da variável `SMALLTV_CHAVE`, em `Authorization: Bearer`, só para o IP local | Gravar ou imprimir essa chave; usar a senha do painel; mandar a chave a algo que não seja o relógio |
+| Usa a **chave de escrita do relógio** (32 hex, criada por você no painel) da variável `SMALLTV_CHAVE` ou do Gerenciador de Credenciais do Windows, em `Authorization: Bearer`, só para o IP local | Gravar ou imprimir essa chave; usar a senha do painel; mandar a chave a algo que não seja o relógio |
 
 A chave de escrita só deixa gravar dados nos campos: não abre o painel nem a atualização do firmware. Ela vive em dois
-lugares, no `/apps.key` do relógio e na variável de ambiente do seu PC, e é você quem a coloca lá. Texto que não tem o
+lugares, no `/apps.key` do relógio e no seu PC (variável de ambiente ou Gerenciador de Credenciais), e é você quem a coloca lá. Texto que não tem o
 formato de uma chave (por exemplo a senha do painel) é recusado antes de abrir a conexão.
 
 Os testes (`test_tokensmall.py`) vigiam isso: um `auth.json` falso ao lado das sessões nunca é aberto, nenhum texto
@@ -52,8 +52,9 @@ redirecionamento de mentira que não podem receber nada.
 
 Precisa de um firmware com `POST /api/apps/data` e da chave de escrita criada.
 
-1. **Chave:** no painel do relógio, *Ajustes → Home Assistant*, crie a chave de escrita. No terminal onde vai rodar o
-   companheiro, defina `SMALLTV_CHAVE` com ela (não ponha em arquivo, commit nem script compartilhado).
+1. **Chave:** no painel do relógio, *Ajustes → Home Assistant*, crie a chave de escrita. Para testar, no terminal onde vai
+   rodar o companheiro defina `SMALLTV_CHAVE` com ela (`$env:SMALLTV_CHAVE = Read-Host "Chave"` no PowerShell; some ao fechar
+   o terminal). Não ponha em arquivo, commit nem script compartilhado. Para rodar sozinho, veja "Rodar sozinho no Windows".
 2. **Pacote:** no painel, *Relógio → Mais mostradores → Instalar de um arquivo*, escolha
    [`sim/apps-seeds/tokensmall.json`](../../sim/apps-seeds/tokensmall.json).
 3. **Claude Code:** peça os limites no `statusLine`. Em `~/.claude/settings.json` (você mesmo edita):
@@ -69,6 +70,37 @@ Precisa de um firmware com `POST /api/apps/data` e da chave de escrita criada.
    python miniapps/tokensmall/tokensmall.py enviar --relogio 192.168.1.50
    ```
    `--uma-vez` envia uma vez e sai; sem ele o programa fica rodando (lê a cada 60 s e reenvia quando algo muda, em geral a cada minuto, porque o tempo até reiniciar anda).
+
+## Rodar sozinho no Windows
+
+Depois de conferir que o envio manual funciona, o companheiro pode subir sozinho quando você entra no Windows.
+
+1. **Guarde a chave no Gerenciador de Credenciais do Windows.** Rode e digite a chave quando pedir (ela não aparece e nunca
+   vai por argumento de linha de comando, que ficaria no histórico):
+   ```powershell
+   python miniapps/tokensmall/tokensmall.py chave guardar
+   python miniapps/tokensmall/tokensmall.py chave estado     # só diz "guardada" ou "nao guardada"; nunca mostra a chave
+   ```
+   A chave fica na credencial `SmallTV-Pomodoro/tokensmall` da sua conta do Windows: não em arquivo, não em `HKCU\Environment`
+   e não herdada por todo programa que você abre. Isso não é um cofre à prova de tudo: qualquer programa rodando como você
+   consegue ler as credenciais da sua conta. O ganho é não deixar a chave em arquivo, no histórico do terminal nem no
+   ambiente. `chave apagar` remove. A variável `SMALLTV_CHAVE`, se definida, tem prioridade sobre a credencial. Uma chave por
+   PC (um relógio).
+2. **Atalho na pasta Inicializar.** Rode o `.ps1` **você mesmo** (nada o executa por você). Primeiro só para ver o que ele faria:
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File miniapps/tokensmall/windows/instalar.ps1 -SoMostrar -Relogio 192.168.1.50
+   powershell -ExecutionPolicy Bypass -File miniapps/tokensmall/windows/instalar.ps1 -Relogio 192.168.1.50
+   ```
+   Cria `tokensmall.lnk` na pasta Inicializar (`shell:startup`), que roda `pythonw.exe tokensmall.py enviar --relogio IP --log`
+   sem janela. Não usa tarefa agendada, não precisa de administrador e a chave não aparece no atalho. Se o `pythonw` for o
+   atalho da Microsoft Store, o script recusa: passe `-Python C:\caminho\pythonw.exe`. Reserve o IP do relógio no roteador
+   (DHCP): se o IP mudar, o envio para de chegar e o motivo aparece em `ultimo.txt`.
+3. **Ver se funciona:** `%LOCALAPPDATA%\tokensmall\ultimo.txt` (último envio) e `envio.log` (histórico, até 200 KB).
+4. **Desinstalar:** `instalar.ps1 -Remover` apaga o atalho e pergunta se apaga a credencial (`-Sim` responde sim).
+
+O `statusLine` do Claude Code **só grava** os limites num arquivo local; quem fala com o relógio é sempre o `enviar`, para que
+uma falha de rede nunca atrase o Claude Code. O laço não sai com erro de rede nem com erro inesperado (registra e segue);
+se mesmo assim parar, saia e entre de novo no Windows ou rode `enviar` num terminal.
 
 ## O que a tela mostra
 

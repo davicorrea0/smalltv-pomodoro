@@ -4,14 +4,19 @@ Rodar da raiz do repositório:  python -I miniapps/tokensmall/test_tokensmall.py
 """
 import ast
 import builtins
+import contextlib
 import http.server
 import importlib.util
+import io
 import json
 import os
+import re
+import sys
 import tempfile
 import threading
 import types
 import unittest
+from unittest import mock
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 spec = importlib.util.spec_from_file_location("tokensmall", os.path.join(AQUI, "tokensmall.py"))
@@ -324,31 +329,11 @@ class Envio(unittest.TestCase):
         self.assertNotIn(CHAVE, visto["corpo"])  # a chave só vai no cabeçalho
 
     def test_erros_com_mensagem_curta_sem_a_chave(self):
-        for status, trecho in ((401, "SMALLTV_CHAVE"), (403, "403"), (404, "rota"), (429, "espera"), (400, "JSON")):
+        for status, trecho in ((401, "SMALLTV_CHAVE"), (403, "403"), (404, "rota"), (429, "espera"), (400, "400")):
             srv, _ = self.servidor(status, b"JSON invalido")
             erro = ts.enviar("127.0.0.1:%d" % srv.server_port, "{}", CHAVE)
             self.assertIn(trecho, erro)
             self.assertNotIn(CHAVE, erro)
-
-    def test_chave_do_ambiente(self):
-        antiga = os.environ.get("SMALLTV_CHAVE")
-        try:
-            os.environ["SMALLTV_CHAVE"] = CHAVE.upper()
-            self.assertEqual(ts.chave_do_ambiente(), CHAVE.upper())
-            for ruim in ("", "senha-do-painel", CHAVE[:-1], CHAVE + "0", "g" * 32, " " + CHAVE):
-                os.environ["SMALLTV_CHAVE"] = ruim
-                with self.assertRaises(ValueError, msg=ruim) as ctx:
-                    ts.chave_do_ambiente()
-                if ruim.strip():
-                    self.assertNotIn(ruim, str(ctx.exception))  # não repete o valor
-            os.environ.pop("SMALLTV_CHAVE")
-            with self.assertRaises(ValueError):
-                ts.chave_do_ambiente()
-        finally:
-            if antiga is None:
-                os.environ.pop("SMALLTV_CHAVE", None)
-            else:
-                os.environ["SMALLTV_CHAVE"] = antiga
 
     def test_nao_usa_proxy(self):
         """Com proxy no ambiente, o envio ao relógio vai direto: o proxy (falso) não pode receber nada."""
@@ -427,6 +412,190 @@ class Envio(unittest.TestCase):
                 os.environ.pop("TOKENSMALL_DIR", None)
             else:
                 os.environ["TOKENSMALL_DIR"] = antigo
+
+
+class CredenciaisWindows(unittest.TestCase):
+    def setUp(self):
+        self.guardado = {}
+        self.ler = mock.Mock(side_effect=lambda alvo=ts.ALVO_CHAVE: self.guardado.get(alvo))
+
+        def gravar(alvo=ts.ALVO_CHAVE, chave=None):
+            self.guardado[alvo] = chave
+
+        def apagar(alvo=ts.ALVO_CHAVE):
+            self.guardado.pop(alvo, None)
+
+        self.gravar = mock.Mock(side_effect=gravar)
+        self.apagar = mock.Mock(side_effect=apagar)
+        self.patches = [mock.patch.object(ts, "_cofre_ler", self.ler),
+                        mock.patch.object(ts, "_cofre_gravar", self.gravar),
+                        mock.patch.object(ts, "_cofre_apagar", self.apagar),
+                        mock.patch.object(ts.os, "name", "nt")]
+        for p in self.patches:
+            p.start()
+
+    def tearDown(self):
+        for p in reversed(self.patches):
+            p.stop()
+
+    @contextlib.contextmanager
+    def ambiente(self, valor=None):
+        anterior = os.environ.pop("SMALLTV_CHAVE", None)
+        if valor is not None:
+            os.environ["SMALLTV_CHAVE"] = valor
+        try:
+            yield
+        finally:
+            os.environ.pop("SMALLTV_CHAVE", None)
+            if anterior is not None:
+                os.environ["SMALLTV_CHAVE"] = anterior
+
+    def test_variavel_vence_o_gerenciador(self):
+        self.guardado[ts.ALVO_CHAVE] = "f" * 32
+        with self.ambiente(CHAVE):
+            self.assertEqual(ts.obter_chave(), CHAVE)
+        self.ler.assert_not_called()
+
+    def test_gerenciador_usado_sem_variavel(self):
+        self.guardado[ts.ALVO_CHAVE] = CHAVE
+        with self.ambiente():
+            self.assertEqual(ts.obter_chave(), CHAVE)
+
+    def test_sem_fonte_gera_erro_neutro(self):
+        with self.ambiente(), self.assertRaises(ValueError) as ctx:
+            ts.obter_chave()
+        self.assertIn("SMALLTV_CHAVE", str(ctx.exception))
+        self.assertIn("chave guardar", str(ctx.exception))
+        self.assertNotIn(CHAVE, str(ctx.exception))
+
+    def test_valores_invalidos_identificam_a_fonte_sem_eco(self):
+        ruim_variavel = "valor-invalido-na-variavel"
+        with self.ambiente(ruim_variavel), self.assertRaises(ValueError) as ctx:
+            ts.obter_chave()
+        self.assertIn("variavel", str(ctx.exception))
+        self.assertNotIn(ruim_variavel, str(ctx.exception))
+
+        ruim_gerenciador = "valor-invalido-no-gerenciador"
+        self.guardado[ts.ALVO_CHAVE] = ruim_gerenciador
+        with self.ambiente(), self.assertRaises(ValueError) as ctx:
+            ts.obter_chave()
+        self.assertIn("Gerenciador de Credenciais", str(ctx.exception))
+        self.assertNotIn(ruim_gerenciador, str(ctx.exception))
+
+    def test_guardar_e_apagar_sem_vazar(self):
+        for digitado, codigo, deve_gravar in ((CHAVE, 0, True), ("texto-invalido", 2, False)):
+            with self.subTest(valido=deve_gravar):
+                self.guardado.clear()
+                saida, erros = io.StringIO(), io.StringIO()
+                with mock.patch.object(ts.getpass, "getpass", return_value=digitado), \
+                        contextlib.redirect_stdout(saida), contextlib.redirect_stderr(erros):
+                    self.assertEqual(ts.principal(["chave", "guardar"]), codigo)
+                junto = saida.getvalue() + erros.getvalue()
+                self.assertNotIn(digitado, junto)
+                self.assertEqual(bool(self.guardado), deve_gravar)
+
+        self.guardado[ts.ALVO_CHAVE] = CHAVE
+        self.assertEqual(ts.principal(["chave", "apagar"]), 0)
+        self.assertEqual(self.guardado, {})
+        self.assertEqual(ts.principal(["chave", "apagar"]), 0)
+
+    def test_estado_nao_imprime_chave_e_retorna_codigo(self):
+        casos = ((None, None, 1), (CHAVE, None, 0), (None, CHAVE, 0))
+        for no_gerenciador, na_variavel, esperado in casos:
+            with self.subTest(gerenciador=bool(no_gerenciador), variavel=bool(na_variavel)):
+                self.guardado.clear()
+                if no_gerenciador:
+                    self.guardado[ts.ALVO_CHAVE] = no_gerenciador
+                with self.ambiente(na_variavel):
+                    saida, erros = io.StringIO(), io.StringIO()
+                    with contextlib.redirect_stdout(saida), contextlib.redirect_stderr(erros):
+                        self.assertEqual(ts.principal(["chave", "estado"]), esperado)
+                self.assertNotIn(CHAVE, saida.getvalue())
+                self.assertNotIn(CHAVE, erros.getvalue())
+                self.assertIn("gerenciador:", saida.getvalue())
+                self.assertIn("variavel SMALLTV_CHAVE:", saida.getvalue())
+
+    def test_guardar_recusa_argumentos(self):
+        for argv in (["chave", "guardar", "--alguma-coisa"], ["chave", "guardar", CHAVE]):
+            with self.subTest(argv=argv), contextlib.redirect_stderr(io.StringIO()):
+                with self.assertRaises(SystemExit) as ctx:
+                    ts.principal(argv)
+                self.assertEqual(ctx.exception.code, 2)
+        self.gravar.assert_not_called()
+
+
+class ApiWindows(unittest.TestCase):
+    def test_modulo_importa_sem_ctypes_disponivel(self):
+        outro = importlib.util.spec_from_file_location("tokensmall_sem_ctypes", os.path.join(AQUI, "tokensmall.py"))
+        modulo = importlib.util.module_from_spec(outro)
+        with mock.patch.dict(sys.modules, {"ctypes": None}):
+            outro.loader.exec_module(modulo)
+
+    def test_funcoes_fora_do_windows_explicam_a_alternativa(self):
+        with mock.patch.object(ts.os, "name", "posix"):
+            for funcao, args in ((ts._cofre_ler, ()), (ts._cofre_gravar, (ts.ALVO_CHAVE, CHAVE)),
+                                 (ts._cofre_apagar, ())):
+                with self.assertRaisesRegex(ValueError, "so no Windows; use a variavel SMALLTV_CHAVE"):
+                    funcao(*args)
+
+    @unittest.skipUnless(os.name == "nt", "ida e volta real exige Windows")
+    def test_ida_e_volta_real_no_gerenciador(self):
+        alvo = "SmallTV-Pomodoro/teste-%d" % os.getpid()
+        try:
+            ts._cofre_apagar(alvo)
+            ts._cofre_gravar(alvo, CHAVE)
+            self.assertEqual(ts._cofre_ler(alvo), CHAVE)
+            ts._cofre_apagar(alvo)
+            self.assertIsNone(ts._cofre_ler(alvo))
+        finally:
+            ts._cofre_apagar(alvo)
+
+
+class LogEnvio(unittest.TestCase):
+    def test_log_cresce_gira_e_nao_contem_chave(self):
+        with tempfile.TemporaryDirectory() as d:
+            caminho = os.path.join(d, "envio.log")
+            args = types.SimpleNamespace(relogio="127.0.0.1", ttl=900, intervalo=60,
+                                         uma_vez=True, log="")
+            leitura = {"claude": {"5": (42.0, AGORA + 8000)}, "codex": {}}
+            with mock.patch.dict(os.environ, {"TOKENSMALL_DIR": d}), \
+                    mock.patch.object(ts, "destino_seguro", side_effect=lambda x: x), \
+                    mock.patch.object(ts, "obter_chave", return_value=CHAVE), \
+                    mock.patch.object(ts, "coletar", return_value=leitura), \
+                    mock.patch.object(ts, "enviar", return_value=None), \
+                    contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(ts.cmd_enviar(args, agora=lambda: AGORA), 0)
+                primeiro = os.path.getsize(caminho)
+                self.assertEqual(ts.cmd_enviar(args, agora=lambda: AGORA + 1), 0)
+                self.assertGreater(os.path.getsize(caminho), primeiro)
+                with open(caminho, encoding="utf-8") as f:
+                    texto = f.read()
+                self.assertRegex(texto, r"^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d enviado ")
+                self.assertNotIn(CHAVE, texto)
+
+                with open(caminho, "w", encoding="utf-8") as f:
+                    f.write("x" * ts.MAX_LOG)
+                self.assertEqual(ts.cmd_enviar(args, agora=lambda: AGORA + 2), 0)
+                self.assertTrue(os.path.exists(caminho + ".1"))
+                self.assertEqual(os.path.getsize(caminho + ".1"), ts.MAX_LOG)
+                with open(caminho, encoding="utf-8") as f:
+                    novo = f.read()
+                self.assertNotIn(CHAVE, novo)
+                self.assertLess(os.path.getsize(caminho), ts.MAX_LOG)
+
+
+class InstaladorWindows(unittest.TestCase):
+    def test_script_tem_bom_parametros_e_nenhuma_chave(self):
+        caminho = os.path.join(AQUI, "windows", "instalar.ps1")
+        self.assertTrue(os.path.isfile(caminho))
+        with open(caminho, "rb") as f:
+            dados = f.read()
+        self.assertTrue(dados.startswith(b"\xef\xbb\xbf"))
+        texto = dados.decode("utf-8-sig")
+        self.assertNotIn("SMALLTV_CHAVE", texto)
+        self.assertIsNone(re.search(r"(?i)(?<![0-9a-f])[0-9a-f]{32}(?![0-9a-f])", texto))
+        for esperado in ("-Relogio", "-Remover", "-SoMostrar", "WindowsApps"):
+            self.assertIn(esperado, texto)
 
 
 class Laco(unittest.TestCase):
