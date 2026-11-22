@@ -55,7 +55,9 @@ using std::max;
 static struct { bool exists(const String &) { return true; } } LittleFS;
 static bool inAlbum = false;
 static String curFile;
-static int gifOffX, gifOffY, nextFrameAt;
+static int gifOffX, gifOffY;
+static uint32_t nextFrameAt;
+static uint32_t millis() { return 1000; }
 static const int GIF_PALETTE_RGB565_LE = 0;
 static void *mediaOpen, *mediaClose, *gifRead, *gifSeek, *gifDraw;
 struct AnimatedGIF {

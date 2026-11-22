@@ -15,7 +15,7 @@ uint32_t bootScreenMs = 0, bootWifiMs = 0, bootTimeMs = 0, bootNtpMs = 0;
 
 uint8_t bootTimeSrc = 0;   // de onde veio a primeira hora: 1 SNTP, 2 memória RTC (reinício por software), 3 cabeçalho do clima
 
-uint8_t bootWifiPath = 0;  // 0 rede salva (varredura completa), 1 canal e BSSID guardados, 2 o SDK já tinha conectado, 3 o rápido falhou
+uint8_t bootWifiPath = 0;  // 0 rede salva (varredura completa), 1 canal e BSSID guardados, 2 o SDK já tinha conectado, 3 o rápido falhou; + 8: conectou pelo IP com o SDK dizendo que não (waitWifi)
 
 uint32_t ntpAskAt = 0;  // quando o SNTP foi (re)configurado; 0 = ainda não
 
@@ -39,10 +39,15 @@ void softTime(int64_t sec, uint8_t src) {
   bootNote(src);
 }
 
+// Atualização à espera do eboot (comando válido nos blocos 0-31): ninguém mexe na memória RTC até o reinício.
+bool ebootPending() {
+  eboot_command cmd;
+  return eboot_command_read(&cmd) == 0;
+}
+
 void rtcTimeSave() {
   if (!timeTrusted()) return;
-  eboot_command cmd;
-  if (eboot_command_read(&cmd) == 0) return;  // atualização à espera do eboot: não mexe na memória RTC agora
+  if (ebootPending()) return;
   RtcClock c = rtcClockMake((uint32_t)time(nullptr), system_get_rtc_time());
   ESP.rtcUserMemoryWrite(RTC_CLOCK_BLOCK, (uint32_t *)&c, sizeof c);
 }
@@ -83,7 +88,7 @@ void timeGuardBegin() {
       timeval w = {(time_t)want, 0};
       settimeofday(&w, nullptr);
     }
-    if (!timeGuard.confirmed && weatherConfirms()) wxBack.next = millis();  // confirma já pelo clima
+    if (!timeGuard.confirmed && weatherConfirms()) wxBack.now();  // confirma já pelo clima
   });
 }
 

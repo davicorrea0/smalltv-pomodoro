@@ -13,11 +13,11 @@ const cut = (sig, from = 0) => { const a = source.indexOf(sig, from); if (a < 0)
 
 // ---------- 1. campos aditivos ----------
 const OLD = ('phase running remaining total cycle today streak best clock showing wx ok t min max h rin tzn off loff rise set desc fs l2 mig used cfg work short long every bri auto h12 tz lock theme mode delay color non nstart nend nbri won fahr rain beta lat lon city bgr inv flip vcom wdown tok tund pkg goal act lang nsun warm lcdg alexa rotmin rot ago ip last pv name heap blk pdraw pseq pshown ver diag rst exc epc rssi minheap frag up draw stall stallAt boot scr wifi wf time src ntp crash n r x va').split(' ');
-const NEW = ['minblk', 'stack', 'ramfix', 'lps', 'pack', 'nomem', 'jpg', 'gif', 'strip', 'tw', 'twmax'];
+const NEW = ['minblk', 'stack', 'ramfix', 'lps', 'pack', 'nomem', 'jpg', 'gif', 'strip', 'tw', 'twmax', 'fail'];
 const sendState = cut('static void sendState() {'), diagJson = cut('static void diagJson('), crashJson = cut('static void crashJson(');
 const keys = new Set([...(sendState + diagJson + crashJson).matchAll(/\\"(\w+)\\":/g)].map(m => m[1]));
 for (const k of OLD) assert(keys.has(k), 'chave antiga sumiu do /api/state: ' + k + ' (painéis antigos leem esse JSON)');
-assert.deepStrictEqual([...keys].filter(k => !OLD.includes(k)).sort(), [...NEW].sort(), 'o /api/state só pode ganhar minblk, stack, ramfix, lps, pack, nomem{jpg,gif,strip}, tw e twmax');
+assert.deepStrictEqual([...keys].filter(k => !OLD.includes(k)).sort(), [...NEW].sort(), 'o /api/state só pode ganhar minblk, stack, ramfix, lps, pack, nomem{jpg,gif,strip}, tw, twmax e wx.fail');
 // os campos novos ficam dentro de diag
 const d = sendState + diagJson;  // diag abre no sendState (\"diag\":{), os campos vêm no diagJson
 for (const k of ['minblk', 'stack', 'ramfix', 'lps', 'pack', 'nomem', 'tw', 'twmax']) assert(d.includes('\\"' + k + '\\":'), k + ' fora de diag');
@@ -148,6 +148,7 @@ ${line(/static uint8_t diagStallAt = 0;/)}
 static uint32_t alexaSeen = 5, previewUntil = 0; static uint8_t alexaLast = 1, alexaMin = 25; static char lanName[12] = "cozinha-dav", netName[16] = "smalltv-abcdef"; static uint16_t pomoDrawMs = 120, phaseSeq = 1, shownSeq = 1;
 static struct { String toString() const { return String("192.168.100.200"); } } alexaIp;
 static bool previewActive() { return false; }
+static uint32_t g_upTick = 0, g_upTicks = 0; static void crashUpTick(uint32_t sec) { g_upTick = sec; g_upTicks++; }  // RTC 32-33 (settings.cpp)
 ${block}
 static void tail(String &j) {
 ${tail}
@@ -186,6 +187,8 @@ int main() {
   g_hMax = 4000; diagBlkSample(); g_hMax = 20000; String j4; tail(j4); CHECK(num(j4.s, "minblk") == 4000 && g_max == 1);
   // diagLoop (a cada volta) não varre o heap
   int s0 = g_stats, m0 = g_max; for (int i = 0; i < 1000; i++) { g_now += 10; diagLoop(); } CHECK(g_stats == s0 && g_max == m0);
+  // crash.up no watchdog de hardware: o diagLoop grava os segundos ligado só no ramo de 1 s (100 voltas = 1 s), não a cada volta
+  CHECK(g_upTicks > 0 && g_upTicks <= 1000 * 10 / 1000 + 1 && g_upTick <= g_now / 1000 + 1);
   // lps: voltas por segundo. Passos de 10 ms = 100 voltas/s; o pedido só lê o número, sem varrer nada
   { String jl; g_hMax = 20000; tail(jl); CHECK(num(jl.s, "lps") >= 99 && num(jl.s, "lps") <= 101); }
   // contadores: saturam em 255 e ignoram tipo inválido

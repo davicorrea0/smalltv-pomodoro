@@ -34,7 +34,9 @@ struct AuthThrottle {
   }
   bool blocked(uint32_t ip, uint32_t now, uint32_t *waitMs = nullptr) {
     Entry *e = find(ip, now, false);
-    bool yes = e && before(now, e->until);
+    // Só vale perto da falha: a espera é de no máximo 32 s depois de `last`; um `until` de mais de 24,8 dias atrás
+    // parece "no futuro" na conta com sinal e trancaria o IP até o millis() dar a volta.
+    bool yes = e && (uint32_t)(now - e->last) < 64000UL && before(now, e->until);
     if (waitMs) *waitMs = yes ? e->until - now : 0;
     return yes;
   }
@@ -52,6 +54,20 @@ struct AuthThrottle {
     for (Entry &e : entries) if (e.ip == ip) { e = Entry(); return; }
   }
 };
+// Chave de escrita dos dados de fora (/apps.key): 32 hex minúsculos, gerada pelo relógio.
+static bool appsKeyOk(const char *k, size_t n) {
+  if (n != 32) return false;
+  for (size_t i = 0; i < n; i++)
+    if (!((k[i] >= '0' && k[i] <= '9') || (k[i] >= 'a' && k[i] <= 'f'))) return false;
+  return true;
+}
+// "Bearer <chave>" do cabeçalho Authorization contra a chave guardada, em tempo constante (não para no 1º byte diferente)
+static bool appsBearerOk(const char *h, size_t hn, const char *key) {
+  if (hn != 7 + 32 || memcmp(h, "Bearer ", 7) || !appsKeyOk(key, strlen(key))) return false;
+  uint8_t d = 0;
+  for (size_t i = 0; i < 32; i++) d |= (uint8_t)(h[7 + i] ^ key[i]);
+  return d == 0;
+}
 static bool safeHttpUrl(const char *s, size_t n) {
   if (n < 8 || n > 400 || memcmp(s, "http://", 7)) return false;
   for (size_t i=0; i<n; i++) {
@@ -414,11 +430,13 @@ struct RateLimit {
 // falha seguida; o sucesso zera. Sem isso, Wi-Fi sem internet fazia o relógio parar a cada tentativa.
 struct HttpBackoff {
   uint8_t fails = 0;
-  uint32_t next = 0;  // millis() da próxima tentativa
+  uint32_t at = 0, wait = 0;  // quando a última tentativa terminou e quanto esperar depois dela (tempo decorrido, não um prazo:
+                              // um prazo em millis() parece "no futuro" depois de 24,8 dias sem tentativas e nada mais era tentado)
   static uint32_t waitMs(uint8_t fails) { return (fails <= 1 ? 2UL : fails == 2 ? 4UL : fails == 3 ? 8UL : 15UL) * 60000UL; }
-  bool due(uint32_t ms) const { return (int32_t)(ms - next) >= 0; }
-  void ok(uint32_t ms, uint32_t afterMs) { fails = 0; next = ms + afterMs; }
-  void fail(uint32_t ms) { if (fails < 255) fails++; next = ms + waitMs(fails); }
+  bool due(uint32_t ms) const { return (uint32_t)(ms - at) >= wait; }
+  void ok(uint32_t ms, uint32_t afterMs) { fails = 0; at = ms; wait = afterMs; }
+  void fail(uint32_t ms) { if (fails < 255) fails++; at = ms; wait = waitMs(fails); }
+  void now() { wait = 0; }  // tenta já
 };
 
 // Cache de nomes (DNS) sem bloquear. A busca roda no lwIP (callback done()); get() só olha o cache e,

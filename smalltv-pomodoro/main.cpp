@@ -135,6 +135,17 @@ static void checkDayRollover(const struct tm &t) {
   statsRollover(t);
 }
 
+// Virada do dia e histórico pendente sem depender do mostrador: o renderClock só roda com o relógio na tela, então com o
+// Pomodoro rodando, o álbum fixo (modo 1) ou o Pomodoro em pausa a virada não acontecia, o contador de hoje seguia
+// somando de ontem e o foco que fechava depois da meia-noite era gravado com a contagem de ontem (e apagado depois).
+// Chamado a cada 5 s no loop e antes de contar um foco (advance).
+void dayRolloverTick() {
+  struct tm t;
+  if (!localNow(t) || !timeTrusted()) return;  // só com a hora confirmada
+  checkDayRollover(t);
+  statsFlush(t);
+}
+
 // "14:05" para o painel web
 String hhmm(const struct tm &t) {
   int h = t.tm_hour;
@@ -199,6 +210,7 @@ static UiState makeState() {
   s.accent = clockColor();
   s.ip = ipString();
   s.ms = millis();
+  appDataExpire(s.ms);  // dados de fora: o campo vencido é descartado já, senão a aritmética com sinal o reviveria após 24,8 dias
   s.celebrate = alertUntil != 0;  // fase acabou de terminar: animação de fim no Pomodoro
   return s;
 }
@@ -327,6 +339,7 @@ void setup() {
   if (fsOk) {
     File rf = LittleFS.open("/rotation.txt", "r");
     if (rf) {
+      rf.setTimeout(0);  // readString termina no EOF do File sem acrescentar 1 s ao boot
       rotList = rf.readString();
       rf.close();
     }
@@ -404,6 +417,7 @@ void loop() {
     lastBriCheck = now;
     updateBrightness();
     timeGuard.tick(time(nullptr), now);
+    dayRolloverTick();
     rtcTimeSave();
   }
   briFade();
@@ -480,3 +494,13 @@ void loop() {
     if (!inAlbum) renderClock();
   }
 }
+
+// Sem as tabelas de unwind: o core chama __register_frame_info no início (core_esp8266_main.cpp), o que liga o
+// unwind-dw2-fde da libgcc (−4.288 B de .bin). O firmware compila sem exceções C++ (padrão do core), então nada
+// desenrola a pilha e o registro não serve para nada. Se algum dia as exceções forem ligadas (-fexceptions), este stub
+// tem de sair, e o #error abaixo avisa. Fica só aqui, nunca num arquivo que o sim/build.sh compile: no PC tomaria o
+// lugar do registro da libgcc.
+#ifdef __EXCEPTIONS
+#error "exceções ligadas: tire o stub de __register_frame_info deste arquivo"
+#endif
+extern "C" void __register_frame_info(const void *, void *) {}

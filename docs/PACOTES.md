@@ -96,6 +96,12 @@ Vale para qualquer mostrador, em qualquer formato. Os números de limite (camada
 
 `°` pode ser escrito direto no texto (`"{TEMP}°"`).
 
+**Valores de fora** (formato 2, beta 1.27.0+): `{x.campo}` mostra um valor que o Home Assistant ou um script mandou
+ao relógio (`POST /api/apps/data`), por exemplo `"{x.temp}°"`. Mostra `--` quando o valor nunca chegou, venceu (cada
+envio tem prazo) ou o campo não existe. O nome tem até 8 caracteres `a-z`, `0-9` e `_`, e o valor até 15 bytes.
+Números grandes ficam melhor na fonte `pixel`: `outfit`, `bebas` e `righteous` só têm dígitos, e `--`, `.` e `%`
+somem nelas. Como configurar o Home Assistant e o contrato completo: [HOME-ASSISTANT.md](HOME-ASSISTANT.md).
+
 **Texto em 3 idiomas** (firmware 1.10.0+): em vez de uma string, `text` aceita um objeto com uma versão por idioma, e o relógio mostra a do idioma escolhido no painel. `en` e `es` são opcionais (sem eles, vale o `pt`):
 
 ```json
@@ -105,6 +111,18 @@ Vale para qualquer mostrador, em qualquer formato. Os números de limite (camada
 ## Camadas
 
 Toda camada aceita `"when"` para aparecer só em certas condições: `day`, `night`, `rain`, `dry`, `weather` (clima disponível), `noweather`, `goal` (meta do dia batida), `nogoal`, `streak` (sequência de pelo menos 1 dia).
+
+**Condições com valores de fora** (formato 2, beta 1.27.0+; ver [HOME-ASSISTANT.md](HOME-ASSISTANT.md)):
+
+| `when` | Aparece quando |
+|---|---|
+| `"x.porta"` | o valor chegou, está no prazo e não é `""` nem `"0"` |
+| `"x.porta=ABERTA"` | o valor é exatamente `ABERTA` (`"x.porta="` = chegou vazio) |
+| `"!x.porta=ABERTA"`, `"!x.porta"` | o contrário (inclusive quando o valor não chegou ou venceu) |
+
+Assim um ícone, uma cor ou um texto troca conforme o estado: por exemplo, uma camada com `"when": "x.lv_est=LAVANDO"` e
+outra com `"when": "x.lv_est=PRONTA"` no mesmo lugar. Para "sem dados", use `"!x.campo"`. Até **8** referências
+diferentes por pacote (a mesma usada em várias camadas, com ou sem `!`, conta uma vez).
 
 | `type` | Campos |
 |---|---|
@@ -116,10 +134,10 @@ Toda camada aceita `"when"` para aparecer só em certas condições: `day`, `nig
 | `mascot` | o tomate do projeto: `x`, `y`, `size`, `mood`: `auto` (dorme à noite, guarda-chuva na chuva, comemora a meta, cachecol no frio, óculos no calor), `feliz`, `dormindo`, `focado`, `relax`, `comemorando`, `guarda-chuva`, `cachecol`, `oculos` |
 | `plant` | a planta do tomate, que cresce com a sequência (semente, broto, flor, tomate verde, maduro, dourado com 7+ dias): `x`, `y`, `size` (ampliação do desenho de 16×16) (requer firmware 1.8.0+) |
 | `weather` | ícone do clima: `x`, `y` (centro), `size` (10 = ~40 px) |
-| `bar` | `x`, `y`, `w`, `h`, `r`, `value` (`sec`, `min`, `hour`, `focos`, `hum`), `max` (opcional), `color`, `track` |
+| `bar` | `x`, `y`, `w`, `h`, `r`, `value` (`sec`, `min`, `hour`, `focos`, `hum`, ou `x.campo` no formato 2: o número do começo do valor, de 0 para cima; `max` padrão 100), `max` (opcional), `color`, `track` |
 | `hand` | ponteiro: `x`, `y` (centro), `value` (`hour`, `min`, `sec`), `len`, `tail`, `size` (espessura), `color` |
 | `image` | JPEG em `/faces/` no relógio: `x`, `y`, `w`, `h`, `file` |
-| `arc` | anel de progresso com pontas redondas, do topo no sentido horário: `x`, `y` (centro), `r` (raio externo), `size` (espessura), `value`, `max` (opcional), `color`, `track` (requer firmware 1.6.6+) |
+| `arc` | anel de progresso com pontas redondas, do topo no sentido horário: `x`, `y` (centro), `r` (raio externo), `size` (espessura), `value` (como no `bar`, inclusive `x.campo`), `max` (opcional), `color`, `track` (requer firmware 1.6.6+) |
 | `ticks` | marcações de mostrador analógico: `x`, `y` (centro), `r` (raio externo), `len`, `count` (12 = horas, 60 = minutos), `size`, `color` (requer firmware 1.6.6+) |
 
 ### Fontes (`text`)

@@ -7,6 +7,7 @@
 // por cima todas as camadas que as tocam, na ordem — sem piscar a tela toda.
 
 #include "facepack.h"
+#include "appdata.h"
 #include "ui_kit.h"
 #include <ArduinoJson.h>
 #include <stdlib.h>
@@ -63,6 +64,41 @@ struct MotionKey { uint16_t t; int16_t x, y; };
 struct Motion { uint16_t period; uint8_t n; MotionKey k[6]; };
 static Motion *motPool = nullptr;
 
+// Condições e valores ligados a dados empurrados (POST /api/apps/data, appdata.h), só no formato 2:
+// "when": "x.campo" (chegou e não é "" nem "0"), "x.campo=VALOR" (igual ao texto), e "!" na frente para negar;
+// "value": "x.campo" em bar e arc (inteiro; "max" opcional, padrão 100). Até XREF_MAX referências diferentes por pacote,
+// guardadas num bloco à parte, alocado junto com o pacote (só quando ele usa alguma): 0 B de RAM fixa.
+static const uint8_t XREF_MAX = 8, W_XREF = 16, W_XNOT = 32, V_XREF = 16;  // when: 16-23 sim, 32-39 negado; value: 16-23
+struct XRef { char k[APPDATA_NAME + 1]; char v[APPDATA_VALUE + 1]; uint8_t eq; };  // eq: compara com v (que pode ser "")
+static XRef *xref = nullptr;
+static uint8_t nXref = 0;
+static_assert(W_XREF >= W_WHENS && W_XNOT >= W_XREF + XREF_MAX && V_XREF >= V_VARS, "faixas de when/value se sobrepõem");
+
+// "x.campo" ou "x.campo=VALOR" (sem o "!"): devolve o índice na tabela, -1 se não é referência a campo, -2 se é mas é
+// inválida (nome, valor ou tabela cheia) ou falta memória
+static int xrefAdd(const char *s) {
+  if (!s || s[0] != 'x' || s[1] != '.') return -1;
+  s += 2;
+  const char *eq = strchr(s, '=');
+  size_t kl = eq ? (size_t)(eq - s) : strlen(s);
+  if (kl < 1 || kl > APPDATA_NAME || (eq && strlen(eq + 1) > APPDATA_VALUE)) return -2;
+  XRef r;
+  memset(&r, 0, sizeof r);
+  memcpy(r.k, s, kl);
+  for (const char *c = r.k; *c; c++)
+    if (!((*c >= 'a' && *c <= 'z') || (*c >= '0' && *c <= '9') || *c == '_')) return -2;
+  if (eq) {
+    strcpy(r.v, eq + 1);
+    r.eq = 1;
+  }
+  for (uint8_t i = 0; i < nXref; i++)
+    if (!memcmp(&xref[i], &r, sizeof r)) return i;
+  if (nXref >= XREF_MAX) return -2;
+  if (!xref && !(xref = (XRef *)calloc(XREF_MAX, sizeof(XRef)))) return -2;
+  xref[nXref] = r;
+  return nXref++;
+}
+
 static Layer *lay = nullptr;
 static uint8_t nLay = 0;
 static char *pool = nullptr;
@@ -82,6 +118,9 @@ const char *facePackAuthor() { return pkAuthor; }
 void facePackUnload() {
   free(motPool);
   motPool = nullptr;
+  free(xref);
+  xref = nullptr;
+  nXref = 0;
   free(lay);
   free(pool);
   free(spr);
@@ -582,9 +621,14 @@ static bool loadFrom(In &in, Rew rewind, size_t size, char *err, size_t errLen) 
     }
     L.font = pick(l["font"] | (const char *)nullptr, FONTS, F_FONTS, F_PIXEL);
     L.align = pick(l["align"] | (const char *)nullptr, ALIGNS, 3, A_LEFT);
-    L.when = pick(l["when"] | (const char *)nullptr, WHENS, W_WHENS, W_ALWAYS);
+    const char *ws = l["when"] | (const char *)nullptr;
+    bool wnot = ws && ws[0] == '!';
+    int xw = xrefAdd(wnot ? ws + 1 : ws);
+    L.when = xw >= 0 ? (wnot ? W_XNOT : W_XREF) + xw : xw == -2 || wnot ? 255 : pick(ws, WHENS, W_WHENS, W_ALWAYS);
+    int xv = L.type == L_BAR || L.type == L_ARC ? xrefAdd(l["value"] | (const char *)nullptr) : -1;
+    if (xw >= 0 || xv >= 0) v2 = true;  // dados de fora: só no formato 2 (o formato 1 recusa, mais abaixo)
     L.var = L.type == L_MASCOT ? pick(l["mood"] | (const char *)nullptr, MOODS, 9, 8)
-                               : pick(l["value"] | (const char *)nullptr, VARS, V_VARS, V_SEC);
+                     : xv >= 0 ? V_XREF + xv : xv == -2 ? 255 : pick(l["value"] | (const char *)nullptr, VARS, V_VARS, V_SEC);
     if (L.font == 255 || L.align == 255 || L.when == 255 || L.var == 255) {
       snprintf_P(err, errLen, PSTR("camada %d: font/align/when/value/mood invalido"), nLay + 1);
       facePackUnload();
@@ -710,7 +754,7 @@ static bool loadFrom(In &in, Rew rewind, size_t size, char *err, size_t errLen) 
   }
   if (fmt == 1 && v2) {
     facePackUnload();
-    snprintf_P(err, errLen, PSTR("use \"format\": 2 (motion, overlay, mais de 8 quadros, 6 KB de sprites ou 16 KB)"));
+    snprintf_P(err, errLen, PSTR("use \"format\": 2 (motion, overlay, dados x., mais de 8 quadros, 6 KB de sprites ou 16 KB)"));
     return false;
   }
   return true;
@@ -740,7 +784,10 @@ static void variable(const char *k, const UiState &s, char *v, size_t n) {
   v[0] = 0;
   bool t = s.timeOk, wx = s.weatherOn && s.wx.ok;
   const struct tm &m = s.now;
-  if (!strcmp_P(k, PSTR("HH"))) t ? snprintf_P(v, n, PSTR("%02d"), displayHour(s)) : snprintf_P(v, n, PSTR("--"));
+  if (k[0] == 'x' && k[1] == '.') {  // dado empurrado de fora (POST /api/apps/data); "--" se ausente ou vencido
+    const char *x = appDataGet(k + 2, s.ms);
+    snprintf_P(v, n, PSTR("%s"), x ? x : "--");
+  } else if (!strcmp_P(k, PSTR("HH"))) t ? snprintf_P(v, n, PSTR("%02d"), displayHour(s)) : snprintf_P(v, n, PSTR("--"));
   else if (!strcmp_P(k, PSTR("H"))) t ? snprintf_P(v, n, PSTR("%d"), displayHour(s)) : snprintf_P(v, n, PSTR("-"));
   else if (!strcmp_P(k, PSTR("MM"))) t ? snprintf_P(v, n, PSTR("%02d"), m.tm_min) : snprintf_P(v, n, PSTR("--"));
   else if (!strcmp_P(k, PSTR("SS"))) t ? snprintf_P(v, n, PSTR("%02d"), m.tm_sec) : snprintf_P(v, n, PSTR("--"));
@@ -769,8 +816,8 @@ static void resolve(const char *tpl, const UiState &s, char *out, size_t n) {
   size_t o = 0;
   for (const char *p = tpl; *p && o + 1 < n;) {
     const char *e = *p == '{' ? strchr(p, '}') : nullptr;
-    if (e && e - p - 1 < 8) {
-      char key[8], v[32];
+    if (e && e - p - 1 < 12) {  // "x." + nome de até 8 + folga
+      char key[12], v[32];
       memcpy(key, p + 1, e - p - 1);
       key[e - p - 1] = 0;
       variable(key, s, v, sizeof v);
@@ -792,6 +839,13 @@ static bool isDay(const UiState &s) {
 }
 
 static bool cond(uint8_t w, const UiState &s) {
+  if (w >= W_XREF) {
+    bool no = w >= W_XNOT;
+    const XRef &r = xref[w - (no ? W_XNOT : W_XREF)];
+    const char *v = appDataGet(r.k, s.ms);
+    bool yes = v && (r.eq ? !strcmp(v, r.v) : v[0] && strcmp(v, "0"));
+    return no ? !yes : yes;
+  }
   bool wx = s.weatherOn && s.wx.ok;
   switch (w) {
     case W_DAY: return isDay(s);
@@ -818,6 +872,12 @@ static uint8_t autoMood(const UiState &s) {
 }
 
 static int value(const Layer &L, const UiState &s, int &mx) {
+  if (L.var >= V_XREF) {  // campo empurrado: inteiro de 0 para cima ("--", ausente ou texto valem 0)
+    const char *v = appDataGet(xref[L.var - V_XREF].k, s.ms);
+    long n = v ? strtol(v, nullptr, 10) : 0;
+    mx = 100;
+    return n < 0 ? 0 : n > 100000 ? 100000 : (int)n;
+  }
   switch (L.var) {
     case V_MIN: mx = 60; return s.timeOk ? s.now.tm_min : 0;
     case V_HOUR: mx = 24; return s.timeOk ? s.now.tm_hour : 0;

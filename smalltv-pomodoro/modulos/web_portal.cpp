@@ -3,6 +3,7 @@
 #include <bearssl/bearssl_hash.h>
 #include <lwip/tcp.h>  // tcp_abort (tcpTwPurge)
 #include "../web.h"
+#include "../appdata.h"
 
 // respostas curtas repetidas nas rotas: um só corpo no binário em vez de três String temporárias em cada uso
 static void sendOk() { server.send_P(200, PSTR("text/plain"), PSTR("ok")); }
@@ -82,7 +83,8 @@ static uint8_t diagTwMax = 0;
 void diagLoop() {
   uint32_t now = millis(), h = ESP.getFreeHeap();
   diagLoops++;
-  if (now - diagLpsAt >= 1000) {
+  bool sec = now - diagLpsAt >= 1000;
+  if (sec) {
     diagLps = diagLoops * 1000UL / (now - diagLpsAt);
     diagLoops = 0;
     diagLpsAt = now;
@@ -92,6 +94,7 @@ void diagLoop() {
     diagStall = now - diagLastMs;
     diagStallAt = diagWhere;
   }
+  if (sec) crashUpTick((uint32_t)((((uint64_t)diagWraps << 32) | now) / 1000));  // depois da volta do millis(): mesmo relógio do diag.up
   diagWhere = 0;
   diagLastMs = now;
   if (h < diagMinHeap) diagMinHeap = h;
@@ -232,6 +235,8 @@ static void sendState() {
   jsonEscapeAppend(j, curFile.c_str());
   j += F("\",\"wx\":{\"ok\":");
   j += wx.ok ? 1 : 0;
+  j += F(",\"fail\":");
+  j += wxBack.fails;
   j += F(",\"t\":");
   appendFixed(j, wx.t, 1);
   j += F(",\"min\":");
@@ -597,6 +602,19 @@ bool guard() { return (panelOk() || deny()) && authed(); }   // ações (POST)
 
 bool readOk() { return (hostOk() || deny()) && authed(); }   // leituras
 
+// chave de escrita dos dados de fora (/apps.key, ver /api/apps/data); false, e out vazio, se não existe ou está estragada
+static bool appsKeyLoad(char out[33]) {
+  out[0] = 0;
+  File f = fsOk ? LittleFS.open(F("/apps.key"), "r") : File();
+  if (!f) return false;
+  size_t n = f.read((uint8_t *)out, 32);
+  f.close();
+  out[n] = 0;
+  if (appsKeyOk(out, n)) return true;
+  out[0] = 0;
+  return false;
+}
+
 // ---------- painel na memória de arquivos ----------
 // O painel (~19 KB comprimido) não ocupa a flash do programa: fica em /www/<hash>.gz, onde <hash> são os
 // 24 primeiros hex do SHA-256 do arquivo, calculado aqui ao receber. O firmware só serve o arquivo com o
@@ -860,6 +878,80 @@ void setupWeb() {
     command(server.arg("c"));
     sendState();
   });
+  // Dados empurrados de fora (Home Assistant, scripts) para os {x.campo} dos pacotes. Contrato: appdata.h e
+  // docs/HOME-ASSISTANT.md. Só com a chave de escrita (/apps.key, criada no painel), nunca com a senha do painel: quem
+  // tem a chave só escreve dados. Sem a chave, a rota fica desligada (403).
+  server.on(F("/api/apps/data"), HTTP_POST, [] {
+    if (!panelOk()) { deny(); return; }  // Host = IP ou o .local do relógio, e X-SmallTV: 1
+    uint32_t ip = requestIp(), wait = 0;
+    if (authThrottle.blocked(ip, millis(), &wait)) {
+      server.sendHeader(F("Retry-After"), String((wait + 999) / 1000));
+      server.send_P(429, PSTR("text/plain"), PSTR("Tente novamente em alguns segundos"));
+      return;
+    }
+    char key[33];
+    if (!appsKeyLoad(key)) { server.send_P(403, PSTR("text/plain"), PSTR("desligado: crie a chave no painel")); return; }
+    const String &h = server.header(F("Authorization"));
+    bool ok = appsBearerOk(h.c_str(), h.length(), key);
+    memset(key, 0, sizeof key);
+    if (!ok) {
+      authThrottle.fail(ip, millis());
+      server.send_P(401, PSTR("text/plain"), PSTR("chave invalida"));
+      return;
+    }
+    const String &b = server.arg("plain");
+    if (b.length() > APPDATA_BODY_MAX) { server.send_P(413, PSTR("text/plain"), PSTR("corpo grande demais")); return; }
+    const char *err = appDataPut(b.c_str(), b.length(), millis());
+    if (err) server.send_P(400, PSTR("text/plain"), err);
+    else server.send_P(200, PSTR("application/json"), PSTR("{\"ok\":true}"));
+  });
+  // valores guardados agora (painel e depuração): {"on":1,"f":[["temp","22",840],...]}, o último número em segundos
+  server.on(F("/api/apps/data"), HTTP_GET, [] {
+    if (!readOk()) return;
+    char key[33];
+    String j = F("{\"on\":");
+    j += appsKeyLoad(key) ? '1' : '0';
+    memset(key, 0, sizeof key);
+    j += F(",\"f\":[");
+    const char *k, *v;
+    uint32_t left, now = millis();
+    for (int i = 0; appDataAt(i, now, &k, &v, &left); i++) {
+      j += i ? F(",[\"") : F("[\"");
+      j += k;
+      j += F("\",\"");
+      jsonEscapeAppend(j, v);
+      j += F("\",");
+      j += left;
+      j += ']';
+    }
+    j += F("]}");
+    server.send(200, F("application/json"), j);
+  });
+  // chave de escrita: c=show devolve a atual, c=new cria ou troca, c=off apaga (desliga a rota). Fica só em /apps.key,
+  // fora da EEPROM e do backup do painel. POST com guard() também para mostrar: a chave não sai num GET.
+  server.on(F("/api/appskey"), HTTP_POST, [] {
+    if (!guard()) return;
+    const String c = server.arg("c");
+    bool ok = fsOk;
+    if (ok && c == "new") {
+      char k[33];
+      snprintf_P(k, sizeof k, PSTR("%08x%08x%08x%08x"), ESP.random(), ESP.random(), ESP.random(), ESP.random());
+      File f = LittleFS.open(F("/apps.key"), "w");
+      ok = f && f.print(k) == 32;
+      if (f) f.close();
+      memset(k, 0, sizeof k);
+      if (!ok) LittleFS.remove(F("/apps.key"));
+    } else if (ok && c == "off") {
+      LittleFS.remove(F("/apps.key"));
+      appDataClear();
+    }
+    char key[33];
+    String j = F("{\"key\":\"");
+    if (appsKeyLoad(key)) j += key;
+    memset(key, 0, sizeof key);
+    j += F("\"}");
+    server.send(ok ? 200 : 500, F("application/json"), j);
+  });
   server.on(F("/api/settings"), HTTP_POST, [] {
     if (!guard()) return;
     cfg.work = argRange("work", cfg.work, 1, 99);
@@ -936,8 +1028,11 @@ void setupWeb() {
     if (newPlace || won != cfg.weatherOn) {
       cfg.weatherOn = won;
       wx.ok = false;
+      wx.rainIn = 0;
+      sunRise = sunSet = -1;
       wx.version++;
-      wxBack.next = millis();  // busca o clima já
+      wxBack.fails = 0;
+      wxBack.now();  // busca o clima já
     }
     saveSettings();
     updateBrightness(true);
@@ -1044,6 +1139,7 @@ void setupWeb() {
     if (!guard()) return;
     String f = server.arg("f");
     if (!fsOk || !f.startsWith("/") || f.length() < 2 || f.length() > 96 || f.indexOf("..") >= 0 || f.indexOf("//") >= 0 ||
+        f.indexOf("/.") >= 0 ||  // o littlefs ignora o componente ".": "/./stats.bin" é o stats.bin e passava pelo fsKeep
         f.endsWith("/") || fsKeep(f) || !LittleFS.exists(f)) {
       server.send_P(400, PSTR("text/plain"), PSTR("Nao foi possivel apagar"));
       return;
@@ -1207,14 +1303,33 @@ static uint32_t ssidHash(const String &s) {  // FNV-1a
   return h;
 }
 
-// Espera conectar animando a barra da tela de início (ver bootAnim)
+// Estação no ar (só para o waitWifi do boot): o estado do SDK diz "conectado" OU a estação já tem endereço IP (o DHCP terminou). O estado do SDK
+// sozinho não basta: com dois WiFi.begin() seguidos (caminho 3 do connectStored) ele pode ficar fora de STATION_GOT_IP
+// com a rede funcionando (issue #44: painel e NTP respondendo e diag.rssi = 0 o tempo todo).
+// O guarda da rede fixada, o diag.rssi, o clima, o mDNS, o NTP e os avisos seguem no WiFi.status(): sem associação, um
+// IP que ficou não deve segurar a rede fixada, e o rssi = 0 continua mostrando esse estado.
+static bool wifiUp() { return WiFi.isConnected() || WiFi.localIP().isSet(); }
+
+static bool bootWifiIpOnly = false;  // o waitWifi aceitou a estação pelo IP, com o SDK dizendo outra coisa
+
+// Espera conectar animando a barra da tela de início (ver bootAnim). Vale também a estação com IP e o SDK dizendo outra
+// coisa (ver wifiUp): antes, esse caso esperava os 20 s e abria o portal com a rede funcionando. Ele fica marcado no
+// diagnóstico (boot.wf + 8) para o relato seguinte dizer se aconteceu.
 static bool waitWifi(uint32_t ms) {
   uint32_t t0 = millis();
-  while (WiFi.status() != WL_CONNECTED && millis() - t0 < ms) {
+  while (!wifiUp() && millis() - t0 < ms) {
     bootAnim(0);
     delay(30);
   }
-  return WiFi.status() == WL_CONNECTED;
+  if (WiFi.status() == WL_CONNECTED) return true;
+  if (!WiFi.localIP().isSet()) return false;
+  // o IP pode chegar um instante antes do estado GOT_IP: só marca depois de 1 s sem ele
+  for (uint32_t t1 = millis(); WiFi.status() != WL_CONNECTED && millis() - t1 < 1000;) {
+    bootAnim(0);
+    delay(30);
+  }
+  if (WiFi.status() != WL_CONNECTED) bootWifiIpOnly = true;
+  return true;
 }
 
 // Rede salva no SDK. Com o canal e o BSSID do último roteador (EEPROM, ver wifiHintSave) o SDK não varre os 13
@@ -1235,22 +1350,25 @@ bool connectStored(uint32_t timeoutMs) {
   WifiHint h;
   EEPROM.get(WIFIH_OFF, h);
   String ssid = WiFi.SSID(), psk = WiFi.psk();
+  bool ok;
   if (!ssid.length() || h.magic != WIFI_MAGIC || h.ssid != ssidHash(ssid) || h.chan < 1 || h.chan > 13) {
     WiFi.begin();
-    return waitWifi(timeoutMs);
-  }
-  WiFi.persistent(false);
-  WiFi.begin(ssid.c_str(), psk.c_str(), h.chan, h.bssid);
-  bool ok = waitWifi(min<uint32_t>(4000, timeoutMs));
-  if (ok) {
-    bootWifiPath = 1;
-    wifiPinned = true;
+    ok = waitWifi(timeoutMs);
   } else {
-    bootWifiPath = 3;
-    WiFi.begin(ssid.c_str(), psk.c_str());
-    uint32_t used = millis() - t0;
-    ok = waitWifi(used < timeoutMs ? timeoutMs - used : 0);
+    WiFi.persistent(false);
+    WiFi.begin(ssid.c_str(), psk.c_str(), h.chan, h.bssid);
+    ok = waitWifi(min<uint32_t>(4000, timeoutMs));
+    if (ok) {
+      bootWifiPath = 1;
+      wifiPinned = true;
+    } else {
+      bootWifiPath = 3;
+      WiFi.begin(ssid.c_str(), psk.c_str());
+      uint32_t used = millis() - t0;
+      ok = waitWifi(used < timeoutMs ? timeoutMs - used : 0);
+    }
   }
+  if (bootWifiIpOnly) bootWifiPath |= 8;  // conectou pelo IP, com o SDK dizendo que não (ver waitWifi)
   return ok;
 }
 
