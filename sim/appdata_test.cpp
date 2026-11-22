@@ -232,6 +232,138 @@ static void pacote(Tela *tela, const char *arq) {
   facePackUnload();
 }
 
+// "when" e "value" ligados a campos: cada camada aparece ou some conforme o dado, a barra acompanha o número, e o
+// incremental bate com o quadro cheio em cada passo. Referências inválidas recusam o pacote na carga.
+static bool carregarTexto(const std::string &js, char *err, size_t n) {
+  std::vector<char> buf(js.begin(), js.end());
+  buf.push_back(0);
+  return facePackLoad(buf.data(), js.size(), err, n);
+}
+
+static void referencias(Tela *tela) {
+  const std::string js =
+    "{\"format\":2,\"id\":\"ref\",\"bg\":\"#000000\",\"layers\":["
+    "{\"type\":\"rect\",\"x\":0,\"y\":0,\"w\":10,\"h\":10,\"color\":\"#ff0000\",\"when\":\"x.a=ON\"},"
+    "{\"type\":\"rect\",\"x\":20,\"y\":0,\"w\":10,\"h\":10,\"color\":\"#00ff00\",\"when\":\"!x.a=ON\"},"
+    "{\"type\":\"rect\",\"x\":40,\"y\":0,\"w\":10,\"h\":10,\"color\":\"#0000ff\",\"when\":\"x.b\"},"
+    "{\"type\":\"rect\",\"x\":60,\"y\":0,\"w\":10,\"h\":10,\"color\":\"#ffff00\",\"when\":\"!x.b\"},"
+    "{\"type\":\"bar\",\"x\":0,\"y\":50,\"w\":100,\"h\":10,\"value\":\"x.p\",\"max\":100,\"color\":\"#ffffff\",\"track\":\"#404040\"},"
+    "{\"type\":\"text\",\"x\":0,\"y\":80,\"font\":\"pixel\",\"size\":2,\"color\":\"#ffffff\",\"text\":\"{x.a} {x.p}\",\"bg\":\"#000000\",\"when\":\"x.a\"}"
+    "]}";
+  char err[96] = "";
+  if (!carregarTexto(js, err, sizeof err)) { CHECK(false, "pacote de referencias recusado: %s", err); return; }
+  const uint16_t VERM = uiRgb(255, 0, 0), VERDE = uiRgb(0, 255, 0), AZUL = uiRgb(0, 0, 255), AMAR = uiRgb(255, 255, 0);
+  const uint16_t BRANCO = uiRgb(255, 255, 255), TRILHO = uiRgb(64, 64, 64), FUNDO = 0;
+  auto px = [&](int x, int y) { return tela->px[y * 240 + x]; };
+  appDataClear();
+  UiState st = estado();
+  st.ms = 0xFFFFF000u;  // atravessa a volta do millis() no meio do teste
+  facePackRender(st, true);
+  CHECK(px(5, 5) == FUNDO && px(25, 5) == VERDE && px(45, 5) == FUNDO && px(65, 5) == AMAR, "sem dados: so os negados");
+  CHECK(px(10, 55) == TRILHO, "sem dados: barra vazia");
+  struct Passo { const char *corpo; uint16_t a, na, b, nb; int cheio, vazio; };  // cores esperadas; colunas da barra
+  const Passo passos[] = {
+    {"{\"ttl\":60,\"values\":{\"a\":\"ON\",\"b\":\"1\",\"p\":50}}", VERM, FUNDO, AZUL, FUNDO, 40, 60},
+    {"{\"ttl\":60,\"values\":{\"a\":\"OFF\",\"b\":\"0\",\"p\":100}}", FUNDO, VERDE, FUNDO, AMAR, 95, -1},
+    {"{\"ttl\":60,\"values\":{\"a\":\"on\",\"b\":\"\",\"p\":-7}}", FUNDO, VERDE, FUNDO, AMAR, -1, 5},
+    {"{\"ttl\":60,\"values\":{\"a\":\"ON\",\"b\":\"sim\",\"p\":250}}", VERM, FUNDO, AZUL, FUNDO, 95, -1},
+    {"{\"ttl\":60,\"values\":{\"p\":\"texto\"}}", VERM, FUNDO, AZUL, FUNDO, -1, 5},
+  };
+  int i = 0;
+  for (const Passo &p : passos) {
+    const char *e = put(p.corpo, st.ms);
+    CHECK(!e, "referencias, passo %d recusado: %s", i, e ? e : "");
+    st.ms += 1000;
+    appDataExpire(st.ms);
+    facePackRender(st, false);
+    uint32_t inc = hash(tela->px);
+    CHECK(px(5, 5) == p.a && px(25, 5) == p.na && px(45, 5) == p.b && px(65, 5) == p.nb, "referencias, passo %d: when errado", i);
+    if (p.cheio >= 0) CHECK(px(p.cheio, 55) == BRANCO, "referencias, passo %d: barra deveria estar cheia em x=%d", i, p.cheio);
+    if (p.vazio >= 0) CHECK(px(p.vazio, 55) == TRILHO, "referencias, passo %d: barra deveria estar vazia em x=%d", i, p.vazio);
+    facePackRender(st, true);
+    CHECK(inc == hash(tela->px), "referencias, passo %d: incremental != quadro cheio", i);
+    i++;
+  }
+  st.ms += 61000;  // vence: volta tudo ao "sem dados"
+  appDataExpire(st.ms);
+  facePackRender(st, false);
+  CHECK(px(5, 5) == FUNDO && px(25, 5) == VERDE && px(45, 5) == FUNDO && px(65, 5) == AMAR && px(10, 55) == TRILHO,
+        "vencido: deveria voltar ao sem dados");
+  facePackUnload();
+
+  // carga: referências inválidas recusam o pacote; 8 diferentes cabem (repetidas não contam); formato 1 recusa
+  auto pacoteCom = [](int fmt, const std::string &camadas) {
+    return "{\"format\":" + std::to_string(fmt) + ",\"id\":\"r\",\"layers\":[" + camadas + "]}";
+  };
+  auto rect = [](const std::string &when) { return "{\"type\":\"rect\",\"w\":5,\"h\":5,\"when\":\"" + when + "\"}"; };
+  const char *ruins[] = {"x.", "x.Abc", "x.a-b", "x.abcdefghi", "x.a=0123456789abcdef", "!day", "!", "!x.", "xa", "y.a"};
+  for (const char *w : ruins) {
+    CHECK(!carregarTexto(pacoteCom(2, rect(w)), err, sizeof err), "when \"%s\" deveria recusar", w);
+    facePackUnload();
+  }
+  CHECK(!carregarTexto(pacoteCom(2, "{\"type\":\"text\",\"text\":\"a\",\"value\":\"x.a\"}"), err, sizeof err), "value x. em texto deveria recusar");
+  CHECK(!carregarTexto(pacoteCom(2, "{\"type\":\"bar\",\"w\":9,\"h\":3,\"value\":\"x.A\"}"), err, sizeof err), "value x.A deveria recusar");
+  CHECK(!carregarTexto(pacoteCom(1, rect("x.a")), err, sizeof err) && strstr(err, "format"), "formato 1 com x. deveria pedir o 2: %s", err);
+  std::string oito, nove;
+  for (int k = 0; k < 8; k++) oito += (k ? "," : "") + rect("x.c" + std::to_string(k)) + "," + rect("!x.c" + std::to_string(k));
+  nove = oito + "," + rect("x.c8");
+  CHECK(carregarTexto(pacoteCom(2, oito), err, sizeof err), "8 referencias (e as negadas repetidas) deveriam caber: %s", err);
+  facePackUnload();
+  CHECK(!carregarTexto(pacoteCom(2, nove), err, sizeof err), "9 referencias deveriam recusar");
+  facePackUnload();
+  CHECK(carregarTexto(pacoteCom(2, rect("x.a=") + "," + rect("x.abcdefgh=0123456789abcde")), err, sizeof err), "x.a= e limites exatos: %s", err);
+  facePackUnload();
+}
+
+// os miniapps de docs/exemplos: cada um carrega e, numa sequência de envios como a do Home Assistant (estados que
+// trocam, campos que vencem, os três dividindo o armazém), o incremental bate com o quadro cheio e a tela muda
+static void exemplos(Tela *tela) {
+  struct Caso { const char *arq; const char *envios[4]; };
+  const Caso casos[] = {
+    {"../docs/exemplos/casa-lavadora.json",
+     {"{\"ttl\":60,\"values\":{\"lv_est\":\"LAVANDO\",\"lv_txt\":\"ENXAGUE\",\"lv_pct\":70,\"lv_min\":18}}",
+      "{\"ttl\":60,\"values\":{\"lv_est\":\"PRONTA\",\"lv_txt\":\"AS 14:52\",\"lv_pct\":100,\"lv_min\":0}}",
+      "{\"ttl\":60,\"values\":{\"lv_est\":\"DESLIGADA\",\"lv_txt\":\"\",\"lv_pct\":0,\"lv_min\":0}}", nullptr}},
+    {"../docs/exemplos/casa-luzes.json",
+     {"{\"ttl\":60,\"values\":{\"lz_n\":2,\"lz_1\":\"ACESA\",\"lz_2\":\"\",\"lz_3\":\"ACESA\"}}",
+      "{\"ttl\":60,\"values\":{\"lz_n\":0,\"lz_1\":\"\",\"lz_2\":\"\",\"lz_3\":\"\"}}",
+      "{\"ttl\":60,\"values\":{\"lz_n\":1,\"lz_2\":\"ACESA\"}}", nullptr}},
+    {"../docs/exemplos/casa-tomadas.json",
+     {"{\"ttl\":60,\"values\":{\"tm_1\":1,\"tm_w1\":640,\"tm_2\":0,\"tm_w2\":0}}",
+      "{\"ttl\":60,\"values\":{\"tm_1\":0,\"tm_w1\":0,\"tm_2\":1,\"tm_w2\":9}}", nullptr, nullptr}},
+  };
+  appDataClear();
+  UiState st = estado();
+  st.ms = 0xFFFF0000u;  // atravessa a volta do millis()
+  for (const Caso &c : casos) {
+    if (!carregar(c.arq)) { falhas++; continue; }
+    facePackRender(st, true);
+    uint32_t antes = hash(tela->px), primeiro = 0;
+    for (int i = 0; i < 4 && c.envios[i]; i++) {
+      const char *e = put(c.envios[i], st.ms);
+      CHECK(!e, "%s, envio %d recusado: %s", c.arq, i, e ? e : "");
+      st.ms += 1000;
+      appDataExpire(st.ms);
+      facePackRender(st, false);
+      uint32_t inc = hash(tela->px);
+      facePackRender(st, true);
+      CHECK(inc == hash(tela->px), "%s, envio %d: incremental != quadro cheio", c.arq, i);
+      if (i == 0) primeiro = inc;
+    }
+    CHECK(primeiro != antes, "%s: os valores nao mudaram a tela", c.arq);
+    st.ms += 61000;  // tudo vence: volta ao desenho sem dados
+    appDataExpire(st.ms);
+    facePackRender(st, false);
+    uint32_t inc = hash(tela->px);
+    facePackRender(st, true);
+    CHECK(inc == hash(tela->px) && inc == antes, "%s: vencido deveria voltar ao sem dados", c.arq);
+    facePackUnload();
+  }
+  // os três juntos cabem no armazém (12 dos 16 campos)
+  appDataClear();
+  for (const Caso &c : casos) CHECK(!put(c.envios[0], st.ms), "%s nao coube junto com os outros", c.arq);
+}
+
 static const char *PARTES[] = {"ttl", "values", "temp", "hum", "porta", "ABERTA", "a", "x", "900", "10", "86400", "-1", "1.5", "null", "[]", "{}", "\"\"", "true"};
 
 static void fuzz(long casos) {
@@ -282,6 +414,8 @@ int main(int argc, char **argv) {
   parcial_e_atomico();
   volta_do_millis();
   pacote(tela, arq);
+  referencias(tela);
+  exemplos(tela);
   fuzz(casos);
   delete tela;
   if (falhas) { printf("appdata_test: %d falha(s)\n", falhas); return 1; }
