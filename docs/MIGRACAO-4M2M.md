@@ -40,7 +40,12 @@ Um relógio no layout **antigo** (4M3M: 1.23.x ou anterior) só enxerga 1 MB par
 | ponte ou mais nova (4M2M, painel novo) | o `l2`, se houver e for mais novo | direto |
 | anterior à 1.14 | (como antes) | passa antes pela 1.14 |
 
-O `compilar.sh` não recusa mais o build acima da janela (`RELOGIOS_4M3M=0` é o padrão); só informa "janela antiga: cabe/não cabe". `RELOGIOS_4M3M=1 sh compilar.sh` volta a recusar (para compilar de propósito uma versão-ponte). O `sim/ponte_test.cjs` (rodado pelo `sim/build.sh`) simula cada tipo de relógio atualizando ao longo das publicações.
+Duas linhas de versões (desde 22/11/2026):
+
+- **`release/ponte`** gera as 1.26.x, que cabem na janela de 1 MB do layout antigo e levam os relógios até a 1.23 para o 4M2M. Nesse branch (e em PR para ele) o `compilar.sh` exige caber na janela com 8 KB de folga (`RELOGIOS_4M3M=1`, `LIMITE_JANELA_KB=8`), e o `publicar.sh` recusa publicar dali uma versão que não caiba.
+- **`main`** gera as 1.27 em diante. O `compilar.sh` só informa "janela antiga: cabe/não cabe"; o teto passa a ser o do 4M2M (firmware + `.gz` em 2 MB menos `LIMITE_OTA_KB`, 16 KB). A versão que não cabe vai só para o `l2`. A primeira **estável** nessa condição exige `S2_L2_TESTADOS=sim` no `publicar.sh`, depois de testar num aparelho um relógio no 1.23.x subindo pela ponte e uma instalação pelo `l2` (o beta com `l2` fica livre para esse teste).
+
+Correção que valha para as duas linhas entra no `main` e é levada ao `release/ponte` à parte. O `sim/ponte_test.cjs` (rodado pelo `sim/build.sh`) simula cada tipo de relógio atualizando ao longo das publicações.
 
 ## O que acontece no relógio
 
