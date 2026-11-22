@@ -6,6 +6,7 @@
 #  - idioma padrão (inglês) e relógios já instalados que não mudam de idioma (idioma_test.cjs);
 #  - telemetria do /api/state (campos aditivos, uma varredura do heap por pedido, tamanho do último pedaço) e a lista branca
 #    do "Copiar diagnóstico" do painel (telemetria_test.cjs);
+#  - conexão do boot com o SDK sem GOT_IP e a estação com IP: conecta, marca boot.wf + 8, sem rede vai ao portal (wifi_ip_test.cjs);
 #  - ETag do painel no GET /: 304 só com o painel desta versão, carregador sem ETag, login antes (painel_etag_test.cjs);
 #  - cor quente (warm.h): os comandos do gama digital de dia, de noite e na prévia;
 #  - curva de brilho (bri_curva.h) contra a fórmula com powf, em todas as entradas;
@@ -29,11 +30,12 @@ if [ -z "${GEN:-}" ]; then
   node portal_test.cjs "$G/portal.cpp"
   node idioma_test.cjs "$G/idioma.cpp"
   node telemetria_test.cjs "$G/telemetria.cpp"
+  node wifi_ip_test.cjs "$G/wifi_ip.cpp"
   node painel_etag_test.cjs "$G/painel_etag.cpp"
   node brilho_loop_test.cjs "$G/brilho_loop.cpp"
 fi
 export ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1
-for t in sec stats jpg_nomem portal idioma telemetria painel_etag brilho_loop; do
+for t in sec stats jpg_nomem portal idioma telemetria wifi_ip painel_etag brilho_loop; do
   g++ -std=c++17 -fsanitize=address,undefined -g -w "$G/$t.cpp" -o "$T/$t"
   "$T/$t"
 done
@@ -65,6 +67,9 @@ g++ -std=c++17 -fsanitize=address,undefined -g -O1 -w -DARDUINO=100 -DARDUINOJSO
 # dados empurrados: POST /api/apps/data, {x.campo}, ttl na volta do millis, incremental x cheio, fuzz do parser
 g++ -std=c++17 -fsanitize=address,undefined -g -O1 -w -DARDUINO=100 -DARDUINOJSON_ENABLE_ARDUINO_STRING=0 -DARDUINOJSON_ENABLE_ARDUINO_STREAM=0   -DARDUINOJSON_ENABLE_ARDUINO_PRINT=0 -DARDUINOJSON_ENABLE_PROGMEM=0 -Ishim -I"$GFX" -I"$JSON" appdata_test.cpp "$FW/facepack.cpp" "$FW/appdata.cpp" "$FW/ui.cpp"   "$FW"/face_*.cpp "$FW/fonts.cpp" "$FW/src/qrcodegen/qrcodegen.cpp" "$GFX/Adafruit_GFX.cpp" -o "$T/appdata_test"
 "$T/appdata_test" apps-seeds/bento-casa.json "$N"
+# pacote tokensmall (miniapps/tokensmall): campos empurrados pelo companheiro, "--" na janela sem leitura, incremental x cheio
+g++ -std=c++17 -fsanitize=address,undefined -g -O1 -w -DARDUINO=100 -DARDUINOJSON_ENABLE_ARDUINO_STRING=0 -DARDUINOJSON_ENABLE_ARDUINO_STREAM=0   -DARDUINOJSON_ENABLE_ARDUINO_PRINT=0 -DARDUINOJSON_ENABLE_PROGMEM=0 -Ishim -I"$GFX" -I"$JSON" tokensmall_test.cpp "$FW/facepack.cpp" "$FW/appdata.cpp" "$FW/ui.cpp"   "$FW"/face_*.cpp "$FW/fonts.cpp" "$FW/src/qrcodegen/qrcodegen.cpp" "$GFX/Adafruit_GFX.cpp" -o "$T/tokensmall_test"
+"$T/tokensmall_test" apps-seeds/tokensmall.json
 # saída completa em arquivo; um erro em qualquer um interrompe tudo (set -e) e mostra o fim do log
 for f in gif jpeg; do
   if ! bash "test-$f.sh" "$f-seeds" "$N" > "$T/$f.log" 2>&1; then
