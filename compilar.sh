@@ -25,8 +25,15 @@
 cd "$(dirname "$0")"
 # ---- Limites de tamanho (a CI e o scripts/publicar.sh passam por aqui: estourar um deles faz o build FALHAR) ----
 # MUDAR ESTES VALORES exige justificativa no PR que muda: data, novo valor, porquê.
-# Ajuste pontual ou desligar pelo ambiente (0 desliga), por exemplo LIMITE_JANELA_KB=0 depois que a ponte estável estiver no ar.
-LIMITE_JANELA_KB="${LIMITE_JANELA_KB:-8}"   # folga mínima na janela de 1 MB do layout antigo (firmware + .gz, a conta da ponte)
+# Ajuste pontual ou desligar pelo ambiente (0 desliga).
+# Duas linhas desde 22/11/2026: o branch release/ponte gera as versões 1.26.x, que cabem na janela de 1 MB do layout
+# antigo e levam os relógios até a 1.23 para o 4M2M; o main gera 1.27+, que podem passar da janela e só chegam aos
+# relógios 4M2M pelo campo "l2" do JSON (scripts/ponte.cjs). Por isso a trava da janela só vale no release/ponte (e em
+# PR para ele); no main ela fica em 0 e o teto passa a ser o do 4M2M (2 MB de atualização, menos LIMITE_OTA_KB).
+RAMO="${GITHUB_BASE_REF:-${GITHUB_REF_NAME:-$(git rev-parse --abbrev-ref HEAD 2>/dev/null)}}"
+if [ "$RAMO" = release/ponte ]; then RELOGIOS_4M3M="${RELOGIOS_4M3M:-1}"; JANELA_PADRAO=8; else JANELA_PADRAO=0; fi
+LIMITE_JANELA_KB="${LIMITE_JANELA_KB:-$JANELA_PADRAO}"   # folga mínima na janela de 1 MB do layout antigo (firmware + .gz, a conta da ponte)
+LIMITE_OTA_KB="${LIMITE_OTA_KB:-16}"        # 4M2M: margem abaixo dos 2 MB da atualização comprimida (firmware + .gz)
 LIMITE_RAM="${LIMITE_RAM:-39936}"           # RAM fixa máxima em bytes (DATA + RODATA + BSS); sobra o resto da 80 KB para pilha e heap
 CLI="${ARDUINO_CLI:-arduino-cli}"
 LAYOUT="${LAYOUT:-4M2M}"
@@ -47,10 +54,13 @@ size=$(wc -c < build/smalltv-pomodoro.ino.bin)
 gz=$(wc -c < build/smalltv-pomodoro.ino.bin.gz)
 r() { echo $(( ($1 + 4095) / 4096 * 4096 )); }
 # janela de 1 MB do layout antigo: obrigatória no 4M3M e com RELOGIOS_4M3M=1; no 4M2M só é informada (a ponte decide)
-AREA=2097152  # 4M2M: o teto é o do linker (1044464 bytes)
+AREA=$(( 2097152 - LIMITE_OTA_KB * 1024 ))  # 4M2M: o teto do programa é o do linker (1044464 bytes)
 [ "$LAYOUT" = 4M3M ] || [ "${RELOGIOS_4M3M:-0}" = 1 ] && AREA=1048576
 need=$(( $(r $size) + $(r $((gz + 512))) ))
-if [ $need -gt $AREA ]; then
+if [ $need -gt $AREA ] && [ $AREA -gt 1048576 ]; then
+  echo "ERRO firmware: firmware ($(r $size)) + .gz ($(r $((gz + 512)))) = $need bytes passa do teto da atualização comprimida no 4M2M ($AREA = 2 MB - $LIMITE_OTA_KB KB). Reduza o código."
+  exit 1
+elif [ $need -gt $AREA ]; then
   echo "firmware com $size bytes (.gz $gz): não caberia na atualização comprimida feita pelo layout antigo (4M3M, 1 MB):"
   echo "firmware ($(r $size)) + .gz ($(r $((gz + 512)))) > $AREA. Reduza o código, ou compile sem RELOGIOS_4M3M=1 (a versão irá só para os relógios 4M2M, pela ponte)."
   exit 1
@@ -58,7 +68,7 @@ fi
 if [ $need -le 1048576 ]; then echo "janela antiga: cabe (sobram $(( (1048576 - need) / 1024 )) KB; serve de ponte para os relógios no 4M3M)"
 else echo "janela antiga: não cabe ($(( (need - 1048576) / 1024 )) KB a mais; só para os relógios 4M2M, campo l2 do latest.json)"; fi
 [ "$size" -gt 524288 ] && echo "aviso: $size bytes; relógios com versão anterior à 1.14 precisam instalar a 1.14 antes"
-if [ "$AREA" = 2097152 ]; then left=$(( 1044464 - size )); else left=$(( (AREA - $(r $size) - $(r $((gz + 512)))) * 100 / 174 )); fi
+if [ "$AREA" -gt 1048576 ]; then left=$(( 1044464 - size )); else left=$(( (AREA - $(r $size) - $(r $((gz + 512)))) * 100 / 174 )); fi
 echo "firmware: $size bytes, .gz $gz bytes, layout $LAYOUT (ainda pode crescer ~$(( left / 1024 )) KB)"
 # ---- confere os limites (mensagens com "firmware" para o grep do publicar.sh) ----
 falhou=0

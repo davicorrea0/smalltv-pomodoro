@@ -33,8 +33,11 @@ say "versão $VER, $KIND$([ $PUB = 1 ] && echo ', PUBLICANDO' || echo ', ensaio:
 [ -z "$(git status --porcelain --untracked-files=no)" ] || die "há mudanças não commitadas"
 git fetch -q origin
 gh release view "$TAG" -R "$REPO" >/dev/null 2>&1 && die "o release $TAG já existe"
-if [ $BETA = 0 ] && [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]; then
-  die "versão estável: o commit atual precisa já estar no origin/main (git push origin HEAD:main)"
+# Estável sai do main (1.27+) ou do release/ponte (1.26.x, a versão que leva os relógios do layout antigo ao 4M2M).
+PONTE_RAMO=0
+if [ "$(git rev-parse HEAD)" = "$(git rev-parse -q --verify origin/release/ponte 2>/dev/null)" ]; then PONTE_RAMO=1; fi
+if [ $BETA = 0 ] && [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ] && [ $PONTE_RAMO = 0 ]; then
+  die "versão estável: o commit atual precisa já estar no origin/main ou no origin/release/ponte"
 fi
 [ -f "$NOTAS" ] || die "faltam as notas da versão: $NOTAS"
 node -e 'const n=require("./'"$NOTAS"'");for(const l of ["pt","en","es"])if(!Array.isArray(n[l])||!n[l].length)throw new Error("notas sem "+l)'
@@ -84,6 +87,10 @@ if [ "$CABE" = 1 ]; then
   echo "cabe na janela de 1 MB do layout antigo: vai para todos os relógios (topo do JSON, ponte)"
 else
   [ "${LAYOUT:-4M2M}" = 4M2M ] || die "não cabe na janela de 1 MB e o layout é $LAYOUT"
+  [ $PONTE_RAMO = 0 ] || die "o release/ponte só publica versões que cabem na janela de 1 MB do layout antigo"
+  # A primeira estável que não cabe na janela espera dois testes em aparelho: um relógio no 1.23.x subindo pela ponte
+  # (migração para o 4M2M) e uma instalação real pelo "l2" (essa pode ser beta). Depois disso, esta trava sai do script.
+  [ $BETA = 1 ] || [ "${S2_L2_TESTADOS:-}" = sim ] || die "estável maior que a janela antiga: rode com S2_L2_TESTADOS=sim só depois de testar a ponte (1.23.x → 4M2M) e o l2 num relógio"
   DIR=$DIR/l2
   echo "não cabe na janela de 1 MB do layout antigo: só para os relógios 4M2M (campo l2 do JSON, arquivos em $DIR/)"
 fi
