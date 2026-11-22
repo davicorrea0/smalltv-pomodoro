@@ -24,6 +24,11 @@ node ../assets/gerar.js || exit 1  # assets/*.txt -> smalltv-pomodoro/assets.h
 if grep -nE "%[-+ #0-9.]*[fFeEgG]|toFloat|atof|strtod|scanf" ../smalltv-pomodoro/*.cpp ../smalltv-pomodoro/modulos/*.cpp ../smalltv-pomodoro/*.h; then
   echo "use números inteiros ou String(x, casas) em vez de float no printf/scanf"; exit 1
 fi
+# o main.cpp esvazia stopWaveform/_stopPWM do core (sem PWM nem tom: o brilho é sigma-delta em hardware). Quem chamar
+# analogWrite, tone ou startWaveform precisa tirar os dois stubs de lá; o link da CI também falha (símbolo duplicado)
+if grep -rnE "analogWrite(Freq|Range)?[[:space:]]*\(|(^|[^_A-Za-z0-9.])(no)?[tT]one[[:space:]]*\(|startWaveform[[:space:]]*\(" ../smalltv-pomodoro --include=*.cpp --include=*.h --include=*.c | grep -v "/web\.h:"; then
+  echo "PWM/tom no firmware: tire os stubs de stopWaveform/_stopPWM do main.cpp antes de usar analogWrite, tone ou startWaveform"; exit 1
+fi
 # ws_parse.h especializa métodos do servidor HTTP: só vale se uma única unidade de compilação (main.cpp) o instancia
 if grep -lE '#include <ESP8266WebServer.h>' ../smalltv-pomodoro/*.cpp ../smalltv-pomodoro/*.h ../smalltv-pomodoro/modulos/*.cpp | grep -vE '/(app|ws_parse)\.h$'; then
   echo "só o app.h (via ws_parse.h) pode incluir ESP8266WebServer.h"; exit 1
