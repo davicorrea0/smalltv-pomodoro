@@ -448,9 +448,9 @@ void handlePackUpload() {
   }
 }
 
-bool telaLivre() {
+bool telaLivre(bool comAlbum) {
   uint32_t now = millis();
-  return phase == IDLE && !previewActive() && !inAlbum && !vcomTestUntil && !colorTestRequested && !colorTestUntil &&
+  return phase == IDLE && !previewActive() && (comAlbum || !inAlbum) && !vcomTestUntil && !colorTestRequested && !colorTestUntil &&
          !(bootHoldUntil && (int32_t)(now - bootHoldUntil) < 0) && !(alertUntil && (int32_t)(now - alertUntil) < 0) &&
          !recoveryMode && !portalMode && !screenDark();
 }

@@ -319,7 +319,7 @@ void rotSet(const String &v);
 void rotLoop();
 void rotTimesSet(const String &v);
 void rotTimesLoad();
-bool telaLivre();
+bool telaLivre(bool comAlbum = false);
 bool screenDark();
 void setupUpdate();
 void setupQrScreen(bool recovery);
