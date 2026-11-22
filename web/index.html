@@ -394,7 +394,7 @@ try{document.fonts.load('16px Silk','ÁÇÃ0:').then(()=>document.documentElemen
 const $=id=>document.getElementById(id),C=339.3;
 const LBL={work:'FOCO',short:'PAUSA',long:'PAUSA LONGA',idle:'PRONTO'};
 // ---------- idioma (pt/en/es; o relógio guarda em cfg.lang) ----------
-const LANGS=['pt','en','es'],I18N={};let BUILTIN=[];  // inglês/espanhol: web/i18n.json, carregado por loadI18n()
+const LANGS=['pt','en','es'],I18N=Object.create(null);let BUILTIN=[];  // inglês/espanhol: web/i18n.json, carregado por loadI18n()
 let LG=0;try{LG=+localStorage.lang||0}catch(e){}
 // t('texto {0}',a,b): tradução do texto em português, com {0}, {1}... trocados
 const t=(s,...a)=>(LG&&I18N[s]?I18N[s][LG-1]:s).replace(/\{(\d)\}/g,(m,i)=>a[i]);
@@ -573,7 +573,8 @@ function drawGame(){const j=STATS;if(!j)return;const d=j.days,G=j.goal,n=d.lengt
  try{localStorage.ach=JSON.stringify(got)}catch(e){}}
 // Cartão do dia: o desenho (web/share.js) fica no site e só é baixado na hora de compartilhar, que já
 // precisa de internet. O build troca __SHV__ pelo código do arquivo; sem ele (painel de teste), vem de /share.js.
-const SHV='__SHV__',SHI='__SHI__';  // SHI: impressão digital (SRI) do arquivo publicadolet shareJs=null;
+const SHV='__SHV__',SHI='__SHI__';  // SHI: impressão digital (SRI) do arquivo publicado
+let shareJs=null;
 async function shareDay(){if(!st)return;if(!STATS)await loadStats();
  if(!window.shareCard){toast(t('Preparando o cartão...'));shareJs=shareJs||new Promise((ok,no)=>{const s=document.createElement('script');if(SHV[0]=='_')s.src='/share.js';else{s.src=SITE+'panel/share-'+SHV+'.js';s.integrity=SHI;s.crossOrigin='anonymous'}s.onload=ok;s.onerror=no;document.head.appendChild(s)});
   try{await shareJs}catch(e){shareJs=null;return toast(t('Sem internet no navegador'))}}
@@ -674,9 +675,10 @@ async function appsKey(c){if(c=='new'&&HAKEY&&!confirm(t('Trocar a chave? O Home
 function appsCopy(){if(!HAKEY)return toast(t('Crie a chave primeiro'));const a=$('hakey');a.select();
  (navigator.clipboard?navigator.clipboard.writeText(HAKEY).then(()=>1):Promise.reject()).catch(()=>{try{return document.execCommand('copy')}catch(e){return 0}})
   .then(r=>toast(t(r?'Chave copiada':'Não consegui copiar: selecione o texto')))}
-function hooksLoad(){fetch('/api/hooks').then(r=>r.json()).then(h=>{$('hkw').value=h.w;$('hkb').value=h.b}).catch(()=>{})}
-function hooksSave(){return post('/api/hooks',new URLSearchParams({w:$('hkw').value,b:$('hkb').value})).then(r=>{toast(t(r.ok?'Salvo':'Falha: ')+(r.ok?'':r.status));hooksLoad()})}
-async function hookTest(e){await hooksSave();toast(t('Chamando o endereço...'));const c=+(await (await post('/api/hooks',new URLSearchParams({test:e}))).text());
+let hooksOk=false;  // só salva e testa depois de ler os endereços: com os campos vazios por falha da leitura, salvar apagaria os guardados
+function hooksLoad(){return fetch('/api/hooks').then(r=>r.json()).then(h=>{$('hkw').value=h.w;$('hkb').value=h.b;hooksOk=true}).catch(()=>{})}
+function hooksSave(){if(!hooksOk){hooksLoad();toast(t('Falha: ')+'/api/hooks');return Promise.resolve(false)}return post('/api/hooks',new URLSearchParams({w:$('hkw').value,b:$('hkb').value})).then(r=>{toast(t(r.ok?'Salvo':'Falha: ')+(r.ok?'':r.status));hooksLoad();return r.ok})}
+async function hookTest(e){if(!await hooksSave())return;toast(t('Chamando o endereço...'));const c=+(await (await post('/api/hooks',new URLSearchParams({test:e}))).text());
  toast(c>=200&&c<300?t('Enviado ({0}): a Alexa deve falar em instantes',c):c==0?t('Sem endereço salvo para esse aviso'):t('O serviço respondeu {0}: confira o endereço',c))}
 // ---------- configurações (salva sozinho) ----------
 function save(o){return post('/api/settings',new URLSearchParams(o)).then(r=>r.json()).then(s=>{filled=false;load(s);return s})}
