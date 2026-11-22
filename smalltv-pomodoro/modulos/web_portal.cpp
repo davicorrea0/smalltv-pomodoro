@@ -235,6 +235,8 @@ static void sendState() {
   jsonEscapeAppend(j, curFile.c_str());
   j += F("\",\"wx\":{\"ok\":");
   j += wx.ok ? 1 : 0;
+  j += F(",\"fail\":");
+  j += wxBack.fails;
   j += F(",\"t\":");
   appendFixed(j, wx.t, 1);
   j += F(",\"min\":");
@@ -1072,7 +1074,10 @@ void setupWeb() {
     if (newPlace || won != cfg.weatherOn) {
       cfg.weatherOn = won;
       wx.ok = false;
+      wx.rainIn = 0;
+      sunRise = sunSet = -1;
       wx.version++;
+      wxBack.fails = 0;
       wxBack.now();  // busca o clima já
     }
     saveSettings();
@@ -1346,14 +1351,33 @@ static uint32_t ssidHash(const String &s) {  // FNV-1a
   return h;
 }
 
-// Espera conectar animando a barra da tela de início (ver bootAnim)
+// Estação no ar (só para o waitWifi do boot): o estado do SDK diz "conectado" OU a estação já tem endereço IP (o DHCP terminou). O estado do SDK
+// sozinho não basta: com dois WiFi.begin() seguidos (caminho 3 do connectStored) ele pode ficar fora de STATION_GOT_IP
+// com a rede funcionando (issue #44: painel e NTP respondendo e diag.rssi = 0 o tempo todo).
+// O guarda da rede fixada, o diag.rssi, o clima, o mDNS, o NTP e os avisos seguem no WiFi.status(): sem associação, um
+// IP que ficou não deve segurar a rede fixada, e o rssi = 0 continua mostrando esse estado.
+static bool wifiUp() { return WiFi.isConnected() || WiFi.localIP().isSet(); }
+
+static bool bootWifiIpOnly = false;  // o waitWifi aceitou a estação pelo IP, com o SDK dizendo outra coisa
+
+// Espera conectar animando a barra da tela de início (ver bootAnim). Vale também a estação com IP e o SDK dizendo outra
+// coisa (ver wifiUp): antes, esse caso esperava os 20 s e abria o portal com a rede funcionando. Ele fica marcado no
+// diagnóstico (boot.wf + 8) para o relato seguinte dizer se aconteceu.
 static bool waitWifi(uint32_t ms) {
   uint32_t t0 = millis();
-  while (WiFi.status() != WL_CONNECTED && millis() - t0 < ms) {
+  while (!wifiUp() && millis() - t0 < ms) {
     bootAnim(0);
     delay(30);
   }
-  return WiFi.status() == WL_CONNECTED;
+  if (WiFi.status() == WL_CONNECTED) return true;
+  if (!WiFi.localIP().isSet()) return false;
+  // o IP pode chegar um instante antes do estado GOT_IP: só marca depois de 1 s sem ele
+  for (uint32_t t1 = millis(); WiFi.status() != WL_CONNECTED && millis() - t1 < 1000;) {
+    bootAnim(0);
+    delay(30);
+  }
+  if (WiFi.status() != WL_CONNECTED) bootWifiIpOnly = true;
+  return true;
 }
 
 // Rede salva no SDK. Com o canal e o BSSID do último roteador (EEPROM, ver wifiHintSave) o SDK não varre os 13
@@ -1374,22 +1398,25 @@ bool connectStored(uint32_t timeoutMs) {
   WifiHint h;
   EEPROM.get(WIFIH_OFF, h);
   String ssid = WiFi.SSID(), psk = WiFi.psk();
+  bool ok;
   if (!ssid.length() || h.magic != WIFI_MAGIC || h.ssid != ssidHash(ssid) || h.chan < 1 || h.chan > 13) {
     WiFi.begin();
-    return waitWifi(timeoutMs);
-  }
-  WiFi.persistent(false);
-  WiFi.begin(ssid.c_str(), psk.c_str(), h.chan, h.bssid);
-  bool ok = waitWifi(min<uint32_t>(4000, timeoutMs));
-  if (ok) {
-    bootWifiPath = 1;
-    wifiPinned = true;
+    ok = waitWifi(timeoutMs);
   } else {
-    bootWifiPath = 3;
-    WiFi.begin(ssid.c_str(), psk.c_str());
-    uint32_t used = millis() - t0;
-    ok = waitWifi(used < timeoutMs ? timeoutMs - used : 0);
+    WiFi.persistent(false);
+    WiFi.begin(ssid.c_str(), psk.c_str(), h.chan, h.bssid);
+    ok = waitWifi(min<uint32_t>(4000, timeoutMs));
+    if (ok) {
+      bootWifiPath = 1;
+      wifiPinned = true;
+    } else {
+      bootWifiPath = 3;
+      WiFi.begin(ssid.c_str(), psk.c_str());
+      uint32_t used = millis() - t0;
+      ok = waitWifi(used < timeoutMs ? timeoutMs - used : 0);
+    }
   }
+  if (bootWifiIpOnly) bootWifiPath |= 8;  // conectou pelo IP, com o SDK dizendo que não (ver waitWifi)
   return ok;
 }
 

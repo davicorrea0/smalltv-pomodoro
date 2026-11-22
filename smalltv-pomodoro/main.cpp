@@ -495,3 +495,13 @@ void loop() {
     if (!inAlbum) renderClock();
   }
 }
+
+// Sem as tabelas de unwind: o core chama __register_frame_info no início (core_esp8266_main.cpp), o que liga o
+// unwind-dw2-fde da libgcc (−4.288 B de .bin). O firmware compila sem exceções C++ (padrão do core), então nada
+// desenrola a pilha e o registro não serve para nada. Se algum dia as exceções forem ligadas (-fexceptions), este stub
+// tem de sair, e o #error abaixo avisa. Fica só aqui, nunca num arquivo que o sim/build.sh compile: no PC tomaria o
+// lugar do registro da libgcc.
+#ifdef __EXCEPTIONS
+#error "exceções ligadas: tire o stub de __register_frame_info deste arquivo"
+#endif
+extern "C" void __register_frame_info(const void *, void *) {}
