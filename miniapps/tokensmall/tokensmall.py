@@ -369,8 +369,8 @@ def _cofre_apagar(alvo=ALVO_CHAVE):
 
 def _validar_chave(chave, fonte):
     if not re.fullmatch(r"[0-9a-fA-F]{32}", chave or ""):
-        raise ValueError("chave invalida na %s; defina SMALLTV_CHAVE ou rode 'tokensmall.py chave guardar'" % fonte)
-    return chave
+        raise ValueError("chave invalida (%s); defina SMALLTV_CHAVE ou rode 'tokensmall.py chave guardar'" % fonte)
+    return chave.lower()  # o relógio só aceita a chave em minúsculas
 
 
 def obter_chave():
@@ -526,11 +526,19 @@ def cmd_chave(args):
 
 
 def cmd_enviar(args, agora=time.time, dormir=time.sleep):
-    host = destino_seguro(args.relogio or os.environ.get("SMALLTV_IP"))
-    chave = obter_chave()
+    try:
+        host = destino_seguro(args.relogio or os.environ.get("SMALLTV_IP"))
+    except ValueError as err:
+        # sem terminal (pythonw) o motivo precisa ficar em arquivo; endereço errado não se corrige sozinho: sai
+        agora_ = int(agora())
+        gravar_ultimo("erro: " + str(err), agora_)
+        if getattr(args, "log", None) is not None:
+            gravar_log(args.log, "erro: " + str(err), agora_)
+        raise
     ultimo, ultimo_envio, avisou, proxima_tentativa = None, 0, False, 0
     while True:
         instante_atual = int(agora())
+        erro = None
         try:
             v = completar(valores(coletar(instante_atual), instante_atual))
             if not v:
@@ -539,7 +547,14 @@ def cmd_enviar(args, agora=time.time, dormir=time.sleep):
                     _mostrar(args, "sem leitura de limites ainda; o relógio mostra '--'", instante_atual, False)
                     avisou = True
             elif instante_atual >= proxima_tentativa and (v != ultimo or instante_atual - ultimo_envio >= args.ttl // 3):
-                erro = enviar(host, montar(v, args.ttl), chave)
+                try:
+                    chave = obter_chave()  # relida a cada tentativa: 'chave guardar' depois do atalho ou uma chave trocada valem sem reiniciar
+                except ValueError as err:
+                    if args.uma_vez:
+                        raise
+                    erro = Recusa(str(err))
+                else:
+                    erro = enviar(host, montar(v, args.ttl), chave)
                 mensagem = ("erro: " + erro) if erro else "enviado " + ", ".join(sorted(v))
                 if erro and getattr(erro, "definitiva", False):
                     proxima_tentativa = instante_atual + ESPERA_RECUSA
@@ -549,7 +564,7 @@ def cmd_enviar(args, agora=time.time, dormir=time.sleep):
                 if not erro:
                     ultimo, ultimo_envio, avisou = v, instante_atual, False
             if args.uma_vez:
-                return 0 if v else 1
+                return 0 if v and not erro else 1
         except Exception as err:
             if args.uma_vez:
                 raise

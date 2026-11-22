@@ -18,7 +18,9 @@ function Obter-Pythonw {
         $resolvido = [IO.Path]::GetFullPath($Caminho)
     }
     else {
-        $comando = Get-Command 'pythonw.exe' -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+        # o alias da Microsoft Store (WindowsApps) nao roda em atalho: pega o primeiro pythonw.exe que nao seja ele
+        $comando = Get-Command 'pythonw.exe' -All -CommandType Application -ErrorAction SilentlyContinue |
+            Where-Object { $_.Source -notmatch '(?i)\\WindowsApps\\' } | Select-Object -First 1
         if (-not $comando) {
             throw 'pythonw.exe nao foi encontrado. Passe -Python com o caminho completo do pythonw.exe.'
         }
@@ -37,7 +39,9 @@ function Testar-IPv4Privado {
     param([string]$Texto)
 
     $ip = $null
-    if (-not [Net.IPAddress]::TryParse($Texto, [ref]$ip) -or
+    # TryParse aceita '192.168.1', numero inteiro e zeros a esquerda; o Python recusaria e o atalho morreria calado no login
+    if ($Texto -notmatch '^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$' -or
+        -not [Net.IPAddress]::TryParse($Texto, [ref]$ip) -or
         $ip.AddressFamily -ne [Net.Sockets.AddressFamily]::InterNetwork) {
         return $false
     }
@@ -74,7 +78,7 @@ if ($Remover) {
 
     if (Test-Path -LiteralPath $atalho) {
         Remove-Item -LiteralPath $atalho -Force
-        Write-Host "Atalho removido: $atalho"
+        Write-Host "Atalho removido: $atalho (um tokensmall que ja esta rodando continua ate voce encerrar o pythonw.exe no Gerenciador de Tarefas ou sair do Windows)"
     }
     else {
         Write-Host 'O atalho ja nao existe.'
@@ -142,4 +146,5 @@ $link.Save()
 
 Write-Host "Atalho criado: $atalho"
 Write-Host 'Para verificar: abra %LOCALAPPDATA%\tokensmall\ultimo.txt e %LOCALAPPDATA%\tokensmall\envio.log.'
+Write-Host 'O atalho vale a partir do proximo login. Para iniciar ja, rode o atalho; para parar um tokensmall em execucao, encerre o pythonw.exe no Gerenciador de Tarefas.'
 Write-Host "Para desinstalar: powershell -ExecutionPolicy Bypass -File `"$PSCommandPath`" -Remover -Nome `"$Nome`" -Python `"$pythonw`""

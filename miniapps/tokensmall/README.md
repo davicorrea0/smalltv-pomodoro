@@ -86,7 +86,7 @@ Depois de conferir que o envio manual funciona, o companheiro pode subir sozinho
    consegue ler as credenciais da sua conta. O ganho é não deixar a chave em arquivo, no histórico do terminal nem no
    ambiente. `chave apagar` remove. A variável `SMALLTV_CHAVE`, se definida, tem prioridade sobre a credencial. Uma chave por
    PC (um relógio).
-2. **Atalho na pasta Inicializar.** Rode o `.ps1` **você mesmo** (nada o executa por você). Primeiro só para ver o que ele faria:
+2. **Atalho na pasta Inicializar.** Rode o `.ps1` **você mesmo** (nada o executa por você), a partir da pasta do repositório onde ele vai ficar (o atalho aponta para o `tokensmall.py` desse lugar). Primeiro só para ver o que ele faria:
    ```powershell
    powershell -ExecutionPolicy Bypass -File miniapps/tokensmall/windows/instalar.ps1 -SoMostrar -Relogio 192.168.1.50
    powershell -ExecutionPolicy Bypass -File miniapps/tokensmall/windows/instalar.ps1 -Relogio 192.168.1.50
@@ -96,7 +96,8 @@ Depois de conferir que o envio manual funciona, o companheiro pode subir sozinho
    atalho da Microsoft Store, o script recusa: passe `-Python C:\caminho\pythonw.exe`. Reserve o IP do relógio no roteador
    (DHCP): se o IP mudar, o envio para de chegar e o motivo aparece em `ultimo.txt`.
 3. **Ver se funciona:** `%LOCALAPPDATA%\tokensmall\ultimo.txt` (último envio) e `envio.log` (histórico, até 200 KB).
-4. **Desinstalar:** `instalar.ps1 -Remover` apaga o atalho e pergunta se apaga a credencial (`-Sim` responde sim).
+4. **Desinstalar:** `instalar.ps1 -Remover` apaga o atalho e pergunta se apaga a credencial (`-Sim` responde sim). Vale a partir do próximo login: para parar já um `tokensmall` que está rodando, encerre o `pythonw.exe` no Gerenciador de Tarefas.
+5. **Se algo falhar sem terminal:** o motivo vai para `ultimo.txt` e `envio.log` (chave ausente, relógio recusando, rede fora). A chave é lida de novo a cada envio: rodar `chave guardar` depois do atalho, ou trocar a chave, vale sem reiniciar.
 
 O `statusLine` do Claude Code **só grava** os limites num arquivo local; quem fala com o relógio é sempre o `enviar`, para que
 uma falha de rede nunca atrase o Claude Code. O laço não sai com erro de rede nem com erro inesperado (registra e segue);

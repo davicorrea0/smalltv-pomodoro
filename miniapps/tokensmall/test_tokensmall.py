@@ -678,6 +678,83 @@ class Laco(unittest.TestCase):
         finally:
             ts.coletar, ts.enviar = original_coletar, original_enviar
 
+    def test_chave_relida_a_cada_tentativa_e_falta_de_chave_nao_mata_o_laco(self):
+        """Atalho criado antes de 'chave guardar', ou chave trocada: o laço pega a nova sem reiniciar e registra o motivo."""
+        import contextlib
+        import io
+        from unittest import mock
+        outra = "fedcba9876543210fedcba9876543210"
+        usadas, estado = [], {"chave": None}
+        relogio = [AGORA]
+
+        def obter():
+            if estado["chave"] is None:
+                raise ValueError("defina SMALLTV_CHAVE ou rode 'tokensmall.py chave guardar'")
+            return estado["chave"]
+
+        def enviar(host, corpo, chave):
+            usadas.append(chave)
+            return None
+
+        def dormir(_):
+            relogio[0] += 60
+            if len(usadas) == 0 and relogio[0] == AGORA + 120:
+                estado["chave"] = CHAVE        # a pessoa rodou 'chave guardar'
+            if len(usadas) == 1:
+                estado["chave"] = outra        # e depois trocou a chave
+            if len(usadas) == 2:
+                raise self.Parar()
+
+        leitura = lambda agora: {"claude": {"5": (42.0 + (agora - AGORA) // 60, agora + 8000)}, "codex": {}}
+        with mock.patch.object(ts, "obter_chave", side_effect=obter), mock.patch.object(ts, "enviar", side_effect=enviar), \
+                mock.patch.object(ts, "coletar", side_effect=leitura), contextlib.redirect_stdout(io.StringIO()):
+            with self.assertRaises(self.Parar):
+                ts.cmd_enviar(self.args(9, 60), agora=lambda: relogio[0], dormir=dormir)
+        self.assertEqual(usadas, [CHAVE, outra])
+        with open(os.path.join(self.tmp.name, "ultimo.txt"), encoding="utf-8") as f:
+            self.assertIn("enviado", f.read())
+
+    def test_sem_chave_registra_o_motivo_em_ultimo_txt(self):
+        import contextlib
+        import io
+        from unittest import mock
+        relogio = [AGORA]
+
+        def dormir(_):
+            raise self.Parar()
+
+        with mock.patch.object(ts, "obter_chave", side_effect=ValueError("defina SMALLTV_CHAVE ou rode 'tokensmall.py chave guardar'")), \
+                mock.patch.object(ts, "coletar", side_effect=lambda agora: self.leitura(agora)), contextlib.redirect_stdout(io.StringIO()):
+            with self.assertRaises(self.Parar):
+                ts.cmd_enviar(self.args(9, 60), agora=lambda: relogio[0], dormir=dormir)
+        with open(os.path.join(self.tmp.name, "ultimo.txt"), encoding="utf-8") as f:
+            self.assertIn("erro: defina SMALLTV_CHAVE", f.read())
+
+    def test_uma_vez_devolve_1_se_o_relogio_recusou(self):
+        import contextlib
+        import io
+        from unittest import mock
+        with mock.patch.object(ts, "obter_chave", return_value=CHAVE), \
+                mock.patch.object(ts, "coletar", side_effect=lambda agora: self.leitura(agora)), \
+                mock.patch.object(ts, "enviar", return_value=ts.Recusa("chave recusada (401)", True)), \
+                contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(ts.cmd_enviar(self.args(9, 60, uma_vez=True), agora=lambda: AGORA), 1)
+
+    def test_ip_invalido_fica_registrado_antes_de_sair(self):
+        from unittest import mock
+        ts.destino_seguro = self.destino_original   # este teste quer a validação de verdade
+        with mock.patch.object(ts, "obter_chave", return_value=CHAVE):
+            with self.assertRaises(ValueError):
+                ts.cmd_enviar(types.SimpleNamespace(relogio="8.8.8.8", ttl=900, intervalo=60, uma_vez=False, log=None),
+                              agora=lambda: AGORA)
+        with open(os.path.join(self.tmp.name, "ultimo.txt"), encoding="utf-8") as f:
+            self.assertIn("erro:", f.read())
+
+    def test_chave_em_maiusculas_vai_em_minusculas(self):
+        from unittest import mock
+        with mock.patch.dict(os.environ, {"SMALLTV_CHAVE": CHAVE.upper()}):
+            self.assertEqual(ts.obter_chave(), CHAVE)
+
     def test_excecao_inesperada_nao_mata_o_laco(self):
         original_coletar, original_enviar = ts.coletar, ts.enviar
         chamadas, registrado = [0], []
