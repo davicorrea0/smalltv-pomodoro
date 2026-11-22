@@ -237,7 +237,8 @@ void setupUpdate() {
           ota.gz = up.currentSize > 1 && up.buf[0] == 0x1F && up.buf[1] == 0x8B;
           uint32_t room = (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000, size = room;
           if (ota.gz) {  // negativo (Content-Length: -1) virava ~4 GB e o Updater arredondava para 0: gravaria por cima do LittleFS
-            long cl = server.header("Content-Length").toInt();
+            const String &h = server.header("Content-Length");  // sem o cabeçalho, o toInt() leria os bytes do pedido anterior
+            long cl = h.length() ? h.toInt() : 0;
             size = cl > 0 && (uint32_t)cl <= room ? (uint32_t)cl : 0;
           }
           if (!size || !Update.begin(size, U_FLASH)) ota.err = size ? Update.getErrorString() : String(F("tamanho desconhecido"));

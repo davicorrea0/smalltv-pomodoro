@@ -20,6 +20,10 @@ if (!web.includes('server.on("/", HTTP_GET, sendPanel);')) throw Error('setupWeb
 if (!body.includes('readOk()') || body.indexOf('readOk()') > body.indexOf('304')) throw Error('GET /: readOk() antes do 304');
 // Accept-Ranges faria o navegador guardar uma entrada parcial e pedir a retomada por Range, que o servidor não atende
 if (body.includes('Accept-Ranges')) throw Error('GET /: sem Accept-Ranges');
+// O core 3.1.2 limpa os cabeçalhos com String::clear(), que só zera o tamanho: comparar pelo c_str() sem olhar o
+// tamanho deixava o If-None-Match de um pedido valer para os seguintes (304 vazio até em aba anônima, issue #44)
+if (!/inm\.length\(\)/.test(body)) throw Error('GET /: o If-None-Match tem de ser comparado também pelo tamanho');
+for (const m of source.matchAll(/server\.header\([^)]*\)\.(c_str|toInt)\(\)/g)) throw Error('header(...).' + m[1] + '() lê os bytes do pedido anterior quando o cabeçalho não veio: confira o tamanho antes');
 const out = process.argv[2];
 if (!out) throw Error('saida.cpp obrigatória');
 fs.writeFileSync(out, `#include <string>
