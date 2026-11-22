@@ -90,7 +90,7 @@ const start=update.slice(update.indexOf('UPLOAD_FILE_START'),update.indexOf('UPL
 if(!/else \{[^]*eboot_command_clear\(\);/.test(start))throw Error('upload start (authorized) must clear a pending eboot command');
 const abort=update.slice(update.indexOf('UPLOAD_FILE_ABORTED'));
 if(!abort.includes('otaCancel();'))throw Error('aborted upload must cancel the staged swap');
-if(!update.includes('long cl = server.header("Content-Length").toInt();')||!update.includes('cl > 0 && (uint32_t)cl <= room'))throw Error('Content-Length must be checked as signed and bounded before Update.begin');
+if(!update.includes('long cl = h.length() ? h.toInt() : 0;')||!update.includes('const String &h = server.header("Content-Length");')||!update.includes('cl > 0 && (uint32_t)cl <= room'))throw Error('Content-Length must be checked as signed and bounded before Update.begin');
 const sigOk=source.slice(source.indexOf('static bool otaSigOk() {'),source.indexOf('\n}',source.indexOf('static bool otaSigOk() {')));
 if(!sigOk.includes('if (recoveryMode) return true;')||!sigOk.includes('stack_thunk_add_ref();')||!sigOk.includes('getMaxFreeBlockSize()'))
  throw Error('otaSigOk: recovery escape, thunk stack and heap check are required');
