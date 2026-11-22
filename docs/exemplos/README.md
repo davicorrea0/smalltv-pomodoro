@@ -19,7 +19,8 @@ Antes, siga a [receita do Home Assistant](../HOME-ASSISTANT.md): crie a chave no
 4. Cole a automação correspondente abaixo no Home Assistant, trocando os nomes das entidades.
 
 Os três juntos usam 12 dos 16 campos do relógio. Cada um usa um prefixo próprio (`lv_`, `lz_`, `tm_`) para não pisar
-no outro.
+no outro. O miniapp de uso de IA ([tokensmall](../../miniapps/tokensmall/README.md), prefixo `tk_`) usa os 4 que sobram:
+com ele os campos ficam em 16 de 16, e um quinto miniapp não cabe (o envio é recusado sem mudar nada).
 
 ## Luzes (`casa-luzes.json`)
 
