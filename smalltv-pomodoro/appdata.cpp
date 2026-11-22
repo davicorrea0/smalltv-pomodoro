@@ -66,13 +66,13 @@ const char *appShowParse(const char *body, size_t len, char *pkg, size_t pkgCap,
   uint8_t parsedSecs = 0;
 
   showSpace(p, end);
-  if (p == end || *p++ != '{') return PSTR("esperado objeto");
+  if (p == end || *p++ != '{') return PSTR("JSON invalido");
   for (;;) {
     showSpace(p, end);
     if (p == end || *p != '"') return PSTR("JSON invalido");
     const char *key = ++p;
     while (p < end && *p != '"' && *p != '\\' && (uint8_t)*p >= 0x20) p++;
-    if (p == end || *p != '"') return PSTR("chave invalida");
+    if (p == end || *p != '"') return PSTR("JSON invalido");
     size_t keyLen = (size_t)(p - key);
     p++;
     showSpace(p, end);
@@ -80,7 +80,7 @@ const char *appShowParse(const char *body, size_t len, char *pkg, size_t pkgCap,
     showSpace(p, end);
 
     if (keyLen == 3 && !memcmp(key, "pkg", 3)) {
-      if (gotPkg) return PSTR("chave repetida");
+      if (gotPkg) return PSTR("JSON invalido");
       gotPkg = true;
       if (p == end || *p++ != '"') return PSTR("pkg invalido");
       pkgLen = 0;
@@ -94,9 +94,9 @@ const char *appShowParse(const char *body, size_t len, char *pkg, size_t pkgCap,
       parsedPkg[pkgLen] = 0;
       if (parsedPkg[0] == '_') return PSTR("pkg invalido");  // "_novo" e afins são os temporários do envio de pacote
     } else if (keyLen == 1 && *key == 's') {
-      if (gotSecs) return PSTR("chave repetida");
+      if (gotSecs) return PSTR("JSON invalido");
       gotSecs = true;
-      if (p == end || *p < '1' || *p > '9') return PSTR("s invalido");
+      if (p == end || *p < '1' || *p > '9') return PSTR("s fora de 5 a 60");
       unsigned v = 0;
       bool grande = false;
       do {
@@ -106,7 +106,7 @@ const char *appShowParse(const char *body, size_t len, char *pkg, size_t pkgCap,
       } while (p < end && *p >= '0' && *p <= '9');
       if (grande || v < 5 || v > 60) return PSTR("s fora de 5 a 60");
       parsedSecs = (uint8_t)v;
-    } else return PSTR("chave desconhecida");
+    } else return PSTR("JSON invalido");
 
     showSpace(p, end);
     if (p == end) return PSTR("JSON invalido");
@@ -115,10 +115,10 @@ const char *appShowParse(const char *body, size_t len, char *pkg, size_t pkgCap,
     return PSTR("JSON invalido");
   }
   showSpace(p, end);
-  if (p != end) return PSTR("dados depois do objeto");
-  if (!gotPkg) return PSTR("pkg ausente");
-  if (!gotSecs) return PSTR("s ausente");
-  if (!pkg || pkgCap <= pkgLen || !secs) return PSTR("saida pequena");
+  if (p != end) return PSTR("JSON invalido");
+  if (!gotPkg) return PSTR("pkg invalido");
+  if (!gotSecs) return PSTR("s fora de 5 a 60");
+  if (!pkg || pkgCap <= pkgLen || !secs) return PSTR("pkg invalido");
   memcpy(pkg, parsedPkg, pkgLen + 1);
   *secs = parsedSecs;
   return nullptr;

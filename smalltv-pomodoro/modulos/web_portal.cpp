@@ -970,9 +970,8 @@ void setupWeb() {
     uint8_t secs;
     const char *err = appShowParse(b.c_str(), b.length(), pkg, sizeof pkg, &secs);
     if (err) { server.send_P(400, PSTR("text/plain"), err); return; }
-    if (!telaLivre(true)) { server.send_P(409, PSTR("text/plain"), PSTR("ocupado")); return; }
-    // Tempo decorrido sem sinal: a volta do millis() não pode deixar a recusa presa para sempre.
-    if (showVisto && (uint32_t)(millis() - showFim) < 60000UL) {
+    // tela livre (o show interrompe o álbum) e, em tempo decorrido sem sinal (a volta do millis() não pode deixar a recusa presa), fora dos 60 s depois do último show
+    if (!telaLivre(true) || (showVisto && (uint32_t)(millis() - showFim) < 60000UL)) {
       server.send_P(409, PSTR("text/plain"), PSTR("ocupado"));
       return;
     }
