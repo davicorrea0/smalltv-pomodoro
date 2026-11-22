@@ -68,15 +68,15 @@ Precisa de um firmware com `POST /api/apps/data` e da chave de escrita criada.
    python miniapps/tokensmall/tokensmall.py ver                      # mostra o que seria enviado, sem rede
    python miniapps/tokensmall/tokensmall.py enviar --relogio 192.168.1.50
    ```
-   `--uma-vez` envia uma vez e sai; sem ele o programa fica rodando (lê a cada 60 s e reenvia a cada 5 min).
+   `--uma-vez` envia uma vez e sai; sem ele o programa fica rodando (lê a cada 60 s e reenvia quando algo muda, em geral a cada minuto, porque o tempo até reiniciar anda).
 
 ## O que a tela mostra
 
-Duas linhas por assistente (5 horas e 7 dias), cada uma com o percentual **usado**, o tempo até reiniciar (`42% 2h13`) e uma barra que enche com o uso. Quando nada chega há 15 minutos, tudo volta para `--` e o rodapé troca para "SEM O PC" em âmbar.
+Duas linhas por assistente (5 horas e 7 dias), cada uma com o percentual **usado**, o tempo até reiniciar (`42% 2h13`) e uma barra que enche com o uso. Quando nada chega há 15 minutos, tudo volta para `--` e o rodapé troca para "SEM O PC" em âmbar (isso inclui o PC ligado e sem uso do Claude e do Codex há mais de 1 ou 12 horas: sem leitura recente, o companheiro não envia nada).
 
 - **Leitura velha vira `--`.** O companheiro só reenvia uma leitura se ela for recente: até 1 hora para a janela de 5 h e até 12 horas para a de 7 dias (o Claude pela hora em que o `statusLine` gravou; o Codex pela hora do arquivo de sessão). Sem isso, um número de horas atrás continuaria na tela com cara de atual (por exemplo se você gastou o limite no claude.ai ou em outro PC).
 - **Chave recusada não trava o painel.** Se o relógio responde 401, 403, 404, 429 ou redirecionamento, o companheiro espera 10 minutos antes de tentar de novo (o relógio usa o mesmo limitador de senha errada para a rota de dados e para o painel, então insistir a cada minuto bloquearia o painel aberto neste PC). Erro de rede, como o Wi-Fi ainda subindo, tenta a cada volta.
-- **Dá para saber o que aconteceu sem terminal.** `enviar` grava uma linha em `ultimo.txt` na pasta de estado (`%LOCALAPPDATA%	okensmall` no Windows): horário e `enviado tk_c5,...`, `erro: ...` ou `sem leitura`. Nunca a chave nem os números.
+- **Dá para saber o que aconteceu sem terminal.** `enviar` grava uma linha em `ultimo.txt` na pasta de estado (`%LOCALAPPDATA%\tokensmall` no Windows): horário e `enviado tk_c5,...`, `erro: ...` ou `sem leitura`. Nunca a chave nem os números.
 
 ## Limites desta versão
 
