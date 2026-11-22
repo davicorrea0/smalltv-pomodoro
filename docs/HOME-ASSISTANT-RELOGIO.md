@@ -156,7 +156,7 @@ script:
 ```
 
 No estado, `cfg.cycles` é o número de focos da sessão (`0` = sem fim), `sess` é quantos focos da sessão atual já
-terminaram e `sdone` vale `1` quando a sessão acabou. A Alexa não chama sessões: as três lâmpadas que ela encontra continuam
+terminaram e `sdone` vale `1` quando a sessão acabou. Ao fim da sessão o relógio dispara o aviso de fim de pausa (`/hooks.txt`), como em qualquer pausa que acaba. A Alexa não chama sessões: as três lâmpadas que ela encontra continuam
 fixas em Pomodoro, Pausa e Pausa longa.
 
 ## Atualizar na hora (fim de foco e de pausa)
@@ -229,5 +229,5 @@ The YAML in “Sessões Deep focus e Gentle focus” applies each template with 
 `c=start`, in that order. Deep focus is 50/10/25 minutes, every 3 focuses, 3 focuses total; Gentle focus is 25/5/20,
 every 2, 2 focuses total. Both send `auto=1`, use `application/x-www-form-urlencoded`, `X-SmallTV: 1`, and the same Basic
 authentication as the command example. In state, `cfg.cycles` is the plan limit (`0` means unlimited), `sess` is the
-number of completed focuses in the current plan, and `sdone` is `1` after the plan ends. Alexa cannot start these
+number of completed focuses in the current plan, and `sdone` is `1` after the plan ends. When a plan ends, the clock fires the end-of-break hook (`/hooks.txt`), like any break that finishes. Alexa cannot start these
 plans: its three exposed lights remain the fixed Pomodoro, Short break, and Long break controls.
