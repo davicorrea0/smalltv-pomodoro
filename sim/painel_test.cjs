@@ -163,6 +163,33 @@ const i = html.indexOf('async function runSteps('), runSteps = new Function('ret
     assert(dict[k] && dict[k].length == 2 && dict[k].every(x => x), 'sem tradução: ' + k);
   console.log('painel: página Miniapps abaixo de Relógio, com o cartão do Home Assistant; Relógio sem miniapps; rodízio com selo');
 }
+// Declarações que não podem virar comentário, avisos que não apagam os endereços guardados e dicionário sem protótipo.
+(async () => {
+  // `let shareJs` colado no fim de um comentário `//` sumia da página: "Compartilhar meu dia" dava ReferenceError (desde a 1.14)
+  assert(/^let shareJs=null;/m.test(html), 'let shareJs=null precisa começar a linha (não pode ficar dentro de um comentário)');
+  const sc = html.slice(html.lastIndexOf('<script'), html.lastIndexOf('</script>'));
+  for (const l of sc.split('\n')) assert(!/\/\/.*\blet \w+=/.test(l.replace(/'[^']*'|"[^"]*"|`[^`]*`/g, '')), 'declaração dentro de comentário: ' + l.slice(0, 80));
+  // avisos: sem ler os endereços do relógio, salvar ou testar mandaria campos vazios e apagaria o que estava guardado
+  const run = async (loadOk) => {
+    const sent = [], el = { hkw: { value: '' }, hkb: { value: '' } };
+    const code = html.slice(html.indexOf('let hooksOk=false'), html.indexOf('// ---------- configurações (salva sozinho)'));
+    const f = new Function('$', 'fetch', 'post', 'toast', 't', code + ';return {hooksLoad,hooksSave,hookTest}');
+    const api = f(id => el[id], async () => { if (!loadOk) throw new Error('rede'); return { json: async () => ({ w: 'http://a', b: 'http://b' }) }; },
+      async (u, b) => { sent.push(b.toString()); return { ok: true, status: 200, text: async () => '200' }; }, () => {}, s => s);
+    return { api, sent, el };
+  };
+  let r = await run(false);
+  await r.api.hooksLoad(); await r.api.hookTest('w'); await r.api.hooksSave();
+  assert.deepStrictEqual(r.sent, [], 'leitura falhou: não pode salvar nem testar');
+  r = await run(true);
+  await r.api.hooksLoad();
+  assert.strictEqual(r.el.hkw.value, 'http://a');
+  await r.api.hooksSave();
+  assert.deepStrictEqual(r.sent, ['w=http%3A%2F%2Fa&b=http%3A%2F%2Fb']);
+  // nome de mostrador "constructor": não é tradução
+  assert(html.includes('I18N=Object.create(null)'), 'I18N precisa ser um objeto sem protótipo');
+  console.log('painel: compartilhar declarado, avisos só salvam depois de ler os endereços e o dicionário ignora nomes como "constructor"');
+})();
 // Envio de GIF e de fotos (web/index.html): o relógio mostra só o canto superior esquerdo de GIF acima de 240×240 e
 // recusa acima de 480×480 (album.cpp, gifcheck.h); o painel avisa antes de enviar e confere o espaço livre.
 (async () => {
