@@ -259,6 +259,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
  <h2>Clima</h2>
  <div class="card">
   <div id="wx" hidden><b id="wt"></b><div><div id="wd"></div><small id="wm"></small></div></div>
+  <small id="wxerr" hidden>O serviço de clima (Open-Meteo) não responde desta rede.</small>
   <label>Mostrar clima<input data-k="won" type="checkbox"></label>
   <label>Temperatura em °F<input data-k="fahr" type="checkbox"></label>
   <label>Avisar quando for chover<input data-k="rain" type="checkbox"></label>
@@ -768,6 +769,7 @@ function load(s){if(s.cfg.lang!=null&&s.cfg.lang!=LG)setLang(s.cfg.lang);if(last
  $('pvbar').style.display=s.pv?'block':'none';if(s.pv)$('pvbar').textContent=t('Prévia no relógio por mais {0} s · depois ele volta para {1}',s.pv,cf?cf.n:t('o mostrador salvo'));
  // clima
  $('city').textContent=s.cfg.city||'—';$('wx').hidden=!(s.cfg.won&&s.wx.ok);
+ $('wxerr').hidden=!(s.cfg.won&&s.cfg.city&&s.wx.fail>=3);
  if(s.wx.ok){const dg=c=>Math.round(s.cfg.fahr?c*9/5+32:c)+'°';$('wt').textContent=dg(s.wx.t);$('wd').textContent=(s.cfg.city?s.cfg.city+' · ':'')+(s.wx.rin?(s.wx.rin<15?t('Chuva logo'):t('Chuva em {0} min',s.wx.rin)):s.wx.desc);$('wm').textContent=t('Mín')+' '+dg(s.wx.min)+' · '+t('Máx')+' '+dg(s.wx.max)+' · '+t('Umidade')+' '+s.wx.h+'%'}
  // fotos
  $('fsinfo').textContent=s.fs.ok?t('{0} usados de {1}',kb(s.fs.used),kb(s.fs.total)):t('Memória de arquivos indisponível');
