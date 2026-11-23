@@ -4,7 +4,7 @@
 #  - foto sem memória × foto estragada (jpg_nomem_test.cjs);
 #  - portal de Wi-Fi: o HTML e a gravação da rede dos handlers reais (portal_test.cjs);
 #  - idioma padrão (inglês) e relógios já instalados que não mudam de idioma (idioma_test.cjs);
-#  - UTF-8 da fonte pixel: alemão, acentos reduzidos à letra base e entradas malformadas (utf8_test.cpp);
+#  - UTF-8 da fonte pixel: alemão, russo, acentos reduzidos à letra base e entradas malformadas (utf8_test.cpp);
 #  - telemetria do /api/state (campos aditivos, uma varredura do heap por pedido, tamanho do último pedaço) e a lista branca
 #    do "Copiar diagnóstico" do painel (telemetria_test.cjs);
 #  - /api/state completo e com cfg=0, cv derivado sem senhas e cache do painel (state_cfg_test.cjs);
