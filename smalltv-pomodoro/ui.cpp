@@ -8,6 +8,7 @@
 //  - redesenho incremental: cada área guarda o que mostrou e só repinta se mudou.
 
 #include "ui.h"
+#include "lang_tr.h"
 #include "assets.h"
 #include "ui_kit.h"
 #include "facepack.h"
@@ -46,7 +47,33 @@ const char *trP(PGM_P pt, PGM_P en, PGM_P es) {
   static char buf[6][48];
   static uint8_t k = 0;
   char *b = buf[k++ % 6];
-  strncpy_P(b, uiLang == 1 || uiLang >= 3 ? en : uiLang == 2 ? es : pt, sizeof buf[0] - 1);
+  PGM_P texto = uiLang == 1 ? en : uiLang == 2 ? es : pt;
+  if (uiLang >= 3) {
+    uint32_t hash = 2166136261u;
+    for (PGM_P p = pt;; p++) {
+      const uint8_t c = pgm_read_byte(p);
+      if (!c) break;
+      hash ^= c;
+      hash *= 16777619u;
+    }
+    const uint32_t *hashes = uiLang == 3 ? LANG_DE_H : LANG_RU_H;
+    const uint16_t *offsets = uiLang == 3 ? LANG_DE_O : LANG_RU_O;
+    PGM_P strings = uiLang == 3 ? LANG_DE_S : LANG_RU_S;
+    int16_t inicio = 0;
+    int16_t fim = (uiLang == 3 ? LANG_DE_N : LANG_RU_N) - 1;
+    texto = en;  // tr() novo ou alterado sem tradução: mantém a queda para inglês.
+    while (inicio <= fim) {
+      const int16_t meio = inicio + (fim - inicio) / 2;
+      const uint32_t atual = pgm_read_dword(hashes + meio);
+      if (atual < hash) inicio = meio + 1;
+      else if (atual > hash) fim = meio - 1;
+      else {
+        texto = strings + pgm_read_word(offsets + meio);
+        break;
+      }
+    }
+  }
+  strncpy_P(b, texto, sizeof buf[0] - 1);
   b[sizeof buf[0] - 1] = 0;
   return b;
 }

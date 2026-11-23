@@ -1574,6 +1574,94 @@ static int testIdiomaTela() {
   printf("idioma tela: %s (decodificador, glifos, troca ao vivo, pacote de data e ordem nos Mundo)\n", fails ? "FALHOU" : "ok");
   return fails;
 }
+#include "out/lang_test.inc"
+
+static bool utf8Valido(const char *texto) {
+  const unsigned char *p = (const unsigned char *)texto;
+  while (*p) {
+    if (*p < 0x80) { p++; continue; }
+    int n = *p >= 0xC2 && *p <= 0xDF ? 1 : *p >= 0xE0 && *p <= 0xEF ? 2 : *p >= 0xF0 && *p <= 0xF4 ? 3 : -1;
+    if (n < 0) return false;
+    const unsigned char primeiro = *p++;
+    if (!p[0] || (p[0] & 0xC0) != 0x80) return false;
+    if ((primeiro == 0xE0 && p[0] < 0xA0) || (primeiro == 0xED && p[0] >= 0xA0) ||
+        (primeiro == 0xF0 && p[0] < 0x90) || (primeiro == 0xF4 && p[0] >= 0x90)) return false;
+    for (int i = 0; i < n; i++) if (!p[i] || (p[i] & 0xC0) != 0x80) return false;
+    p += n;
+  }
+  return true;
+}
+
+static int testTraducoes() {
+  int fails = 0;
+  const uint8_t lang = uiLang;
+  const char *retorno;
+  const auto igual = [](const char *atual, const char *esperado) {
+    return strnlen(atual, 48) < 48 && strcmp(atual, esperado) == 0;
+  };
+
+  const char *const *esperadas[] = {LANG_TEST_DE, LANG_TEST_RU};
+  for (int idioma = 0; idioma < 2; idioma++) {
+    uiSetLang(3 + idioma);
+    for (int i = 0; i < LANG_TEST_N; i++) {
+      retorno = trP(PSTR(LANG_TEST_PT[i]), PSTR("EN"), PSTR("ES"));
+      if (strcmp(retorno, esperadas[idioma][i]) || strnlen(retorno, 48) >= 48 || !utf8Valido(retorno) || retorno[47] != 0) {
+        printf("tradução %s de %s FALHOU\n", idioma ? "ru" : "de", LANG_TEST_PT[i]);
+        fails++;
+      }
+    }
+  }
+
+  uiSetLang(3);
+  fails += !igual(tr("FOCO", "FOCUS", "FOCO"), "FOKUS");
+  fails += !igual(tr("PAUSA", "BREAK", "PAUSA"), "PAUSE");
+  fails += !igual(tr("Conectando Wi-Fi", "Connecting Wi-Fi", "Conectando Wi-Fi"), "Wi-Fi verbinden");
+  fails += !igual(tr("Atualizar firmware", "Update firmware", "Actualizar firmware"), "Firmware aktualisieren");
+  fails += !igual(tr("GIF invalido", "Invalid GIF", "GIF no valido"), u8"GIF ungültig");
+  retorno = tr("__SEM_TR__", "FALLBACK", "ALTERNATIVA");
+  fails += !igual(retorno, "FALLBACK");
+
+  uiSetLang(4);
+  fails += !igual(tr("FOCO", "FOCUS", "FOCO"), u8"ФОКУС");
+  fails += !igual(tr("PAUSA", "BREAK", "PAUSA"), u8"ПЕРЕРЫВ");
+  fails += !igual(tr("Conectando Wi-Fi", "Connecting Wi-Fi", "Conectando Wi-Fi"), u8"Подключение Wi-Fi");
+  fails += !igual(tr("Atualizar firmware", "Update firmware", "Actualizar firmware"), u8"Обновить прошивку");
+  fails += !igual(tr("GIF invalido", "Invalid GIF", "GIF no valido"), u8"Неверный GIF");
+  retorno = tr("__SEM_TR__", "FALLBACK", "ALTERNATIVA");
+  fails += !igual(retorno, "FALLBACK");
+
+  const char *esperado[] = {"PT", "EN", "ES"};
+  for (int l = 0; l < 3; l++) {
+    uiSetLang(l);
+    retorno = tr("PT", "EN", "ES");
+    fails += !igual(retorno, esperado[l]);
+  }
+
+  for (int l = 3; l <= 4; l++) {
+    uiSetLang(l);
+    for (size_t i = 0; i < sizeof TEMAS_IDIOMA / sizeof TEMAS_IDIOMA[0]; i++) {
+      UiState st = base(14, 37, 25);
+      st.now.tm_mon = 2; st.now.tm_mday = 16; st.now.tm_wday = 1; st.theme = TEMAS_IDIOMA[i];
+      char nome[64];
+      snprintf(nome, sizeof nome, "idioma-%s-msg-%s", l == 3 ? "de" : "ru", NOMES_IDIOMA[i]);
+      shot(nome, st, false);
+    }
+    Frame *f = new Frame();
+    uiBegin(f);
+    uiWifiSetup("SmallTV-Pomodoro", "AbCd2345", "192.168.4.1", false, false);
+    save(*f, l == 3 ? "idioma-de-msg-wifi" : "idioma-ru-msg-wifi");
+    uiError(tr("GIF invalido", "Invalid GIF", "GIF no valido"));
+    save(*f, l == 3 ? "idioma-de-msg-erro" : "idioma-ru-msg-erro");
+    uiMessage(tr("Atualizar firmware", "Update firmware", "Actualizar firmware"),
+              tr("Envie o firmware pelo painel", "Upload firmware in the panel", "Envia firmware desde el panel"), "", "");
+    save(*f, l == 3 ? "idioma-de-msg-atualizacao" : "idioma-ru-msg-atualizacao");
+    delete f;
+  }
+
+  uiSetLang(lang);
+  printf("traducoes: %s (de/ru, fallback inglês, pt/en/es, NUL e telas por idioma)\n", fails ? "FALHOU" : "ok");
+  return fails;
+}
 #include "out/tint_test.inc"
 
 int main() {
@@ -1682,6 +1770,7 @@ int main() {
   // ---- redesenho incremental ----
   int fails = 0;
   fails += testIdiomaTela();
+  fails += testTraducoes();
   fails += checkSetupQr();
   for (int t = 0; t < THEME_COUNT; t++) {
     UiState st = base(14, 58, 50);

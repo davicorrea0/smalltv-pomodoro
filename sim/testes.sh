@@ -5,6 +5,7 @@
 #  - portal de Wi-Fi: o HTML e a gravação da rede dos handlers reais (portal_test.cjs);
 #  - idioma padrão (inglês) e relógios já instalados que não mudam de idioma (idioma_test.cjs);
 #  - UTF-8 da fonte pixel: alemão, russo, acentos reduzidos à letra base e entradas malformadas (utf8_test.cpp);
+#  - mensagens da tela em alemão e russo e tabela PROGMEM sincronizada com os JSON;
 #  - telemetria do /api/state (campos aditivos, uma varredura do heap por pedido, tamanho do último pedaço) e a lista branca
 #    do "Copiar diagnóstico" do painel (telemetria_test.cjs);
 #  - /api/state completo e com cfg=0, cv derivado sem senhas e cache do painel (state_cfg_test.cjs);
@@ -22,6 +23,7 @@
 # Os .cpp dos testes são gerados com node; sem node (WSL), passe a pasta já gerada em GEN.
 set -euo pipefail
 cd "$(dirname "$0")"
+[ -n "${GEN:-}" ] || node ../scripts/idiomas-gerar.cjs --check || { echo "ERRO: tabela de idiomas ausente, inválida ou desatualizada"; exit 1; }
 N="${1:-5000}"
 T=$(mktemp -d /tmp/smalltv-testes.XXXXXX)
 G="${GEN:-$T}"

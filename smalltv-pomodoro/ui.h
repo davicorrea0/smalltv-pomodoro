@@ -145,7 +145,7 @@ bool uiScrollActive();
 inline uint16_t uiScrollSad(bool flip, int rows, int offset) {
   return (uint16_t)(flip && offset ? rows - offset : offset);
 }
-void uiSetLang(uint8_t lang);                // 0 português, 1 inglês, 2 espanhol; em 3/4 só datas são de/ru por enquanto
+void uiSetLang(uint8_t lang);                // 0 português, 1 inglês, 2 espanhol, 3 alemão, 4 russo
 extern uint8_t uiLang;
 // tr("pt", "en", "es"): os três textos ficam na flash (PSTR) e o do idioma atual é copiado para um
 // de 6 buffers rotativos de 48 bytes (RAM é escassa: o GIF do álbum precisa de ~22 KB contíguos).
