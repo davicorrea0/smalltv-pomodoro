@@ -144,13 +144,17 @@ diferentes por pacote (a mesma usada em várias camadas, com ou sem `!`, conta u
 
 | `font` | `size` | Observações |
 |---|---|---|
-| `pixel` | escala da fonte 6×8 (1, 2, 3…) | qualquer texto (acentos viram a letra sem acento) |
+| `pixel` | escala da fonte 6×8 (1, 2, 3…) | qualquer texto (`ä ö ü ß Ä Ö Ü` aparecem; os demais acentos viram a letra sem acento) |
 | `dm` | lado de cada "pixel" do dígito (5×7) | dígitos, `:`, `-`, `.`; `off` pinta os pixels apagados |
 | `geo` | altura em px | dígitos e `:`; `w` muda a espessura do traço |
 | `dseg` | altura em px | 7 segmentos de LCD; `off` mostra os segmentos apagados |
 | `bebas` | altura em px | dígitos e `:` suavizados; `bg` é a cor de fundo da suavização (padrão: `bg` do pacote) |
 | `outfit` | altura em px | geométrica limpa, estilo widget (Outfit SemiBold); igual a `bebas` no resto (requer firmware 1.6.5+) |
 | `righteous` | altura em px | geométrica arredondada, estilo Bauhaus/art déco (Righteous); igual a `bebas` (requer firmware 1.6.5+) |
+
+Alemão na fonte `pixel` (simulador, tamanhos 1 e 2; a linha de baixo é a mesma sem trema):
+
+![ÄÖÜäöüß na fonte pixel, tamanhos 1 e 2](img/idiomas/alemao-tamanhos.png)
 
 ## Sprites
 
