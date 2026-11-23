@@ -24,6 +24,18 @@ node ../assets/gerar.js || exit 1  # assets/*.txt -> smalltv-pomodoro/assets.h
 if grep -nE "%[-+ #0-9.]*[fFeEgG]|toFloat|atof|strtod|scanf" ../smalltv-pomodoro/*.cpp ../smalltv-pomodoro/modulos/*.cpp ../smalltv-pomodoro/*.h; then
   echo "use números inteiros ou String(x, casas) em vez de float no printf/scanf"; exit 1
 fi
+# o main.cpp esvazia stopWaveform/_stopPWM do core (sem PWM nem tom: o brilho é sigma-delta em hardware). Quem chamar
+# analogWrite, tone ou startWaveform precisa tirar os dois stubs de lá; o link da CI também falha (símbolo duplicado)
+if grep -rnE "analogWrite(Freq|Range)?[[:space:]]*\(|(^|[^_A-Za-z0-9.])(no)?[tT]one[[:space:]]*\(|startWaveform[[:space:]]*\(" ../smalltv-pomodoro --include=*.cpp --include=*.h --include=*.c | grep -v "/web\.h:"; then
+  echo "PWM/tom no firmware: tire os stubs de stopWaveform/_stopPWM do main.cpp antes de usar analogWrite, tone ou startWaveform"; exit 1
+fi
+# ws_parse.h especializa métodos do servidor HTTP: só vale se uma única unidade de compilação (main.cpp) o instancia
+if grep -lE '#include <ESP8266WebServer.h>' ../smalltv-pomodoro/*.cpp ../smalltv-pomodoro/*.h ../smalltv-pomodoro/modulos/*.cpp | grep -vE '/(app|ws_parse)\.h$'; then
+  echo "só o app.h (via ws_parse.h) pode incluir ESP8266WebServer.h"; exit 1
+fi
+if grep -lE '#include "(\.\./)?app\.h"' ../smalltv-pomodoro/*.cpp ../smalltv-pomodoro/*.h | grep -vE '/main\.cpp$'; then
+  echo "só o main.cpp (que inclui os modulos/) pode incluir o app.h: outra unidade instanciaria o servidor sem o ws_parse.h"; exit 1
+fi
 GFX="${GFX:-$HOME/Documents/Arduino/libraries/Adafruit_GFX_Library}"
 mkdir -p out
 node tint_test.cjs out/tint_test.inc || exit 1
@@ -34,14 +46,18 @@ if [ -n "$LOCALAPPDATA" ]; then TARGET=x86-windows-gnu; BIN=sim.exe; else TARGET
 # _FILE_OFFSET_BITS=64, senão o readdir de 32 bits falha em pastas com inode grande (WSL) e os pacotes ficam de fora
 if [ -n "$ZIG" ]; then CXX="$ZIG c++ -target $TARGET"; else CXX="g++ -m32 -D_FILE_OFFSET_BITS=64"; fi
 $CXX -O1 -std=c++17 -DARDUINO=100 -DARDUINOJSON_ENABLE_ARDUINO_STRING=0 -DARDUINOJSON_ENABLE_ARDUINO_STREAM=0 -DARDUINOJSON_ENABLE_ARDUINO_PRINT=0 -DARDUINOJSON_ENABLE_PROGMEM=0 -Ishim -I"$GFX" -I"${JSON:-$HOME/Documents/Arduino/libraries/ArduinoJson/src}" sim.cpp ../smalltv-pomodoro/ui.cpp ../smalltv-pomodoro/face_*.cpp ../smalltv-pomodoro/facepack.cpp ../smalltv-pomodoro/appdata.cpp ../smalltv-pomodoro/fonts.cpp ../smalltv-pomodoro/trig.cpp ../smalltv-pomodoro/src/qrcodegen/qrcodegen.cpp "$GFX/Adafruit_GFX.cpp" -o "$BIN" || exit 1
+$CXX -O1 -std=c++17 -DARDUINO=100 -DARDUINOJSON_ENABLE_ARDUINO_STRING=0 -DARDUINOJSON_ENABLE_ARDUINO_STREAM=0 -DARDUINOJSON_ENABLE_ARDUINO_PRINT=0 -DARDUINOJSON_ENABLE_PROGMEM=0 -Ishim -I"$GFX" -I"${JSON:-$HOME/Documents/Arduino/libraries/ArduinoJson/src}" previa_miniapp.cpp ../smalltv-pomodoro/ui.cpp ../smalltv-pomodoro/face_*.cpp ../smalltv-pomodoro/facepack.cpp ../smalltv-pomodoro/appdata.cpp ../smalltv-pomodoro/fonts.cpp ../smalltv-pomodoro/trig.cpp ../smalltv-pomodoro/src/qrcodegen/qrcodegen.cpp "$GFX/Adafruit_GFX.cpp" -o "out/previa_miniapp${BIN#sim}" || exit 1
 ./"$BIN"; r=$?
 node png.js > /dev/null
 node transicao_lcd.js
 node faces.js
-node catalog.js
+node catalog.js || exit 1
+node previas_miniapps.js --conferir || exit 1
 $CXX -O1 -std=c++17 -w -Ishim brilho_test.cpp -o "out/brilho_$BIN" && "./out/brilho_$BIN" || exit 1
 node brilho_loop_test.cjs out/brilho_loop.cpp && $CXX -O1 -std=c++17 -w out/brilho_loop.cpp -o "out/brilho_loop_$BIN" && "./out/brilho_loop_$BIN" || exit 1
+node sessoes_test.cjs out/sessoes.cpp && $CXX -O1 -std=c++17 -w out/sessoes.cpp -o "out/sessoes_$BIN" && "./out/sessoes_$BIN" || exit 1
 node painel_test.cjs
+node state_cfg_test.cjs out/state_cfg.cpp && $CXX -O1 -std=c++17 -w out/state_cfg.cpp -o "out/state_cfg_$BIN" && "./out/state_cfg_$BIN" || exit 1
 node ponte_test.cjs || exit 1
 node fuso_test.cjs || exit 1
 node ../web/build.js

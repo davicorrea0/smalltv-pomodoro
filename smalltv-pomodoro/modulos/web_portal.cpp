@@ -127,6 +127,16 @@ static void diagHeap(uint32_t &heapFree, uint32_t &blk, uint8_t &frag) {
 // calcula o resto da DRAM de 80 KB (81920 B): heap total = 81920 - ramfix. A pilha do laço fica fora (pilha do sistema).
 static uint32_t ramFixed() { return (uint32_t)(uintptr_t)_heap_start - 0x3FFE8000u; }
 
+// A geometria da flash não muda enquanto o relógio está ligado. Lê uma vez no setup, depois do LittleFS montar,
+// para o /api/state apenas serializar os valores (sem consultar a flash a cada pedido).
+static uint32_t diagSketchSize, diagFreeSketch, diagFlashSize;
+
+static void diagFlashBoot() {
+  diagSketchSize = ESP.getSketchSize();
+  diagFreeSketch = ESP.getFreeSketchSpace();
+  diagFlashSize = ESP.getFlashChipSize();
+}
+
 static void diagJson(String &j, uint8_t frag) {
   const rst_info *r = ESP.getResetInfoPtr();
   char epc[12];
@@ -157,6 +167,12 @@ static void diagJson(String &j, uint8_t frag) {
   j += ESP.getFreeContStack();
   j += F(",\"ramfix\":");  // RAM fixa do build em bytes (o painel desenha a barra fixa / em uso / livre)
   j += ramFixed();
+  j += F(",\"sk\":");  // programa, folga para OTA e flash real (medidos uma vez no boot)
+  j += diagSketchSize;
+  j += F(",\"fr\":");
+  j += diagFreeSketch;
+  j += F(",\"fl\":");
+  j += diagFlashSize;
   j += F(",\"lps\":");  // voltas do laço por segundo (só no texto copiado do painel)
   j += diagLps;
   j += F(",\"pack\":");  // ms da última carga de pacote de mostrador (0 = nenhuma)
@@ -195,8 +211,38 @@ static void crashJson(String &j) {
   j += b;
 }
 
+static void fnvMix(uint32_t &h, const void *data, size_t len) {
+  const uint8_t *p = static_cast<const uint8_t *>(data);
+  while (len--) {
+    h ^= *p++;
+    h *= 16777619u;
+  }
+}
+
+// Versão derivada dos ajustes que o painel recebe. Senhas não entram: da senha OTA só vale
+// se existe uma, que é o que o JSON expõe como "lock"; a senha do ponto de acesso é pulada inteira.
+static uint32_t cfgVersion() {
+  uint32_t h = 2166136261u;
+  const uint8_t *begin = reinterpret_cast<const uint8_t *>(&cfg);
+  const uint8_t *ota = reinterpret_cast<const uint8_t *>(cfg.otaPass);
+  const uint8_t *ap = reinterpret_cast<const uint8_t *>(cfg.apPass);
+  const uint8_t *end = begin + sizeof cfg;
+  fnvMix(h, begin, ota - begin);
+  const uint8_t otaSet = cfg.otaPass[0] != 0;
+  fnvMix(h, &otaSet, sizeof otaSet);
+  fnvMix(h, ota + sizeof cfg.otaPass, ap - (ota + sizeof cfg.otaPass));
+  fnvMix(h, ap + sizeof cfg.apPass, end - (ap + sizeof cfg.apPass));
+  if (rotList.length()) fnvMix(h, rotList.c_str(), rotList.length());
+  if (rotTimes.length()) fnvMix(h, rotTimes.c_str(), rotTimes.length());  // os tempos do rodízio (/rotime.txt) não estão na Settings
+  fnvMix(h, &wifiDowngrades, sizeof wifiDowngrades);
+  fnvMix(h, &timeGuard.undone, sizeof timeGuard.undone);
+  fnvMix(h, &timeGuard.confirmed, sizeof timeGuard.confirmed);
+  return h;
+}
+
 static void sendState() {
   if (!readOk()) return;
+  const bool withCfg = server.method() != HTTP_GET || server.arg("cfg") != "0";
   struct tm t;
   String clock = localNow(t) ? hhmm(t) : "--:--";
   char color[8];
@@ -210,7 +256,7 @@ static void sendState() {
     fsInfoAt = millis() | 1;
   }
   String j;
-  j.reserve(704);
+  j.reserve(736);
   server.sendHeader("Cache-Control", F("no-store"));  // cidade, rede e ajustes: o navegador não guarda
   jsonBegin();
   j += F("{\"phase\":\"");
@@ -223,6 +269,10 @@ static void sendState() {
   j += totalMs;
   j += F(",\"cycle\":");
   j += cycleDone;
+  j += F(",\"sess\":");
+  j += sessionFoci;
+  j += F(",\"sdone\":");
+  j += sessionDone ? 1 : 0;
   j += F(",\"today\":");
   j += cfg.todayCount;
   j += F(",\"streak\":");
@@ -269,101 +319,107 @@ static void sendState() {
   j += (uint32_t)fi.usedBytes;
   j += F(",\"total\":");
   j += (uint32_t)fi.totalBytes;
-  j += '}';
+  j += F("},\"cv\":");
+  j += cfgVersion();
   jsonFlush(j);
-  j = F(",\"cfg\":{\"work\":");
-  j += cfg.work;
-  j += F(",\"short\":");
-  j += cfg.shortBreak;
-  j += F(",\"long\":");
-  j += cfg.longBreak;
-  j += F(",\"every\":");
-  j += cfg.longEvery;
-  j += F(",\"bri\":");
-  j += cfg.brightness;
-  j += F(",\"auto\":");
-  j += cfg.autoStart;
-  j += F(",\"h12\":");
-  j += cfg.hour12;
-  j += F(",\"tz\":\"");
-  jsonEscapeAppend(j, cfg.tz);
-  j += F("\",\"lock\":");
-  j += cfg.otaPass[0] ? 1 : 0;
-  j += F(",\"theme\":");
-  j += cfg.theme;
-  j += F(",\"mode\":");
-  j += cfg.mode;
-  j += F(",\"delay\":");
-  j += cfg.albumDelay;
-  j += F(",\"color\":\"");
-  j += color;
-  j += F("\",\"non\":");
-  j += cfg.nightOn;
-  j += F(",\"nstart\":");
-  j += cfg.nightStart;
-  j += F(",\"nend\":");
-  j += cfg.nightEnd;
-  j += F(",\"nbri\":");
-  j += cfg.nightBri;
-  j += F(",\"won\":");
-  j += cfg.weatherOn;
-  j += F(",\"fahr\":");
-  j += cfg.fahr;
-  j += F(",\"rain\":");
-  j += cfg.rainAlert;
-  j += F(",\"beta\":");
-  j += cfg.beta;
-  j += F(",\"lat\":");
-  appendFixed(j, cfg.lat, 4);
-  j += F(",\"lon\":");
-  appendFixed(j, cfg.lon, 4);
-  j += F(",\"city\":\"");
-  jsonEscapeAppend(j, cfg.city);
-  j += F("\",\"bgr\":");
-  j += cfg.bgr;
-  j += F(",\"inv\":");
-  j += cfg.invert;
-  j += F(",\"flip\":");
-  j += cfg.flip;
-  j += F(",\"vcom\":");
-  j += cfg.vcom;
-  j += F(",\"wdown\":");  // rebaixamentos do Wi-Fi bloqueados desde que ligou
-  j += wifiDowngrades;
-  j += F(",\"tok\":");  // hora confirmada por uma segunda fonte (1) e saltos de hora desfeitos desde que ligou
-  j += timeGuard.confirmed ? 1 : 0;
-  j += F(",\"tund\":");
-  j += timeGuard.undone;
-  j += F(",\"pkg\":\"");
-  j += cfg.theme == THEME_PACK ? cfg.facePkg : "";
-  j += F("\",\"goal\":");
-  j += cfg.dailyGoal;
-  j += F(",\"act\":");
-  j += cfg.activity;
-  j += F(",\"lang\":");
-  j += cfg.lang;
-  j += F(",\"nsun\":");
-  j += cfg.nightSun;
-  j += F(",\"warm\":");
-  j += cfg.warm;
-  j += F(",\"lcdg\":");
-  j += cfg.lcdGreen;
-  j += F(",\"alexa\":");
-  j += cfg.alexa;
-  j += F(",\"rotmin\":");
-  j += cfg.rotMin;
-  j += F(",\"rot\":\"");
-  jsonFlush(j);
-  if (rotList.length()) {
-    server.sendContent(rotList);
-    yield();
+  if (withCfg) {
+    j = F(",\"cfg\":{\"work\":");
+    j += cfg.work;
+    j += F(",\"short\":");
+    j += cfg.shortBreak;
+    j += F(",\"long\":");
+    j += cfg.longBreak;
+    j += F(",\"every\":");
+    j += cfg.longEvery;
+    j += F(",\"cycles\":");
+    j += cfg.cycles;
+    j += F(",\"bri\":");
+    j += cfg.brightness;
+    j += F(",\"auto\":");
+    j += cfg.autoStart;
+    j += F(",\"h12\":");
+    j += cfg.hour12;
+    j += F(",\"tz\":\"");
+    jsonEscapeAppend(j, cfg.tz);
+    j += F("\",\"lock\":");
+    j += cfg.otaPass[0] ? 1 : 0;
+    j += F(",\"theme\":");
+    j += cfg.theme;
+    j += F(",\"mode\":");
+    j += cfg.mode;
+    j += F(",\"delay\":");
+    j += cfg.albumDelay;
+    j += F(",\"color\":\"");
+    j += color;
+    j += F("\",\"non\":");
+    j += cfg.nightOn;
+    j += F(",\"nstart\":");
+    j += cfg.nightStart;
+    j += F(",\"nend\":");
+    j += cfg.nightEnd;
+    j += F(",\"nbri\":");
+    j += cfg.nightBri;
+    j += F(",\"won\":");
+    j += cfg.weatherOn;
+    j += F(",\"fahr\":");
+    j += cfg.fahr;
+    j += F(",\"rain\":");
+    j += cfg.rainAlert;
+    j += F(",\"beta\":");
+    j += cfg.beta;
+    j += F(",\"lat\":");
+    appendFixed(j, cfg.lat, 4);
+    j += F(",\"lon\":");
+    appendFixed(j, cfg.lon, 4);
+    j += F(",\"city\":\"");
+    jsonEscapeAppend(j, cfg.city);
+    j += F("\",\"bgr\":");
+    j += cfg.bgr;
+    j += F(",\"inv\":");
+    j += cfg.invert;
+    j += F(",\"flip\":");
+    j += cfg.flip;
+    j += F(",\"vcom\":");
+    j += cfg.vcom;
+    j += F(",\"wdown\":");  // rebaixamentos do Wi-Fi bloqueados desde que ligou
+    j += wifiDowngrades;
+    j += F(",\"tok\":");  // hora confirmada por uma segunda fonte (1) e saltos de hora desfeitos desde que ligou
+    j += timeGuard.confirmed ? 1 : 0;
+    j += F(",\"tund\":");
+    j += timeGuard.undone;
+    j += F(",\"pkg\":\"");
+    j += cfg.theme == THEME_PACK ? cfg.facePkg : "";
+    j += F("\",\"goal\":");
+    j += cfg.dailyGoal;
+    j += F(",\"act\":");
+    j += cfg.activity;
+    j += F(",\"lang\":");
+    j += cfg.lang;
+    j += F(",\"nsun\":");
+    j += cfg.nightSun;
+    j += F(",\"warm\":");
+    j += cfg.warm;
+    j += F(",\"lcdg\":");
+    j += cfg.lcdGreen;
+    j += F(",\"alexa\":");
+    j += cfg.alexa;
+    j += F(",\"rotmin\":");
+    j += cfg.rotMin;
+    j += F(",\"rot\":\"");
+    jsonFlush(j);
+    if (rotList.length()) {
+      server.sendContent(rotList);
+      yield();
+    }
+    j = F("\",\"rott\":\"");
+    jsonFlush(j);
+    if (rotTimes.length()) {
+      server.sendContent(rotTimes);
+      yield();
+    }
+    j = F("\"}");
   }
-  j = F("\",\"rott\":\"");
-  jsonFlush(j);
-  if (rotTimes.length()) {
-    server.sendContent(rotTimes);
-    yield();
-  }
-  j = F("\"},\"alexa\":{\"ago\":");  // segundos desde o último pedido de um Echo (-1 = nenhum)
+  j += F(",\"alexa\":{\"ago\":");  // segundos desde o último pedido de um Echo (-1 = nenhum)
   j += alexaSeen ? (long)((millis() - alexaSeen) / 1000) : -1L;
   j += F(",\"ip\":\"");
   j += alexaSeen ? alexaIp.toString() : String();
@@ -475,6 +531,12 @@ static void handleUpload() {
       uploadError = F("Use JPG ou GIF");
       return;
     }
+    const String target = String(F("/image/")) + name;  // só vira uploadPath depois das recusas: abortar não pode apagar um arquivo que existia
+    static_assert(ALBUM_MAX_UPLOAD == 100, "atualize tambem a mensagem de album cheio");
+    if (album.size() >= ALBUM_MAX_UPLOAD && !LittleFS.exists(target)) {
+      uploadError = tr("Album cheio (maximo 100 fotos e GIFs): apague alguns", "Album full (100 photos and GIFs at most): delete some", "Album lleno (maximo 100 fotos y GIF): borra algunos");
+      return;
+    }
     FSInfo fi;
     LittleFS.info(fi);
     if (fi.totalBytes - fi.usedBytes < 16384) {
@@ -482,7 +544,7 @@ static void handleUpload() {
       return;
     }
     if (!LittleFS.exists("/image")) LittleFS.mkdir("/image");
-    uploadPath = String(F("/image/")) + name;
+    uploadPath = target;
     uploadFile = LittleFS.open(uploadPath, "w");
     if (!uploadFile) uploadError = F("Falha ao criar arquivo");
     else photoGate.begin(true, 3 * 1024 * 1024);
@@ -718,7 +780,11 @@ static void sendPanel() {
   File f = fsOk ? LittleFS.open("/www/" PANEL_HASH ".gz", "r") : File();
   if (f) {
     server.sendHeader(F("ETag"), F("\"" PANEL_HASH "\""));
-    if (!strcmp_P(server.header(F("If-None-Match")).c_str(), PSTR("\"" PANEL_HASH "\""))) server.send(304);
+    // Comparar pelo tamanho também: o core 3.1.2 "limpa" o cabeçalho de um pedido para o outro com String::clear(),
+    // que só zera o tamanho e deixa os bytes. Pelo c_str(), um pedido sem If-None-Match via o ETag do pedido anterior
+    // e recebia 304 vazio (página em branco, até em aba anônima) até o relógio reiniciar.
+    const String &inm = server.header(F("If-None-Match"));
+    if (inm.length() == sizeof("\"" PANEL_HASH "\"") - 1 && !strcmp_P(inm.c_str(), PSTR("\"" PANEL_HASH "\""))) server.send(304);
     else server.streamFile(f, "text/html");  // .gz: o servidor manda "Content-Encoding: gzip"
     f.close();
     return;
@@ -1049,6 +1115,9 @@ void setupWeb() {
     cfg.shortBreak = argRange("short", cfg.shortBreak, 1, 99);
     cfg.longBreak = argRange("long", cfg.longBreak, 1, 99);
     cfg.longEvery = argRange("every", cfg.longEvery, 1, 8);
+    uint8_t cycles = argRange("cycles", cfg.cycles, 0, 99);
+    if (cycles != cfg.cycles) sessionFoci = 0;
+    cfg.cycles = cycles;
     cfg.brightness = argRange("bri", cfg.brightness, 5, 100);  // mínimo 5: com 0 a tela apagaria
     cfg.autoStart = argRange("auto", cfg.autoStart, 0, 1);
     cfg.hour12 = argRange("h12", cfg.hour12, 0, 1);
@@ -1131,7 +1200,7 @@ void setupWeb() {
     if (panelChanged) applyPanel();
     // Brilho, horário noturno e opções que não aparecem na tela: sem apagar e redesenhar tudo, que piscaria
     // a cada movimento do controle (junto com a rampa do brilho)
-    static const char *const QUIET[] = {"bri", "non", "nstart", "nend", "nbri", "nsun", "warm", "lcdg", "beta", "alexa", "rotmin"};
+    static const char *const QUIET[] = {"bri", "non", "nstart", "nend", "nbri", "nsun", "warm", "lcdg", "beta", "alexa", "rotmin", "cycles"};
     bool quiet = true;
     for (int i = 0; quiet && i < server.args(); i++) {
       bool q = false;
@@ -1496,7 +1565,8 @@ static void htmlEscapeAppend(String &o, const String &s) {
 // não muda.
 uint8_t pageLang() {
   if (cfg.lang != 1) return cfg.lang;
-  uint8_t l = langFromAccept(server.header("Accept-Language").c_str());
+  const String &al = server.header("Accept-Language");  // tamanho zero = sem o cabeçalho (os bytes podem ser do pedido anterior)
+  uint8_t l = langFromAccept(al.length() ? al.c_str() : "");
   return l == 255 ? cfg.lang : l;
 }
 

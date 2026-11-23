@@ -12,15 +12,15 @@ const dict = JSON.parse(fs.readFileSync(path.join(__dirname, '../web/i18n.json')
 const cut = (sig, from = 0) => { const a = source.indexOf(sig, from); if (a < 0) throw Error('não achei ' + sig); const b = source.indexOf('\n}', a); if (b < 0) throw Error('sem fim: ' + sig); return source.slice(a, b + 2); };
 
 // ---------- 1. campos aditivos ----------
-const OLD = ('phase running remaining total cycle today streak best clock showing wx ok t min max h rin tzn off loff rise set desc fs l2 mig used cfg work short long every bri auto h12 tz lock theme mode delay color non nstart nend nbri won fahr rain beta lat lon city bgr inv flip vcom wdown tok tund pkg goal act lang nsun warm lcdg alexa rotmin rot ago ip last pv name heap blk pdraw pseq pshown ver diag rst exc epc rssi minheap frag up draw stall stallAt boot scr wifi wf time src ntp crash n r x va').split(' ');
-const NEW = ['minblk', 'stack', 'ramfix', 'lps', 'pack', 'nomem', 'jpg', 'gif', 'strip', 'tw', 'twmax', 'fail', 'rott'];
+const OLD = ('phase running remaining total cycle sess sdone today streak best clock showing wx ok t min max h rin tzn off loff rise set desc fs l2 mig used cfg work short long every cycles bri auto h12 tz lock theme mode delay color non nstart nend nbri won fahr rain beta lat lon city bgr inv flip vcom wdown tok tund pkg goal act lang nsun warm lcdg alexa rotmin rot ago ip last pv name heap blk pdraw pseq pshown ver diag rst exc epc rssi minheap frag up draw stall stallAt boot scr wifi wf time src ntp crash n r x va').split(' ');
+const NEW = ['minblk', 'stack', 'ramfix', 'sk', 'fr', 'fl', 'lps', 'pack', 'nomem', 'jpg', 'gif', 'strip', 'tw', 'twmax', 'fail', 'cv', 'rott'];
 const sendState = cut('static void sendState() {'), diagJson = cut('static void diagJson('), crashJson = cut('static void crashJson(');
 const keys = new Set([...(sendState + diagJson + crashJson).matchAll(/\\"(\w+)\\":/g)].map(m => m[1]));
 for (const k of OLD) assert(keys.has(k), 'chave antiga sumiu do /api/state: ' + k + ' (painéis antigos leem esse JSON)');
-assert.deepStrictEqual([...keys].filter(k => !OLD.includes(k)).sort(), [...NEW].sort(), 'o /api/state só pode ganhar minblk, stack, ramfix, lps, pack, nomem{jpg,gif,strip}, tw, twmax e wx.fail');
+assert.deepStrictEqual([...keys].filter(k => !OLD.includes(k)).sort(), [...NEW].sort(), 'o /api/state só pode ganhar minblk, stack, ramfix, lps, pack, nomem{jpg,gif,strip}, tw, twmax, wx.fail e cv');
 // os campos novos ficam dentro de diag
 const d = sendState + diagJson;  // diag abre no sendState (\"diag\":{), os campos vêm no diagJson
-for (const k of ['minblk', 'stack', 'ramfix', 'lps', 'pack', 'nomem', 'tw', 'twmax']) assert(d.includes('\\"' + k + '\\":'), k + ' fora de diag');
+for (const k of ['minblk', 'stack', 'ramfix', 'sk', 'fr', 'fl', 'lps', 'pack', 'nomem', 'tw', 'twmax']) assert(d.includes('\\"' + k + '\\":'), k + ' fora de diag');
 
 // uma só varredura do heap por pedido (getHeapStats), nenhuma das duas chamadas antigas no pedido, nada no laço
 const heapFn = cut('static void diagHeap(');
@@ -31,6 +31,14 @@ assert(!/getHeapFragmentation|getMaxFreeBlockSize/.test(sendState + diagJson + h
 const loopFn = source.slice(source.indexOf('void loop() {'), source.indexOf('\n}', source.indexOf('void loop() {')));
 for (const [n, f] of [['diagLoop', cut('void diagLoop() {')], ['loop', loopFn]])
   assert(!/getHeapStats|getMaxFreeBlockSize|getHeapFragmentation|diagBlkSample|diagHeap/.test(f), n + ': o heap só é varrido no /api/state e antes de foto/GIF/pacote/OTA (interrupções desligadas)');
+// programa, folga para atualização e flash real: uma leitura no setup, nunca no pedido nem no laço
+const flashBoot = cut('static void diagFlashBoot() {'), setup = cut('void setup() {');
+for (const m of ['getSketchSize', 'getFreeSketchSpace', 'getFlashChipSize']) {
+  assert.strictEqual((flashBoot.match(new RegExp(m + '\\(', 'g')) || []).length, 1, m + ': uma leitura no boot');
+  for (const [n, f] of [['sendState', sendState], ['diagJson', diagJson], ['loop', loopFn]]) assert(!f.includes(m + '('), n + ' não pode ler a flash');
+}
+assert.strictEqual((setup.match(/diagFlashBoot\(/g) || []).length, 1, 'setup mede a flash uma vez');
+assert(setup.indexOf('fsMount();') < setup.indexOf('if (recoveryMode)') && setup.indexOf('if (recoveryMode)') < setup.indexOf('diagFlashBoot();'), 'medição fica no setup após montar o FS e sair do caminho de recuperação');
 // quem chama diagBlkSample: só os pontos pontuais combinados
 const calls = [...source.matchAll(/^\s+diagBlkSample\(\);/gm)].length;
 assert.strictEqual(calls, 5, 'diagBlkSample: foto (álbum), GIF, validJpg, pacote e OTA');
@@ -45,13 +53,13 @@ assert(/diagNoMem\(0\);/.test(gifBranch) && /diagNoMem\(1\);/.test(gifBranch), '
 assert(fs.readFileSync(path.join(__dirname, '../smalltv-pomodoro/ui.cpp'), 'utf8').includes('uiOffscreenFail++'), 'faixa recusada contada no ui.cpp');
 // nada novo na flash nem na rede: sem endpoint novo, sem gravação
 assert(!/server\.on\("\/api\/(diag|telem|heap)/.test(source), 'sem endpoint novo');
-assert(!/EEPROM|LittleFS|saveSettings/.test(diagJson + heapFn + cut('void diagBlkSample() {') + cut('void diagNoMem(')), 'o diagnóstico não grava em lugar nenhum');
+assert(!/EEPROM|LittleFS|saveSettings/.test(diagJson + heapFn + flashBoot + cut('void diagBlkSample() {') + cut('void diagNoMem(')), 'o diagnóstico não grava em lugar nenhum');
 
 // ---------- 2. painel: histórico só no navegador e lista branca ----------
 const sp = html.slice(html.indexOf('// minigráficos:'), html.indexOf('// data-neg:'));
 assert(sp.includes('HN=600'), 'anel de ~600 amostras');
 assert(!/localStorage|sessionStorage|indexedDB|post\(|fetch\(|sendBeacon/.test(sp.replace(/\/\/[^\n]*/g, '').replace(/navigator\.clipboard/g, '')), 'o histórico fica só na memória da página: nada de storage nem rede nos gráficos');
-assert(html.includes('if(s.diag){diagShow(s);spkPush(s)}'), 'os gráficos são alimentados pelo load() do poll existente');
+assert(html.includes('if(s.diag){diagShow(s);spkPush(s);memShow(s)}'), 'os gráficos e a memória são alimentados pelo load() do poll existente');
 const a = html.indexOf('const DKEY='), b = html.indexOf('function diagCopy');
 const diagText = new Function(html.slice(a, b) + '\nreturn diagText')();
 const SEN = ['SEGREDO-CIDADE', 'SEGREDO-NOME', '192.168.77.5', '-23.5478', 'SEGREDO-FUSO', 'SEGREDO-ARQUIVO', 'SEGREDO-SENHA', 'SEGREDO-ROT', 'SEGREDO-PKG'];
@@ -59,7 +67,7 @@ const state = {
   phase: 'idle', ver: '1.25.0', heap: 31200, blk: 17600, showing: '/image/SEGREDO-ARQUIVO.jpg', name: 'SEGREDO-NOME', clock: '10:21',
   cfg: { city: 'SEGREDO-CIDADE', lat: -23.5478, lon: -46.6361, tz: 'SEGREDO-FUSO', lock: 1, pkg: 'SEGREDO-PKG', rot: 'SEGREDO-ROT', rott: 'SEGREDO-ROT', pass: 'SEGREDO-SENHA' },
   alexa: { ago: 5, ip: '192.168.77.5', last: 1, min: 0 }, wx: { tzn: 'SEGREDO-CIDADE', desc: 'SEGREDO-CIDADE' }, fs: { used: 1, total: 2 },
-  diag: { rst: 4, exc: 0, epc: '40201234', rssi: -61, minheap: 24100, minblk: 14200, frag: 12, stack: 3180, ramfix: 38496, lps: 58000, up: 3600, draw: 140, pack: 38, stall: 90, stallAt: 1, tw: 37, twmax: 2,
+  diag: { rst: 4, exc: 0, epc: '40201234', rssi: -61, minheap: 24100, minblk: 14200, frag: 12, stack: 3180, ramfix: 38496, sk: 700000, fr: 1000000, fl: 4194304, lps: 58000, up: 3600, draw: 140, pack: 38, stall: 90, stallAt: 1, tw: 37, twmax: 2,
     nomem: { jpg: 1, gif: 0, strip: 2 }, boot: { scr: 1200, wifi: 800, wf: 1, time: 900, src: 1, ntp: 700 },
     ip: '192.168.77.5', ssid: 'SEGREDO-NOME', city: 'SEGREDO-CIDADE', campoNovo: 'SEGREDO-CIDADE' },
   crash: { n: 1, r: 2, x: 29, epc: '40201234', va: '00000000', up: 120, ver: '1.24.9', ip: '192.168.77.5', msg: 'SEGREDO-CIDADE' },
@@ -67,15 +75,15 @@ const state = {
 const txt = diagText(state, { heap: 26000, blk: 14000, rssi: -74, ip: '192.168.77.5', nome: 'SEGREDO-NOME' });
 for (const s of SEN) assert(!txt.includes(s), 'a lista branca vazou: ' + s);
 assert(!/\b\d{1,3}(\.\d{1,3}){3}\b/.test(txt), 'IP no diagnóstico copiado');
-assert(!/cfg|city|\b(lat|lon)=|name|ssid|alexa|tz=|pkg|rot=|rott=|showing/i.test(txt), 'campo pessoal no diagnóstico copiado: ' + txt);
-for (const want of ['SmallTV Pomodoro 1.25.0', 'heap=31200 blk=17600', 'minheap=24100', 'minblk=14200', 'stack=3180', 'ramfix=38496', 'lps=58000', 'pack=38', 'tw=37', 'twmax=2', 'nomem jpg=1 gif=0 strip=2', 'boot scr=1200', 'crash n=1 r=2 x=29 epc=40201234 va=00000000 up=120 ver=1.24.9', 'page-min heap=26000 blk=14000 rssi=-74'])
+assert(!/cfg|city|(lat|lon)=|name|ssid|alexa|tz=|pkg|rot=|rott=|showing/i.test(txt), 'campo pessoal no diagnóstico copiado: ' + txt);
+for (const want of ['SmallTV Pomodoro 1.25.0', 'heap=31200 blk=17600', 'minheap=24100', 'minblk=14200', 'stack=3180', 'ramfix=38496', 'sk=700000', 'fr=1000000', 'fl=4194304', 'lps=58000', 'pack=38', 'tw=37', 'twmax=2', 'nomem jpg=1 gif=0 strip=2', 'boot scr=1200', 'crash n=1 r=2 x=29 epc=40201234 va=00000000 up=120 ver=1.24.9', 'page-min heap=26000 blk=14000 rssi=-74'])
   assert(txt.includes(want), 'faltou no diagnóstico: ' + want);
 // campo que o firmware ganhar um dia não entra sozinho, e valor de texto livre é limpo mesmo numa chave da lista
 assert.strictEqual(diagText({ ...state, diag: { ...state.diag, outro: 'x' } }, {}), diagText(state, {}), 'chave fora da lista branca entrou');
 assert(/^diag( \w+=[\w.-]*)+$/.test(diagText({ ...state, diag: { ...state.diag, epc: 'Rua das Flores, 12 (casa)' } }, {}).split('\n')[2]), 'q() deve tirar espaços e pontuação de qualquer valor');
 assert.doesNotThrow(() => diagText({ ver: '1.25.0' }, {}), 'firmware antigo (sem diag.minblk/nomem/boot) não pode quebrar o texto');
 // barra de RAM: fixa + em uso + livre fecha a DRAM de 80 KB (81920 B)
-assert(html.includes('const T=81920,u=T-f-s.heap;') && html.includes('[f,u,s.heap]') && /0x3FFE8000u/.test(source) && /heap total = 81920 - ramfix/.test(source), 'conta da barra de RAM: fixa + (81920 - fixa - livre) + livre');
+assert(html.includes('const rf=d.ramfix,T=81920,h=s.heap;') && html.includes('[rf,u,h]') && /0x3FFE8000u/.test(source) && /heap total = 81920 - ramfix/.test(source), 'conta da barra de RAM: fixa + (81920 - fixa - livre) + livre');
 // lps (voltas do laço por segundo): só em diag e no texto copiado; nada na tela, sem % nem gráfico
 assert(!/lps/.test(html.replace(/const DKEY=[^\n]*/, '')), 'lps não pode aparecer na tela do painel (só no texto copiado)');
 // tw/twmax (lista TIME_WAIT esvaziada pelo tcpTwPurge): idem, só no texto copiado
@@ -96,10 +104,10 @@ console.log('telemetria: campos aditivos (' + NEW.join(', ') + '), uma varredura
 const out = process.argv[2];
 if (!out) process.exit(0);
 const reserve = +sendState.match(/j\.reserve\((\d+)\)/)[1];
-const i0 = sendState.indexOf('j = F("\\"},\\"alexa\\":{\\"ago\\":");'), i1 = sendState.indexOf('jsonEnd(j);');
+const i0 = sendState.indexOf('j += F(",\\"alexa\\":{\\"ago\\":");'), i1 = sendState.indexOf('jsonEnd(j);');
 if (i0 < 0 || i1 < 0) throw Error('não achei o último pedaço do sendState');
 const tail = sendState.slice(i0, i1);
-const block = source.slice(source.indexOf('static uint32_t diagMinHeap'), source.indexOf('static void sendState() {'));
+const block = source.slice(source.indexOf('static uint32_t diagMinHeap'), source.indexOf('static void fnvMix('));
 const line = re => { const m = source.match(re); if (!m) throw Error(String(re)); return m[0]; };
 fs.writeFileSync(out, `#include <cstdint>
 #include <cstdio>
@@ -131,10 +139,11 @@ struct String {  // como o do Arduino: += de um byte sem sinal acrescenta o NÚM
 struct rst_info { uint32_t reason, exccause, epc1; };
 struct CrashRec { uint32_t magic; uint8_t n, reason, exc, pad; uint32_t epc, vaddr, up; char ver[8]; };
 static CrashRec crashRec;
-static uint32_t g_now = 100000, g_hFree, g_hMax; static uint8_t g_hFrag; static int g_stats = 0, g_max = 0, g_free = 0, g_rssi = -61;
+static uint32_t g_now = 100000, g_hFree, g_hMax; static uint8_t g_hFrag; static int g_stats = 0, g_max = 0, g_free = 0, g_rssi = -61, g_flashReads = 0;
 static rst_info g_rst = {4, 0, 0};
 static struct { void getHeapStats(uint32_t *f, uint32_t *m, uint8_t *fr) { g_stats++; if (f) *f = g_hFree; if (m) *m = g_hMax; if (fr) *fr = g_hFrag; }
   uint32_t getMaxFreeBlockSize() { g_max++; return g_hMax; } uint32_t getFreeHeap() { g_free++; return g_hFree; } uint32_t getFreeContStack() { return 3180; }
+  uint32_t getSketchSize() { g_flashReads++; return 700000; } uint32_t getFreeSketchSpace() { g_flashReads++; return 1000000; } uint32_t getFlashChipSize() { g_flashReads++; return 4194304; }
   const rst_info *getResetInfoPtr() { return &g_rst; } } ESP;
 static struct { bool isConnected() { return true; } int RSSI() { return g_rssi; } } WiFi;
 uint32_t millis() { return g_now; }
@@ -166,10 +175,11 @@ static long num(const std::string &j, const char *key) {  // primeiro "key":N
 }
 #define CHECK(c) do { if (!(c)) { printf("FALHA linha %d: %s\\n", __LINE__, #c); return 1; } } while (0)
 int main() {
-  crashRec = {CRASH_MAGIC_PLACEHOLDER, 255, 2, 29, 0, 0x40201234, 0, 4294967295u, "1.24.13"};
+  crashRec = CrashRec{CRASH_MAGIC_PLACEHOLDER, 255, 2, 29, 0, 0x40201234, 0, 4294967295u, "1.24.13"};
   g_hFree = 31200; g_hMax = 17600; g_hFrag = 12;
+  diagFlashBoot(); CHECK(g_flashReads == 3);
   String j; tail(j);
-  std::string doc = std::string("{\\"cfg\\":{\\"rot\\":\\"") + j.s;
+  std::string doc = std::string("{\\"cfg\\":{\\"rot\\":\\"\\"}") + j.s;
   CHECK(jsonOk(doc.c_str()));
   // antigos iguais
   CHECK(num(doc, "rssi") == -61 && num(doc, "frag") == 12 && num(doc, "heap") == 31200 && num(doc, "blk") == 17600 && num(doc, "draw") == 140);
@@ -177,6 +187,7 @@ int main() {
   CHECK(doc.find("\\"ip\\":\\"192.168.100.200\\"") != std::string::npos && doc.find("\\"crash\\":{\\"n\\":255,") != std::string::npos && doc.find("\\"ver\\":\\"1.25.0\\"}") != std::string::npos);
   // novos
   CHECK(num(doc, "minblk") == 17600 && num(doc, "stack") == 3180 && num(doc, "pack") == 38 && num(doc, "ramfix") == 38496);
+  CHECK(num(doc, "sk") == 700000 && num(doc, "fr") == 1000000 && num(doc, "fl") == 4194304 && g_flashReads == 3);
   CHECK(num(doc, "jpg") == 0 && num(doc, "gif") == 0 && num(doc, "strip") == 2);
   // uma varredura por pedido: getHeapStats uma vez; nem getMaxFreeBlockSize nem getHeapFragmentation (nem existe no ESP de mentira)
   CHECK(g_stats == 1 && g_max == 0);
@@ -196,9 +207,10 @@ int main() {
   String j5; tail(j5); CHECK(num(j5.s, "jpg") == 255 && num(j5.s, "gif") == 2 && num(j5.s, "strip") == 2);
   // pior caso de tamanho do último pedaço (números de 10 dígitos onde couber) cabe no j.reserve(${reserve}) do sendState
   g_hFree = 99999; g_hMax = 99999; g_hFrag = 99; diagMinHeap = 4294967295u; g_rssi = -100; g_now = 4294967295u; diagStall = 4294967295u; diagStallAt = 2;
+  diagSketchSize = diagFreeSketch = diagFlashSize = 4294967295u;
   bootScreenMs = bootWifiMs = bootTimeMs = bootNtpMs = 4294967295u; fullDrawMs = packLoadMs = 65535; diagTw = 4294967295u; diagTwMax = 255; pomoDrawMs = phaseSeq = shownSeq = 65535; alexaMin = 255; uiOffscreenFail = 255;
   crashRec.reason = crashRec.exc = 255; crashRec.epc = crashRec.vaddr = crashRec.up = 4294967295u; memcpy(crashRec.ver, "1.24.13", 8);
-  String w; tail(w); CHECK(jsonOk((std::string("{\\"cfg\\":{\\"rot\\":\\"") + w.s).c_str()));
+  String w; tail(w); CHECK(jsonOk((std::string("{\\"cfg\\":{\\"rot\\":\\"\\"}") + w.s).c_str()));
   printf("telemetria: JSON do diagnóstico ok; último pedaço do /api/state no pior caso = %zu bytes (j.reserve(${reserve}))\\n", w.s.size());
   CHECK((int)w.s.size() <= ${reserve});
   return 0;

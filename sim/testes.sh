@@ -4,8 +4,10 @@
 #  - foto sem memória × foto estragada (jpg_nomem_test.cjs);
 #  - portal de Wi-Fi: o HTML e a gravação da rede dos handlers reais (portal_test.cjs);
 #  - idioma padrão (inglês) e relógios já instalados que não mudam de idioma (idioma_test.cjs);
+#  - UTF-8 da fonte pixel: alemão, russo, acentos reduzidos à letra base e entradas malformadas (utf8_test.cpp);
 #  - telemetria do /api/state (campos aditivos, uma varredura do heap por pedido, tamanho do último pedaço) e a lista branca
 #    do "Copiar diagnóstico" do painel (telemetria_test.cjs);
+#  - /api/state completo e com cfg=0, cv derivado sem senhas e cache do painel (state_cfg_test.cjs);
 #  - conexão do boot com o SDK sem GOT_IP e a estação com IP: conecta, marca boot.wf + 8, sem rede vai ao portal (wifi_ip_test.cjs);
 #  - ETag do painel no GET /: 304 só com o painel desta versão, carregador sem ETag, login antes (painel_etag_test.cjs);
 #  - cor quente (warm.h): os comandos do gama digital de dia, de noite e na prévia;
@@ -31,17 +33,42 @@ if [ -z "${GEN:-}" ]; then
   node portal_test.cjs "$G/portal.cpp"
   node idioma_test.cjs "$G/idioma.cpp"
   node telemetria_test.cjs "$G/telemetria.cpp"
+  node state_cfg_test.cjs "$G/state_cfg.cpp"
   node wifi_ip_test.cjs "$G/wifi_ip.cpp"
   node painel_etag_test.cjs "$G/painel_etag.cpp"
   node brilho_loop_test.cjs "$G/brilho_loop.cpp"
 fi
 export ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1
-for t in sec stats jpg_nomem portal idioma telemetria wifi_ip painel_etag brilho_loop; do
+for t in sec stats jpg_nomem portal idioma telemetria state_cfg wifi_ip painel_etag brilho_loop; do
   g++ -std=c++17 -fsanitize=address,undefined -g -w "$G/$t.cpp" -o "$T/$t"
   "$T/$t"
 done
 g++ -std=c++17 -fsanitize=address,undefined -g -w warm_test.cpp -o "$T/warm"
 "$T/warm"
+g++ -m32 -std=c++17 -fsanitize=address,undefined -g utf8_test.cpp -o "$T/utf8"
+"$T/utf8"
+# Analisador de requisições do ESP8266WebServer (smalltv-pomodoro/ws_parse.h) sobre o Parsing-impl.h REAL do core 3.1.2, com
+# cliente falso e relógio simulado: multipart de 33 campos, multipart truncado, envio parado, corpo grande (C1–C4 da
+# auditoria). O mesmo teste sem o remendo precisa FALHAR (prova de que ele enxerga os defeitos).
+CORE_WS="${CORE_WS:-}"
+if [ -z "$CORE_WS" ]; then
+  for d in "$HOME/.arduino15" "$HOME/Library/Arduino15" /mnt/c/Users/*/AppData/Local/Arduino15; do
+    f="$d/packages/esp8266/hardware/esp8266/3.1.2/libraries/ESP8266WebServer/src/Parsing-impl.h"
+    [ -f "$f" ] && { CORE_WS="$f"; break; }
+  done
+fi
+[ -f "$CORE_WS" ] || { echo "testes: Parsing-impl.h do core 3.1.2 não encontrado (instale o core ou defina CORE_WS)"; exit 1; }
+[ "$(tr -d '\r' < "$CORE_WS" | sha256sum | cut -d' ' -f1)" = f8fe756b04222f20c49813ea63f0c8a90a99034255324de84349e32755afe818 ] \
+  || { echo "testes: $CORE_WS não é o Parsing-impl.h do core 3.1.2, de que o ws_parse.h é cópia"; exit 1; }
+mkdir -p "$T/corews" && cp "$CORE_WS" "$T/corews/Parsing-impl.h"
+# -fno-sanitize=null: o _parseArguments do core amarra uma referência a nullptr na primeira passada (inofensivo, não toca no objeto)
+WSF="-std=c++17 -fsanitize=address,undefined -fno-sanitize=null -g -w -Ishim_ws -I$T/corews"
+g++ $WSF -I../smalltv-pomodoro ws_parse_test.cpp -o "$T/ws_parse"
+"$T/ws_parse" todos
+g++ $WSF -DWS_UNPATCHED ws_parse_test.cpp -o "$T/ws_core"
+for c in c1 c2_fechado c2_mudo c2_lixo c2_valor_enorme c4_mudo c3 c5; do
+  if "$T/ws_core" "$c" > "$T/ws_core.log" 2>&1; then echo "testes: o core SEM o remendo passou em $c: o teste não enxerga o defeito"; exit 1; fi
+done
 [ -n "${GEN:-}" ] || node pacote_ram_test.cjs  # pacote de mostrador × álbum e OTA: ligação entre as peças
 g++ -std=c++17 -fsanitize=address,undefined -g -w -Ishim brilho_test.cpp -o "$T/brilho"
 "$T/brilho"

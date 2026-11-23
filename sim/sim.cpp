@@ -828,6 +828,198 @@ static int testMetaLonga() {
   return fails;
 }
 
+// glifos da fonte 5x7 (a mesma que a Adafruit GFX usa), para conferir pixel a pixel
+namespace glcd {
+#include <glcdfont.c>
+}
+// Alemão na fonte pixel dos pacotes: glifos CP437, trema decomposto e medida por caracteres, não por bytes.
+static int testAlemao() {
+  int fails = 0;
+  char err[96] = "";
+  const std::string pacote =
+    "{\"format\":2,\"bg\":\"#081018\",\"layers\":["
+    "{\"type\":\"text\",\"x\":18,\"y\":28,\"font\":\"pixel\",\"size\":2,\"color\":\"#f3e7c9\",\"text\":\"M\xC3\xBCller Gr\xC3\xB6\xC3\x9F" "e\"},"
+    "{\"type\":\"text\",\"x\":18,\"y\":58,\"font\":\"pixel\",\"size\":2,\"color\":\"#f3e7c9\",\"text\":\"\xC3\x84pfel \xC3\x96 \xC3\x9F \xC3\xA9 \xC3\xB1\"},"
+    "{\"type\":\"text\",\"x\":18,\"y\":104,\"font\":\"pixel\",\"size\":3,\"color\":\"#70d6ff\",\"text\":\"trema: u\xCC\x88\"}]}";
+  std::string js = pacote;
+  if (!facePackLoad((char *)js.c_str(), js.size(), err, sizeof err)) {
+    printf("alemao FALHOU ao carregar pacote: %s\n", err);
+    fails++;
+  } else {
+    UiState st = base(14, 37, 0);
+    st.theme = THEME_PACK;
+    shot("idioma-de-pacote", st, false);
+    facePackUnload();
+  }
+
+  auto inicio = [&](const char *texto) {
+    std::string p = std::string("{\"format\":2,\"bg\":\"#081018\",\"layers\":[{\"type\":\"text\",\"x\":200,\"y\":20,\"font\":\"pixel\",\"size\":2,\"align\":\"right\",\"color\":\"#ffffff\",\"text\":\"") + texto + "\"}]}";
+    Frame f;
+    int x0 = 240;
+    if (!facePackLoad((char *)p.c_str(), p.size(), err, sizeof err)) return -1;
+    UiState st = base(14, 37, 0);
+    st.theme = THEME_PACK;
+    uiBegin(&f);
+    facePackRender(st, true);
+    facePackUnload();
+    const uint16_t branco = uiRgb(255, 255, 255);
+    for (int y = 0; y < 240; y++) for (int x = 0; x < 240; x++)
+      if (f.px[y * 240 + x] == branco && x < x0) x0 = x;
+    return x0;
+  };
+  int umlaut = inicio("M\xC3\xBCller"), ascii = inicio("Muller");
+  if (umlaut != ascii || umlaut != 128) {
+    printf("alemao FALHOU na largura: M\xC3\xBCller=%d, Muller=%d (esperado 128)\n", umlaut, ascii);
+    fails++;
+  }
+
+  {  // legibilidade dos pontos do Ä/Ö no 5x7, tamanhos 1 e 2
+    std::string t = "{\"format\":2,\"bg\":\"#081018\",\"layers\":["
+      "{\"type\":\"text\",\"x\":12,\"y\":20,\"font\":\"pixel\",\"size\":1,\"color\":\"#ffffff\",\"text\":\"\xC3\x84\xC3\x96\xC3\x9C\xC3\xA4\xC3\xB6\xC3\xBC\xC3\x9F AOUaou\"},"
+      "{\"type\":\"text\",\"x\":12,\"y\":50,\"font\":\"pixel\",\"size\":2,\"color\":\"#ffffff\",\"text\":\"\xC3\x84\xC3\x96\xC3\x9C\xC3\xA4\xC3\xB6\xC3\xBC\xC3\x9F\"},"
+      "{\"type\":\"text\",\"x\":12,\"y\":90,\"font\":\"pixel\",\"size\":2,\"color\":\"#ffffff\",\"text\":\"AOUaou\"}]}";
+    if (!facePackLoad((char *)t.c_str(), t.size(), err, sizeof err)) { printf("alemao tamanhos FALHOU: %s\n", err); fails++; }
+    else { UiState st = base(14, 37, 0); st.theme = THEME_PACK; shot("idioma-de-tamanhos", st, false); facePackUnload(); }
+  }
+  {  // o que o cp437(true) protege: cada letra tem de sair com o glifo CP437 certo da fonte 5x7 (ß = 0xE1, não 0xE2)
+    struct { const char *utf8; uint8_t cp; } casos[] = {{"\xC3\xA4", 0x84}, {"\xC3\xB6", 0x94}, {"\xC3\xBC", 0x81}, {"\xC3\x84", 0x8E},
+                                                         {"\xC3\x96", 0x99}, {"\xC3\x9C", 0x9A}, {"\xC3\x9F", 0xE1}, {"u\xCC\x88", 0x81}};
+    std::string js = "{\"format\":2,\"bg\":\"#000000\",\"layers\":[";
+    for (int i = 0; i < 8; i++)
+      js += std::string(i ? "," : "") + "{\"type\":\"text\",\"x\":" + std::to_string(10 + 12 * i) + ",\"y\":10,\"font\":\"pixel\",\"size\":1,\"color\":\"#ffffff\",\"text\":\"" + casos[i].utf8 + "\"}";
+    js += "]}";
+    Frame f;
+    if (!facePackLoad((char *)js.c_str(), js.size(), err, sizeof err)) { printf("alemao glifos FALHOU: %s\n", err); fails++; }
+    else {
+      UiState st = base(14, 37, 0);
+      st.theme = THEME_PACK;
+      uiBegin(&f);
+      facePackRender(st, true);
+      facePackUnload();
+      const uint16_t branco = uiRgb(255, 255, 255);
+      for (int i = 0; i < 8; i++)
+        for (int c = 0; c < 5; c++)
+          for (int r = 0; r < 7; r++) {
+            bool aceso = f.px[(10 + r) * 240 + 10 + 12 * i + c] == branco, esperado = (glcd::font[casos[i].cp * 5 + c] >> r) & 1;
+            if (aceso != esperado) { printf("alemao glifo %d coluna %d linha %d FALHOU: desenhou %d, a fonte tem %d\n", i, c, r, aceso, esperado); fails++; }
+          }
+    }
+  }
+  if (!fails) printf("alemao: ok (pacote UTF-8, trema decomposto, Muller e M\xC3\xBCller com 6 caracteres)\n");
+  return fails;
+}
+
+// Russo na fonte pixel dos pacotes: frases, alfabeto inteiro nos tamanhos 1 e 2 e medida por caracteres.
+static int testRusso() {
+  int fails = 0;
+  char err[96] = "";
+  {
+    std::string js =
+      u8"{\"format\":2,\"bg\":\"#081018\",\"layers\":["
+      u8"{\"type\":\"text\",\"x\":120,\"y\":74,\"font\":\"pixel\",\"size\":2,\"align\":\"center\",\"color\":\"#f3e7c9\",\"text\":\"Привет, мир!\"},"
+      u8"{\"type\":\"text\",\"x\":120,\"y\":108,\"font\":\"pixel\",\"size\":2,\"align\":\"center\",\"color\":\"#70d6ff\",\"text\":\"Москва Ёлка ёж\"}]}";
+    if (!facePackLoad((char *)js.c_str(), js.size(), err, sizeof err)) {
+      printf("russo FALHOU ao carregar pacote: %s\n", err);
+      fails++;
+    } else {
+      UiState st = base(14, 37, 0);
+      st.theme = THEME_PACK;
+      shot("idioma-ru-pacote", st, false);
+      facePackUnload();
+    }
+  }
+
+  {
+    const char *linhas[] = {
+      u8"АБВГДЕЖЗИЙКЛМНОП", u8"РСТУФХЦЧШЩЪЫЬЭЮЯ",
+      u8"абвгдежзийклмноп", u8"рстуфхцчшщъыьэюя", u8"Ёё"
+    };
+    std::string js = "{\"format\":2,\"bg\":\"#081018\",\"layers\":[";
+    bool primeira = true;
+    for (int tamanho = 2; tamanho >= 1; tamanho--)
+      for (int i = 0; i < 5; i++) {
+        int y = tamanho == 2 ? 8 + i * 21 : 126 + i * 13;
+        js += std::string(primeira ? "" : ",") + "{\"type\":\"text\",\"x\":12,\"y\":" + std::to_string(y) +
+              ",\"font\":\"pixel\",\"size\":" + std::to_string(tamanho) +
+              ",\"color\":\"#ffffff\",\"text\":\"" + linhas[i] + "\"}";
+        primeira = false;
+      }
+    js += "]}";
+    if (!facePackLoad((char *)js.c_str(), js.size(), err, sizeof err)) {
+      printf("russo alfabeto FALHOU ao carregar: %s\n", err);
+      fails++;
+    } else {
+      UiState st = base(14, 37, 0);
+      st.theme = THEME_PACK;
+      shot("idioma-ru-alfabeto", st, false);
+      facePackUnload();
+    }
+  }
+
+  auto inicio = [&](const char *texto) {
+    std::string js = std::string("{\"format\":2,\"bg\":\"#081018\",\"layers\":[{\"type\":\"text\",\"x\":200,\"y\":20,\"font\":\"pixel\",\"size\":2,\"align\":\"right\",\"color\":\"#ffffff\",\"text\":\"") + texto + "\"}]}";
+    Frame f;
+    int x0 = 240;
+    if (!facePackLoad((char *)js.c_str(), js.size(), err, sizeof err)) return -1;
+    UiState st = base(14, 37, 0);
+    st.theme = THEME_PACK;
+    uiBegin(&f);
+    facePackRender(st, true);
+    facePackUnload();
+    const uint16_t branco = uiRgb(255, 255, 255);
+    for (int y = 0; y < 240; y++) for (int x = 0; x < 240; x++)
+      if (f.px[y * 240 + x] == branco && x < x0) x0 = x;
+    return x0;
+  };
+  int cirilico = inicio(u8"Москва"), latino = inicio("Moskva");
+  if (cirilico != latino || cirilico != 128) {
+    printf("russo FALHOU na largura: Москва=%d, Moskva=%d (esperado 128)\n", cirilico, latino);
+    fails++;
+  }
+
+  {  // os 66 glifos: nenhum vazio, nenhum igual a outro, e os que repetem uma letra latina saem iguais a ela na fonte 5x7
+    // (isso também confere a ordem da tabela: uma linha trocada faria А sair diferente do A)
+    const std::string maiusc = u8"АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЁ", minusc = u8"абвгдежзийклмнопрстуфхцчшщъыьэюяё";
+    std::string js = "{\"format\":2,\"bg\":\"#000000\",\"layers\":[";
+    for (int linha = 0; linha < 6; linha++) {
+      std::string txt;
+      for (int k = 0; k < 11; k++) {
+        int i = linha * 11 + k;
+        txt += i < 33 ? maiusc.substr(2 * i, 2) : minusc.substr(2 * (i - 33), 2);
+      }
+      js += "{\"type\":\"text\",\"x\":10,\"y\":" + std::to_string(10 + 12 * linha) + ",\"font\":\"pixel\",\"size\":1,\"color\":\"#ffffff\",\"text\":\"" + txt + "\"},";
+    }
+    js += "{\"type\":\"text\",\"x\":10,\"y\":82,\"font\":\"pixel\",\"size\":1,\"color\":\"#ffffff\",\"text\":\"ABEKMHOPCTXYaeopcx\"}]}";
+    Frame f;
+    if (!facePackLoad((char *)js.c_str(), js.size(), err, sizeof err)) { printf("russo glifos FALHOU ao carregar: %s\n", err); fails++; }
+    else {
+      UiState st = base(14, 37, 0);
+      st.theme = THEME_PACK;
+      uiBegin(&f);
+      facePackRender(st, true);
+      facePackUnload();
+      auto celula = [&](int x, int y) {
+        uint64_t h = 0;
+        for (int c = 0; c < 5; c++) for (int r = 0; r < 8; r++) h = (h << 1) | (f.px[(y + r) * 240 + x + c] != 0);
+        return h;
+      };
+      std::vector<uint64_t> cel;
+      for (int i = 0; i < 66; i++) {
+        uint64_t h = celula(10 + 6 * (i % 11), 10 + 12 * (i / 11));
+        if (!h) { printf("russo glifo %d FALHOU: vazio\n", i); fails++; }
+        for (size_t j = 0; j < cel.size(); j++) if (cel[j] == h) { printf("russo glifo %d FALHOU: igual ao %zu\n", i, j); fails++; }
+        cel.push_back(h);
+      }
+      const int cir[18] = {0, 2, 5, 10, 12, 13, 14, 16, 17, 18, 21, 19, 33, 38, 47, 49, 50, 54};  // А В Е К М Н О Р С Т Х У а е о р с х
+      for (int k = 0; k < 18; k++)
+        if (cel[cir[k]] != celula(10 + 6 * k, 82)) { printf("russo glifo %d FALHOU: deveria ser igual à letra latina %d\n", cir[k], k); fails++; }
+    }
+  }
+
+  if (!fails) printf("russo: ok (66 glifos, Ё/ё, alfabeto nos tamanhos 1 e 2, Москва e Moskva com 6 caracteres)\n");
+  return fails;
+}
+
 // Muitas camadas mudando no mesmo quadro (12 com motion + 6 animadas + a hora: mais que as 12 áreas sujas): o incremental continua igual ao completo
 // quadro a quadro, com a hora grande cruzada pelos sprites (o caso do koi)
 static int testMuitasAreas() {
@@ -1293,6 +1485,8 @@ int main() {
   fails += testSpriteOracle(2000, 16, 10, 2);
   fails += testOverlay();
   fails += testMetaLonga();
+  fails += testAlemao();
+  fails += testRusso();
   fails += testSemClima();
   fails += testMotion();
   fails += testMuitasAreas();
