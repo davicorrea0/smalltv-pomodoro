@@ -46,11 +46,13 @@ if [ -n "$LOCALAPPDATA" ]; then TARGET=x86-windows-gnu; BIN=sim.exe; else TARGET
 # _FILE_OFFSET_BITS=64, senão o readdir de 32 bits falha em pastas com inode grande (WSL) e os pacotes ficam de fora
 if [ -n "$ZIG" ]; then CXX="$ZIG c++ -target $TARGET"; else CXX="g++ -m32 -D_FILE_OFFSET_BITS=64"; fi
 $CXX -O1 -std=c++17 -DARDUINO=100 -DARDUINOJSON_ENABLE_ARDUINO_STRING=0 -DARDUINOJSON_ENABLE_ARDUINO_STREAM=0 -DARDUINOJSON_ENABLE_ARDUINO_PRINT=0 -DARDUINOJSON_ENABLE_PROGMEM=0 -Ishim -I"$GFX" -I"${JSON:-$HOME/Documents/Arduino/libraries/ArduinoJson/src}" sim.cpp ../smalltv-pomodoro/ui.cpp ../smalltv-pomodoro/face_*.cpp ../smalltv-pomodoro/facepack.cpp ../smalltv-pomodoro/appdata.cpp ../smalltv-pomodoro/fonts.cpp ../smalltv-pomodoro/trig.cpp ../smalltv-pomodoro/src/qrcodegen/qrcodegen.cpp "$GFX/Adafruit_GFX.cpp" -o "$BIN" || exit 1
+$CXX -O1 -std=c++17 -DARDUINO=100 -DARDUINOJSON_ENABLE_ARDUINO_STRING=0 -DARDUINOJSON_ENABLE_ARDUINO_STREAM=0 -DARDUINOJSON_ENABLE_ARDUINO_PRINT=0 -DARDUINOJSON_ENABLE_PROGMEM=0 -Ishim -I"$GFX" -I"${JSON:-$HOME/Documents/Arduino/libraries/ArduinoJson/src}" previa_miniapp.cpp ../smalltv-pomodoro/ui.cpp ../smalltv-pomodoro/face_*.cpp ../smalltv-pomodoro/facepack.cpp ../smalltv-pomodoro/appdata.cpp ../smalltv-pomodoro/fonts.cpp ../smalltv-pomodoro/trig.cpp ../smalltv-pomodoro/src/qrcodegen/qrcodegen.cpp "$GFX/Adafruit_GFX.cpp" -o "out/previa_miniapp${BIN#sim}" || exit 1
 ./"$BIN"; r=$?
 node png.js > /dev/null
 node transicao_lcd.js
 node faces.js
-node catalog.js
+node catalog.js || exit 1
+node previas_miniapps.js --conferir || exit 1
 $CXX -O1 -std=c++17 -w -Ishim brilho_test.cpp -o "out/brilho_$BIN" && "./out/brilho_$BIN" || exit 1
 node brilho_loop_test.cjs out/brilho_loop.cpp && $CXX -O1 -std=c++17 -w out/brilho_loop.cpp -o "out/brilho_loop_$BIN" && "./out/brilho_loop_$BIN" || exit 1
 node sessoes_test.cjs out/sessoes.cpp && $CXX -O1 -std=c++17 -w out/sessoes.cpp -o "out/sessoes_$BIN" && "./out/sessoes_$BIN" || exit 1

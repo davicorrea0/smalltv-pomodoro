@@ -13,9 +13,9 @@ a 1 m.
 Antes, siga a [receita do Home Assistant](../HOME-ASSISTANT.md): crie a chave no painel e o `rest_command`
 `smalltv_dados`. Depois, para cada mostrador que quiser:
 
-1. Baixe o `.json` (abra o arquivo aqui no GitHub e use "Download raw file").
+1. Baixe o `.json` e o `.png` de mesmo nome (abra cada arquivo aqui no GitHub e use "Download raw file").
 2. Se quiser, troque os nomes (`"SALA"`, `"CAFE"`...) no arquivo. Use até 7 letras, sem acento.
-3. No painel do relógio, vá em Relógio → Mais mostradores → **Instalar de um arquivo**.
+3. No painel do relógio, vá na página Miniapps → **Instalar miniapp de um arquivo** e escolha os dois juntos. O relógio guarda a miniatura; sem o `.png`, o painel tenta pegar a do site (publicada junto com o painel novo).
 4. Cole a automação correspondente abaixo no Home Assistant, trocando os nomes das entidades.
 
 Os três juntos usam 12 dos 16 campos do relógio. Cada um usa um prefixo próprio (`lv_`, `lz_`, `tm_`) para não pisar
@@ -23,6 +23,8 @@ no outro. O miniapp de uso de IA ([tokensmall](../../miniapps/tokensmall/README.
 com ele os campos ficam em 16 de 16, e um quinto miniapp não cabe (o envio é recusado sem mudar nada).
 
 ## Luzes (`casa-luzes.json`)
+
+![Estados do miniapp de luzes](casa-luzes-estados.png)
 
 `lz_n` é quantas estão acesas. `lz_1` a `lz_3` valem `ACESA`, ou vazio quando a luz está apagada. A receita
 abaixo só manda esses dois. Se você mandar outro texto curto (por exemplo
@@ -52,6 +54,8 @@ automation:
 ```
 
 ## Tomadas (`casa-tomadas.json`)
+
+![Estados do miniapp de tomadas](casa-tomadas-estados.png)
 
 `tm_1` e `tm_2` valem `1` (ligada) ou `0`. `tm_w1` e `tm_w2` são os watts. Se a tomada não mede consumo, tire os
 `tm_w`: no lugar dos watts aparece `--`. A receita abaixo só manda `1` ou `0`. Se você mandar um texto
@@ -83,6 +87,8 @@ Um sensor de potência que muda a cada segundo dispara a automação a cada segu
 `trigger` e deixe só o `switch` e o envio a cada 5 minutos.
 
 ## Lavadora (`casa-lavadora.json`)
+
+![Estados do miniapp da lavadora](casa-lavadora-estados.png)
 
 Os campos e o que a tela mostra em cada estado:
 

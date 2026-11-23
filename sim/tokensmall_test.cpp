@@ -8,6 +8,7 @@
 #include <string.h>
 #include <string>
 #include <vector>
+#include <ArduinoJson.h>
 #include "../smalltv-pomodoro/ui_kit.h"
 #include "../smalltv-pomodoro/facepack.h"
 #include "../smalltv-pomodoro/appdata.h"
@@ -51,8 +52,37 @@ static UiState estado() {
   return st;
 }
 
+static bool lerCorpos(const char *arq, std::vector<std::string> &corpos) {
+  FILE *f = fopen(arq, "rb");
+  if (!f) { printf("tokensmall_test: sem %s\n", arq); return false; }
+  std::string texto; char bloco[4096];
+  for (size_t n; (n = fread(bloco, 1, sizeof bloco, f));) texto.append(bloco, n);
+  fclose(f);
+  JsonDocument doc;
+  DeserializationError erro = deserializeJson(doc, texto);
+  if (erro) { printf("tokensmall_test: estados invalidos: %s\n", erro.c_str()); return false; }
+  for (JsonObject estado : doc["estados"].as<JsonArray>()) {
+    JsonArray envios = estado["envios"].as<JsonArray>();
+    std::string corpo;
+    if (!envios.isNull() && envios.size()) serializeJson(envios[0], corpo);
+    corpos.push_back(corpo);
+  }
+  return corpos.size() >= 4 && !corpos[1].empty() && !corpos[2].empty() && !corpos[3].empty();
+}
+
+static std::string trocar(const std::string &corpo, const char *campo, const char *valor) {
+  JsonDocument doc;
+  if (deserializeJson(doc, corpo)) return std::string();
+  doc["values"][campo] = valor;
+  std::string alterado;
+  serializeJson(doc, alterado);
+  return alterado;
+}
+
 int main(int argc, char **argv) {
   const char *arq = argc > 1 ? argv[1] : "apps-seeds/tokensmall.json";
+  std::vector<std::string> corpos;
+  if (!lerCorpos("miniapps-estados/tokensmall.json", corpos)) return 1;
   Tela *tela = new Tela();
   uiBegin(tela);
   if (!carregar(arq)) return 1;
@@ -64,21 +94,21 @@ int main(int argc, char **argv) {
   const uint32_t semDados = hash(tela->px);
 
   // o que o companheiro manda: sempre os 4 campos ("--" na janela sem leitura)
-  struct Passo { const char *corpo; uint32_t dt; };
+  struct Passo { std::string corpo; uint32_t dt; };
   const Passo passos[] = {
-    {"{\"ttl\":900,\"values\":{\"tk_c5\":\"42% 2h13\",\"tk_c7\":\"71% 3d\",\"tk_x5\":\"93% 38m\",\"tk_x7\":\"12% 5d\"}}", 300},
-    {nullptr, 700},
-    {"{\"ttl\":900,\"values\":{\"tk_c5\":\"43% 2h12\",\"tk_c7\":\"71% 3d\",\"tk_x5\":\"93% 38m\",\"tk_x7\":\"12% 5d\"}}", 60000},  // só o c5 mudou
-    {"{\"ttl\":900,\"values\":{\"tk_c5\":\"--\",\"tk_c7\":\"71% 3d\",\"tk_x5\":\"93% 38m\",\"tk_x7\":\"12% 5d\"}}", 60000},      // janela do Claude venceu
-    {"{\"ttl\":900,\"values\":{\"tk_c5\":\"100% 5h59\",\"tk_c7\":\"100% 24h\",\"tk_x5\":\"0% 1m\",\"tk_x7\":\"7% 47h\"}}", 1000},  // os mais largos
-    {nullptr, 899000},  // quase vence
-    {nullptr, 2000},    // venceu: tudo "--"
-    {nullptr, 100},
+    {corpos[1], 300},
+    {std::string(), 700},
+    {trocar(corpos[1], "tk_c5", "43% 2h12"), 60000},
+    {corpos[2], 60000},
+    {corpos[3], 1000},
+    {std::string(), 899000},  // quase vence
+    {std::string(), 2000},    // venceu: tudo "--"
+    {std::string(), 100},
   };
   uint32_t comDados = 0, venceuC5 = 0, vencido = 0, antesC5 = 0;
   int i = 0;
   for (const Passo &p : passos) {
-    if (p.corpo) { const char *e = put(p.corpo, st.ms); CHECK(!e, "passo %d recusado: %s", i, e ? e : ""); }
+    if (!p.corpo.empty()) { const char *e = put(p.corpo.c_str(), st.ms); CHECK(!e, "passo %d recusado: %s", i, e ? e : ""); }
     st.ms += p.dt;
     appDataExpire(st.ms);
     facePackRender(st, false);  // incremental
@@ -101,7 +131,8 @@ int main(int argc, char **argv) {
   for (int lang = 0; lang < 3; lang++) {
     uiSetLang(lang);
     st.timeOk = lang != 1;
-    put("{\"ttl\":900,\"values\":{\"tk_c5\":\"100% 5h59\",\"tk_c7\":\"71% 3d\",\"tk_x5\":\"--\",\"tk_x7\":\"12% 5d\"}}", st.ms);
+    std::string idioma = trocar(trocar(corpos[1], "tk_c5", "100% 5h59"), "tk_x5", "--");
+    put(idioma.c_str(), st.ms);
     st.ms += 50;
     facePackRender(st, false);
     uint32_t inc = hash(tela->px);
