@@ -948,7 +948,7 @@ void setupWeb() {
     const String &texto = server.arg("t");
     SessoesErro erro = sessoesValidar(texto.c_str(), texto.length());
     if (erro != SESSOES_OK) {
-      server.send(400, PSTR("text/plain"), sessoesErroTexto(erro));
+      server.send_P(400, PSTR("text/plain"), sessoesErroTexto(erro));
       return;
     }
     LittleFS.remove(F("/sessoes.tmp"));

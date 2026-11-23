@@ -6,6 +6,16 @@
 // Lista textual guardada em /sessoes.txt. Este cabeçalho não depende de Arduino e pode ser
 // incluído diretamente pelos testes do host. A validação estrita não copia nomes nem mantém
 // uma tabela deles na pilha: para achar repetidos, relê somente as linhas anteriores.
+// Funções grandes ficam fora de linha: no ESP8266 cada cópia inline custa flash (o gcc as duplicava nos laços abaixo).
+#if defined(__GNUC__)
+#define SESSOES_FORA __attribute__((noinline))
+#else
+#define SESSOES_FORA
+#endif
+// Textos de erro na flash no firmware; no host, texto comum.
+#ifndef PSTR
+#define PSTR(x) (x)
+#endif
 #define SESSOES_MAX 8
 #define SESSOES_TEXTO_MAX 1024
 
@@ -29,7 +39,7 @@ typedef struct {
 
 typedef void (*SessaoVisita)(const SessaoLinha *sessao, void *contexto);
 
-static inline int sessoesUtf8Nome(const char *p, size_t n) {
+static SESSOES_FORA int sessoesUtf8Nome(const char *p, size_t n) {
   size_t i = 0;
   int pontos = 0, tem_nao_espaco = 0;
   if (!n || n > 96 || p[0] == ' ' || p[n - 1] == ' ') return 0;
@@ -71,7 +81,7 @@ static inline int sessoesUtf8Nome(const char *p, size_t n) {
   return pontos && tem_nao_espaco;
 }
 
-static inline int sessoesNumero(const char *p, size_t n, int minimo, int maximo, uint8_t *saida) {
+static SESSOES_FORA int sessoesNumero(const char *p, size_t n, int minimo, int maximo, uint8_t *saida) {
   if (n < 1 || n > 2) return 0;  // 01 é válido; 007 não é, pois tem três dígitos.
   int v = 0;
   for (size_t i = 0; i < n; i++) {
@@ -84,7 +94,7 @@ static inline int sessoesNumero(const char *p, size_t n, int minimo, int maximo,
 }
 
 // Analisa uma linha sem CR/LF. O nome continua apontando para o buffer recebido.
-static inline SessoesErro sessoesLinha(const char *p, size_t n, SessaoLinha *s) {
+static SESSOES_FORA SessoesErro sessoesLinha(const char *p, size_t n, SessaoLinha *s) {
   const char *campo[6];
   size_t tam[6];
   int nf = 0;
@@ -111,7 +121,7 @@ static inline SessoesErro sessoesLinha(const char *p, size_t n, SessaoLinha *s) 
   return SESSOES_OK;
 }
 
-static inline int sessoesNomeAnterior(const char *texto, const char *linha, const SessaoLinha *atual) {
+static SESSOES_FORA int sessoesNomeAnterior(const char *texto, const char *linha, const SessaoLinha *atual) {
   const char *p = texto;
   while (p < linha) {
     const char *fim = (const char *)memchr(p, '\n', (size_t)(linha - p));
@@ -125,7 +135,7 @@ static inline int sessoesNomeAnterior(const char *texto, const char *linha, cons
   return 0;
 }
 
-static inline int sessoesNomeValidoAnterior(const char *texto, const char *linha, const SessaoLinha *atual) {
+static SESSOES_FORA int sessoesNomeValidoAnterior(const char *texto, const char *linha, const SessaoLinha *atual) {
   const char *p = texto;
   while (p < linha) {
     const char *lf = (const char *)memchr(p, '\n', (size_t)(linha - p));
@@ -140,7 +150,7 @@ static inline int sessoesNomeValidoAnterior(const char *texto, const char *linha
   return 0;
 }
 
-static inline SessoesErro sessoesValidar(const char *texto, size_t n) {
+static SESSOES_FORA SessoesErro sessoesValidar(const char *texto, size_t n) {
   if (n > SESSOES_TEXTO_MAX) return SESSOES_CORPO_GRANDE;
   if (!n) return SESSOES_OK;
   const char *p = texto, *fim_texto = texto + n;
@@ -161,7 +171,7 @@ static inline SessoesErro sessoesValidar(const char *texto, size_t n) {
 }
 
 // Leitor tolerante: pula linhas ruins, aceita a última sem \n e entrega no máximo oito válidas.
-static inline int sessoesLer(const char *texto, size_t n, SessaoVisita visita, void *contexto) {
+static SESSOES_FORA int sessoesLer(const char *texto, size_t n, SessaoVisita visita, void *contexto) {
   const char *p = texto, *fim_texto = texto + n;
   int validas = 0;
   while (p < fim_texto && validas < SESSOES_MAX) {
@@ -182,14 +192,14 @@ static inline int sessoesLer(const char *texto, size_t n, SessaoVisita visita, v
 
 static inline const char *sessoesErroTexto(SessoesErro e) {
   switch (e) {
-    case SESSOES_CORPO_GRANDE: return "lista grande demais";
-    case SESSOES_LISTA_CHEIA: return "lista cheia";
-    case SESSOES_SEM_NOVA_LINHA: return "fim de linha invalido";
-    case SESSOES_LINHA_VAZIA: return "linha vazia";
-    case SESSOES_CAMPOS: return "linha incompleta";
-    case SESSOES_NOME: return "nome invalido";
-    case SESSOES_NOME_REPETIDO: return "nome repetido";
-    case SESSOES_NUMERO: return "numero fora da faixa";
-    default: return "ok";
+    case SESSOES_CORPO_GRANDE: return PSTR("lista grande demais");
+    case SESSOES_LISTA_CHEIA: return PSTR("lista cheia");
+    case SESSOES_SEM_NOVA_LINHA: return PSTR("fim de linha invalido");
+    case SESSOES_LINHA_VAZIA: return PSTR("linha vazia");
+    case SESSOES_CAMPOS: return PSTR("linha incompleta");
+    case SESSOES_NOME: return PSTR("nome invalido");
+    case SESSOES_NOME_REPETIDO: return PSTR("nome repetido");
+    case SESSOES_NUMERO: return PSTR("numero fora da faixa");
+    default: return PSTR("ok");
   }
 }
