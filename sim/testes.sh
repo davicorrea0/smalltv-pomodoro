@@ -38,6 +38,8 @@ if [ -z "${GEN:-}" ]; then
   node brilho_loop_test.cjs "$G/brilho_loop.cpp"
 fi
 export ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1
+g++ -std=c++17 -fsanitize=address,undefined -g sessoes_lista_test.cpp -o "$T/sessoes_lista"
+"$T/sessoes_lista" "$N"
 for t in sec stats jpg_nomem portal idioma telemetria state_cfg wifi_ip painel_etag brilho_loop; do
   g++ -std=c++17 -fsanitize=address,undefined -g -w "$G/$t.cpp" -o "$T/$t"
   "$T/$t"

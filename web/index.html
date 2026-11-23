@@ -71,7 +71,7 @@ input[type=color]{width:52px;height:36px;padding:2px}
 .spk div{padding:7px 0;border-top:1px solid var(--line);font-size:13px}.spk b{color:var(--mut);font-weight:500}.spk span{float:right}.spk canvas{display:block;width:100%;height:40px;margin-top:4px;color:var(--ac)}.rb{display:flex;height:10px;margin:6px 0 4px;border-radius:5px;overflow:hidden;background:var(--line)}.rb i{height:100%}.rb i:nth-child(1){background:var(--mut)}.rb i:nth-child(2){background:var(--long)}.rb i:nth-child(3){background:var(--short)}.spk .rb+span{float:none;display:block;color:var(--mut)}#dgt{width:100%;margin-top:8px;font:11px monospace;background:var(--card2);color:inherit;border:1px solid var(--line);border-radius:8px;padding:6px}
 .rb i:nth-child(4){background:var(--work)}
 .bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:6px}.bar i{display:block;height:100%;background:var(--ac)}
-.sessions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.sessions button{padding:13px;text-align:left;border:1px solid var(--line);border-radius:12px;background:var(--bg)}.sessions button.on{border-color:var(--ac);background:var(--card2)}.sessions b,.sessions span,.sessions small{display:block}.sessions span{color:var(--ac);margin:3px 0}.sessions small,#sessionnote,#cyclesum{color:var(--mut)}
+.sessions{display:flex;gap:8px;overflow:auto;padding-bottom:2px}.sessions button{min-width:180px;flex:1;padding:13px;text-align:left;border:1px solid var(--line);border-radius:12px;background:var(--bg)}.sessions button.on{border-color:var(--ac);background:var(--card2)}.sessions b,.sessions span,.sessions small{display:block}.sessions span{color:var(--ac);margin:3px 0}.sessions small,#sessionnote,#cyclesum,#sesswarn{color:var(--mut)}#sesswarn{display:block;margin-top:8px}.sedit{max-height:58vh;overflow:auto;margin:10px 0}.srow{padding:10px 0;border-top:1px solid var(--line)}.srow:first-child{border-top:0}.srow>input{font-weight:600}.snums{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-top:7px}.snums label{font-size:10px;color:var(--mut);margin:0}.snums input{padding:8px 4px;text-align:center}.srow .row{align-items:center;margin-top:7px}.srow .row small{flex:1}.srow .row button{flex:none;padding:7px 10px;border-radius:8px;background:var(--card2);border:1px solid var(--line)}.serr{display:block;min-height:18px;color:#ff8b82}
 /* Silkscreen (SIL OFL 1.1), subset ASCII + acentos pt/es (pyftsubset --unicodes=U+0020-007E,U+00A1,U+00BF,... --flavor=woff2), só nos destaques: timer, títulos, contadores.
    Embutida (~2 KB): o painel funciona sem internet. Só liga (html.sk) depois de carregar; sem ela tudo fica na fonte do sistema.
    Tamanhos em múltiplos de 8 pixels físicos (a grade da fonte): vars --f* calculadas em fitPx(). */
@@ -208,7 +208,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
  <h2>Conquistas</h2>
  <div class="card"><div id="ach"></div></div>
  <h2>Sessões</h2>
- <div class="card"><div class="sessions"><button id="deep" onclick="applySession(DEEP_FOCUS)"><b>Deep focus</b><span></span><small></small></button><button id="gentle" onclick="applySession(GENTLE_FOCUS)"><b>Gentle focus</b><span></span><small></small></button></div><small id="sessionnote">Troca seus tempos e liga o início automático.</small></div>
+ <div class="card"><div class="sessions" id="sessions"></div><small id="sessionnote">Troca seus tempos e liga o início automático.</small><small id="sesswarn"></small><p style="margin-bottom:0"><button class="btn" id="sessedit" type="button" disabled>Editar sessões</button></p></div>
  <h2>Tempos</h2>
  <div class="card">
   <label>Foco (min)<input data-k="work" type="number" min="1" max="99"></label>
@@ -407,8 +407,8 @@ try{document.fonts.load('16px Silk','ÁÇÃ0:').then(()=>document.documentElemen
 
 const $=id=>document.getElementById(id),C=339.3;
 const LBL={work:'FOCO',short:'PAUSA',long:'PAUSA LONGA',idle:'PRONTO'};
-const DEEP_FOCUS={work:50,short:10,long:25,every:3,cycles:3},GENTLE_FOCUS={work:25,short:5,long:20,every:2,cycles:2};
-function sessionMinutes(x){let n=x.cycles,total=n*x.work+x.long;for(let i=1;i<n;i++)total+=i%x.every?x.short:x.long;return total}
+const DEEP_FOCUS={name:'Deep focus',work:50,short:10,long:25,every:3,cycles:3},GENTLE_FOCUS={name:'Gentle focus',work:25,short:5,long:20,every:2,cycles:2},SESSION_KEYS=['work','short','long','every','cycles'];
+function sessionMinutes(x){let n=+x.cycles;if(!n)return 0;let total=n*x.work+x.long;for(let i=1;i<n;i++)total+=i%x.every?+x.short:+x.long;return total}
 function sessionDuration(m){return m>=60?(m/60|0)+'h'+(m%60?String(m%60).padStart(2,'0'):''):m+' min'}
 // ---------- idioma (pt/en/es; o relógio guarda em cfg.lang) ----------
 const LANGS=['pt','en','es'],I18N=Object.create(null);let BUILTIN=[];  // inglês/espanhol: web/i18n.json, carregado por loadI18n()
@@ -444,10 +444,25 @@ const _fetch=window.fetch;window.fetch=(u,o={})=>_fetch(u,/^https?:/.test(u)?o:{
 const post=(u,b)=>fetch(u,{method:'POST',body:b});
 const kb=n=>n>1048576?(n/1048576).toFixed(1)+' MB':Math.round(n/1024)+' KB';
 function toast(t){const e=$('toast');e.textContent=t;e.classList.add('v');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('v'),2200)}
-function sessionRender(s){[[DEEP_FOCUS,$('deep')],[GENTLE_FOCUS,$('gentle')]].forEach(([x,b])=>{b.children[1].textContent=sessionDuration(sessionMinutes(x));b.children[2].textContent=t('{0} focos de {1} min, com a pausa final',x.cycles,x.work);b.classList.toggle('on',['work','short','long','every','cycles'].every(k=>s.cfg[k]==x[k]))});const c=s.cfg.cycles;$('cyclesum').textContent=c?t('{0} no total',sessionDuration(sessionMinutes(s.cfg))):t('0 = sem fim')}
-async function applySession(x){if(st&&st.phase!='idle'&&!confirm(t('Isso zera o foco em andamento. Continuar?')))return;try{for(const [u,b] of [['/api/settings',new URLSearchParams({...x,auto:1})],['/api/cmd',new URLSearchParams({c:'reset'})],['/api/cmd',new URLSearchParams({c:'start'})]]){const r=await post(u,b);if(!r.ok)throw Error(r.status);filled=false;load(await r.json())}toast(t('Sessão iniciada'))}catch(e){toast(t('Falha: ')+(e.message||e))}}
+let sessOk=false,sessSet=false,SESSIONS=[DEEP_FOCUS,GENTLE_FOCUS];
+const sessionCopy=x=>({name:x.name,...Object.fromEntries(SESSION_KEYS.map(k=>[k,+x[k]]))});
+function sessionSame(a,b){return a.length==b.length&&a.every((x,i)=>x.name===b[i].name&&SESSION_KEYS.every(k=>+x[k]===+b[i][k]))}
+function sessionCheck(lista,campos){
+ if(!Array.isArray(lista))throw Error(t('Lista de sessões inválida'));if(lista.length>8)throw Error(t('Limite de 8 sessões'));
+ const nomes=new Set(),lim={work:[1,99],short:[1,99],long:[1,99],every:[1,8],cycles:[0,99]},out=[],linhas=[];
+ const bad=(i,k,m)=>{const e=campos&&campos[i]&&campos[i][k];if(e)e.setCustomValidity(m);throw Object.assign(Error(m),{field:e})};
+ lista.forEach((x,i)=>{if(!x||typeof x.name!='string')bad(i,'name',t('Nome inválido'));const name=x.name,n=[...name].length;
+  if(n<1||n>24||name.trim()!=name||!name.trim()||/[\u0000-\u001f\u007f]/.test(name))bad(i,'name',t('Use de 1 a 24 caracteres, sem espaços nas pontas'));
+  if(nomes.has(name))bad(i,'name',t('Os nomes não podem se repetir'));nomes.add(name);const y={name};
+  SESSION_KEYS.forEach(k=>{const v=String(x[k]);if(!/^\d{1,2}$/.test(v)||+v<lim[k][0]||+v>lim[k][1])bad(i,k,t('Número fora da faixa'));y[k]=+v});
+  out.push(y);linhas.push([name,...SESSION_KEYS.map(k=>y[k])].join('\t')+'\n')});
+ const texto=linhas.join('');if(new TextEncoder().encode(texto).length>1024)throw Error(t('A lista passa de 1024 bytes'));return{lista:out,texto}
+}
+function sessionRender(s){const box=$('sessions');box.textContent='';SESSIONS.forEach(x=>{const b=el('button');b.type='button';b.append(el('b',null,x.name),el('span',null,x.cycles?sessionDuration(sessionMinutes(x)):t('sem fim')),el('small',null,x.cycles?t('{0} focos de {1} min, com a pausa final',x.cycles,x.work):t('Focos de {0} min, sem fim',x.work)));b.classList.toggle('on',!!(s&&s.cfg&&SESSION_KEYS.every(k=>s.cfg[k]==x[k])));b.addEventListener('click',()=>applySession(x));box.appendChild(b)});if(s&&s.cfg){const c=s.cfg.cycles;$('cyclesum').textContent=c?t('{0} no total',sessionDuration(sessionMinutes(s.cfg))):t('0 = sem fim')}}
+async function sessLoad(avisa=false){try{const r=await fetch('/api/sessoes');if(!r.ok)throw Error(r.status);const j=await r.json();if((j.set!==0&&j.set!==1)||!Array.isArray(j.l))throw Error('resposta');const l=j.set?sessionCheck(j.l).lista:[sessionCopy(DEEP_FOCUS),sessionCopy(GENTLE_FOCUS)];sessOk=true;sessSet=!!j.set;SESSIONS=l;$('sessedit').disabled=false;$('sesswarn').textContent='';sessionRender(st);return j}catch(e){sessOk=false;sessSet=false;SESSIONS=[sessionCopy(DEEP_FOCUS),sessionCopy(GENTLE_FOCUS)];$('sessedit').disabled=true;$('sesswarn').textContent=t('Não foi possível ler as sessões do relógio.');sessionRender(st);if(avisa)toast(t('Falha: ')+'/api/sessoes');return null}}
+async function applySession(x){if(st&&st.phase!='idle'&&!confirm(t('Isso zera o foco em andamento. Continuar?')))return;try{const cfg=Object.fromEntries(SESSION_KEYS.map(k=>[k,x[k]]));for(const [u,b] of [['/api/settings',new URLSearchParams({...cfg,auto:1})],['/api/cmd',new URLSearchParams({c:'reset'})],['/api/cmd',new URLSearchParams({c:'start'})]]){const r=await post(u,b);if(!r.ok)throw Error(r.status);filled=false;load(await r.json())}toast(t('Sessão iniciada'))}catch(e){toast(t('Falha: ')+(e.message||e))}}
 function tab(i){curTab=i;document.querySelectorAll('.tab').forEach((e,k)=>e.classList.toggle('on',k==i));document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t==i));
- try{localStorage.tab=i}catch(e){}if(i==2)files();if(i==3)hooksLoad();if(i==4)appsLoad();if(i==1&&!STATS)loadStats();window.scrollTo(0,0)}
+ try{localStorage.tab=i}catch(e){}if(i==2)files();if(i==3)hooksLoad();if(i==4)appsLoad();if(i==1){if(!STATS)loadStats();sessLoad()}window.scrollTo(0,0)}
 const fkey=f=>f.pkg?'p:'+f.pkg:'t:'+f.t;  // embutido "t:N" ou pacote "p:id"
 const curKey=s=>s.cfg.theme==200?'p:'+s.cfg.pkg:'t:'+s.cfg.theme;
 const faceSrc=f=>f.src||(f.pkg?'/face?pkg='+encodeURIComponent(f.pkg):SITE+'img/faces/face-'+f.t+'.png');  // embutidos: prévia no site (não ocupa a flash)
@@ -466,6 +481,18 @@ function img(f){const i=new Image();i.alt=f.n;const u=faceImgs(f);
 // mesmo id que o relógio calcula (facepack.cpp: safeId)
 const safeId=s=>{let o='';for(let c of String(s||'').toLowerCase()){if(/[a-z0-9_-]/.test(c))o+=c;else if(c==' '&&o&&!o.endsWith('-'))o+='-';if(o.length>=23)break}return o}
 function el(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
+async function sessEdit(){
+ if(!await sessLoad(true)||!sessOk)return;let lista=SESSIONS.map(sessionCopy),campos=[];const c=$('sheetc');c.textContent='';c.appendChild(el('h3',null,t('Editar sessões')));const ed=el('div','sedit'),erro=el('small','serr');c.append(ed,erro);
+ const rodape=el('div','row'),add=el('button','btn',t('Adicionar')),saveb=el('button','btn p',t('Salvar'));rodape.append(add,saveb);c.appendChild(rodape);
+ const render=()=>{ed.textContent='';campos=[];lista.forEach((x,i)=>{const row=el('div','srow'),nome=el('input');nome.type='text';nome.value=x.name;nome.setAttribute('aria-label',t('Nome'));row.appendChild(nome);const nums=el('div','snums'),fs={name:nome};
+   [['work','Foco'],['short','Pausa curta'],['long','Pausa longa'],['every','A cada'],['cycles','Focos']].forEach(([k,l])=>{const lab=el('label',null,t(l)),inp=el('input');inp.type='number';inp.min=k=='cycles'?0:1;inp.max=k=='every'?8:99;inp.value=x[k];inp.setAttribute('aria-label',t(l));lab.appendChild(inp);nums.appendChild(lab);fs[k]=inp});row.appendChild(nums);
+   const actions=el('div','row'),total=el('small'),del=el('button',null,t('Apagar')),sum=()=>total.textContent=/^\d{1,2}$/.test(fs.cycles.value)&&+fs.cycles.value?sessionDuration(sessionMinutes(Object.fromEntries(SESSION_KEYS.map(k=>[k,+fs[k].value])))):t('sem fim');
+   nome.oninput=()=>{x.name=nome.value;nome.setCustomValidity('')};SESSION_KEYS.forEach(k=>fs[k].oninput=()=>{x[k]=fs[k].value;fs[k].setCustomValidity('');sum()});del.onclick=()=>{lista.splice(i,1);render()};actions.append(total,del);row.appendChild(actions);sum();ed.appendChild(row);campos.push(fs)});add.disabled=lista.length>=8;erro.textContent=lista.length>=8?t('Limite de 8 sessões'):''};
+ add.onclick=()=>{if(lista.length>=8)return toast(t('Limite de 8 sessões'));let n=lista.length+1,name;do{name=t('Sessão {0}',n++)}while(lista.some(x=>x.name==name));lista.push({name,work:25,short:5,long:20,every:4,cycles:4});render()};
+ saveb.onclick=async()=>{campos.forEach(f=>Object.values(f).forEach(e=>e.setCustomValidity('')));let v;try{v=sessionCheck(lista,campos);erro.textContent=''}catch(e){erro.textContent=e.message;if(e.field)e.field.reportValidity();return}saveb.disabled=true;try{const r=await post('/api/sessoes',new URLSearchParams({t:v.texto})),txt=await r.text();if(!r.ok)throw Error(txt||r.status);const j=JSON.parse(txt),volta=j.set&&sessionCheck(j.l).lista;if(!volta||!sessionSame(v.lista,volta))throw Error(t('O relógio não guardou. Tente de novo.'));sessOk=sessSet=true;SESSIONS=volta;sessionRender(st);closeSheet();toast(t('Sessões salvas'))}catch(e){erro.textContent=e.message||e;toast(t('Falha: ')+(e.message||e))}finally{saveb.disabled=false}};
+ render();$('sheet').classList.add('v')
+}
+$('sessedit').onclick=sessEdit;
 // ---------- mostradores ----------
 function loadFaces(){return fetch('/api/faces').then(r=>r.json()).then(j=>{let t=0;FACES=j.map(f=>({n0:f.n,d0:f.d,n:f.n,d:f.d,a:f.a||'',pkg:f.pkg,x:f.x||'',t:f.pkg?null:t++}));buildFaces();$('curimg').dataset.k='';if(st)load(st);
  // estilos e animação dos pacotes instalados vêm do catálogo do site (uma vez por visita; sem internet vale o último guardado)
@@ -637,9 +664,9 @@ const b64=buf=>{const u=new Uint8Array(buf);let o='';for(let i=0;i<u.length;i+=0
 const unb64=d=>{const o=atob(d),u=new Uint8Array(o.length);for(let i=0;i<o.length;i++)u[i]=o.charCodeAt(i);return u};
 // Inclui também as fotos e GIFs (base64) e os links dos avisos: é o que a migração de layout da memória apaga. Devolve true se salvou.
 async function backup(){try{const s=await (await fetch('/api/state')).json(),h=await (await fetch('/api/stats')).json(),c={...s.cfg};delete c.lock;
- const hk=await fetch('/api/hooks').then(r=>r.ok?r.json():null).catch(()=>null),fl=(await (await fetch('/api/files')).json()).files,media=[];
+ const sj=await fetch('/api/sessoes').then(async r=>{if(!r.ok)return null;const j=await r.json();return j.set===1?{set:1,l:sessionCheck(j.l).lista}:{set:0}}).catch(()=>null),hk=await fetch('/api/hooks').then(r=>r.ok?r.json():null).catch(()=>null),fl=(await (await fetch('/api/files')).json()).files,media=[];
  for(let i=0;i<fl.length;i++){toast(t('Salvando {0} de {1}...',i+1,fl.length));const r=await fetch('/fs?f='+encodeURIComponent(fl[i].n));if(!r.ok)throw fl[i].n;media.push({n:fl[i].n,d:b64(await r.arrayBuffer())})}
- const b={app:'smalltv-pomodoro',format:2,ver:s.ver,date:new Date().toISOString().slice(0,10),cfg:c,stats:h,faces:FACES.filter(f=>f.pkg).map(f=>f.pkg),hooks:hk,media};
+ const b={app:'smalltv-pomodoro',format:2,ver:s.ver,date:new Date().toISOString().slice(0,10),cfg:c,stats:h,faces:FACES.filter(f=>f.pkg).map(f=>f.pkg),hooks:hk,media};if(sj&&sj.set)b.sessoes=sj.l;
  const blob=new Blob([JSON.stringify(b)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='smalltv-backup-'+b.date+'.json';a.click();
  setTimeout(()=>URL.revokeObjectURL(a.href),60000);toast(t('Backup salvo: ajustes, histórico, mostradores, avisos, fotos e GIFs'));return true}
  catch(x){toast(t('Falha no backup: ')+t(String(x)));return false}}
@@ -665,6 +692,7 @@ $('rbk').onchange=async e=>{const file=e.target.files[0];e.target.value='';if(!f
    await save(c)}],
   ['Histórico',async()=>{if(!(b.stats&&b.stats.days))return;
    await need(await post('/api/statsimport',new URLSearchParams({day:b.stats.day,best:b.stats.best,total:b.stats.total,days:b.stats.days.join(',')})));await loadStats()}],
+  ...(Object.prototype.hasOwnProperty.call(b,'sessoes')?[['Sessões',async()=>{const v=sessionCheck(b.sessoes),r=await post('/api/sessoes',new URLSearchParams({t:v.texto})),txt=await r.text();if(!r.ok)throw txt||r.status;const j=JSON.parse(txt),volta=j.set&&sessionCheck(j.l).lista;if(!volta||!sessionSame(v.lista,volta))throw t('O relógio não guardou. Tente de novo.');sessOk=sessSet=true;SESSIONS=volta;sessionRender(st)}]]:[]),
   ['Avisos',async()=>{if(b.hooks&&(b.hooks.w||b.hooks.b))await need(await post('/api/hooks',new URLSearchParams({w:b.hooks.w||'',b:b.hooks.b||''})))}],
   ['Fotos e GIFs',async()=>{if(!(b.media&&b.media.length))return;let nf=0;
    const have=new Set((await (await fetch('/api/files')).json()).files.map(x=>x.n.split('/').pop()));
@@ -672,7 +700,7 @@ $('rbk').onchange=async e=>{const file=e.target.files[0];e.target.value='';if(!f
     try{const fd=new FormData();fd.append('f',new Blob([unb64(m.d)]),nm);if(!(await fetch('/api/upload',{method:'POST',body:fd})).ok)nf++}catch(x){nf++}}
    if(nf)throw t('{0} foto(s)/GIF(s) não couberam e ficaram de fora',nf)}]]);
  if(!R.bad.some(x=>x[0]=='Fotos e GIFs')&&st&&st.fs&&st.fs.mig)migDone();   // o aviso de migração só some se as fotos voltaram
- try{await loadFaces();files();filled=false}catch(x){}
+ try{await loadFaces();await sessLoad();files();filled=false}catch(x){}
  if(!R.bad.length)return toast(t('Backup restaurado'));
  alert(t('Backup restaurado com falhas.')+'\n\n'+t('Entrou: {0}',R.ok.map(n=>t(n)).join(', ')||'—')+'\n'+t('Falhou:')+'\n'+R.bad.map(([n,m])=>'• '+t(n)+': '+t(m)).join('\n'))};
 // ---------- avisos de fim de fase (endereços chamados pelo relógio) ----------
@@ -853,7 +881,7 @@ let qt;$('q').oninput=()=>{clearTimeout(qt);const q=$('q').value.trim();if(q.len
 // ---------- armazenamento: tudo o que ocupa a memória de arquivos (/api/storage) ----------
 // Agrupa por tipo; "Outros" é o que o Pomodoro não usa (em relógios vindos do firmware original, os arquivos dele).
 // O relógio marca com k o que precisa para funcionar (sem botão de apagar).
-const STG=[['Fotos e GIFs',p=>p.startsWith('/image/')||p.startsWith('/gif/')],['Mostradores baixados',p=>p.startsWith('/faces/')],['Painel',p=>p.startsWith('/www/')],['Histórico e ajustes',p=>['/stats.bin','/hooks.txt','/rotation.txt','/apps.key'].includes(p)]];
+const STG=[['Fotos e GIFs',p=>p.startsWith('/image/')||p.startsWith('/gif/')],['Mostradores baixados',p=>p.startsWith('/faces/')],['Painel',p=>p.startsWith('/www/')],['Histórico e ajustes',p=>['/stats.bin','/hooks.txt','/rotation.txt','/apps.key','/sessoes.txt'].includes(p)]];
 function storage(){fetch('/api/storage').then(r=>r.json()).then(j=>{const c=$('sheetc');c.innerHTML='';c.appendChild(el('h3',null,t('Memória de arquivos')));
  const fl=j.files.filter(x=>!x.d),sum=fl.reduce((a,x)=>a+x.s,0);c.appendChild(el('p',null,t('{0} usados de {1}',kb(j.used),kb(j.total))));
  const box=el('div','stg'),known=new Set(),mine=['/image','/gif','/faces','/www'];
@@ -900,5 +928,5 @@ $('up').onchange=async e=>{const fs=[...e.target.files];e.target.value='';let ok
 $('op').onsubmit=e=>{e.preventDefault();const o=e.target;post('/api/otapass',new URLSearchParams(new FormData(o))).then(r=>r.text()).then(x=>{toast(t(x));o.reset()})};
 document.onkeydown=e=>{if(e.code=='Space'&&curTab==1&&!/INPUT|BUTTON|SELECT/.test(e.target.tagName)){e.preventDefault();cmd('toggle')}};
 function poll(){if(updating)return setTimeout(poll,1000);fetch(st&&st.cfg?'/api/state?cfg=0':'/api/state').then(r=>r.json()).then(load).catch(()=>$('net').className='off').finally(()=>setTimeout(poll,1000))}
-i18n();loadI18n();loadFaces();let t0=0;try{t0=+localStorage.tab||0}catch(e){}tab(t0);poll();
+i18n();loadI18n();loadFaces();sessLoad();let t0=0;try{t0=+localStorage.tab||0}catch(e){}tab(t0);poll();
 </script></body></html>
