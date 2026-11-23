@@ -118,12 +118,14 @@ sim/build.sh
 
 ```
 arduino-cli core install esp8266:esp8266 --additional-urls https://arduino.esp8266.com/stable/package_esp8266com_index.json
-arduino-cli lib install --no-deps "Adafruit GFX Library@1.13.0" "Adafruit ST7735 and ST7789 Library@1.11.0" "Adafruit BusIO@1.17.4" "ArduinoJson@7.4.3"  # --no-deps: keeps GFX at 1.13.0 (2.0.0 moved the sources to src/)
+arduino-cli lib install --no-deps "Adafruit GFX Library@1.13.0" "Adafruit ST7735 and ST7789 Library@1.11.0" "Adafruit BusIO@1.17.4" "ArduinoJson@7.4.3"
 (cd web && npm install)  # optional: terser minifies the panel (~1 KB smaller)
 sim/build.sh   # generates assets.h and web.h, checks the code and tests the screens in the simulator
 sim/testes.sh  # Linux/WSL (g++-multilib): upload/host/password handlers, history, GIF and JPEG fuzzing
 ./compilar.sh  # builds into build/ and checks the size
 ```
+
+Keep `--no-deps`: the ST7789 library declares Adafruit GFX without a version, and GFX 2.0.0 (sources moved to `src/`) would replace the pinned 1.13.0.
 
 `sim/build.sh` runs on Windows (Zig) and on Linux (Zig, or `g++ -m32` without it). Every push runs all of the above on GitHub Actions (`.github/workflows/firmware.yml`) and keeps the firmware as an artifact.
 
