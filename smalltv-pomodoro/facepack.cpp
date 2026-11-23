@@ -9,6 +9,7 @@
 #include "facepack.h"
 #include "appdata.h"
 #include "ui_kit.h"
+#include "utf8_pixel.h"
 #include <ArduinoJson.h>
 #include <stdlib.h>
 
@@ -953,19 +954,25 @@ static uint16_t col(int32_t c, const UiState &s) { return c == C_ACCENT ? s.acce
 // Percorre o texto; desenha se draw = true. Devolve a largura.
 static int runText(const Layer &L, const char *str, int x, int y, bool draw, uint16_t fg, int32_t c2, int grow = 0) {
   const int sz = L.size, x0 = x;
-  for (const unsigned char *p = (const unsigned char *)str; *p; p++) {
+  if (draw && L.font == F_PIXEL) G->cp437(true);  // o glifo 0xE1 do ß só é correto no modo CP437 real
+  for (const unsigned char *p = (const unsigned char *)str; *p;) {
     unsigned char ch = *p;
     if (ch == 0xC2 && p[1] == 0xB0) {  // "°"
-      p++;
+      p += 2;
       if (draw) degree(x, y, L.font == F_PIXEL ? sz : (sz > 20 ? sz / 10 : 1), fg);
       x += L.font == F_PIXEL ? 4 * sz : sz / 3 + 4;
       continue;
     }
-    if (ch == 0xC3 && p[1]) {  // letras acentuadas: só a letra base (a fonte embutida é ASCII)
-      unsigned char c = *++p;
-      ch = c <= 0x85 ? 'A' : c == 0x87 ? 'C' : c <= 0x8B ? 'E' : c <= 0x8F ? 'I' : c <= 0x96 ? 'O' : c <= 0x9C ? 'U'
-         : c <= 0xA5 ? 'a' : c == 0xA7 ? 'c' : c <= 0xAB ? 'e' : c <= 0xAF ? 'i' : c <= 0xB6 ? 'o' : 'u';
-    } else if (ch >= 0x80) continue;
+    if (L.font == F_PIXEL) {
+      ch = utf8ToCp437(p);
+      if (!ch) continue;
+    } else if (ch == 0xC3 && p[1]) {  // nas outras fontes, acentos continuam como a letra base
+      ch = latin1Base(p[1]);
+      p += 2;
+    } else {
+      p++;
+      if (ch >= 0x80) continue;
+    }
     switch (L.font) {
       case F_PIXEL:
         if (draw) G->drawChar(x, y, ch, fg, fg, sz);

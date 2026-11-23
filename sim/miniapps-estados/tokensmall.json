@@ -1,0 +1,9 @@
+{
+ "capa": 1,
+ "estados": [
+  {"n":"Sem dados","en":"No data","es":"Sin datos","envios":[]},
+  {"n":"Os 4 limites","en":"All 4 limits","es":"Los 4 límites","envios":[{"ttl":900,"values":{"tk_c5":"42% 2h13","tk_c7":"71% 3d","tk_x5":"93% 38m","tk_x7":"12% 5d"}}]},
+  {"n":"Uma janela sem leitura","en":"One window unread","es":"Una ventana sin lectura","envios":[{"ttl":900,"values":{"tk_c5":"--","tk_c7":"71% 3d","tk_x5":"93% 38m","tk_x7":"12% 5d"}}]},
+  {"n":"Limites no máximo","en":"Limits maxed","es":"Límites al máximo","envios":[{"ttl":900,"values":{"tk_c5":"100% 5h59","tk_c7":"100% 24h","tk_x5":"0% 1m","tk_x7":"7% 47h"}}]}
+ ]
+}

@@ -1,0 +1,9 @@
+{
+ "capa": 1,
+ "estados": [
+  {"n":"Sem dados","en":"No data","es":"Sin datos","envios":[]},
+  {"n":"2 acesas","en":"2 on","es":"2 encendidas","envios":[{"ttl":60,"values":{"lz_n":2,"lz_1":"ACESA","lz_2":"","lz_3":"ACESA"}}]},
+  {"n":"Todas apagadas","en":"All off","es":"Todas apagadas","envios":[{"ttl":60,"values":{"lz_n":0,"lz_1":"","lz_2":"","lz_3":""}}]},
+  {"n":"Uma sem sinal","en":"One offline","es":"Una sin señal","envios":[{"ttl":60,"values":{"lz_n":1,"lz_1":"ACESA","lz_2":"SEM SINAL","lz_3":""}}]}
+ ]
+}
