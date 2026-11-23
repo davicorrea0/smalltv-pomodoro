@@ -440,6 +440,17 @@ static void exemplos(Tela *tela) {
       if (i == 0) primeiro = inc;
       i++;
     }
+    // envio parcial (so alguns campos; os outros mantem o valor anterior): fica fora do sidecar porque nao e um estado
+    // que o miniapp mostre sozinho, mas o incremental tem de bater com o quadro cheio
+    if (strstr(c.arq, "casa-luzes")) {
+      CHECK(!put("{\"ttl\":60,\"values\":{\"lz_n\":1,\"lz_2\":\"ACESA\"}}", st.ms), "%s: envio parcial recusado", c.arq);
+      st.ms += 1000;
+      appDataExpire(st.ms);
+      facePackRender(st, false);
+      uint32_t parcial = hash(tela->px);
+      facePackRender(st, true);
+      CHECK(parcial == hash(tela->px), "%s, envio parcial: incremental != quadro cheio", c.arq);
+    }
     CHECK(primeiro != antes, "%s: os valores nao mudaram a tela", c.arq);
     st.ms += 61000;  // tudo vence: volta ao desenho sem dados
     appDataExpire(st.ms);

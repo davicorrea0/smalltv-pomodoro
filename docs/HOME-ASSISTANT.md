@@ -87,7 +87,7 @@ Num pacote do **formato 2** (ver [PACOTES.md](PACOTES.md)), `{x.campo}` no texto
   "color": "#ffffff", "bg": "#1c1c24", "text": "{x.temp}°" }
 ```
 
-Instale pelo painel, em Relógio → Mais mostradores → **Instalar de um arquivo**, e escolha o mostrador como de
+Instale pelo painel, na página Miniapps → **Instalar miniapp de um arquivo**, e escolha o mostrador como de
 costume (ou ponha no rodízio).
 
 Mostradores prontos para lavadora, luzes e tomadas, com a automação de cada um: [exemplos/](exemplos/README.md).

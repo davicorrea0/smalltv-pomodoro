@@ -15,7 +15,7 @@ Antes, siga a [receita do Home Assistant](../HOME-ASSISTANT.md): crie a chave no
 
 1. Baixe o `.json` e o `.png` de mesmo nome (abra cada arquivo aqui no GitHub e use "Download raw file").
 2. Se quiser, troque os nomes (`"SALA"`, `"CAFE"`...) no arquivo. Use até 7 letras, sem acento.
-3. No painel do relógio, vá em Relógio → Mais mostradores → **Instalar miniapp de um arquivo** e escolha os dois juntos. O relógio guarda a miniatura; sem o `.png`, o painel usa a do site.
+3. No painel do relógio, vá na página Miniapps → **Instalar miniapp de um arquivo** e escolha os dois juntos. O relógio guarda a miniatura; sem o `.png`, o painel tenta pegar a do site (publicada junto com o painel novo).
 4. Cole a automação correspondente abaixo no Home Assistant, trocando os nomes das entidades.
 
 Os três juntos usam 12 dos 16 campos do relógio. Cada um usa um prefixo próprio (`lv_`, `lz_`, `tm_`) para não pisar
