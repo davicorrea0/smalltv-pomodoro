@@ -182,7 +182,7 @@ int main(int argc, char **argv) {
     st.wx.ok = rnd(2); st.wx.code = rnd(100); st.wx.day = rnd(2); st.wx.t = (float)rnd(60) - 20; st.wx.hum = rnd(101);
     st.city = "Cidade"; st.ip = "10.0.0.1"; st.dailyGoal = rnd(12); st.today = rnd(15); st.streak = rnd(40);
     st.accent = (uint16_t)rnd(65536);
-    uiSetLang(rnd(3));
+    uiSetLang(rnd(5));
     st.ms = rnd(1u << 31);
     appDataClear();
     dados(st.ms);
