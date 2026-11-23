@@ -13,11 +13,11 @@ const cut = (sig, from = 0) => { const a = source.indexOf(sig, from); if (a < 0)
 
 // ---------- 1. campos aditivos ----------
 const OLD = ('phase running remaining total cycle sess sdone today streak best clock showing wx ok t min max h rin tzn off loff rise set desc fs l2 mig used cfg work short long every cycles bri auto h12 tz lock theme mode delay color non nstart nend nbri won fahr rain beta lat lon city bgr inv flip vcom wdown tok tund pkg goal act lang nsun warm lcdg alexa rotmin rot ago ip last pv name heap blk pdraw pseq pshown ver diag rst exc epc rssi minheap frag up draw stall stallAt boot scr wifi wf time src ntp crash n r x va').split(' ');
-const NEW = ['minblk', 'stack', 'ramfix', 'lps', 'pack', 'nomem', 'jpg', 'gif', 'strip', 'tw', 'twmax', 'fail'];
+const NEW = ['minblk', 'stack', 'ramfix', 'lps', 'pack', 'nomem', 'jpg', 'gif', 'strip', 'tw', 'twmax', 'fail', 'cv'];
 const sendState = cut('static void sendState() {'), diagJson = cut('static void diagJson('), crashJson = cut('static void crashJson(');
 const keys = new Set([...(sendState + diagJson + crashJson).matchAll(/\\"(\w+)\\":/g)].map(m => m[1]));
 for (const k of OLD) assert(keys.has(k), 'chave antiga sumiu do /api/state: ' + k + ' (painéis antigos leem esse JSON)');
-assert.deepStrictEqual([...keys].filter(k => !OLD.includes(k)).sort(), [...NEW].sort(), 'o /api/state só pode ganhar minblk, stack, ramfix, lps, pack, nomem{jpg,gif,strip}, tw, twmax e wx.fail');
+assert.deepStrictEqual([...keys].filter(k => !OLD.includes(k)).sort(), [...NEW].sort(), 'o /api/state só pode ganhar minblk, stack, ramfix, lps, pack, nomem{jpg,gif,strip}, tw, twmax, wx.fail e cv');
 // os campos novos ficam dentro de diag
 const d = sendState + diagJson;  // diag abre no sendState (\"diag\":{), os campos vêm no diagJson
 for (const k of ['minblk', 'stack', 'ramfix', 'lps', 'pack', 'nomem', 'tw', 'twmax']) assert(d.includes('\\"' + k + '\\":'), k + ' fora de diag');
@@ -96,10 +96,10 @@ console.log('telemetria: campos aditivos (' + NEW.join(', ') + '), uma varredura
 const out = process.argv[2];
 if (!out) process.exit(0);
 const reserve = +sendState.match(/j\.reserve\((\d+)\)/)[1];
-const i0 = sendState.indexOf('j = F("\\"},\\"alexa\\":{\\"ago\\":");'), i1 = sendState.indexOf('jsonEnd(j);');
+const i0 = sendState.indexOf('j += F(",\\"alexa\\":{\\"ago\\":");'), i1 = sendState.indexOf('jsonEnd(j);');
 if (i0 < 0 || i1 < 0) throw Error('não achei o último pedaço do sendState');
 const tail = sendState.slice(i0, i1);
-const block = source.slice(source.indexOf('static uint32_t diagMinHeap'), source.indexOf('static void sendState() {'));
+const block = source.slice(source.indexOf('static uint32_t diagMinHeap'), source.indexOf('static void fnvMix('));
 const line = re => { const m = source.match(re); if (!m) throw Error(String(re)); return m[0]; };
 fs.writeFileSync(out, `#include <cstdint>
 #include <cstdio>
@@ -169,7 +169,7 @@ int main() {
   crashRec = {CRASH_MAGIC_PLACEHOLDER, 255, 2, 29, 0, 0x40201234, 0, 4294967295u, "1.24.13"};
   g_hFree = 31200; g_hMax = 17600; g_hFrag = 12;
   String j; tail(j);
-  std::string doc = std::string("{\\"cfg\\":{\\"rot\\":\\"") + j.s;
+  std::string doc = std::string("{\\"cfg\\":{\\"rot\\":\\"\\"}") + j.s;
   CHECK(jsonOk(doc.c_str()));
   // antigos iguais
   CHECK(num(doc, "rssi") == -61 && num(doc, "frag") == 12 && num(doc, "heap") == 31200 && num(doc, "blk") == 17600 && num(doc, "draw") == 140);
@@ -198,7 +198,7 @@ int main() {
   g_hFree = 99999; g_hMax = 99999; g_hFrag = 99; diagMinHeap = 4294967295u; g_rssi = -100; g_now = 4294967295u; diagStall = 4294967295u; diagStallAt = 2;
   bootScreenMs = bootWifiMs = bootTimeMs = bootNtpMs = 4294967295u; fullDrawMs = packLoadMs = 65535; diagTw = 4294967295u; diagTwMax = 255; pomoDrawMs = phaseSeq = shownSeq = 65535; alexaMin = 255; uiOffscreenFail = 255;
   crashRec.reason = crashRec.exc = 255; crashRec.epc = crashRec.vaddr = crashRec.up = 4294967295u; memcpy(crashRec.ver, "1.24.13", 8);
-  String w; tail(w); CHECK(jsonOk((std::string("{\\"cfg\\":{\\"rot\\":\\"") + w.s).c_str()));
+  String w; tail(w); CHECK(jsonOk((std::string("{\\"cfg\\":{\\"rot\\":\\"\\"}") + w.s).c_str()));
   printf("telemetria: JSON do diagnóstico ok; último pedaço do /api/state no pior caso = %zu bytes (j.reserve(${reserve}))\\n", w.s.size());
   CHECK((int)w.s.size() <= ${reserve});
   return 0;

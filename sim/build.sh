@@ -50,6 +50,7 @@ $CXX -O1 -std=c++17 -w -Ishim brilho_test.cpp -o "out/brilho_$BIN" && "./out/bri
 node brilho_loop_test.cjs out/brilho_loop.cpp && $CXX -O1 -std=c++17 -w out/brilho_loop.cpp -o "out/brilho_loop_$BIN" && "./out/brilho_loop_$BIN" || exit 1
 node sessoes_test.cjs out/sessoes.cpp && $CXX -O1 -std=c++17 -w out/sessoes.cpp -o "out/sessoes_$BIN" && "./out/sessoes_$BIN" || exit 1
 node painel_test.cjs
+node state_cfg_test.cjs out/state_cfg.cpp && $CXX -O1 -std=c++17 -w out/state_cfg.cpp -o "out/state_cfg_$BIN" && "./out/state_cfg_$BIN" || exit 1
 node ponte_test.cjs || exit 1
 node fuso_test.cjs || exit 1
 node ../web/build.js

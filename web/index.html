@@ -771,7 +771,7 @@ function vcomEnd(save){clearTimeout(vcT);$('vcombox').style.display='none';$('vc
  post('/api/vcom',new URLSearchParams(save?{v:$('vcom').value,save:1}:{stop:1})).then(r=>r.json()).then(j=>{if(st)st.cfg.vcom=j.vcom;toast(t(save?'Ajuste salvo':'Ajuste cancelado'))})}
 function warmPrev(c){const v=document.querySelector('[data-k=warm]').value;if(v=='0'){toast(t('Aumente a intensidade para ver a prévia'));return}post('/api/warm',new URLSearchParams(c?{v,c:1}:{v})).then(()=>toast(t('Prévia por 15 s')))}
 function cmd(c){try{actx=actx||new AudioContext()}catch(e){}post('/api/cmd',new URLSearchParams({c})).then(r=>r.json()).then(load)}
-function load(s){if(s.cfg.lang!=null&&s.cfg.lang!=LG)setLang(s.cfg.lang);if(lastPhase&&s.phase!=lastPhase&&s.phase!='idle'&&lastPhase!='idle')beep();lastPhase=s.phase;
+function load(s){if(!s.cfg){if(st&&s.cv!=null&&s.cv===st.cv)s.cfg=st.cfg;else return fetch('/api/state').then(r=>r.json()).then(load)}if(s.cfg.lang!=null&&s.cfg.lang!=LG)setLang(s.cfg.lang);if(lastPhase&&s.phase!=lastPhase&&s.phase!='idle'&&lastPhase!='idle')beep();lastPhase=s.phase;
  // fase que acabou de começar: o relógio desenha o anel e só depois mostra os números. O painel desenha o anel
  // dele e espera o relógio avisar que os números já estão na tela (pshown == pseq), perguntando a cada 100 ms:
  // assim o navegador nunca começa a contar antes do aparelho
@@ -887,6 +887,6 @@ $('up').onchange=async e=>{const fs=[...e.target.files];e.target.value='';let ok
  if(ok)toast(t('{0} arquivo(s) enviado(s)',ok));if(bad.length)alert(bad.join('\n'));files()};
 $('op').onsubmit=e=>{e.preventDefault();const o=e.target;post('/api/otapass',new URLSearchParams(new FormData(o))).then(r=>r.text()).then(x=>{toast(t(x));o.reset()})};
 document.onkeydown=e=>{if(e.code=='Space'&&curTab==1&&!/INPUT|BUTTON|SELECT/.test(e.target.tagName)){e.preventDefault();cmd('toggle')}};
-function poll(){if(updating)return setTimeout(poll,1000);fetch('/api/state').then(r=>r.json()).then(load).catch(()=>$('net').className='off').finally(()=>setTimeout(poll,1000))}
+function poll(){if(updating)return setTimeout(poll,1000);fetch(st&&st.cfg?'/api/state?cfg=0':'/api/state').then(r=>r.json()).then(load).catch(()=>$('net').className='off').finally(()=>setTimeout(poll,1000))}
 i18n();loadI18n();loadFaces();let t0=0;try{t0=+localStorage.tab||0}catch(e){}tab(t0);poll();
 </script></body></html>
