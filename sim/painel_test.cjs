@@ -2,6 +2,24 @@
 // Extrai o runSteps real do painel, confere a ordem/contabilidade e que todo texto novo tem inglês e espanhol.
 const fs = require('fs'), path = require('path'), assert = require('assert');
 const html = fs.readFileSync(path.join(__dirname, '../web/index.html'), 'utf8');
+
+// Ajustes > Memória: flash fecha no total, reserva nunca fica negativa, teto do linker e firmware antigo seguro.
+{
+  const line = s => { const i = html.indexOf(s); assert(i >= 0, s); return html.slice(i, html.indexOf('\n', i)); };
+  const LINKMAX = +line('const LINKMAX=').match(/=(\d+)/)[1];
+  const memCalc = new Function('LINKMAX', 'return ' + line('const memCalc=').replace(/^const memCalc=/, '').replace(/;$/, ''))(LINKMAX);
+  const m = memCalc({ diag: { sk: 700000, fr: 1000000, fl: 4194304 }, fs: { used: 320000, total: 2000000, l2: 1 } });
+  assert.strictEqual(m.sk + m.fr + m.fs + m.sys, m.fl, 'partes da flash precisam fechar no total');
+  assert(m.sys >= 0 && m.room == 1044464 - 700000, 'reserva não negativa e teto menos programa');
+  assert.strictEqual(memCalc({ diag: { sk: 3000000, fr: 2000000, fl: 4194304 }, fs: { total: 1 } }).sys, 0, 'sistema e reserva nunca fica negativo');
+  assert.strictEqual(memCalc({ diag: { frag: 12 }, fs: { used: 1, total: 2 } }), null, 'firmware antigo esconde a barra de flash sem produzir NaN');
+  assert(html.includes('[rf,u,h].forEach') && !html.includes("spk').lastChild"), 'a barra de RAM foi movida, não duplicada');
+  const dict = JSON.parse(fs.readFileSync(path.join(__dirname, '../web/i18n.json'), 'utf8')).dict;
+  for (const k of ['Memória', 'Flash', 'RAM', 'Programa: o espaço que o firmware do relógio ocupa. Livre para atualizar: a área disponível para receber uma versão nova. Arquivos: fotos, GIFs e mostradores. Sistema e reserva: dados internos e espaço protegido do aparelho.',
+    'RAM fixa: o que o sistema reserva sempre. Em uso: memória temporária ocupada agora. Heap livre: o que ainda pode ser usado; o maior bloco mostra o tamanho que cabe de uma vez.', 'programa', 'livre para atualizar', 'arquivos', 'sistema e reserva', 'ainda cabe de programa', 'layout 4M2M', 'layout antigo 4M3M', 'RAM fixa', 'heap livre', 'maior bloco', 'fragmentação', 'menor livre desde que ligou', 'menor maior bloco desde que ligou'])
+    assert(dict[k] && dict[k].length == 2 && dict[k].every(x => x), 'sem tradução en/es: ' + k);
+  console.log('painel: card Memória fecha a flash, limita a reserva, mostra o teto e aceita firmware antigo');
+}
 const i = html.indexOf('async function runSteps('), runSteps = new Function('return ' + html.slice(i, html.indexOf('\n', i)))();
 (async () => {
   const ran = [];

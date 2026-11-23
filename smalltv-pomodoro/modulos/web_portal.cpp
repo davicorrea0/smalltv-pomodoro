@@ -127,6 +127,16 @@ static void diagHeap(uint32_t &heapFree, uint32_t &blk, uint8_t &frag) {
 // calcula o resto da DRAM de 80 KB (81920 B): heap total = 81920 - ramfix. A pilha do laço fica fora (pilha do sistema).
 static uint32_t ramFixed() { return (uint32_t)(uintptr_t)_heap_start - 0x3FFE8000u; }
 
+// A geometria da flash não muda enquanto o relógio está ligado. Lê uma vez no setup, depois do LittleFS montar,
+// para o /api/state apenas serializar os valores (sem consultar a flash a cada pedido).
+static uint32_t diagSketchSize, diagFreeSketch, diagFlashSize;
+
+static void diagFlashBoot() {
+  diagSketchSize = ESP.getSketchSize();
+  diagFreeSketch = ESP.getFreeSketchSpace();
+  diagFlashSize = ESP.getFlashChipSize();
+}
+
 static void diagJson(String &j, uint8_t frag) {
   const rst_info *r = ESP.getResetInfoPtr();
   char epc[12];
@@ -157,6 +167,12 @@ static void diagJson(String &j, uint8_t frag) {
   j += ESP.getFreeContStack();
   j += F(",\"ramfix\":");  // RAM fixa do build em bytes (o painel desenha a barra fixa / em uso / livre)
   j += ramFixed();
+  j += F(",\"sk\":");  // programa, folga para OTA e flash real (medidos uma vez no boot)
+  j += diagSketchSize;
+  j += F(",\"fr\":");
+  j += diagFreeSketch;
+  j += F(",\"fl\":");
+  j += diagFlashSize;
   j += F(",\"lps\":");  // voltas do laço por segundo (só no texto copiado do painel)
   j += diagLps;
   j += F(",\"pack\":");  // ms da última carga de pacote de mostrador (0 = nenhuma)
