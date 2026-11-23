@@ -7,7 +7,7 @@
 
 static int casos = 0;
 
-static void confere(const unsigned char *s, uint8_t esperado, size_t avanco) {
+static void confere(const unsigned char *s, uint16_t esperado, size_t avanco) {
   const unsigned char *p = s;
   assert(utf8ToCp437(p) == esperado);
   assert((size_t)(p - s) == avanco);
@@ -69,7 +69,25 @@ int main() {
     confere(s, (uint8_t)base[bi++], 2);
   }
 
-  const uint8_t valores[] = {0x41,0x80,0xA4,0xBC,0xC0,0xC3,0xCC,0x88,0xE2,0xF0,0xFF};
+  for (uint8_t d = 0x90; d <= 0xAF; d++) {
+    const unsigned char s[] = {0xD0, d, 0};
+    confere(s, (uint16_t)(0x100 + d - 0x90), 2);  // А..Я
+  }
+  confere((const unsigned char *)"\xD0\x81", 0x100 + 32, 2);  // Ё
+  for (uint8_t d = 0xB0; d <= 0xBF; d++) {
+    const unsigned char s[] = {0xD0, d, 0};
+    confere(s, (uint16_t)(0x100 + 33 + d - 0xB0), 2);  // а..п
+  }
+  for (uint8_t d = 0x80; d <= 0x8F; d++) {
+    const unsigned char s[] = {0xD1, d, 0};
+    confere(s, (uint16_t)(0x100 + 49 + d - 0x80), 2);  // р..я
+  }
+  confere((const unsigned char *)"\xD1\x91", 0x100 + 65, 2);  // ё
+
+  confere((const unsigned char *)"І", 0, 2);  // І (ucraniano): fora do russo, ignorado sem largura
+  confere((const unsigned char *)"ї", 0, 2);  // ї
+  const uint8_t valores[] = {0x41,0x80,0x81,0x8F,0x91,0xA4,0xAF,0xB0,0xBC,
+                             0xC0,0xC3,0xCC,0xD0,0xD1,0xE2,0xF0,0xFF};
   for (int a = 1; a < 256; a++) {
     unsigned char s[] = {(unsigned char)a};
     buffer(s, 1);

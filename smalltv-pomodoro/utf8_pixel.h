@@ -8,7 +8,10 @@ static inline unsigned char latin1Base(unsigned char d) {
        : d <= 0xAB ? 'e' : d <= 0xAF ? 'i' : d <= 0xB6 ? 'o' : 'u';
 }
 
-static inline uint8_t utf8ToCp437(const unsigned char *&p) {
+// Retorna 1..255 para CP437 e 0x100+i para cirílico. A ordem cirílica é:
+// А Б В Г Д Е Ж З И Й К Л М Н О П Р С Т У Ф Х Ц Ч Ш Щ Ъ Ы Ь Э Ю Я Ё,
+// seguida por а..я e ё (maiúsculas 0..32, minúsculas 33..65).
+static inline uint16_t utf8ToCp437(const unsigned char *&p) {
   const uint8_t c = *p;
   if (c < 0x80) {
     const bool letra = (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
@@ -32,6 +35,17 @@ static inline uint8_t utf8ToCp437(const unsigned char *&p) {
     if (d == 0x96) return 0x99;
     if (d == 0x9C) return 0x9A;
     return latin1Base(d);
+  }
+
+  if (c == 0xD0) {
+    const uint8_t d = p[1];
+    if (d == 0x81) { p += 2; return 0x100 + 32; }       // Ё
+    if (d >= 0x90 && d <= 0xAF) { p += 2; return 0x100 + d - 0x90; }  // А..Я
+    if (d >= 0xB0 && d <= 0xBF) { p += 2; return 0x100 + 33 + d - 0xB0; }  // а..п
+  } else if (c == 0xD1) {
+    const uint8_t d = p[1];
+    if (d >= 0x80 && d <= 0x8F) { p += 2; return 0x100 + 49 + d - 0x80; }  // р..я
+    if (d == 0x91) { p += 2; return 0x100 + 65; }       // ё
   }
 
   uint8_t n = c < 0xC0 ? 1 : c <= 0xDF ? 2 : c <= 0xEF ? 3 : c <= 0xF7 ? 4

@@ -144,7 +144,7 @@ diferentes por pacote (a mesma usada em várias camadas, com ou sem `!`, conta u
 
 | `font` | `size` | Observações |
 |---|---|---|
-| `pixel` | escala da fonte 6×8 (1, 2, 3…) | qualquer texto (`ä ö ü ß Ä Ö Ü` aparecem; os demais acentos viram a letra sem acento) |
+| `pixel` | escala da fonte 6×8 (1, 2, 3…) | qualquer texto (`ä ö ü ß Ä Ö Ü` e letras russas `А-Я, а-я, Ё ё` aparecem; os demais acentos latinos viram a letra sem acento e outras letras cirílicas, como as do ucraniano, são ignoradas) |
 | `dm` | lado de cada "pixel" do dígito (5×7) | dígitos, `:`, `-`, `.`; `off` pinta os pixels apagados |
 | `geo` | altura em px | dígitos e `:`; `w` muda a espessura do traço |
 | `dseg` | altura em px | 7 segmentos de LCD; `off` mostra os segmentos apagados |
@@ -155,6 +155,10 @@ diferentes por pacote (a mesma usada em várias camadas, com ou sem `!`, conta u
 Alemão na fonte `pixel` (simulador, tamanhos 1 e 2; a linha de baixo é a mesma sem trema):
 
 ![ÄÖÜäöüß na fonte pixel, tamanhos 1 e 2](img/idiomas/alemao-tamanhos.png)
+
+Russo na fonte `pixel` (simulador, tamanhos 2 e 1):
+
+![Alfabeto russo na fonte pixel, tamanhos 2 e 1](img/idiomas/russo-alfabeto.png)
 
 ## Sprites
 
