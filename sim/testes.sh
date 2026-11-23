@@ -4,6 +4,7 @@
 #  - foto sem memória × foto estragada (jpg_nomem_test.cjs);
 #  - portal de Wi-Fi: o HTML e a gravação da rede dos handlers reais (portal_test.cjs);
 #  - idioma padrão (inglês) e relógios já instalados que não mudam de idioma (idioma_test.cjs);
+#  - UTF-8 da fonte pixel: alemão, acentos reduzidos à letra base e entradas malformadas (utf8_test.cpp);
 #  - telemetria do /api/state (campos aditivos, uma varredura do heap por pedido, tamanho do último pedaço) e a lista branca
 #    do "Copiar diagnóstico" do painel (telemetria_test.cjs);
 #  - /api/state completo e com cfg=0, cv derivado sem senhas e cache do painel (state_cfg_test.cjs);
@@ -43,6 +44,8 @@ for t in sec stats jpg_nomem portal idioma telemetria state_cfg wifi_ip painel_e
 done
 g++ -std=c++17 -fsanitize=address,undefined -g -w warm_test.cpp -o "$T/warm"
 "$T/warm"
+g++ -m32 -std=c++17 -fsanitize=address,undefined -g utf8_test.cpp -o "$T/utf8"
+"$T/utf8"
 # Analisador de requisições do ESP8266WebServer (smalltv-pomodoro/ws_parse.h) sobre o Parsing-impl.h REAL do core 3.1.2, com
 # cliente falso e relógio simulado: multipart de 33 campos, multipart truncado, envio parado, corpo grande (C1–C4 da
 # auditoria). O mesmo teste sem o remendo precisa FALHAR (prova de que ele enxerga os defeitos).

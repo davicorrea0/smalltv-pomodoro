@@ -250,3 +250,25 @@ const i = html.indexOf('async function runSteps('), runSteps = new Function('ret
   assert(dict[note] && dict[note].every(x => x), 'a nota do álbum precisa de tradução');
   console.log('painel: avisa GIF acima de 240×240 (cortado) e de 480×480 (recusado), confere o espaço livre e reduz fotos com suavização alta');
 })();
+
+// Miniaturas e estados dos miniapps: a prévia guardada no relógio continua na fila; só miniapp tenta a capa
+// publicada antes do catálogo. A tira de estados desaparece inteira se não estiver publicada, sem imagem quebrada.
+{
+  const src = html.match(/const faceImgs=(f=>[^\n]+);/)[1];
+  const faceImgs = new Function('faceSrc', 'isApp', 'SITE', 'CATALOG', 'return ' + src)(
+    f => '/face?pkg=' + f.pkg, f => !!f.x, 'https://site/', 'https://catalog/');
+  assert.deepStrictEqual(faceImgs({ pkg: 'lavadora', x: 'lv_est,lv_txt' }), [
+    '/face?pkg=lavadora', 'https://site/miniapps/lavadora.png', 'https://catalog/lavadora.png', null
+  ], 'miniapp: relógio, site, catálogo e bloco com nome, nessa ordem');
+  assert.deepStrictEqual(faceImgs({ pkg: 'koi', x: '' }), [
+    '/face?pkg=koi', 'https://catalog/koi.png', null
+  ], 'mostrador comum não pode tentar a pasta de miniapps');
+  const bf = html.slice(html.indexOf('function buildFaces()'), html.indexOf('const rotKeys='));
+  assert(bf.includes("si.loading='lazy';si.decoding='async';si.alt='';si.onerror=()=>w.remove()"), 'tira sem lazy/async ou sem sumir no erro');
+  assert(bf.includes("si.src=SITE+'miniapps/'+encodeURIComponent(f.pkg)+'-estados.png'"), 'endereço da tira de estados');
+  const apf = html.slice(html.indexOf("$('pkf').onchange=$('apf').onchange="), html.indexOf('// o pacote pede uma versão mínima'));
+  assert(apf.indexOf("CATALOG+id+'.png'") < apf.indexOf("SITE+'miniapps/'+id+'.png'"), 'instalação só com JSON: catálogo antes da capa do miniapp');
+  const dict = JSON.parse(fs.readFileSync(path.join(__dirname, '../web/i18n.json'), 'utf8')).dict;
+  assert.deepStrictEqual(dict['Lê'], ['Reads', 'Lee']);
+  console.log('painel: miniapp reserva capa no site antes do catálogo, mostrador comum não; tira some no erro e "Lê" está traduzido');
+}

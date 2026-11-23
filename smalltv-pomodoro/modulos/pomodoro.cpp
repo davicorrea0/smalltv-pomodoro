@@ -12,6 +12,8 @@ bool running = false;
 uint32_t totalMs = 0, remainingMs = 0, lastTick = 0;
 
 uint8_t cycleDone = 0;      // focos concluídos no ciclo atual
+uint8_t sessionFoci = 0;    // focos concluídos na sessão atual (não persiste)
+bool sessionDone = false;
 
 uint32_t alertUntil = 0;
 
@@ -25,6 +27,7 @@ static uint8_t phaseMinutes(Phase p) {
 uint16_t phaseSeq = 0, shownSeq = 0;
 
 void startPhase(Phase p, bool run) {
+  sessionDone = false;
   phase = p;
   totalMs = remainingMs = (uint32_t)phaseMinutes(p) * 60000UL;
   running = run;
@@ -42,13 +45,23 @@ static void advance(bool completed) {
     if (completed) {
       dayRolloverTick();  // o foco que termina depois da meia-noite conta no dia novo (antes herdava a contagem de ontem)
       cycleDone++;
+      if (sessionFoci < 255) sessionFoci++;
       cfg.todayCount++;
       saveSettings();
       statsFocus();
     }
-    bool longNext = completed && cfg.longEvery && cycleDone % cfg.longEvery == 0;
+    bool last = cfg.cycles && sessionFoci >= cfg.cycles;
+    bool longNext = completed && ((cfg.longEvery && cycleDone % cfg.longEvery == 0) || last);
     startPhase(longNext ? LONG_BREAK : SHORT_BREAK, cfg.autoStart);
   } else {
+    if (cfg.cycles && sessionFoci >= cfg.cycles) {
+      phase = IDLE;
+      running = false;
+      cycleDone = 0;
+      sessionFoci = 0;
+      sessionDone = true;
+      return;
+    }
     if (phase == LONG_BREAK) cycleDone = 0;
     startPhase(WORK, cfg.autoStart);
   }
@@ -91,6 +104,8 @@ void command(const String &c) {
     phase = IDLE;
     running = false;
     cycleDone = 0;
+    sessionFoci = 0;
+    sessionDone = false;
   } else if (c == "focus") {
     startPhase(WORK, true);
   } else if (c == "short") {

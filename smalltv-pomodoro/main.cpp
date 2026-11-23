@@ -505,3 +505,15 @@ void loop() {
 #error "exceções ligadas: tire o stub de __register_frame_info deste arquivo"
 #endif
 extern "C" void __register_frame_info(const void *, void *) {}
+
+// Sem o PWM/waveform do core: o backlight é sigma-delta em hardware (app.h) e nada chama analogWrite, tone nem
+// startWaveform. Só o digitalWrite do core ainda chama stopWaveform e _stopPWM, o que ligaria o
+// core_esp8266_waveform_pwm (−480 B de .bin, −588 B de RAM fixa). Sem PWM nem tom ligados, os dois não têm o que
+// parar. Se algo passar a chamar analogWrite/tone/startWaveform, o link falha por símbolo duplicado (nunca em
+// silêncio): aí estes dois stubs saem. Troca de core: os dois substituem internos do 3.1.2, então o #error abaixo pede
+// para rever os stubs (nomes e assinaturas) antes de subir a versão do core.
+#ifndef ARDUINO_ESP8266_RELEASE_3_1_2
+#error "core diferente do 3.1.2: revise os stubs de stopWaveform e _stopPWM (core_esp8266_waveform_pwm.cpp) e tire-os se o core novo já não os chama"
+#endif
+extern "C" IRAM_ATTR int stopWaveform(uint8_t) { return 0; }
+extern "C" IRAM_ATTR bool _stopPWM(uint8_t) { return false; }
