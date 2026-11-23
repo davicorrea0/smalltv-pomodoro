@@ -205,7 +205,7 @@ void themeWorldWatch(const UiState &s, bool full) {
   if (changed(cStatL, dk)) {
     G->fillRect(11, 120, 218, 23, LCD_BG);
     int a = s.timeOk ? s.now.tm_mday : -1, b = s.timeOk ? s.now.tm_mon + 1 : -1;
-    if (uiLang == 1) { int t = a; a = b; b = t; }
+    if (uiLang == 1 || uiLang >= 3) { int t = a; a = b; b = t; }
     const int H = 20, W = 12;  // dígitos de 20 px (12,4 de largura): "dd-mm" = 4 dígitos e um traço fino de 8 px
     int x = 14;
     for (int k = 0; k < 2; k++) {

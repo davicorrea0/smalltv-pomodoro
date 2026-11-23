@@ -3,6 +3,27 @@
 const fs = require('fs'), path = require('path'), assert = require('assert');
 const html = fs.readFileSync(path.join(__dirname, '../web/index.html'), 'utf8');
 
+// Dicionários extras: cobrem exatamente o painel base, preservam os parâmetros e os mostradores nativos.
+{
+  const base = JSON.parse(fs.readFileSync(path.join(__dirname, '../web/i18n.json'), 'utf8'));
+  const de = JSON.parse(fs.readFileSync(path.join(__dirname, '../web/i18n-de.json'), 'utf8'));
+  const ru = JSON.parse(fs.readFileSync(path.join(__dirname, '../web/i18n-ru.json'), 'utf8'));
+  const keys = Object.keys(base.dict).sort(), params = s => (String(s).match(/\{\d+\}/g) || []).sort();
+  for (const [lang, d] of [['de', de], ['ru', ru]]) {
+    assert.deepStrictEqual(Object.keys(d.dict).sort(), keys, lang + ': chaves diferentes do dicionário base');
+    for (const k of keys) {
+      assert.strictEqual(typeof d.dict[k], 'string', lang + ': valor não textual em ' + k);
+      assert(d.dict[k].trim(), lang + ': valor vazio em ' + k);
+      assert.deepStrictEqual(params(d.dict[k]), params(k), lang + ': parâmetros diferentes em ' + k);
+    }
+    assert.strictEqual(d.builtin.length, base.builtin.length, lang + ': quantidade de mostradores nativos');
+  }
+  assert(!/[«»“”„‟‘’‚‛ёЁ]/.test(JSON.stringify(ru)), 'russo usa aspas curvas, guillemets ou ё');
+  const alemão = JSON.stringify(de);
+  assert(alemão.includes('ß') && alemão.includes('ü'), 'alemão precisa conter ß e ü');
+  console.log('painel: dicionários alemão e russo completos, com parâmetros e mostradores válidos');
+}
+
 // Cidade do clima: translitera nomes para o formato ASCII do firmware e nunca grava nome vazio.
 {
   const i = html.indexOf('function cityAscii('), cityAscii = new Function('return ' + html.slice(i, html.indexOf('\n', i)))();

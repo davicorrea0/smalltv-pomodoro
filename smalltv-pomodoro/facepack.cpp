@@ -826,8 +826,9 @@ bool facePackLoadFile(File &f, char *err, size_t errLen) {
 // texto da camada no idioma da tela
 static const char *layerText(const Layer &L) {
   const char *p = pool + L.str;
+  int li = uiLang < 3 ? uiLang : 1;
   if (L.tr)
-    for (int i = 0; i < uiLang; i++) p += strlen(p) + 1;
+    for (int i = 0; i < li; i++) p += strlen(p) + 1;
   return p;
 }
 

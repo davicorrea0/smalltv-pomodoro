@@ -107,7 +107,7 @@ static int buildPhrase(const UiState &s, Tok *t, uint16_t hourC) {
   int n = 0;
   int h = s.now.tm_hour, r = (s.now.tm_min + 2) / 5 * 5;
   if (r == 60) { r = 0; h = (h + 1) % 24; }
-  if (uiLang == 1) return phraseEn(h, r, t, hourC);
+  if (uiLang == 1 || uiLang >= 3) return phraseEn(h, r, t, hourC);
   if (uiLang == 2) return phraseEs(h, r, t, hourC);
   bool para = r >= 35;
   int hh = para ? (h + 1) % 24 : h;
@@ -179,4 +179,3 @@ void themeWords(const UiState &s, bool full) {
     textC(120, 214, 2, uiRgb(90, 90, 100), hm);
   }
 }
-
