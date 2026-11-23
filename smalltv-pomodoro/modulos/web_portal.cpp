@@ -195,8 +195,37 @@ static void crashJson(String &j) {
   j += b;
 }
 
+static void fnvMix(uint32_t &h, const void *data, size_t len) {
+  const uint8_t *p = static_cast<const uint8_t *>(data);
+  while (len--) {
+    h ^= *p++;
+    h *= 16777619u;
+  }
+}
+
+// Versão derivada dos ajustes que o painel recebe. Senhas não entram: da senha OTA só vale
+// se existe uma, que é o que o JSON expõe como "lock"; a senha do ponto de acesso é pulada inteira.
+static uint32_t cfgVersion() {
+  uint32_t h = 2166136261u;
+  const uint8_t *begin = reinterpret_cast<const uint8_t *>(&cfg);
+  const uint8_t *ota = reinterpret_cast<const uint8_t *>(cfg.otaPass);
+  const uint8_t *ap = reinterpret_cast<const uint8_t *>(cfg.apPass);
+  const uint8_t *end = begin + sizeof cfg;
+  fnvMix(h, begin, ota - begin);
+  const uint8_t otaSet = cfg.otaPass[0] != 0;
+  fnvMix(h, &otaSet, sizeof otaSet);
+  fnvMix(h, ota + sizeof cfg.otaPass, ap - (ota + sizeof cfg.otaPass));
+  fnvMix(h, ap + sizeof cfg.apPass, end - (ap + sizeof cfg.apPass));
+  if (rotList.length()) fnvMix(h, rotList.c_str(), rotList.length());
+  fnvMix(h, &wifiDowngrades, sizeof wifiDowngrades);
+  fnvMix(h, &timeGuard.undone, sizeof timeGuard.undone);
+  fnvMix(h, &timeGuard.confirmed, sizeof timeGuard.confirmed);
+  return h;
+}
+
 static void sendState() {
   if (!readOk()) return;
+  const bool withCfg = server.method() != HTTP_GET || server.arg("cfg") != "0";
   struct tm t;
   String clock = localNow(t) ? hhmm(t) : "--:--";
   char color[8];
@@ -210,7 +239,7 @@ static void sendState() {
     fsInfoAt = millis() | 1;
   }
   String j;
-  j.reserve(704);
+  j.reserve(736);
   server.sendHeader("Cache-Control", F("no-store"));  // cidade, rede e ajustes: o navegador não guarda
   jsonBegin();
   j += F("{\"phase\":\"");
@@ -223,6 +252,10 @@ static void sendState() {
   j += totalMs;
   j += F(",\"cycle\":");
   j += cycleDone;
+  j += F(",\"sess\":");
+  j += sessionFoci;
+  j += F(",\"sdone\":");
+  j += sessionDone ? 1 : 0;
   j += F(",\"today\":");
   j += cfg.todayCount;
   j += F(",\"streak\":");
@@ -269,95 +302,101 @@ static void sendState() {
   j += (uint32_t)fi.usedBytes;
   j += F(",\"total\":");
   j += (uint32_t)fi.totalBytes;
-  j += '}';
+  j += F("},\"cv\":");
+  j += cfgVersion();
   jsonFlush(j);
-  j = F(",\"cfg\":{\"work\":");
-  j += cfg.work;
-  j += F(",\"short\":");
-  j += cfg.shortBreak;
-  j += F(",\"long\":");
-  j += cfg.longBreak;
-  j += F(",\"every\":");
-  j += cfg.longEvery;
-  j += F(",\"bri\":");
-  j += cfg.brightness;
-  j += F(",\"auto\":");
-  j += cfg.autoStart;
-  j += F(",\"h12\":");
-  j += cfg.hour12;
-  j += F(",\"tz\":\"");
-  jsonEscapeAppend(j, cfg.tz);
-  j += F("\",\"lock\":");
-  j += cfg.otaPass[0] ? 1 : 0;
-  j += F(",\"theme\":");
-  j += cfg.theme;
-  j += F(",\"mode\":");
-  j += cfg.mode;
-  j += F(",\"delay\":");
-  j += cfg.albumDelay;
-  j += F(",\"color\":\"");
-  j += color;
-  j += F("\",\"non\":");
-  j += cfg.nightOn;
-  j += F(",\"nstart\":");
-  j += cfg.nightStart;
-  j += F(",\"nend\":");
-  j += cfg.nightEnd;
-  j += F(",\"nbri\":");
-  j += cfg.nightBri;
-  j += F(",\"won\":");
-  j += cfg.weatherOn;
-  j += F(",\"fahr\":");
-  j += cfg.fahr;
-  j += F(",\"rain\":");
-  j += cfg.rainAlert;
-  j += F(",\"beta\":");
-  j += cfg.beta;
-  j += F(",\"lat\":");
-  appendFixed(j, cfg.lat, 4);
-  j += F(",\"lon\":");
-  appendFixed(j, cfg.lon, 4);
-  j += F(",\"city\":\"");
-  jsonEscapeAppend(j, cfg.city);
-  j += F("\",\"bgr\":");
-  j += cfg.bgr;
-  j += F(",\"inv\":");
-  j += cfg.invert;
-  j += F(",\"flip\":");
-  j += cfg.flip;
-  j += F(",\"vcom\":");
-  j += cfg.vcom;
-  j += F(",\"wdown\":");  // rebaixamentos do Wi-Fi bloqueados desde que ligou
-  j += wifiDowngrades;
-  j += F(",\"tok\":");  // hora confirmada por uma segunda fonte (1) e saltos de hora desfeitos desde que ligou
-  j += timeGuard.confirmed ? 1 : 0;
-  j += F(",\"tund\":");
-  j += timeGuard.undone;
-  j += F(",\"pkg\":\"");
-  j += cfg.theme == THEME_PACK ? cfg.facePkg : "";
-  j += F("\",\"goal\":");
-  j += cfg.dailyGoal;
-  j += F(",\"act\":");
-  j += cfg.activity;
-  j += F(",\"lang\":");
-  j += cfg.lang;
-  j += F(",\"nsun\":");
-  j += cfg.nightSun;
-  j += F(",\"warm\":");
-  j += cfg.warm;
-  j += F(",\"lcdg\":");
-  j += cfg.lcdGreen;
-  j += F(",\"alexa\":");
-  j += cfg.alexa;
-  j += F(",\"rotmin\":");
-  j += cfg.rotMin;
-  j += F(",\"rot\":\"");
-  jsonFlush(j);
-  if (rotList.length()) {
-    server.sendContent(rotList);
-    yield();
+  if (withCfg) {
+    j = F(",\"cfg\":{\"work\":");
+    j += cfg.work;
+    j += F(",\"short\":");
+    j += cfg.shortBreak;
+    j += F(",\"long\":");
+    j += cfg.longBreak;
+    j += F(",\"every\":");
+    j += cfg.longEvery;
+    j += F(",\"cycles\":");
+    j += cfg.cycles;
+    j += F(",\"bri\":");
+    j += cfg.brightness;
+    j += F(",\"auto\":");
+    j += cfg.autoStart;
+    j += F(",\"h12\":");
+    j += cfg.hour12;
+    j += F(",\"tz\":\"");
+    jsonEscapeAppend(j, cfg.tz);
+    j += F("\",\"lock\":");
+    j += cfg.otaPass[0] ? 1 : 0;
+    j += F(",\"theme\":");
+    j += cfg.theme;
+    j += F(",\"mode\":");
+    j += cfg.mode;
+    j += F(",\"delay\":");
+    j += cfg.albumDelay;
+    j += F(",\"color\":\"");
+    j += color;
+    j += F("\",\"non\":");
+    j += cfg.nightOn;
+    j += F(",\"nstart\":");
+    j += cfg.nightStart;
+    j += F(",\"nend\":");
+    j += cfg.nightEnd;
+    j += F(",\"nbri\":");
+    j += cfg.nightBri;
+    j += F(",\"won\":");
+    j += cfg.weatherOn;
+    j += F(",\"fahr\":");
+    j += cfg.fahr;
+    j += F(",\"rain\":");
+    j += cfg.rainAlert;
+    j += F(",\"beta\":");
+    j += cfg.beta;
+    j += F(",\"lat\":");
+    appendFixed(j, cfg.lat, 4);
+    j += F(",\"lon\":");
+    appendFixed(j, cfg.lon, 4);
+    j += F(",\"city\":\"");
+    jsonEscapeAppend(j, cfg.city);
+    j += F("\",\"bgr\":");
+    j += cfg.bgr;
+    j += F(",\"inv\":");
+    j += cfg.invert;
+    j += F(",\"flip\":");
+    j += cfg.flip;
+    j += F(",\"vcom\":");
+    j += cfg.vcom;
+    j += F(",\"wdown\":");  // rebaixamentos do Wi-Fi bloqueados desde que ligou
+    j += wifiDowngrades;
+    j += F(",\"tok\":");  // hora confirmada por uma segunda fonte (1) e saltos de hora desfeitos desde que ligou
+    j += timeGuard.confirmed ? 1 : 0;
+    j += F(",\"tund\":");
+    j += timeGuard.undone;
+    j += F(",\"pkg\":\"");
+    j += cfg.theme == THEME_PACK ? cfg.facePkg : "";
+    j += F("\",\"goal\":");
+    j += cfg.dailyGoal;
+    j += F(",\"act\":");
+    j += cfg.activity;
+    j += F(",\"lang\":");
+    j += cfg.lang;
+    j += F(",\"nsun\":");
+    j += cfg.nightSun;
+    j += F(",\"warm\":");
+    j += cfg.warm;
+    j += F(",\"lcdg\":");
+    j += cfg.lcdGreen;
+    j += F(",\"alexa\":");
+    j += cfg.alexa;
+    j += F(",\"rotmin\":");
+    j += cfg.rotMin;
+    j += F(",\"rot\":\"");
+    jsonFlush(j);
+    if (rotList.length()) {
+      server.sendContent(rotList);
+      yield();
+    }
+    j = F("\"}");
   }
-  j = F("\"},\"alexa\":{\"ago\":");  // segundos desde o último pedido de um Echo (-1 = nenhum)
+  j += F(",\"alexa\":{\"ago\":");  // segundos desde o último pedido de um Echo (-1 = nenhum)
   j += alexaSeen ? (long)((millis() - alexaSeen) / 1000) : -1L;
   j += F(",\"ip\":\"");
   j += alexaSeen ? alexaIp.toString() : String();
@@ -1001,6 +1040,9 @@ void setupWeb() {
     cfg.shortBreak = argRange("short", cfg.shortBreak, 1, 99);
     cfg.longBreak = argRange("long", cfg.longBreak, 1, 99);
     cfg.longEvery = argRange("every", cfg.longEvery, 1, 8);
+    uint8_t cycles = argRange("cycles", cfg.cycles, 0, 99);
+    if (cycles != cfg.cycles) sessionFoci = 0;
+    cfg.cycles = cycles;
     cfg.brightness = argRange("bri", cfg.brightness, 5, 100);  // mínimo 5: com 0 a tela apagaria
     cfg.autoStart = argRange("auto", cfg.autoStart, 0, 1);
     cfg.hour12 = argRange("h12", cfg.hour12, 0, 1);
@@ -1082,7 +1124,7 @@ void setupWeb() {
     if (panelChanged) applyPanel();
     // Brilho, horário noturno e opções que não aparecem na tela: sem apagar e redesenhar tudo, que piscaria
     // a cada movimento do controle (junto com a rampa do brilho)
-    static const char *const QUIET[] = {"bri", "non", "nstart", "nend", "nbri", "nsun", "warm", "lcdg", "beta", "alexa", "rotmin"};
+    static const char *const QUIET[] = {"bri", "non", "nstart", "nend", "nbri", "nsun", "warm", "lcdg", "beta", "alexa", "rotmin", "cycles"};
     bool quiet = true;
     for (int i = 0; quiet && i < server.args(); i++) {
       bool q = false;

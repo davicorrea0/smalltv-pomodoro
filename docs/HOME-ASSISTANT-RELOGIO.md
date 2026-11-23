@@ -114,6 +114,51 @@ rest_command:
   segundo.
 - **Cada comando acende a tela do relógio por 10 segundos.**
 
+## Sessões Deep focus e Gentle focus
+
+Cada sessão precisa de três pedidos, nesta ordem: aplicar os tempos, zerar e iniciar. Acrescente estes dois comandos ao
+`rest_command` acima e use os scripts para manter a ordem (eles reutilizam `smalltv_comando`):
+
+```yaml
+rest_command:
+  smalltv_deep_focus_ajustes:
+    url: "http://192.168.1.50/api/settings"
+    method: POST
+    content_type: "application/x-www-form-urlencoded"
+    payload: "work=50&short=10&long=25&every=3&cycles=3&auto=1"
+    headers: { X-SmallTV: "1" }
+    username: admin
+    password: !secret smalltv_senha
+  smalltv_gentle_focus_ajustes:
+    url: "http://192.168.1.50/api/settings"
+    method: POST
+    content_type: "application/x-www-form-urlencoded"
+    payload: "work=25&short=5&long=20&every=2&cycles=2&auto=1"
+    headers: { X-SmallTV: "1" }
+    username: admin
+    password: !secret smalltv_senha
+
+script:
+  smalltv_deep_focus:
+    sequence:
+      - action: rest_command.smalltv_deep_focus_ajustes
+      - action: rest_command.smalltv_comando
+        data: { c: reset }
+      - action: rest_command.smalltv_comando
+        data: { c: start }
+  smalltv_gentle_focus:
+    sequence:
+      - action: rest_command.smalltv_gentle_focus_ajustes
+      - action: rest_command.smalltv_comando
+        data: { c: reset }
+      - action: rest_command.smalltv_comando
+        data: { c: start }
+```
+
+No estado, `cfg.cycles` é o número de focos da sessão (`0` = sem fim), `sess` é quantos focos da sessão atual já
+terminaram e `sdone` vale `1` quando a sessão acabou. Ao fim da sessão o relógio dispara o aviso de fim de pausa (`/hooks.txt`), como em qualquer pausa que acaba. A Alexa não chama sessões: as três lâmpadas que ela encontra continuam
+fixas em Pomodoro, Pausa e Pausa longa.
+
 ## Atualizar na hora (fim de foco e de pausa)
 
 No painel do relógio, em **Ajustes → Alexa**, cole o endereço abaixo nos dois campos (**Avisar quando o foco terminar** e
@@ -147,7 +192,8 @@ Estes nomes passam a ser públicos: mudar um deles exige aviso nas notas da vers
 
 | Rota | O que o pacote usa |
 |---|---|
-| `GET /api/state` | `phase` (`idle`, `work`, `short` ou `long`), `running` (verdadeiro/falso), `remaining` e `total` em **milissegundos**, `today` (pomodoros de hoje), `streak` (sequência de dias) |
+| `GET /api/state` | `phase` (`idle`, `work`, `short` ou `long`), `running` (verdadeiro/falso), `remaining` e `total` em **milissegundos**, `today` (pomodoros de hoje), `streak` (sequência de dias), `cfg.cycles`, `sess` e `sdone` |
+| `POST /api/settings` | Tempos e sessão como formulário; os templates usam `work`, `short`, `long`, `every`, `cycles` e `auto` |
 | `POST /api/cmd`, campo `c` | `start`, `pause`, `toggle`, `skip`, `reset`; a resposta é o mesmo estado do `GET /api/state` |
 
 | Item | Regra |
@@ -176,3 +222,12 @@ firmware. Works on 1.26.1 and later.
    focus/break ends" fields (Settings → Alexa). Best effort: a missed call is caught by the next poll.
 5. Not run on a real clock or Home Assistant by the author. Checked against the firmware source and the Home
    Assistant documentation of 22/11/2026. Brightness and other settings are deliberately outside this contract.
+
+### Focus plans
+
+The YAML in “Sessões Deep focus e Gentle focus” applies each template with `POST /api/settings`, then sends `c=reset` and
+`c=start`, in that order. Deep focus is 50/10/25 minutes, every 3 focuses, 3 focuses total; Gentle focus is 25/5/20,
+every 2, 2 focuses total. Both send `auto=1`, use `application/x-www-form-urlencoded`, `X-SmallTV: 1`, and the same Basic
+authentication as the command example. In state, `cfg.cycles` is the plan limit (`0` means unlimited), `sess` is the
+number of completed focuses in the current plan, and `sdone` is `1` after the plan ends. When a plan ends, the clock fires the end-of-break hook (`/hooks.txt`), like any break that finishes. Alexa cannot start these
+plans: its three exposed lights remain the fixed Pomodoro, Short break, and Long break controls.
