@@ -1093,7 +1093,7 @@ void setupWeb() {
       statsCompute();
     }
     cfg.activity = argRange("act", cfg.activity, 0, ACT_COUNT - 1);
-    uint8_t lang = argRange("lang", cfg.lang, 0, 2);
+    uint8_t lang = argRange("lang", cfg.lang, 0, 4);
     if (lang != cfg.lang) uiSetLang(cfg.lang = lang);
     uint8_t bgr = argRange("bgr", cfg.bgr, 0, 1), inv = argRange("inv", cfg.invert, 0, 1),
             flip = argRange("flip", cfg.flip, 0, 1);
@@ -1529,10 +1529,12 @@ static void htmlEscapeAppend(String &o, const String &s) {
 
 // Idioma das páginas do portal e da recuperação: com o idioma dos ajustes em inglês (o padrão de fábrica) vale o do
 // navegador (Accept-Language), que serve a quem acabou de instalar e nunca escolheu; português e espanhol nos ajustes são
-// respeitados. Não há como saber se o inglês foi escolhido ou é o padrão (um campo novo na EEPROM não vale para duas
+// respeitados, e alemão/russo usam inglês enquanto o portal não tem esses textos. Não há como saber se o inglês foi escolhido
+// ou é o padrão (um campo novo na EEPROM não vale para duas
 // páginas): quem escolheu inglês com o navegador em outra língua vê a página na língua do navegador. A tela do relógio
 // não muda.
 uint8_t pageLang() {
+  if (cfg.lang >= 3) return 1;
   if (cfg.lang != 1) return cfg.lang;
   const String &al = server.header("Accept-Language");  // tamanho zero = sem o cabeçalho (os bytes podem ser do pedido anterior)
   uint8_t l = langFromAccept(al.length() ? al.c_str() : "");
@@ -1540,7 +1542,7 @@ uint8_t pageLang() {
 }
 
 // Texto longo no idioma da página (o tr() corta em 47 bytes)
-static void addTr(String &o, PGM_P pt, PGM_P en, PGM_P es) { o += FPSTR(uiLang == 1 ? en : uiLang == 2 ? es : pt); }
+static void addTr(String &o, PGM_P pt, PGM_P en, PGM_P es) { o += FPSTR(uiLang == 1 || uiLang >= 3 ? en : uiLang == 2 ? es : pt); }
 
 #define ADD_TR(o, pt, en, es) addTr(o, PSTR(pt), PSTR(en), PSTR(es))
 

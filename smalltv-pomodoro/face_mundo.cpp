@@ -297,7 +297,7 @@ static void paintDay(void *p) {
   G->fillRect(14, 118, 212, 18, LCD_BG);
   text(16, 119, 2, LCD_ON, s.timeOk ? WD[s.now.tm_wday] : "---");
   int a = s.timeOk ? s.now.tm_mday : -1, b = s.timeOk ? s.now.tm_mon + 1 : -1;
-  if (uiLang == 1) { int t = a; a = b; b = t; }  // mês-dia em inglês
+  if (uiLang == 1 || uiLang >= 3) { int t = a; a = b; b = t; }  // mês-dia em inglês
   const int H = 16, P = 12;  // dígitos de 16 px (10 de largura)
   int x = 62;
   for (int k = 0; k < 2; k++) {

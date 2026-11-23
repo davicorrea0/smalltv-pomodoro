@@ -1349,6 +1349,20 @@ static int checkSetupQr() {
   printf("QR de configuracao e recuperacao: %s (escape, limites e 3 idiomas)\n", fails ? "FALHOU" : "ok");
   return fails;
 }
+
+static int checkExtraLang() {
+  int fails = 0;
+  const uint8_t lang = uiLang;
+  uiSetLang(3);
+  fails += uiLang != 3 || strcmp(WD[1], "MON") || strcmp(MO[3], "APR") || strcmp(trP(PSTR("PT"), PSTR("EN"), PSTR("ES")), "EN");
+  uiSetLang(4);
+  fails += uiLang != 4 || strcmp(WD[1], "MON") || strcmp(MO[3], "APR") || strcmp(trP(PSTR("PT"), PSTR("EN"), PSTR("ES")), "EN");
+  uiSetLang(5);
+  fails += uiLang != 0 || strcmp(WD[1], "SEG") || strcmp(MO[3], "ABR") || strcmp(trP(PSTR("PT"), PSTR("EN"), PSTR("ES")), "PT");
+  uiSetLang(lang);
+  printf("idiomas extras 3/4 em ingles e 5 recusado: %s\n", fails ? "FALHOU" : "ok");
+  return fails;
+}
 #include "out/tint_test.inc"
 
 int main() {
@@ -1456,6 +1470,7 @@ int main() {
 
   // ---- redesenho incremental ----
   int fails = 0;
+  fails += checkExtraLang();
   fails += checkSetupQr();
   for (int t = 0; t < THEME_COUNT; t++) {
     UiState st = base(14, 58, 50);

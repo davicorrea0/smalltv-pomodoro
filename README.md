@@ -39,7 +39,7 @@
 - **Installs without a cable.** You upload it from the clock's own factory web page, like a normal update. Some units need a small loader first ([details](#install)).
 - **Updates you can trust.** Network updates are signed (RSA-2048) and the clock checks the whole file before it switches. If something still goes wrong, a **recovery mode with no button** (power-cycle it 3 times) lets you reflash it or go back to the original firmware.
 - **Many faces, one small file each.** A dozen faces built in, and 40+ more in the [online gallery](https://davicorrea0.github.io/smalltv-pomodoro/en/gallery.html) that install from the panel without updating the firmware.
-- **Made for people, not just tinkerers.** Panel and clock screen in English, Portuguese and Spanish, with layouts for phone and computer. A small [focus game](https://davicorrea0.github.io/smalltv-pomodoro/en/game.html) (streak, garden, achievements, a card of your day) and a photo/GIF album.
+- **Made for people, not just tinkerers.** Panel and clock screen in English, Portuguese and Spanish (German and Russian are coming, panel first, in beta), with layouts for phone and computer. A small [focus game](https://davicorrea0.github.io/smalltv-pomodoro/en/game.html) (streak, garden, achievements, a card of your day) and a photo/GIF album.
 
 ## Is this my device?
 

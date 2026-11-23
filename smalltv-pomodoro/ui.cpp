@@ -32,16 +32,17 @@ uint8_t uiLang = 0;
 char WD[7][4] = {"DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SAB"};  // português até o uiSetLang
 char MO[12][4] = {"JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"};
 void uiSetLang(uint8_t lang) {
-  uiLang = lang < 3 ? lang : 0;
-  memcpy_P(WD, WD_L[uiLang], sizeof WD);
-  memcpy_P(MO, MO_L[uiLang], sizeof MO);
+  uiLang = lang <= 4 ? lang : 0;
+  uint8_t li = uiLang < 3 ? uiLang : 1;
+  memcpy_P(WD, WD_L[li], sizeof WD);
+  memcpy_P(MO, MO_L[li], sizeof MO);
   uiInvalidate();
 }
 const char *trP(PGM_P pt, PGM_P en, PGM_P es) {
   static char buf[6][48];
   static uint8_t k = 0;
   char *b = buf[k++ % 6];
-  strncpy_P(b, uiLang == 1 ? en : uiLang == 2 ? es : pt, sizeof buf[0] - 1);
+  strncpy_P(b, uiLang == 1 || uiLang >= 3 ? en : uiLang == 2 ? es : pt, sizeof buf[0] - 1);
   b[sizeof buf[0] - 1] = 0;
   return b;
 }
