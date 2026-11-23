@@ -54,6 +54,7 @@ input[type=color]{width:52px;height:36px;padding:2px}
 #phase{font-size:13px;font-weight:700;letter-spacing:3px;color:var(--ac)}
 #time{font-size:clamp(50px,16vw,64px);font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-1px}
 #dots{display:flex;gap:7px;margin-top:4px}#dots i{width:9px;height:9px;border-radius:50%;border:2px solid var(--mut)}#dots i.f{background:var(--work);border-color:var(--work)}
+#sessprog{min-height:18px;margin-top:7px;color:var(--mut);font-size:12px}
 .ctl{display:flex;justify-content:center;align-items:center;gap:22px;margin-top:6px}
 .ic{width:52px;height:52px;border-radius:50%;background:var(--card2);display:flex;align-items:center;justify-content:center}.asel{display:flex;align-items:center;gap:10px}
 #go{width:76px;height:76px;border-radius:50%;background:var(--ac);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 24px -6px var(--ac)}
@@ -68,6 +69,7 @@ input[type=color]{width:52px;height:36px;padding:2px}
 .diag div{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-top:1px solid var(--line);font-size:13px}.diag div:first-child{border-top:0}.diag b{color:var(--mut);font-weight:500;white-space:nowrap}.diag span{text-align:right}
 .spk div{padding:7px 0;border-top:1px solid var(--line);font-size:13px}.spk b{color:var(--mut);font-weight:500}.spk span{float:right}.spk canvas{display:block;width:100%;height:40px;margin-top:4px;color:var(--ac)}.rb{display:flex;height:10px;margin:6px 0 4px;border-radius:5px;overflow:hidden;background:var(--line)}.rb i{height:100%}.rb i:nth-child(1){background:var(--mut)}.rb i:nth-child(2){background:var(--long)}.rb i:nth-child(3){background:var(--short)}.spk .rb+span{float:none;display:block;color:var(--mut)}#dgt{width:100%;margin-top:8px;font:11px monospace;background:var(--card2);color:inherit;border:1px solid var(--line);border-radius:8px;padding:6px}
 .bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:6px}.bar i{display:block;height:100%;background:var(--ac)}
+.sessions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.sessions button{padding:13px;text-align:left;border:1px solid var(--line);border-radius:12px;background:var(--bg)}.sessions button.on{border-color:var(--ac);background:var(--card2)}.sessions b,.sessions span,.sessions small{display:block}.sessions span{color:var(--ac);margin:3px 0}.sessions small,#sessionnote,#cyclesum{color:var(--mut)}
 /* Silkscreen (SIL OFL 1.1), subset ASCII + acentos pt/es (pyftsubset --unicodes=U+0020-007E,U+00A1,U+00BF,... --flavor=woff2), só nos destaques: timer, títulos, contadores.
    Embutida (~2 KB): o painel funciona sem internet. Só liga (html.sk) depois de carregar; sem ela tudo fica na fonte do sistema.
    Tamanhos em múltiplos de 8 pixels físicos (a grade da fonte): vars --f* calculadas em fitPx(). */
@@ -191,7 +193,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
  <div class="card">
   <div class="tabs"><button data-p="work" onclick="cmd('focus')">Foco</button><button data-p="short" onclick="cmd('short')">Pausa</button><button data-p="long" onclick="cmd('long')">Pausa longa</button></div>
   <div class="ring"><svg viewBox="0 0 120 120"><circle id="trk" cx="60" cy="60" r="54"/><circle id="arc" cx="60" cy="60" r="54" stroke-dasharray="339.3" stroke-dashoffset="339.3"/></svg>
-   <div class="mid"><div id="phase">PRONTO</div><div id="time">--:--</div><div id="dots"></div></div></div>
+   <div class="mid"><div id="phase">PRONTO</div><div id="time">--:--</div><div id="dots"></div><div id="sessprog"></div></div></div>
   <div class="ctl"><button class="ic" title="Zerar" onclick="cmd('reset')"><svg class="vi" aria-hidden="true"><use href="#v-zerar"/></svg></button><button id="go" title="Iniciar/pausar (espaço)" onclick="cmd('toggle')"><svg class="vi" aria-hidden="true"><use id="goh" href="#v-tocar"/></svg></button><button class="ic" title="Pular fase" onclick="cmd('skip')"><svg class="vi" aria-hidden="true"><use href="#v-pular"/></svg></button></div>
  </div>
  <div class="card"><label>O que vou fazer no foco<span class="asel"><svg class="pi on" aria-hidden="true"><use id="acth" href="#i-ler"/></svg><select data-k="act"><option value="0">Ler</option><option value="1">Estudar</option><option value="2">Programar</option><option value="3">Tarefas</option><option value="4">Desenhar</option></select></span></label></div>
@@ -203,12 +205,15 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
  <div class="card"><div id="garden"></div><small id="gsum"></small><p style="margin-bottom:0"><button class="btn" onclick="shareDay()">Compartilhar meu dia</button></p></div>
  <h2>Conquistas</h2>
  <div class="card"><div id="ach"></div></div>
+ <h2>Sessões</h2>
+ <div class="card"><div class="sessions"><button id="deep" onclick="applySession(DEEP_FOCUS)"><b>Deep focus</b><span></span><small></small></button><button id="gentle" onclick="applySession(GENTLE_FOCUS)"><b>Gentle focus</b><span></span><small></small></button></div><small id="sessionnote">Troca seus tempos e liga o início automático.</small></div>
  <h2>Tempos</h2>
  <div class="card">
   <label>Foco (min)<input data-k="work" type="number" min="1" max="99"></label>
   <label>Pausa curta (min)<input data-k="short" type="number" min="1" max="99"></label>
   <label>Pausa longa (min)<input data-k="long" type="number" min="1" max="99"></label>
   <label>Pausa longa a cada<input data-k="every" type="number" min="1" max="8"></label>
+  <label>Focos por sessão<span><small id="cyclesum">0 = sem fim</small><input data-k="cycles" type="number" min="0" max="99"></span></label>
   <label>Meta diária de focos<input data-k="goal" type="number" min="1" max="30"></label>
   <label>Iniciar a próxima fase sozinho<input data-k="auto" type="checkbox"></label>
  </div>
@@ -393,6 +398,9 @@ try{document.fonts.load('16px Silk','ÁÇÃ0:').then(()=>document.documentElemen
 
 const $=id=>document.getElementById(id),C=339.3;
 const LBL={work:'FOCO',short:'PAUSA',long:'PAUSA LONGA',idle:'PRONTO'};
+const DEEP_FOCUS={work:50,short:10,long:25,every:3,cycles:3},GENTLE_FOCUS={work:25,short:5,long:20,every:2,cycles:2};
+function sessionMinutes(x){let n=x.cycles,total=n*x.work+x.long;for(let i=1;i<n;i++)total+=i%x.every?x.short:x.long;return total}
+function sessionDuration(m){return m>=60?(m/60|0)+'h'+(m%60?String(m%60).padStart(2,'0'):''):m+' min'}
 // ---------- idioma (pt/en/es; o relógio guarda em cfg.lang) ----------
 const LANGS=['pt','en','es'],I18N=Object.create(null);let BUILTIN=[];  // inglês/espanhol: web/i18n.json, carregado por loadI18n()
 let LG=0;try{LG=+localStorage.lang||0}catch(e){}
@@ -427,6 +435,8 @@ const _fetch=window.fetch;window.fetch=(u,o={})=>_fetch(u,/^https?:/.test(u)?o:{
 const post=(u,b)=>fetch(u,{method:'POST',body:b});
 const kb=n=>n>1048576?(n/1048576).toFixed(1)+' MB':Math.round(n/1024)+' KB';
 function toast(t){const e=$('toast');e.textContent=t;e.classList.add('v');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('v'),2200)}
+function sessionRender(s){[[DEEP_FOCUS,$('deep')],[GENTLE_FOCUS,$('gentle')]].forEach(([x,b])=>{b.children[1].textContent=sessionDuration(sessionMinutes(x));b.children[2].textContent=t('{0} focos de {1} min, com a pausa final',x.cycles,x.work);b.classList.toggle('on',['work','short','long','every','cycles'].every(k=>s.cfg[k]==x[k]))});const c=s.cfg.cycles;$('cyclesum').textContent=c?t('{0} no total',sessionDuration(sessionMinutes(s.cfg))):t('0 = sem fim')}
+async function applySession(x){if(st&&st.phase!='idle'&&!confirm(t('Isso zera o foco em andamento. Continuar?')))return;try{for(const [u,b] of [['/api/settings',new URLSearchParams({...x,auto:1})],['/api/cmd',new URLSearchParams({c:'reset'})],['/api/cmd',new URLSearchParams({c:'start'})]]){const r=await post(u,b);if(!r.ok)throw Error(r.status);filled=false;load(await r.json())}toast(t('Sessão iniciada'))}catch(e){toast(t('Falha: ')+(e.message||e))}}
 function tab(i){curTab=i;document.querySelectorAll('.tab').forEach((e,k)=>e.classList.toggle('on',k==i));document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t==i));
  try{localStorage.tab=i}catch(e){}if(i==2)files();if(i==3)hooksLoad();if(i==4)appsLoad();if(i==1&&!STATS)loadStats();window.scrollTo(0,0)}
 const fkey=f=>f.pkg?'p:'+f.pkg:'t:'+f.t;  // embutido "t:N" ou pacote "p:id"
@@ -773,6 +783,7 @@ function load(s){if(!s.cfg){if(st&&s.cv!=null&&s.cv===st.cv)s.cfg=st.cfg;else re
  document.documentElement.style.setProperty('--ac','var(--'+(s.phase=='idle'?'work':s.phase)+')');
  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('sel',b.dataset.p==s.phase));
  const n=s.cfg.every,d=s.phase=='long'?n:s.cycle%n;$('dots').innerHTML='<i class="f"></i>'.repeat(d)+'<i></i>'.repeat(n-d);
+ const active=s.phase!='idle',sf=Math.min(s.cfg.cycles,s.sess+(s.phase=='work'?1:0));$('sessprog').textContent=s.cfg.cycles&&active?t('Foco {0} de {1}',sf,s.cfg.cycles):s.sdone&&s.phase=='idle'?t('Sessão concluída: {0} focos.',s.cfg.cycles):'';
  $('goh').setAttribute('href',s.running?'#v-pausar':'#v-tocar');$('today').textContent=s.today;$('goal').textContent=s.cfg.goal;$('mins').textContent=s.today*s.cfg.work;$('streak').textContent=s.streak||0;
  const met=s.today>=s.cfg.goal;if(met!=$('goalbar').classList.contains('v')){$('goalbar').classList.toggle('v',met);const gi=$('goalimg').getContext('2d');gi.clearRect(0,0,16,16);spr(gi,SPR.t_comemorando,0,0,1)}
  if(STATS&&(s.today!=lastToday||STATS.goal!=s.cfg.goal))loadStats();lastToday=s.today;  // um foco terminou: horta e conquistas novas
@@ -804,7 +815,7 @@ function load(s){if(!s.cfg){if(st&&s.cv!=null&&s.cv===st.cv)s.cfg=st.cfg;else re
  $('fsinfo').textContent=s.fs.ok?t('{0} usados de {1}',kb(s.fs.used),kb(s.fs.total)):t('Memória de arquivos indisponível');
  $('fsbar').style.width=(s.fs.total?s.fs.used/s.fs.total*100:0)+'%';$('fmt').hidden=!!s.fs.ok;$('mig').classList.toggle('v',!!s.fs.mig);
  document.querySelectorAll('#grid div').forEach(e=>e.classList.toggle('on',e.dataset.n==s.showing));
- if(!filled){filled=true;document.querySelectorAll('[data-k]').forEach(e=>{const v=s.cfg[e.dataset.k];if(v===undefined)return;if(e.type=='checkbox')e.checked=!!v!=e.hasAttribute('data-neg');else e.value=v});actIc(s.cfg.act);nbriInfo()}
+ sessionRender(s);if(!filled){filled=true;document.querySelectorAll('[data-k]').forEach(e=>{const v=s.cfg[e.dataset.k];if(v===undefined)return;if(e.type=='checkbox')e.checked=!!v!=e.hasAttribute('data-neg');else e.value=v});actIc(s.cfg.act);nbriInfo()}
  draw()}
 // anel do painel sendo desenhado em ms; com wait, só termina com o aviso do relógio (ou em 4 s, se ele não vier)
 function ringDraw(ms,rem,wait){holding=true;holdRem=rem;const r=document.querySelector('.ring');r.style.setProperty('--pd',ms+'ms');

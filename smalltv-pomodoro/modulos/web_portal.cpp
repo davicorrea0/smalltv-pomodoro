@@ -239,7 +239,7 @@ static void sendState() {
     fsInfoAt = millis() | 1;
   }
   String j;
-  j.reserve(720);
+  j.reserve(736);
   server.sendHeader("Cache-Control", F("no-store"));  // cidade, rede e ajustes: o navegador não guarda
   jsonBegin();
   j += F("{\"phase\":\"");
@@ -252,6 +252,10 @@ static void sendState() {
   j += totalMs;
   j += F(",\"cycle\":");
   j += cycleDone;
+  j += F(",\"sess\":");
+  j += sessionFoci;
+  j += F(",\"sdone\":");
+  j += sessionDone ? 1 : 0;
   j += F(",\"today\":");
   j += cfg.todayCount;
   j += F(",\"streak\":");
@@ -310,6 +314,8 @@ static void sendState() {
     j += cfg.longBreak;
     j += F(",\"every\":");
     j += cfg.longEvery;
+    j += F(",\"cycles\":");
+    j += cfg.cycles;
     j += F(",\"bri\":");
     j += cfg.brightness;
     j += F(",\"auto\":");
@@ -1034,6 +1040,9 @@ void setupWeb() {
     cfg.shortBreak = argRange("short", cfg.shortBreak, 1, 99);
     cfg.longBreak = argRange("long", cfg.longBreak, 1, 99);
     cfg.longEvery = argRange("every", cfg.longEvery, 1, 8);
+    uint8_t cycles = argRange("cycles", cfg.cycles, 0, 99);
+    if (cycles != cfg.cycles) sessionFoci = 0;
+    cfg.cycles = cycles;
     cfg.brightness = argRange("bri", cfg.brightness, 5, 100);  // mínimo 5: com 0 a tela apagaria
     cfg.autoStart = argRange("auto", cfg.autoStart, 0, 1);
     cfg.hour12 = argRange("h12", cfg.hour12, 0, 1);
@@ -1115,7 +1124,7 @@ void setupWeb() {
     if (panelChanged) applyPanel();
     // Brilho, horário noturno e opções que não aparecem na tela: sem apagar e redesenhar tudo, que piscaria
     // a cada movimento do controle (junto com a rampa do brilho)
-    static const char *const QUIET[] = {"bri", "non", "nstart", "nend", "nbri", "nsun", "warm", "lcdg", "beta", "alexa", "rotmin"};
+    static const char *const QUIET[] = {"bri", "non", "nstart", "nend", "nbri", "nsun", "warm", "lcdg", "beta", "alexa", "rotmin", "cycles"};
     bool quiet = true;
     for (int i = 0; quiet && i < server.args(); i++) {
       bool q = false;
