@@ -266,7 +266,7 @@ Estes nomes passam a ser públicos: mudar um deles exige aviso nas notas da vers
 |---|---|
 | Host | O IP do relógio ou o `.local` dele (outro nome: 403) |
 | `GET /api/state` | Sem senha, qualquer pedido do Host certo; com senha, `Authorization: Basic` com `admin` e a senha do painel |
-| `GET /api/sessoes` | O mesmo de `GET /api/state`; só leitura (gravar a lista é só pelo painel) |
+| `GET /api/sessoes` | O mesmo de `GET /api/state`; só leitura (o endereço de gravação não faz parte do contrato) |
 | `POST /api/cmd` | O mesmo, mais o cabeçalho `X-SmallTV: 1` e o corpo `application/x-www-form-urlencoded` |
 | Erros de senha | Depois de errar, o mesmo IP espera 1, 2, 4... até 32 s (`429`) |
 

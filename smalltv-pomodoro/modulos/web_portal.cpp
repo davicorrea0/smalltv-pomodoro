@@ -107,9 +107,12 @@ static bool sendSessoes() {
     return false;
   }
   f.setTimeout(0);
-  const size_t limite = 4096;  // arquivo normal tem no máximo 1024; limita também um arquivo corrompido
   size_t esperado = f.size();
-  if (esperado > limite) esperado = limite;
+  if (esperado > SESSOES_TEXTO_MAX) {  // arquivo normal tem no máximo 1024: maior que isso está corrompido
+    f.close();
+    server.send_P(500, PSTR("text/plain"), PSTR("falha de leitura"));
+    return false;
+  }
   String texto;
   bool ok = texto.reserve(esperado + 1);
   char bloco[96];
@@ -125,7 +128,10 @@ static bool sendSessoes() {
     return false;
   }
   String j;
-  j.reserve(160 + texto.length() * 2);
+  if (!j.reserve(160 + texto.length() * 2)) {
+    server.send_P(500, PSTR("text/plain"), PSTR("memoria insuficiente"));
+    return false;
+  }
   j = F("{\"set\":1,\"l\":[");
   SessoesJson contexto = {&j, true};
   sessoesLer(texto.c_str(), texto.length(), sessoesJsonLinha, &contexto);
@@ -137,16 +143,19 @@ static bool sendSessoes() {
 struct SessoesGrava {
   File *arquivo;
   bool ok;
+  size_t bytes;  // o que foi pedido ao arquivo: o tamanho final tem de bater (flush/close do LittleFS não devolvem erro)
 };
 
 static void sessoesGravaLinha(const SessaoLinha *s, void *contexto) {
   SessoesGrava &c = *(SessoesGrava *)contexto;
   if (!c.ok) return;
   c.ok = c.arquivo->write((const uint8_t *)s->nome, s->nome_len) == s->nome_len;
+  c.bytes += s->nome_len;
   char numeros[24];
   int n = snprintf_P(numeros, sizeof numeros, PSTR("\t%u\t%u\t%u\t%u\t%u\n"), s->work, s->short_break,
                      s->long_break, s->every, s->cycles);
   if (c.ok) c.ok = n > 0 && c.arquivo->write((const uint8_t *)numeros, n) == (size_t)n;
+  if (c.ok) c.bytes += n;
 }
 
 // ---------- diagnóstico (painel: Ajustes -> Sistema) ----------
@@ -953,11 +962,17 @@ void setupWeb() {
     }
     LittleFS.remove(F("/sessoes.tmp"));
     File f = LittleFS.open(F("/sessoes.tmp"), "w");
-    SessoesGrava contexto = {&f, (bool)f};
+    SessoesGrava contexto = {&f, (bool)f, 0};
     if (contexto.ok) sessoesLer(texto.c_str(), texto.length(), sessoesGravaLinha, &contexto);
     if (f) {
       f.flush();
       f.close();
+    }
+    // flush e close não informam falha (flash cheia): só troca o arquivo bom se o tmp releu com o tamanho certo
+    if (contexto.ok) {
+      File v = LittleFS.open(F("/sessoes.tmp"), "r");
+      contexto.ok = v && v.size() == contexto.bytes;
+      if (v) v.close();
     }
     bool salva = contexto.ok && LittleFS.rename(F("/sessoes.tmp"), F("/sessoes.txt"));
     if (!salva) {

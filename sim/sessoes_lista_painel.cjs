@@ -24,7 +24,7 @@ const make = resposta => {
   const els = { sessions: { children: [], appendChild(x) { this.children.push(x); } }, sessedit: {}, sesswarn: {}, cyclesum: {} };
   let fetch = async () => { if (resposta instanceof Error) throw resposta; return { ok: resposta.ok !== false, status: resposta.status || 500, json: async () => resposta.body }; };
   const el = (tag, cls, txt) => ({ tag, className: cls, textContent: txt == null ? '' : txt, append(...x) { this.children = x; }, classList: { toggle() {} }, addEventListener() {} });
-  const api = new Function('$', 'fetch', 't', 'el', 'TextEncoder', 'st', 'applySession', consts + '\n' + sessionCode + ';return {sessLoad,state:()=>({sessOk,sessSet,SESSIONS})}')(
+  const api = new Function('$', 'fetch', 't', 'el', 'TextEncoder', 'st', 'applySession', consts + '\n' + sessionCode + ';return {sessLoad,sessionRender,state:()=>({sessOk,sessSet,SESSIONS})}')(
     id => els[id], fetch, (s, ...v) => s.replace(/\{(\d)\}/g, (_, i) => v[i]), el, TextEncoder, null, () => {});
   return { api, els };
 };
@@ -32,6 +32,14 @@ const make = resposta => {
 (async () => {
   let x = make({ body: { set: 0, l: [] } }); await x.api.sessLoad();
   assert.strictEqual(x.api.state().sessOk, true); assert.strictEqual(x.api.state().sessSet, false); assert.deepStrictEqual(x.api.state().SESSIONS.map(s => s.name), ['Deep focus', 'Gentle focus']);
+  // chips não são recriados a cada poll (1 s): só a classe muda; recriar derrubaria o toque e o foco do teclado
+  {
+    const y = make({ body: { set: 0, l: [] } }); await y.api.sessLoad();
+    const n0 = y.els.sessions.children.slice();
+    y.api.sessionRender({ cfg: { work: 50, short: 10, long: 25, every: 3, cycles: 3 } }); y.api.sessionRender(null);
+    assert.strictEqual(y.els.sessions.children.length, 2, 'sessionRender recriou os chips sem a lista mudar');
+    assert(y.els.sessions.children.every((c, i) => c === n0[i]), 'os nós dos chips têm de ser os mesmos');
+  }
   x = make({ body: { set: 1, l: [{ name: 'Minha', work: 40, short: 5, long: 15, every: 3, cycles: 2 }] } }); await x.api.sessLoad();
   assert.deepStrictEqual(x.api.state().SESSIONS.map(s => s.name), ['Minha']);
   x = make({ body: { set: 1, l: [] } }); await x.api.sessLoad();
@@ -51,9 +59,13 @@ const make = resposta => {
 
   // Nomes e valores nunca entram em HTML nem em atributos de evento montados como texto.
   const xss = html.slice(html.indexOf('const DEEP_FOCUS='), html.indexOf('function tab('));
-  assert(!xss.includes('innerHTML'), 'sessões não podem usar innerHTML');
-  assert(!/setAttribute\(\s*['"]on/i.test(xss), 'sessões não podem montar atributo on*');
-  assert(!/onclick\s*=.*(?:name|work|short|long|every|cycles)/i.test(xss), 'sessões não podem montar onclick com dados');
+  // inclui o editor e a restauração, onde o nome do usuário também passa
+  const edit = html.slice(html.indexOf('async function sessEdit'), html.indexOf("$('sessedit').onclick")), xss2 = xss + edit + restore;
+  assert(edit.length > 500, 'trecho do editor não achado');
+  assert(!xss2.includes('innerHTML'), 'sessões não podem usar innerHTML');
+  assert(!/setAttribute\(\s*['"]on/i.test(xss2), 'sessões não podem montar atributo on*');
+  // atributo onclick="..." montado como texto com dados; "x.onclick=()=>" (propriedade com closure) é o jeito certo
+  assert(!/onclick\s*=\s*["'`][^"'`]*(?:name|work|short|long|every|cycles)/i.test(xss2), 'sessões não podem montar onclick com dados');
 
   const chaves = ['Sessões', 'Editar sessões', 'Não foi possível ler as sessões do relógio.', 'sem fim', 'Focos de {0} min, sem fim',
     'Lista de sessões inválida', 'Limite de 8 sessões', 'Use de 1 a 24 caracteres, sem espaços nas pontas',
