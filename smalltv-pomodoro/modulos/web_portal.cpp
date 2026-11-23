@@ -469,6 +469,12 @@ static void handleUpload() {
       uploadError = F("Use JPG ou GIF");
       return;
     }
+    const String target = String(F("/image/")) + name;  // só vira uploadPath depois das recusas: abortar não pode apagar um arquivo que existia
+    static_assert(ALBUM_MAX_UPLOAD == 100, "atualize tambem a mensagem de album cheio");
+    if (album.size() >= ALBUM_MAX_UPLOAD && !LittleFS.exists(target)) {
+      uploadError = tr("Album cheio (maximo 100 fotos e GIFs): apague alguns", "Album full (100 photos and GIFs at most): delete some", "Album lleno (maximo 100 fotos y GIF): borra algunos");
+      return;
+    }
     FSInfo fi;
     LittleFS.info(fi);
     if (fi.totalBytes - fi.usedBytes < 16384) {
@@ -476,7 +482,7 @@ static void handleUpload() {
       return;
     }
     if (!LittleFS.exists("/image")) LittleFS.mkdir("/image");
-    uploadPath = String(F("/image/")) + name;
+    uploadPath = target;
     uploadFile = LittleFS.open(uploadPath, "w");
     if (!uploadFile) uploadError = F("Falha ao criar arquivo");
     else photoGate.begin(true, 3 * 1024 * 1024);
