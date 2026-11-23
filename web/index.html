@@ -428,10 +428,10 @@ const I18V='__I18V__',I18I='__I18I__';  // I18I: impressão digital (SRI) do dic
 const I18XV=[null,null,null,'__I18DEV__','__I18RUV__'],I18XI=[null,null,null,'__I18DEI__','__I18RUI__'];
 const TZV='__TZV__',TZI='__TZI__';  // tabela de fusos publicada (panel/tz-<código>.json), idem
 let i18Fail=false;
-function loadI18n(){if(!LG)return;const refresh=()=>{i18n();buildFaces();drawGame();if(st){$('curimg').dataset.k='';load(st)}};
+function loadI18n(){if(!LG)return;const warn=()=>{if(LG>=3&&!i18Fail){i18Fail=true;toast('Translation unavailable (needs internet)')}};const refresh=()=>{i18n();buildFaces();drawGame();if(st){$('curimg').dataset.k='';load(st)}};
  const get=(key,V,SRI,url,use,fail)=>{let c=null;try{c=JSON.parse(localStorage[key]||'null')}catch(e){}if(c&&c.v==V)return use(c);fetch(V[0]=='_'?'/'+url:SITE+'panel/'+url.replace('.json','-'+V+'.json'),V[0]=='_'?{}:{integrity:SRI}).then(r=>r.json()).then(d=>{use(d);try{localStorage[key]=JSON.stringify({...d,v:V})}catch(e){}}).catch(fail||(()=>{}))};
- if(I18N._v!=I18V)get('i18n',I18V,I18I,'i18n.json',d=>{Object.assign(I18N,d.dict,{_v:I18V});BUILTIN=d.builtin;refresh()});
- if(LG>=3){const l=LG,V=I18XV[l];if(I18X[l]._v!=V)get('i18n_'+LANGS[l],V,I18XI[l],'i18n-'+LANGS[l]+'.json',d=>{Object.assign(I18X[l],d.dict,{_v:V});BUILTINX[l]=d.builtin;refresh()},()=>{if(!i18Fail){i18Fail=true;toast('Translation unavailable, showing English')}})}}
+ if(I18N._v!=I18V)get('i18n',I18V,I18I,'i18n.json',d=>{Object.assign(I18N,d.dict,{_v:I18V});BUILTIN=d.builtin;refresh()},warn);
+ if(LG>=3){const l=LG,V=I18XV[l];if(I18X[l]._v!=V)get('i18n_'+LANGS[l],V,I18XI[l],'i18n-'+LANGS[l]+'.json',d=>{Object.assign(I18X[l],d.dict,{_v:V});BUILTINX[l]=d.builtin;refresh()},warn)}}
 // chamado por load() antes de desenhar o estado: não chama load de novo
 function setLang(l){if(l==LG)return;LG=l;try{localStorage.lang=l}catch(e){}loadI18n();i18n();buildFaces();drawGame();if($('upd').classList.contains('v')&&!updating)showUpdate();$('curimg').dataset.k='';if(curTab==2)files();if($('cat').children.length)catalog()}
 
@@ -558,7 +558,7 @@ const EDV='__EDV__',EDI='__EDI__';
 let edJs=null;
 async function editor(){if(!window.faceEditor){toast(t('Abrindo o editor...'));edJs=edJs||new Promise((ok,no)=>{const s=document.createElement('script');if(EDV[0]=='_')s.src='/editor.js';else{s.src=SITE+'panel/editor-'+EDV+'.js';s.integrity=EDI;s.crossOrigin='anonymous'}s.onload=ok;s.onerror=no;document.head.appendChild(s)});
  try{await edJs}catch(e){edJs=null;return toast(t('Sem internet no navegador'))}}
- faceEditor({t,el,toast,install,safeId,c:$('sheetc'),lang:LANGS[LG],accent:st?st.cfg.color:'#ff5a47'});$('sheet').classList.add('v')}
+ faceEditor({t,el,toast,install,safeId,c:$('sheetc'),lang:LG<3?LANGS[LG]:'en',accent:st?st.cfg.color:'#ff5a47'});$('sheet').classList.add('v')}
 function closeSheet(){$('sheet').classList.remove('v')}
 const SPR={"t_feliz":{"p":"Re8402f ra8261e hff9178 G60c454 g2e8034 k280e0c pffa0a0 wffffff m7a1010","r":["......gGGg......","....gGGGGGGg....","...rRRgGGgRRr...","..rRRRRggRRRRr..",".rRhhRRRRRRRRRr.",".rRhRRRRRRRRRRr.","rRRRRRRRRRRRRRRr","rRRRRRRRRRRRRRRr","rRRRRkRRRRkRRRRr","rRRRRkRRRRkRRRRr","rRRpRRRRRRRRpRRr",".rRRRRkRRkRRRRr.",".rRRRRRkkRRRRRr.","..rrRRRRRRRRrr..","....rrrrrrrr....","................"]},"t_comemorando":{"p":"Re8402f ra8261e hff9178 G60c454 g2e8034 k280e0c pffa0a0 wffffff m7a1010 Yffc428 B4f8dff","r":[".Y....gGGg....B.","....gGGGGGGg....","r..rRRgGGgRRr..r",".rrRRRRggRRRRrr.",".rRhhRRRRRRRRRr.","BrRhRRRRRRRRRRrY","rRRRRRRRRRRRRRRr","rRRRRRRRRRRRRRRr","rRRRRkRRRRkRRRRr","rRRRkRkRRkRkRRRr","rRRpRRRRRRRRpRRr",".rRRRRkkkkRRRRr.",".rRRRRkmmkRRRRr.","..rrRRRkkRRRrr..","....rrrrrrrr....","................"]},"chama":{"p":"oa8261e Rff5a2a Yffc83a wfff4c0","r":["...o....","...oo...","..oRo...","..oRRo.o",".oRRRooR",".oRYRRRo","oRRYYRRo","oRYYwYRo","oRYwwYRo",".oRYYRo.","..oooo.."]},"p_broto":{"p":"o3d2414 S7a4a2e sf0d58c g2e8034 G60c454 yffd23f cff8c1a v8fd16a V4f9a3a Re8402f ra8261e Dffcc33 dc48a12 wffffff","r":["................","................","................","................","................","................",".....gGg.gGg....","....gGGGgGGGg...",".....gggGggg....",".......gG.......",".......gG.......",".......gG.......","......oooo......",".....oSSSSo.....","....oSSSSSSo....","...oSSSSSSSSo..."]}};
 // ---------- sequência, horta, conquistas e cartão de compartilhar ----------
@@ -599,7 +599,7 @@ let shareJs=null;
 async function shareDay(){if(!st)return;if(!STATS)await loadStats();
  if(!window.shareCard){toast(t('Preparando o cartão...'));shareJs=shareJs||new Promise((ok,no)=>{const s=document.createElement('script');if(SHV[0]=='_')s.src='/share.js';else{s.src=SITE+'panel/share-'+SHV+'.js';s.integrity=SHI;s.crossOrigin='anonymous'}s.onload=ok;s.onerror=no;document.head.appendChild(s)});
   try{await shareJs}catch(e){shareJs=null;return toast(t('Sem internet no navegador'))}}
- const now=new Date(),big=shareCard({spr,SPR,t,LG,today:st.today,goal:st.cfg.goal,streak:st.streak||0,days:STATS?STATS.days:[]});
+ const now=new Date(),big=shareCard({spr,SPR,t,LG:LG<3?LG:1,today:st.today,goal:st.cfg.goal,streak:st.streak||0,days:STATS?STATS.days:[]});
  const blob=await new Promise(r=>big.toBlob(r,'image/png')),file=new File([blob],'pomodoro-'+now.toISOString().slice(0,10)+'.png',{type:'image/png'});
  if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:'SmallTV Pomodoro'})}catch(e){}return}
  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=file.name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000);toast(t('Imagem salva'))}
