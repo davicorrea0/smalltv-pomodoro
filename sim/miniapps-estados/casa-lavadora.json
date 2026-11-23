@@ -1,0 +1,10 @@
+{
+ "capa": 1,
+ "estados": [
+  {"n":"Sem dados","en":"No data","es":"Sin datos","envios":[]},
+  {"n":"Lavando, enxágue, 70%","en":"Washing, rinse, 70%","es":"Lavando, enjuague, 70%","envios":[{"ttl":60,"values":{"lv_est":"LAVANDO","lv_txt":"ENXAGUE","lv_pct":70,"lv_min":18}}]},
+  {"n":"Pronta","en":"Done","es":"Lista","envios":[{"ttl":60,"values":{"lv_est":"PRONTA","lv_txt":"AS 14:52","lv_pct":100,"lv_min":0}}]},
+  {"n":"Desligada","en":"Off","es":"Apagada","envios":[{"ttl":60,"values":{"lv_est":"DESLIGADA","lv_txt":"","lv_pct":0,"lv_min":0}}]},
+  {"n":"Erro E21","en":"Error E21","es":"Error E21","envios":[{"ttl":60,"values":{"lv_est":"ERRO","lv_txt":"E21","lv_pct":40,"lv_min":0}}]}
+ ]
+}

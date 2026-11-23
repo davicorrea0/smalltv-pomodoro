@@ -2,6 +2,7 @@
 const fs=require('fs'),path=require('path');
 const source=require('./fonte.cjs');
 function fn(name){const a=source.indexOf(`void ${name}() {`),b=source.indexOf('\n}',a);if(a<0||b<0)throw Error(name);return source.slice(a,b+2);}
+function fnFrom(text,name){const a=text.indexOf(`void ${name}() {`),b=text.indexOf('\n}',a);if(a<0||b<0)throw Error(name);return text.slice(a,b+2);}
 // 1.26.1: /api/fsdelete não pode ser driblado por "/./" e o rodízio sem vírgula não passa do limite
 if(!source.includes('f.indexOf("/.") >= 0'))throw Error('/api/fsdelete: recusar "/." (o littlefs ignora o componente "." e o fsKeep comparava o texto)');
 if(!source.includes('int cut = s.lastIndexOf(',', 300);')||!source.includes('s = cut > 0 ? s.substring(0, cut) : String();'))throw Error('rotSet: sem vírgula, substring(0, -1) não corta nada');
@@ -90,13 +91,15 @@ const start=update.slice(update.indexOf('UPLOAD_FILE_START'),update.indexOf('UPL
 if(!/else \{[^]*eboot_command_clear\(\);/.test(start))throw Error('upload start (authorized) must clear a pending eboot command');
 const abort=update.slice(update.indexOf('UPLOAD_FILE_ABORTED'));
 if(!abort.includes('otaCancel();'))throw Error('aborted upload must cancel the staged swap');
-if(!update.includes('long cl = server.header("Content-Length").toInt();')||!update.includes('cl > 0 && (uint32_t)cl <= room'))throw Error('Content-Length must be checked as signed and bounded before Update.begin');
+if(!update.includes('long cl = h.length() ? h.toInt() : 0;')||!update.includes('const String &h = server.header("Content-Length");')||!update.includes('cl > 0 && (uint32_t)cl <= room'))throw Error('Content-Length must be checked as signed and bounded before Update.begin');
 const sigOk=source.slice(source.indexOf('static bool otaSigOk() {'),source.indexOf('\n}',source.indexOf('static bool otaSigOk() {')));
 if(!sigOk.includes('if (recoveryMode) return true;')||!sigOk.includes('stack_thunk_add_ref();')||!sigOk.includes('getMaxFreeBlockSize()'))
  throw Error('otaSigOk: recovery escape, thunk stack and heap check are required');
 if(!update.includes('br_sha256_update(&otaHash, up.buf, up.currentSize);')||!update.includes('otaSigBegin();'))throw Error('upload must hash every byte');
 // 1.26.1: prazos em millis() guardados com 0 inicial parecem "no futuro" depois de 24,8 dias ligado (conta com sinal)
 const alb=fs.readFileSync(path.join(__dirname,'../smalltv-pomodoro/modulos/album.cpp'),'utf8');
+const albumLimits=(alb.match(/static constexpr size_t ALBUM_MAX_UPLOAD = \d+;/)||[])[0]+'\n'+(alb.match(/static constexpr size_t ALBUM_MAX_LISTA = \d+;/)||[])[0];
+if(albumLimits.includes('undefined'))throw Error('limites do album esperados em album.cpp');
 if(alb.split(String.fromCharCode(10)).some(l=>l.trim().startsWith('nextFrameAt = 0;')))throw Error('album: nextFrameAt = 0 deixa o GIF parado depois de 24,8 dias ligado (use millis())');
 if(!alb.includes('packRetryWait')||alb.includes('if ((int32_t)(millis() - packRetryAt) < 0) return;'))throw Error('album: packRetryAt precisa de packRetryWait (0 inicial parece futuro)');
 if(/rotNext/.test(alb)||!alb.includes('rotArmed && (uint32_t)(millis() - rotAt)'))throw Error('album: o rodízio usa tempo decorrido (rotAt), não prazo em millis()');
@@ -169,22 +172,29 @@ enum{UPLOAD_FILE_START,UPLOAD_FILE_WRITE,UPLOAD_FILE_END,UPLOAD_FILE_ABORTED};
 struct HTTPUpload{int status;String name="face",filename="photo.jpg";size_t currentSize=1;uint8_t buf[1]={0};}event;
 struct{HTTPUpload&upload(){return event;}}server;
 static bool allowed=true,password=true,fsOk=true;
-static int opens,writes,deletes,rebuilds;static size_t written;
+static int opens,writes,deletes;static size_t written;
 bool panelOk(){return allowed;}bool passOk(){return password;}bool uploadAuthed(){return passOk();}
 struct FSInfo{size_t totalBytes=4000000,usedBytes=0;};
 struct File{bool live=false;operator bool()const{return live;}void close(){live=false;}
  size_t write(const uint8_t*,size_t n){assert(live);writes++;written+=n;return n;}};
-struct{bool exists(const String&){return true;}void mkdir(const char*){}File open(const String&,const char*){opens++;return {true};}
- void info(FSInfo&){}void remove(const String&){deletes++;}}LittleFS;
+static std::vector<String> fsFiles;static std::vector<String> fsDirs={"/image","/gif"};
+struct Dir{String dir,current;size_t at=0;bool next(){while(at<fsFiles.size()){String p=fsFiles[at++],prefix=dir+"/";if(p.compare(0,prefix.size(),prefix))continue;String n=p.substr(prefix.size());if(n.find('/')!=String::npos)continue;current=n;return true;}return false;}bool isDirectory()const{return false;}String fileName()const{return current;}};
+struct{bool exists(const String&p){return std::find(fsFiles.begin(),fsFiles.end(),p)!=fsFiles.end()||std::find(fsDirs.begin(),fsDirs.end(),p)!=fsDirs.end();}
+ void mkdir(const char*p){if(std::find(fsDirs.begin(),fsDirs.end(),p)==fsDirs.end())fsDirs.push_back(p);}File open(const String&p,const char*mode){opens++;if(mode[0]=='w'&&!exists(p))fsFiles.push_back(p);return {true};}
+ void info(FSInfo&){}void remove(const String&p){deletes++;fsFiles.erase(std::remove(fsFiles.begin(),fsFiles.end(),p),fsFiles.end());}Dir openDir(const char*p){return {p};}}LittleFS;
 bool isJpg(String s){s.toLowerCase();return s.endsWith(".jpg")||s.endsWith(".jpeg");}
 bool isGif(String s){s.toLowerCase();return s.endsWith(".gif");}
-bool validGif(const String&){return true;}enum JpgResult:uint8_t{JPG_OK,JPG_BAD,JPG_NOMEM};static JpgResult jpgRes=JPG_OK;JpgResult validJpg(const String&){return jpgRes;}void rebuildAlbum(){rebuilds++;}
-const char*tr(const char*a,const char*,const char*){return a;}
+bool validGif(const String&){return true;}enum JpgResult:uint8_t{JPG_OK,JPG_BAD,JPG_NOMEM};static JpgResult jpgRes=JPG_OK;JpgResult validJpg(const String&){return jpgRes;}
+uint32_t fsInfoAt;std::vector<String> album;
+${albumLimits}
+static const char *MEDIA_DIRS[] = {"/image", "/gif"};
+${fnFrom(alb,'rebuildAlbum')}
+static int language;const char*tr(const char*a,const char*b,const char*c){return language==1?b:language==2?c:a;}
 File uploadFile,packUpload;String uploadPath,uploadError,packUploadError;
 UploadGate photoGate,packGate;bool packFaceReady=false;
 ${fn('handleUpload')}
 ${fn('handlePackUpload')}
-void reset(){jpgRes=JPG_OK;allowed=password=true;opens=writes=deletes=rebuilds=0;written=0;uploadFile={};packUpload={};uploadPath="";uploadError="";packUploadError="";packFaceReady=false;photoGate={};packGate={};event={};}
+void reset(){jpgRes=JPG_OK;allowed=password=true;language=0;opens=writes=deletes=0;written=0;fsFiles.clear();fsDirs={"/image","/gif"};album.clear();uploadFile={};packUpload={};uploadPath="";uploadError="";packUploadError="";packFaceReady=false;photoGate={};packGate={};event={};}
 void send(void(*handler)(),int status){event.status=status;handler();}
 int main(){
  for(bool panel:{false,true}){reset();allowed=panel;password=false;
@@ -195,11 +205,18 @@ int main(){
  }
  reset();send(handleUpload,UPLOAD_FILE_START);send(handleUpload,UPLOAD_FILE_WRITE);send(handleUpload,UPLOAD_FILE_END);assert(opens==1&&writes==1&&written==1);
  // foto sem memória para conferir: fica salva e o envio avisa; arquivo recusado pelo decodificador: apagado
- reset();jpgRes=JPG_NOMEM;send(handleUpload,UPLOAD_FILE_START);send(handleUpload,UPLOAD_FILE_WRITE);send(handleUpload,UPLOAD_FILE_END);assert(deletes==0&&uploadError.length()&&uploadError!="JPG fora do padrao"&&rebuilds==1);
+ reset();jpgRes=JPG_NOMEM;send(handleUpload,UPLOAD_FILE_START);send(handleUpload,UPLOAD_FILE_WRITE);send(handleUpload,UPLOAD_FILE_END);assert(deletes==0&&uploadError.length()&&uploadError!="JPG fora do padrao"&&LittleFS.exists("/image/photo.jpg"));
  reset();jpgRes=JPG_BAD;send(handleUpload,UPLOAD_FILE_START);send(handleUpload,UPLOAD_FILE_WRITE);send(handleUpload,UPLOAD_FILE_END);assert(deletes==1&&uploadError=="JPG fora do padrao");
  reset();jpgRes=JPG_OK;send(handleUpload,UPLOAD_FILE_START);send(handleUpload,UPLOAD_FILE_WRITE);send(handleUpload,UPLOAD_FILE_END);assert(deletes==0&&!uploadError.length());
  reset();event.filename="a..b.jpg";send(handleUpload,UPLOAD_FILE_START);assert(uploadPath=="/image/a.b.jpg");
  reset();send(handleUpload,UPLOAD_FILE_START);event.currentSize=3*1024*1024+1;send(handleUpload,UPLOAD_FILE_WRITE);assert(!writes&&deletes==1&&!photoGate.active);
+ // teto de envio: o 100º item entra; depois, nome novo recusa nos três idiomas sem criar parcial, mas substituição entra
+ reset();album.resize(99,"/image/existente.jpg");event.filename="novo.jpg";send(handleUpload,UPLOAD_FILE_START);send(handleUpload,UPLOAD_FILE_WRITE);send(handleUpload,UPLOAD_FILE_END);assert(opens==1&&writes==1&&!uploadError.length()&&LittleFS.exists("/image/novo.jpg"));
+ const char*full[]={"Album cheio (maximo 100 fotos e GIFs): apague alguns","Album full (100 photos and GIFs at most): delete some","Album lleno (maximo 100 fotos y GIF): borra algunos"};
+ for(int l=0;l<3;l++){reset();language=l;album.resize(100,"/image/existente.jpg");event.filename="novo.jpg";send(handleUpload,UPLOAD_FILE_START);assert(uploadError==full[l]&&uploadPath==""&&!opens&&!writes&&!deletes&&!LittleFS.exists("/image/novo.jpg")&&!photoGate.active);}
+ reset();album.resize(100,"/image/existente.jpg");fsFiles.push_back("/image/existente.jpg");event.filename="existente.jpg";send(handleUpload,UPLOAD_FILE_START);send(handleUpload,UPLOAD_FILE_WRITE);send(handleUpload,UPLOAD_FILE_END);assert(opens==1&&writes==1&&!uploadError.length()&&LittleFS.exists("/image/existente.jpg"));
+ // teto do rebuild não remove o excedente da flash
+ reset();for(int i=0;i<150;i++)fsFiles.push_back(String("/image/foto")+std::to_string(i)+".jpg");rebuildAlbum();assert(album.size()==ALBUM_MAX_LISTA&&fsFiles.size()==150&&!deletes);
  reset();send(handlePackUpload,UPLOAD_FILE_START);event.currentSize=24577;send(handlePackUpload,UPLOAD_FILE_WRITE);send(handlePackUpload,UPLOAD_FILE_END);assert(!writes&&!packFaceReady&&!packGate.active);
  reset();send(handlePackUpload,UPLOAD_FILE_START);event.currentSize=24576;send(handlePackUpload,UPLOAD_FILE_WRITE);send(handlePackUpload,UPLOAD_FILE_END);assert(writes==1&&packFaceReady);  // pacote de até 24 KB (formato 2, 1.26.0)
  reset();send(handlePackUpload,UPLOAD_FILE_START);send(handlePackUpload,UPLOAD_FILE_WRITE);send(handlePackUpload,UPLOAD_FILE_END);assert(packFaceReady&&written==1);

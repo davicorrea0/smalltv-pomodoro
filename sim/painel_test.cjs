@@ -2,6 +2,24 @@
 // Extrai o runSteps real do painel, confere a ordem/contabilidade e que todo texto novo tem inglês e espanhol.
 const fs = require('fs'), path = require('path'), assert = require('assert');
 const html = fs.readFileSync(path.join(__dirname, '../web/index.html'), 'utf8');
+
+// Ajustes > Memória: flash fecha no total, reserva nunca fica negativa, teto do linker e firmware antigo seguro.
+{
+  const line = s => { const i = html.indexOf(s); assert(i >= 0, s); return html.slice(i, html.indexOf('\n', i)); };
+  const LINKMAX = +line('const LINKMAX=').match(/=(\d+)/)[1];
+  const memCalc = new Function('LINKMAX', 'return ' + line('const memCalc=').replace(/^const memCalc=/, '').replace(/;$/, ''))(LINKMAX);
+  const m = memCalc({ diag: { sk: 700000, fr: 1000000, fl: 4194304 }, fs: { used: 320000, total: 2000000, l2: 1 } });
+  assert.strictEqual(m.sk + m.fr + m.fs + m.sys, m.fl, 'partes da flash precisam fechar no total');
+  assert(m.sys >= 0 && m.room == 1044464 - 700000, 'reserva não negativa e teto menos programa');
+  assert.strictEqual(memCalc({ diag: { sk: 3000000, fr: 2000000, fl: 4194304 }, fs: { total: 1 } }).sys, 0, 'sistema e reserva nunca fica negativo');
+  assert.strictEqual(memCalc({ diag: { frag: 12 }, fs: { used: 1, total: 2 } }), null, 'firmware antigo esconde a barra de flash sem produzir NaN');
+  assert(html.includes('[rf,u,h].forEach') && !html.includes("spk').lastChild"), 'a barra de RAM foi movida, não duplicada');
+  const dict = JSON.parse(fs.readFileSync(path.join(__dirname, '../web/i18n.json'), 'utf8')).dict;
+  for (const k of ['Memória', 'Flash', 'RAM', 'Programa: o espaço que o firmware do relógio ocupa. Livre para atualizar: a área disponível para receber uma versão nova. Arquivos: fotos, GIFs e mostradores. Sistema e reserva: dados internos e espaço protegido do aparelho.',
+    'RAM fixa: o que o sistema reserva sempre. Em uso: memória temporária ocupada agora. Heap livre: o que ainda pode ser usado; o maior bloco mostra o tamanho que cabe de uma vez.', 'programa', 'livre para atualizar', 'arquivos', 'sistema e reserva', 'ainda cabe de programa', 'layout 4M2M', 'layout antigo 4M3M', 'RAM fixa', 'heap livre', 'maior bloco', 'fragmentação', 'menor livre desde que ligou', 'menor maior bloco desde que ligou'])
+    assert(dict[k] && dict[k].length == 2 && dict[k].every(x => x), 'sem tradução en/es: ' + k);
+  console.log('painel: card Memória fecha a flash, limita a reserva, mostra o teto e aceita firmware antigo');
+}
 const i = html.indexOf('async function runSteps('), runSteps = new Function('return ' + html.slice(i, html.indexOf('\n', i)))();
 (async () => {
   const ran = [];
@@ -246,3 +264,25 @@ const i = html.indexOf('async function runSteps('), runSteps = new Function('ret
   assert(dict[note] && dict[note].every(x => x), 'a nota do álbum precisa de tradução');
   console.log('painel: avisa GIF acima de 240×240 (cortado) e de 480×480 (recusado), confere o espaço livre e reduz fotos com suavização alta');
 })();
+
+// Miniaturas e estados dos miniapps: a prévia guardada no relógio continua na fila; só miniapp tenta a capa
+// publicada antes do catálogo. A tira de estados desaparece inteira se não estiver publicada, sem imagem quebrada.
+{
+  const src = html.match(/const faceImgs=(f=>[^\n]+);/)[1];
+  const faceImgs = new Function('faceSrc', 'isApp', 'SITE', 'CATALOG', 'return ' + src)(
+    f => '/face?pkg=' + f.pkg, f => !!f.x, 'https://site/', 'https://catalog/');
+  assert.deepStrictEqual(faceImgs({ pkg: 'lavadora', x: 'lv_est,lv_txt' }), [
+    '/face?pkg=lavadora', 'https://site/miniapps/lavadora.png', 'https://catalog/lavadora.png', null
+  ], 'miniapp: relógio, site, catálogo e bloco com nome, nessa ordem');
+  assert.deepStrictEqual(faceImgs({ pkg: 'koi', x: '' }), [
+    '/face?pkg=koi', 'https://catalog/koi.png', null
+  ], 'mostrador comum não pode tentar a pasta de miniapps');
+  const bf = html.slice(html.indexOf('function buildFaces()'), html.indexOf('const rotKeys='));
+  assert(bf.includes("si.loading='lazy';si.decoding='async';si.alt='';si.onerror=()=>w.remove()"), 'tira sem lazy/async ou sem sumir no erro');
+  assert(bf.includes("si.src=SITE+'miniapps/'+encodeURIComponent(f.pkg)+'-estados.png'"), 'endereço da tira de estados');
+  const apf = html.slice(html.indexOf("$('pkf').onchange=$('apf').onchange="), html.indexOf('// o pacote pede uma versão mínima'));
+  assert(apf.indexOf("CATALOG+id+'.png'") < apf.indexOf("SITE+'miniapps/'+id+'.png'"), 'instalação só com JSON: catálogo antes da capa do miniapp');
+  const dict = JSON.parse(fs.readFileSync(path.join(__dirname, '../web/i18n.json'), 'utf8')).dict;
+  assert.deepStrictEqual(dict['Lê'], ['Reads', 'Lee']);
+  console.log('painel: miniapp reserva capa no site antes do catálogo, mostrador comum não; tira some no erro e "Lê" está traduzido');
+}

@@ -19,6 +19,11 @@ static bool rotArmed = false;
 
 std::vector<String> album;
 
+// 100 limita novos envios antes de pressionar o heap; 128 protege o rebuild se a flash já tiver mais arquivos.
+// Cada item foi estimado em ~50 B de heap (String + bloco), mas essa estimativa não foi medida.
+static constexpr size_t ALBUM_MAX_UPLOAD = 100;
+static constexpr size_t ALBUM_MAX_LISTA = 128;
+
 static size_t albumIdx = 0;
 
 bool inAlbum = false;
@@ -63,7 +68,10 @@ void rebuildAlbum() {
       if (d.isDirectory()) continue;
       String n = String(dir) + "/" + d.fileName();
       // a animação de boot do firmware original não entra no álbum
-      if ((isJpg(n) || isGif(n)) && d.fileName() != "boot.gif" && d.fileName() != "boot.jpg") album.push_back(n);
+      if ((isJpg(n) || isGif(n)) && d.fileName() != "boot.gif" && d.fileName() != "boot.jpg") {
+        album.push_back(n);
+        if (album.size() >= ALBUM_MAX_LISTA) return;
+      }
     }
   }
 }

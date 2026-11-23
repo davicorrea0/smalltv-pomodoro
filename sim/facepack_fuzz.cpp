@@ -50,6 +50,10 @@ static const char *SEMENTES[] = {
   "{\"format\":2,\"bg\":\"#102040\",\"sprites\":{\"s\":{\"fps\":4,\"pal\":{\"a\":\"#e0a030\",\"b\":\"#30a0e0\"},\"frames\":[[\"aab\",\"aab\",\"bbb\"],[\"baa\",\"baa\",\"bbb\"]]}},"
   "\"layers\":[{\"type\":\"circle\",\"x\":120,\"y\":120,\"r\":90,\"color\":\"#2a5a8a\"},{\"type\":\"sprite\",\"sprite\":\"s\",\"size\":8,\"motion\":{\"period\":4000,\"keys\":[{\"t\":0,\"x\":20,\"y\":40},{\"t\":2000,\"x\":180,\"y\":90},{\"t\":4000,\"x\":20,\"y\":40}]}},"
   "{\"type\":\"text\",\"x\":120,\"y\":72,\"font\":\"bebas\",\"size\":96,\"align\":\"center\",\"color\":\"#ecffff\",\"overlay\":true,\"text\":\"{HH}:{MM}\"}]}",
+  // formato 2: texto pixel em UTF-8 (alemão, russo, trema decomposto) e sequências cortadas ou malformadas
+  "{\"format\":2,\"layers\":[{\"type\":\"text\",\"x\":10,\"y\":10,\"font\":\"pixel\",\"size\":2,\"text\":\"M\xC3\xBCller Gr\xC3\xB6\xC3\x9F" "e u\xCC\x88 \xC3\x84\xC3\x96\xC3\x9C \xD0\x9F\xD1\x80\xD0\xB8\xD0\xB2\xD0\xB5\xD1\x82 \xD0\x81\xD1\x91\"},"
+  "{\"type\":\"text\",\"x\":10,\"y\":60,\"font\":\"pixel\",\"size\":1,\"text\":\"\xC3\xC0\x80\xE2\x82\xAC\xF0\x9F\x98\x80 u\xCC \xD0\xD1\x91\xD0\"},"
+  "{\"type\":\"text\",\"x\":10,\"y\":90,\"font\":\"outfit\",\"size\":40,\"text\":\"1\xC3\xBC" "2\xC3\"}]}",
   "{\"format\":2,\"sprites\":{\"m\":{\"pal\":{\"a\":\"#ffcc00\"},\"fps\":10,\"frames\":[[\"a.\"],[\".a\"],[\"aa\"],[\"a.\"],[\".a\"],[\"aa\"],[\"a.\"],[\".a\"],[\"aa\"]]}},"
   "\"layers\":[{\"type\":\"rect\",\"x\":0,\"y\":0,\"w\":240,\"h\":240,\"color\":\"#15151d\",\"when\":\"night\"},"
   "{\"type\":\"sprite\",\"sprite\":\"m\",\"size\":6,\"motion\":{\"period\":3000,\"keys\":[{\"t\":0,\"x\":-20,\"y\":10},{\"t\":1500,\"x\":230,\"y\":200},{\"t\":3000,\"x\":-20,\"y\":10}]}}]}",
