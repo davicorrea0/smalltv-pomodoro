@@ -828,6 +828,87 @@ static int testMetaLonga() {
   return fails;
 }
 
+// glifos da fonte 5x7 (a mesma que a Adafruit GFX usa), para conferir pixel a pixel
+namespace glcd {
+#include <glcdfont.c>
+}
+// Alemão na fonte pixel dos pacotes: glifos CP437, trema decomposto e medida por caracteres, não por bytes.
+static int testAlemao() {
+  int fails = 0;
+  char err[96] = "";
+  const std::string pacote =
+    "{\"format\":2,\"bg\":\"#081018\",\"layers\":["
+    "{\"type\":\"text\",\"x\":18,\"y\":28,\"font\":\"pixel\",\"size\":2,\"color\":\"#f3e7c9\",\"text\":\"M\xC3\xBCller Gr\xC3\xB6\xC3\x9F" "e\"},"
+    "{\"type\":\"text\",\"x\":18,\"y\":58,\"font\":\"pixel\",\"size\":2,\"color\":\"#f3e7c9\",\"text\":\"\xC3\x84pfel \xC3\x96 \xC3\x9F \xC3\xA9 \xC3\xB1\"},"
+    "{\"type\":\"text\",\"x\":18,\"y\":104,\"font\":\"pixel\",\"size\":3,\"color\":\"#70d6ff\",\"text\":\"trema: u\xCC\x88\"}]}";
+  std::string js = pacote;
+  if (!facePackLoad((char *)js.c_str(), js.size(), err, sizeof err)) {
+    printf("alemao FALHOU ao carregar pacote: %s\n", err);
+    fails++;
+  } else {
+    UiState st = base(14, 37, 0);
+    st.theme = THEME_PACK;
+    shot("idioma-de-pacote", st, false);
+    facePackUnload();
+  }
+
+  auto inicio = [&](const char *texto) {
+    std::string p = std::string("{\"format\":2,\"bg\":\"#081018\",\"layers\":[{\"type\":\"text\",\"x\":200,\"y\":20,\"font\":\"pixel\",\"size\":2,\"align\":\"right\",\"color\":\"#ffffff\",\"text\":\"") + texto + "\"}]}";
+    Frame f;
+    int x0 = 240;
+    if (!facePackLoad((char *)p.c_str(), p.size(), err, sizeof err)) return -1;
+    UiState st = base(14, 37, 0);
+    st.theme = THEME_PACK;
+    uiBegin(&f);
+    facePackRender(st, true);
+    facePackUnload();
+    const uint16_t branco = uiRgb(255, 255, 255);
+    for (int y = 0; y < 240; y++) for (int x = 0; x < 240; x++)
+      if (f.px[y * 240 + x] == branco && x < x0) x0 = x;
+    return x0;
+  };
+  int umlaut = inicio("M\xC3\xBCller"), ascii = inicio("Muller");
+  if (umlaut != ascii || umlaut != 128) {
+    printf("alemao FALHOU na largura: M\xC3\xBCller=%d, Muller=%d (esperado 128)\n", umlaut, ascii);
+    fails++;
+  }
+
+  {  // legibilidade dos pontos do Ä/Ö no 5x7, tamanhos 1 e 2
+    std::string t = "{\"format\":2,\"bg\":\"#081018\",\"layers\":["
+      "{\"type\":\"text\",\"x\":12,\"y\":20,\"font\":\"pixel\",\"size\":1,\"color\":\"#ffffff\",\"text\":\"\xC3\x84\xC3\x96\xC3\x9C\xC3\xA4\xC3\xB6\xC3\xBC\xC3\x9F AOUaou\"},"
+      "{\"type\":\"text\",\"x\":12,\"y\":50,\"font\":\"pixel\",\"size\":2,\"color\":\"#ffffff\",\"text\":\"\xC3\x84\xC3\x96\xC3\x9C\xC3\xA4\xC3\xB6\xC3\xBC\xC3\x9F\"},"
+      "{\"type\":\"text\",\"x\":12,\"y\":90,\"font\":\"pixel\",\"size\":2,\"color\":\"#ffffff\",\"text\":\"AOUaou\"}]}";
+    if (!facePackLoad((char *)t.c_str(), t.size(), err, sizeof err)) { printf("alemao tamanhos FALHOU: %s\n", err); fails++; }
+    else { UiState st = base(14, 37, 0); st.theme = THEME_PACK; shot("idioma-de-tamanhos", st, false); facePackUnload(); }
+  }
+  {  // o que o cp437(true) protege: cada letra tem de sair com o glifo CP437 certo da fonte 5x7 (ß = 0xE1, não 0xE2)
+    struct { const char *utf8; uint8_t cp; } casos[] = {{"\xC3\xA4", 0x84}, {"\xC3\xB6", 0x94}, {"\xC3\xBC", 0x81}, {"\xC3\x84", 0x8E},
+                                                         {"\xC3\x96", 0x99}, {"\xC3\x9C", 0x9A}, {"\xC3\x9F", 0xE1}, {"u\xCC\x88", 0x81}};
+    std::string js = "{\"format\":2,\"bg\":\"#000000\",\"layers\":[";
+    for (int i = 0; i < 8; i++)
+      js += std::string(i ? "," : "") + "{\"type\":\"text\",\"x\":" + std::to_string(10 + 12 * i) + ",\"y\":10,\"font\":\"pixel\",\"size\":1,\"color\":\"#ffffff\",\"text\":\"" + casos[i].utf8 + "\"}";
+    js += "]}";
+    Frame f;
+    if (!facePackLoad((char *)js.c_str(), js.size(), err, sizeof err)) { printf("alemao glifos FALHOU: %s\n", err); fails++; }
+    else {
+      UiState st = base(14, 37, 0);
+      st.theme = THEME_PACK;
+      uiBegin(&f);
+      facePackRender(st, true);
+      facePackUnload();
+      const uint16_t branco = uiRgb(255, 255, 255);
+      for (int i = 0; i < 8; i++)
+        for (int c = 0; c < 5; c++)
+          for (int r = 0; r < 7; r++) {
+            bool aceso = f.px[(10 + r) * 240 + 10 + 12 * i + c] == branco, esperado = (glcd::font[casos[i].cp * 5 + c] >> r) & 1;
+            if (aceso != esperado) { printf("alemao glifo %d coluna %d linha %d FALHOU: desenhou %d, a fonte tem %d\n", i, c, r, aceso, esperado); fails++; }
+          }
+    }
+  }
+  if (!fails) printf("alemao: ok (pacote UTF-8, trema decomposto, Muller e M\xC3\xBCller com 6 caracteres)\n");
+  return fails;
+}
+
 // Muitas camadas mudando no mesmo quadro (12 com motion + 6 animadas + a hora: mais que as 12 áreas sujas): o incremental continua igual ao completo
 // quadro a quadro, com a hora grande cruzada pelos sprites (o caso do koi)
 static int testMuitasAreas() {
@@ -1293,6 +1374,7 @@ int main() {
   fails += testSpriteOracle(2000, 16, 10, 2);
   fails += testOverlay();
   fails += testMetaLonga();
+  fails += testAlemao();
   fails += testSemClima();
   fails += testMotion();
   fails += testMuitasAreas();

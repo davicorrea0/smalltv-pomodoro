@@ -97,7 +97,7 @@ Mostradores prontos para lavadora, luzes e tomadas, com a automação de cada um
   em [PACOTES.md](PACOTES.md).
 - **Números:** use a fonte `pixel` ou mande inteiros. As fontes grandes (`outfit`, `bebas`, `righteous`) só têm
   dígitos: `21.5` vira `21 5`, e `--` e `%` somem.
-- Os acentos viram a letra sem acento na fonte do relógio.
+- Os acentos viram a letra sem acento na fonte do relógio; na fonte `pixel` de pacotes `ä ö ü ß Ä Ö Ü` aparecem como são.
 
 ## Contrato
 
