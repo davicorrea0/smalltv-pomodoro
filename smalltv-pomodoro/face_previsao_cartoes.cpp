@@ -4,12 +4,31 @@
 // Registrado em faces_list.h; usa o kit de desenho de ui_kit.h.
 #include "ui_kit.h"
 #include "assets.h"
+#include "utf8_pixel.h"
 
 static const int CARD_Y = 34, CARD_W = 54, CARD_H = 200, CARD_GAP = 4;
 static const uint16_t CARD_BG = uiRgb(24, 24, 28), CARD_LINE = uiRgb(48, 48, 54);
 
+static bool otxNeedsPixel(const char *s) {
+  for (const unsigned char *p = (const unsigned char *)s; *p;) {
+    if (*p < 0x80) { p++; continue; }
+    uint16_t ch = utf8ToCp437(p);
+    if (!ch || ch >= 0x100) return true;
+    if (ch > 0x7F && ch != 0x84 && ch != 0x94 && ch != 0x81 && ch != 0x8E &&
+        ch != 0x99 && ch != 0x9A && ch != 0xE1) return true;
+  }
+  return false;
+}
+
 // texto Outfit centralizado em cx (h = altura da linha, com as descendentes)
 static void otxC(int cx, int y, int h, uint16_t c, const char *s, uint16_t bg) {
+  if (otxNeedsPixel(s)) {
+    int sz = textW(s, 2) <= 220 ? 2 : 1;
+    int w = textW(s, sz);
+    G->fillRect(cx - w / 2, y, w, h, bg);
+    textC(cx, y + (h - 8 * sz) / 2, sz, c, s);
+    return;
+  }
   vecText(VF_OUTFIT_TXT, cx - vecWidth(VF_OUTFIT_TXT, s, h) / 2, y, h, s, c, bg);
 }
 

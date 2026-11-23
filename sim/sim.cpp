@@ -417,6 +417,7 @@ static int checkIncremental(const char *name, UiState s, bool pomo) {
       if (++s.now.tm_sec >= 60) { s.now.tm_sec = 0; if (++s.now.tm_min >= 60) { s.now.tm_min = 0; s.now.tm_hour = (s.now.tm_hour + 1) % 24; } }
       if (step == 50) { s.wx.t = 9.6f; s.wx.code = 63; s.wx.tmin = 7; s.wx.tmax = 12; s.wx.version++; }
       if (step == 80) s.today++;
+      if (step == 100) { s.now.tm_wday = (s.now.tm_wday + 1) % 7; s.now.tm_mday++; }
       if (step == 110) { s.weatherOn = false; }
       if (step == 125) s.today = s.dailyGoal;      // meta batida: tomate comemorando
     }
@@ -1350,23 +1351,233 @@ static int checkSetupQr() {
   return fails;
 }
 
-static int checkExtraLang() {
+// Toda entrada de um e dois bytes, mais cadeias maiores reproduzíveis, passa pelos três decodificadores.
+// Cada cadeia mora numa alocação do tamanho exato para o ASan enxergar qualquer leitura depois do NUL.
+static int testDecodificadorUtf8() {
+  int fails = 0;
+  Frame f;
+  uiBegin(&f);
+  const uint16_t cor = uiRgb(255, 255, 255);
+  auto exercita = [&](const unsigned char *bytes, size_t n) {
+    char *s = (char *)malloc(n + 1);
+    if (!s) { fails++; return; }
+    memcpy(s, bytes, n);
+    s[n] = 0;
+    (void)textW(s, 1);
+    text(0, 0, 1, cor, s);
+    (void)vecWidth(VF_OUTFIT_TXT, s, 20);
+    free(s);
+  };
+  for (int a = 1; a <= 0xFF; a++)
+    for (int b = 0; b <= 0xFF; b++) {
+      unsigned char s[2] = {(unsigned char)a, (unsigned char)b};
+      exercita(s, b ? 2 : 1);
+    }
+  uint32_t rnd = 0x51A7C0DEu;
+  for (int caso = 0; caso < 5000; caso++) {
+    rnd = rnd * 1664525u + 1013904223u;
+    size_t n = 3 + rnd % 6;
+    unsigned char s[8];
+    for (size_t i = 0; i < n; i++) {
+      rnd = rnd * 1664525u + 1013904223u;
+      s[i] = 1 + (rnd % 255);  // sem NUL interno: a alocação termina exatamente depois do último byte
+    }
+    exercita(s, n);
+  }
+  printf("decodificador UTF-8: %s (65280 sequencias de 1/2 bytes e 5000 aleatorias nos 3 caminhos)\n", fails ? "FALHOU" : "ok");
+  return fails;
+}
+
+// O texto nativo precisa selecionar o glifo CP437/cirílico correto, não apenas avançar a largura certa.
+static int testGlifosTextoUtf8() {
+  int fails = 0;
+  struct Caso { const char *utf8; uint16_t glifo; } casos[] = {
+    {"\xC3\xA4", 0x84}, {"\xC3\xB6", 0x94}, {"\xC3\xBC", 0x81}, {"\xC3\x9F", 0xE1},
+    {"\xC3\x84", 0x8E}, {"\xC3\x96", 0x99}, {"\xC3\x9C", 0x9A}, {"\xD0\x90", 0x100}
+  };
+  const uint16_t cor = uiRgb(243, 231, 201);
+  for (int sz = 1; sz <= 2; sz++)
+    for (const Caso &caso : casos) {
+      Frame a, b;
+      uiBegin(&a);
+      text(17, 23, sz, cor, caso.utf8);
+      uiBegin(&b);
+      if (caso.glifo >= 0x100) uiDrawCyr(17, 23, caso.glifo - 0x100, cor, sz);
+      else { b.cp437(true); b.drawChar(17, 23, caso.glifo, cor, cor, sz); }
+      if (memcmp(a.px, b.px, sizeof a.px)) {
+        printf("glifo UTF-8 %04x tamanho %d FALHOU\n", caso.glifo, sz);
+        fails++;
+      }
+    }
+  printf("glifos do texto UTF-8: %s (alemao CP437 e А cirilico, tamanhos 1 e 2)\n", fails ? "FALHOU" : "ok");
+  return fails;
+}
+
+static const uint8_t TEMAS_IDIOMA[] = {THEME_WEATHER, THEME_FLIP, THEME_NEON, THEME_FORECAST, THEME_TOMATO,
+                                       THEME_ANALOG, THEME_LCD, THEME_WORLD, THEME_FORECAST_CARDS,
+                                       THEME_FORECAST_LCD, THEME_WORLD_WATCH};
+static const char *NOMES_IDIOMA[] = {"clima", "flip", "neon", "previsao", "tomate", "analogico", "lcd-retro",
+                                     "mundo", "previsao-cartoes", "previsao-lcd", "mundo-relogio"};
+
+// A tela já desenhada troca de idioma no mesmo framebuffer. uiSetLang invalida os caches porque os textos podem mudar
+// de largura; cada resultado é comparado com uma referência desenhada do zero no mesmo idioma.
+static int testTrocaIdiomaAoVivo() {
+  int fails = 0;
+  const uint8_t inicial = uiLang, seq[] = {0, 4, 3, 2, 1, 0};
+  for (size_t t = 0; t < sizeof TEMAS_IDIOMA / sizeof TEMAS_IDIOMA[0]; t++) {
+    UiState st = base(14, 37, 25);
+    st.now.tm_mon = 2; st.now.tm_mday = 16; st.now.tm_wday = 1; st.theme = TEMAS_IDIOMA[t];
+    Frame *ref[sizeof seq] = {};
+    for (size_t k = 0; k < sizeof seq; k++) {
+      ref[k] = new Frame();
+      uiSetLang(seq[k]);
+      uiBegin(ref[k]);
+      uiRenderClock(st);
+    }
+    Frame inc;
+    uiSetLang(seq[0]);
+    uiBegin(&inc);
+    uiRenderClock(st);
+    for (size_t k = 0; k < sizeof seq; k++) {
+      if (k) { uiSetLang(seq[k]); uiRenderClock(st); }
+      if (memcmp(inc.px, ref[k]->px, sizeof inc.px)) {
+        printf("troca de idioma %-18s passo %zu (%d -> %d) FALHOU\n", NOMES_IDIOMA[t], k, k ? seq[k - 1] : seq[k], seq[k]);
+        fails++;
+      }
+      delete ref[k];
+    }
+  }
+  uiSetLang(inicial);
+  printf("troca de idioma ao vivo: %s (pt -> ru -> de -> es -> en -> pt em 11 mostradores)\n", fails ? "FALHOU" : "ok");
+  return fails;
+}
+
+// Pacote mínimo com os três campos localizados: a camada muda de largura entre idiomas e de conteúdo entre dias.
+static int testPacoteDataPixel() {
+  int fails = 0;
+  const uint8_t inicial = uiLang, seq[] = {3, 4, 0};
+  std::string js = R"({"format":2,"bg":"#081018","layers":[{"type":"text","x":120,"y":80,"font":"pixel","size":2,"align":"center","color":"#ffffff","text":"{WD} {DD} {MON}"}]})";
+  char err[96] = "";
+  if (!facePackLoad((char *)js.c_str(), js.size(), err, sizeof err)) {
+    printf("pacote de data pixel FALHOU ao carregar: %s\n", err);
+    uiSetLang(inicial);
+    return 1;
+  }
+  UiState st = base(14, 37, 0);
+  st.theme = THEME_PACK; st.now.tm_mon = 2; st.now.tm_mday = 16; st.now.tm_wday = 1;
+  Frame inc, fresh;
+  for (size_t k = 0; k < sizeof seq; k++) {
+    if (k) { st.now.tm_mday++; st.now.tm_wday = (st.now.tm_wday + 1) % 7; }
+    uiSetLang(seq[k]);
+    uiBegin(&inc);
+    facePackRender(st, k == 0);
+    uiBegin(&fresh);
+    facePackRender(st, true);
+    if (memcmp(inc.px, fresh.px, sizeof inc.px)) {
+      printf("pacote de data pixel lang %d dia %d FALHOU no incremental\n", seq[k], st.now.tm_mday);
+      fails++;
+    }
+  }
+  facePackUnload();
+  uiSetLang(inicial);
+  printf("pacote de data pixel: %s ({WD} {DD} {MON}, de -> ru -> pt com avanco do dia)\n", fails ? "FALHOU" : "ok");
+  return fails;
+}
+
+static bool mesmaArea(const Frame &a, const Frame &b, int x, int y, int w, int h) {
+  for (int r = 0; r < h; r++)
+    if (memcmp(a.px + (y + r) * 240 + x, b.px + (y + r) * 240 + x, w * sizeof(uint16_t))) return false;
+  return true;
+}
+
+// Nos dois Mundo, isola só os segmentos da data. 11/03 dá uma referência válida 03/11 ao trocar dia e mês em pt.
+static int testOrdemDataMundo() {
+  int fails = 0;
+  const uint8_t inicial = uiLang;
+  const uint8_t temas[] = {THEME_WORLD, THEME_WORLD_WATCH};
+  const char *nomes[] = {"mundo", "mundo-relogio"};
+  for (int t = 0; t < 2; t++) {
+    UiState st = base(14, 37, 25);
+    st.theme = temas[t]; st.now.tm_mon = 2; st.now.tm_mday = 11; st.now.tm_wday = 1;
+    Frame diaMes, mesDia;
+    uiSetLang(0); uiBegin(&diaMes); uiRenderClock(st);
+    UiState inv = st;
+    inv.now.tm_mon = 10; inv.now.tm_mday = 3;  // pt desenha 03-11, a referência do inglês para 11/03
+    uiSetLang(0); uiBegin(&mesDia); uiRenderClock(inv);
+    const int x = t ? 14 : 62, y = t ? 121 : 119, w = t ? 76 : 58, h = t ? 21 : 16;
+    for (int lang : {0, 2, 3, 4, 1}) {
+      Frame got;
+      uiSetLang(lang); uiBegin(&got); uiRenderClock(st);
+      const Frame &esperado = lang == 1 ? mesDia : diaMes;
+      if (!mesmaArea(got, esperado, x, y, w, h)) {
+        printf("ordem da data %s lang %d FALHOU\n", nomes[t], lang);
+        fails++;
+      }
+    }
+  }
+  uiSetLang(inicial);
+  printf("ordem da data nos Mundo: %s (pt/es/de/ru dia-mes; en mes-dia, somente nos segmentos)\n", fails ? "FALHOU" : "ok");
+  return fails;
+}
+
+static int testIdiomaTela() {
   int fails = 0;
   const uint8_t lang = uiLang;
+
+  fails += testDecodificadorUtf8();
+  fails += testGlifosTextoUtf8();
+
+  for (int sz = 1; sz <= 3; sz++) {
+    if (textW(u8"Müller", sz) != textW("Muller", sz)) fails++;
+    if (textW(u8"Москва", sz) != textW("Moskva", sz)) fails++;
+    if (vecWidth(VF_OUTFIT_TXT, u8"Müller Größe", 12 * sz) != vecWidth(VF_OUTFIT_TXT, "Muller Grose", 12 * sz)) fails++;
+    if (vecWidth(VF_OUTFIT_TXT, u8"Москва", 12 * sz) != 0) fails++;
+  }
+
   uiSetLang(3);
-  fails += uiLang != 3 || strcmp(WD[1], "MON") || strcmp(MO[3], "APR") || strcmp(trP(PSTR("PT"), PSTR("EN"), PSTR("ES")), "EN");
+  fails += uiLang != 3 || strcmp(WD[1], "MO") || strcmp(MO[2], "MRZ") || strcmp(trP(PSTR("PT"), PSTR("EN"), PSTR("ES")), "EN");
   uiSetLang(4);
-  fails += uiLang != 4 || strcmp(WD[1], "MON") || strcmp(MO[3], "APR") || strcmp(trP(PSTR("PT"), PSTR("EN"), PSTR("ES")), "EN");
+  fails += uiLang != 4 || strcmp(WD[1], u8"ПН") || strcmp(MO[2], u8"МАР") || strcmp(trP(PSTR("PT"), PSTR("EN"), PSTR("ES")), "EN");
+  const char *dias[] = {"SEG", "MON", "LUN"};
+  const char *meses[] = {"MAR", "MAR", "MAR"};
+  for (int l = 0; l < 3; l++) {
+    uiSetLang(l);
+    fails += strcmp(WD[1], dias[l]) || strcmp(MO[2], meses[l]);
+  }
   uiSetLang(5);
   fails += uiLang != 0 || strcmp(WD[1], "SEG") || strcmp(MO[3], "ABR") || strcmp(trP(PSTR("PT"), PSTR("EN"), PSTR("ES")), "PT");
+
+  {  // sequências cortadas e bytes soltos: o sanitizer acusa qualquer leitura fora da string
+    const char c3[] = {(char)0xC3, 0}, d0[] = {(char)0xD0, 0};
+    const char e2[] = {(char)0xE2, (char)0x82, 0}, solto[] = {(char)0x80, 'A', 0};
+    Frame f;
+    uiBegin(&f);
+    const char *ruins[] = {c3, d0, e2, solto};
+    fails += textW(c3, 2) != 0 || textW(d0, 2) != 0 || textW(e2, 2) != 0 || textW(solto, 2) != 10;
+    for (int i = 0; i < 4; i++) text(2, i * 18, 2, uiRgb(255, 255, 255), ruins[i]);
+  }
+
+  for (int l = 3; l <= 4; l++) {
+    uiSetLang(l);
+    for (size_t i = 0; i < sizeof TEMAS_IDIOMA / sizeof TEMAS_IDIOMA[0]; i++) {
+      UiState st = base(14, 37, 25);
+      st.now.tm_mon = 2; st.now.tm_mday = 16; st.now.tm_wday = 1; st.theme = TEMAS_IDIOMA[i];
+      char nome[64];
+      snprintf(nome, sizeof nome, "idioma-%s-%s", l == 3 ? "de" : "ru", NOMES_IDIOMA[i]);
+      shot(nome, st, false);
+    }
+  }
+  fails += testTrocaIdiomaAoVivo();
+  fails += testPacoteDataPixel();
+  fails += testOrdemDataMundo();
   uiSetLang(lang);
-  printf("idiomas extras 3/4 em ingles e 5 recusado: %s\n", fails ? "FALHOU" : "ok");
+  printf("idioma tela: %s (decodificador, glifos, troca ao vivo, pacote de data e ordem nos Mundo)\n", fails ? "FALHOU" : "ok");
   return fails;
 }
 #include "out/tint_test.inc"
 
 int main() {
-  if (const char *l = getenv("SIM_LANG")) uiSetLang(atoi(l));  // 1 = inglês, 2 = espanhol (as prévias oficiais ficam em português)
+  if (const char *l = getenv("SIM_LANG")) uiSetLang(atoi(l));  // 1 inglês, 2 espanhol, 3 alemão, 4 russo
   // ---- relógio: temas ----
   UiState s = base(14, 37, 25);
   s.theme = THEME_MATRIX;              shot("01_matriz", s, false);
@@ -1470,7 +1681,7 @@ int main() {
 
   // ---- redesenho incremental ----
   int fails = 0;
-  fails += checkExtraLang();
+  fails += testIdiomaTela();
   fails += checkSetupQr();
   for (int t = 0; t < THEME_COUNT; t++) {
     UiState st = base(14, 58, 50);
@@ -1486,6 +1697,20 @@ int main() {
     }
     slug[k] = 0;
     fails += checkIncremental(slug, st, false) != 0;
+  }
+  {  // nomes de dia/mês mudam de largura: de/ru também precisam apagar todos os pixels antigos
+    const uint8_t idiomaInicial = uiLang;
+    for (int l = 3; l <= 4; l++) {
+      uiSetLang(l);
+      for (int t = 0; t < THEME_COUNT; t++) {
+        UiState st = base(14, 58, 50);
+        st.theme = t;
+        char nome[32];
+        snprintf(nome, sizeof nome, "%s_%02d", l == 3 ? "de" : "ru", t);
+        fails += checkIncremental(nome, st, false) != 0;
+      }
+    }
+    uiSetLang(idiomaInicial);
   }
   fails += checkIncremental("pomodoro", p, true) != 0;
   fails += checkTransitions(p);

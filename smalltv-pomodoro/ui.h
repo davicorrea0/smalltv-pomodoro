@@ -93,6 +93,7 @@ void uiSprite(const UiSprite *s, int x, int y, uint8_t scale = 1, uint8_t frame 
 uint8_t uiSpriteFrame(const UiSprite *s, uint32_t ms);  // quadro da animação no instante ms
 
 void uiBegin(Adafruit_GFX *gfx);
+void uiDrawCyr(int x, int y, int i, uint16_t fg, int sz);  // glifo cirílico 5x8 compartilhado
 // Chamado entre os quadros de animação (ex.: virada do Flip) para ceder tempo ao Wi-Fi.
 extern void (*uiFrameHook)();
 // Antes de desenhar cada tela: true só para os dois mostradores LCD.
@@ -144,7 +145,7 @@ bool uiScrollActive();
 inline uint16_t uiScrollSad(bool flip, int rows, int offset) {
   return (uint16_t)(flip && offset ? rows - offset : offset);
 }
-void uiSetLang(uint8_t lang);                // textos da tela: 0 português, 1 inglês, 2 espanhol (3 alemão e 4 russo usam inglês por enquanto)
+void uiSetLang(uint8_t lang);                // 0 português, 1 inglês, 2 espanhol; em 3/4 só datas são de/ru por enquanto
 extern uint8_t uiLang;
 // tr("pt", "en", "es"): os três textos ficam na flash (PSTR) e o do idioma atual é copiado para um
 // de 6 buffers rotativos de 48 bytes (RAM é escassa: o GIF do álbum precisa de ~22 KB contíguos).
