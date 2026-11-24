@@ -8,6 +8,8 @@
 #ifndef WS_UNPATCHED
 #include "ws_parse.h"
 #else
+#define WS_HEADERS_MS 5000
+#define WS_LINE_MAX 1024
 #define WS_FORM_MAX 4096
 #define WS_BODY_MAX 4096
 #endif
@@ -106,6 +108,51 @@ static void ok_json() {
   WiFiClient c; Rec h; Srv s(h);
   c.segs.push_back({0, pedido("{\"devicetype\":\"x\"}", "application/json", B, "PUT")});
   CONFERE(s.parse(c) == OK && s.arg("plain") == "{\"devicetype\":\"x\"}", "corpo JSON do Alexa chega em plain");
+}
+
+// ---- C6: linhas limitadas antes do login ----
+static std::string getComCabecalho(const std::string& linha) {
+  return "GET /x HTTP/1.1\r\n" + linha + "\r\n\r\n";
+}
+static void c6_linha_requisicao() {
+  novo();
+  WiFiClient c; Rec h; Srv s(h);
+  std::string linha = "GET /" + std::string(WS_LINE_MAX + 1 - 14, 'a') + " HTTP/1.1";  // 1025 bytes
+  CONFERE(linha.size() == WS_LINE_MAX + 1, "a linha de teste tem 1025 bytes");
+  c.segs.push_back({0, linha + "\r\n\r\n"});
+  CONFERE(s.parse(c) == PARAR, "linha da requisição com 1025 bytes: recusada");
+  CONFERE(c.consumed <= WS_LINE_MAX + 1, "sem ler o restante da linha gigante");
+}
+static void c6_cabecalho() {
+  novo();
+  { WiFiClient c; Rec h; Srv s(h);
+    std::string linha = "X-Test: " + std::string(WS_LINE_MAX + 1 - 8, 'a');
+    CONFERE(linha.size() == WS_LINE_MAX + 1, "o cabeçalho grande tem 1025 bytes");
+    c.segs.push_back({0, getComCabecalho(linha)});
+    CONFERE(s.parse(c) == PARAR, "cabeçalho com 1025 bytes: recusado"); }
+  { WiFiClient c; Rec h; Srv s(h);
+    std::string linha = "X-Test: " + std::string(WS_LINE_MAX - 8, 'a');
+    CONFERE(linha.size() == WS_LINE_MAX, "o cabeçalho no limite tem 1024 bytes");
+    c.segs.push_back({0, getComCabecalho(linha)});
+    CONFERE(s.parse(c) == OK, "cabeçalho com 1024 bytes: aceito"); }
+}
+static void c6_nome_arquivo() {
+  novo();
+  WiFiClient c; Rec h; Srv s(h);
+  std::string nome(255, 'f');
+  std::string corpo = "--" + B + "\r\nContent-Disposition: form-data; name=\"foto\"; filename=\"" + nome + "\"\r\n"
+                      "Content-Type: image/jpeg\r\n\r\nx\r\n--" + B + "--\r\n";
+  c.segs.push_back({0, pedido(corpo, "multipart")});
+  CONFERE(s.parse(c) == OK, "multipart com nome de arquivo de 255 bytes: aceito");
+  CONFERE(h.dados == "x", "o arquivo com nome comprido chega ao handler");
+}
+static void c6_sem_cr() {
+  novo();
+  WiFiClient c; Rec h; Srv s(h);
+  c.segs.push_back({0, "GET /x HTTP/1.1"});  // conexão fica aberta, sem fim de linha
+  CONFERE(s.parse(c) == PARAR, "linha sem CR com conexão aberta: recusada");
+  CONFERE(wsNow >= WS_HEADERS_MS && wsNow < WS_HEADERS_MS + 100, "volta no prazo total de 5 s");
+  CONFERE(c.timeout == 5000, "o timeout original do cliente é restaurado");
 }
 
 // ---- C1: 33 campos comuns ----
@@ -216,6 +263,10 @@ int main(int argc, char** argv) {
   std::map<std::string, void (*)()> casos = {{"ok_arquivo_e_campo", ok_arquivo_e_campo}, {"ok_dois_arquivos", ok_dois_arquivos}, {"ok_envio_lento", ok_envio_lento},
       {"ok_json", ok_json}, {"c1", c1}, {"c2_fechado", c2_fechado}, {"c2_fechado_cabecalho", c2_fechado_cabecalho}, {"c2_mudo", c2_mudo}, {"c2_lixo", c2_lixo},
       {"c2_valor_enorme", c2_valor_enorme}, {"c4_mudo", c4_mudo}, {"c4_fechado", c4_fechado}, {"c3", c3}, {"c5", c5}};
+  casos["c6_linha_requisicao"] = c6_linha_requisicao;
+  casos["c6_cabecalho"] = c6_cabecalho;
+  casos["c6_nome_arquivo"] = c6_nome_arquivo;
+  casos["c6_sem_cr"] = c6_sem_cr;
   std::string quer = argc > 1 ? argv[1] : "todos";
   for (auto& k : casos) {
     if (quer != "todos" && quer != k.first) continue;

@@ -1,14 +1,14 @@
 // ws_parse.h — o analisador de requisições do ESP8266WebServer (core 3.1.2) com limites.
 //
 // Por quê: o `Parsing-impl.h` do core roda dentro do `handleClient`, antes de qualquer guarda (hostOk, panelOk, senha),
-// e tem quatro defeitos que um vizinho na rede explora sem login:
+// e tem seis defeitos que um vizinho na rede explora sem login:
 //  C1  multipart com mais de 32 campos comuns escreve além do `_postArgs` (WEBSERVER_MAX_POST_ARGS) no heap;
 //  C2  multipart cortado com o cliente fechando o socket: os `while (1)` só saem ao ver o boundary e o laço principal
 //      nunca mais volta (tela, timer e Wi-Fi do portal param até o relógio ser religado);
 //  C3  corpo que não é multipart é lido inteiro em `String`, sem limite de Content-Length;
-//  C4  `_uploadReadByte` espera sem prazo (celular dorme no meio de um envio, ou corpo enorme sem senha).
-// Também limita o tamanho do boundary (o core o copia para um array na pilha: boundary de milhares de bytes estoura a
-// pilha de 4 KB do laço).
+//  C4  `_uploadReadByte` espera sem prazo (celular dorme no meio de um envio, ou corpo enorme sem senha);
+//  C5  boundary de milhares de bytes estoura a pilha de 4 KB do laço;
+//  C6  linhas sem teto esgotam o heap antes do login.
 //
 // Como: especializações explícitas de três métodos de ESP8266WebServerTemplate<WiFiServer>. A especialização troca a
 // definição do template: a original deixa de ser compilada, então o custo é só o dos limites. Não mexe no core
@@ -27,18 +27,53 @@
 #include <ESP8266WebServer.h>
 
 #ifndef ARDUINO_ESP8266_RELEASE_3_1_2
-#error "ws_parse.h copia o Parsing-impl.h do core 3.1.2: revise a cópia contra o core novo (ou tire-a se ele já corrige C1-C5)"
+#error "ws_parse.h copia o Parsing-impl.h do core 3.1.2: revise a cópia contra o core novo (ou tire-a se ele já corrige C1-C6)"
 #endif
 
 // Limites (bytes ou ms). Os formulários do painel mandam arquivos em multipart (face, painel, foto, firmware) e o
 // resto em urlencoded: o maior é o /api/statsimport com 371 dias (~2,3 KB no pior caso, 371 x "255%2C") e o "Ajustes"
 // da restauração, com a configuração inteira e o rodízio de 300 caracteres (~1,1 KB).
 #define WS_IDLE_MS 10000UL     // sem receber nenhum byte por tanto tempo: larga a requisição
+#define WS_HEADERS_MS 5000UL   // prazo total da linha inicial e dos cabeçalhos, antes do login
+#define WS_LINE_MAX 1024       // maior linha aceita (inclui Content-Disposition com nome comprido)
 #define WS_FORM_MAX 4096       // multipart: cabeçalhos das partes e campos comuns (os arquivos não contam)
 #define WS_BODY_MAX 4096       // corpo que não é multipart (POST urlencoded, JSON do Alexa)
 #define WS_BOUNDARY_MAX 80     // o RFC 2046 limita o boundary a 70
 
 namespace esp8266webserver {
+
+// PATCH C6: limita a linha antes de guardá-la; o prazo total é usado só nos cabeçalhos da requisição
+static bool wsReadLine(WiFiClient& client, String& out, size_t max, uint32_t started = 0, uint32_t total = 0) {
+  out.clear();
+  out.reserve(max);
+  const unsigned long oldTimeout = client.getTimeout();
+  auto readByte = [&](char& ch) -> bool {
+    unsigned long timeout = oldTimeout;
+    if (total) {
+      uint32_t elapsed = (uint32_t)(millis() - started);
+      if (elapsed >= total) return false;
+      uint32_t left = total - elapsed;
+      if (timeout > left) timeout = left;
+    }
+    int ready = client.read();
+    if (ready >= 0) {
+      ch = (char)ready;
+      return true;
+    }
+    if (timeout != oldTimeout) client.setTimeout(timeout);
+    bool ok = client.readBytes(&ch, 1) == 1;
+    if (timeout != oldTimeout) client.setTimeout(oldTimeout);
+    return ok;
+  };
+
+  char ch;
+  while (readByte(ch)) {
+    if (ch == '\r') return readByte(ch) && ch == '\n';
+    if (out.length() >= max) return false;
+    out += ch;
+  }
+  return false;
+}
 
 template <>
 inline int ESP8266WebServerTemplate<WiFiServer>::_uploadReadByte(ClientType& client) {
@@ -61,8 +96,7 @@ inline bool ESP8266WebServerTemplate<WiFiServer>::_parseForm(ClientType& client,
   uint32_t last = millis();
   size_t used = 0;
   auto readLine = [&](String& out) -> bool {
-    out = client.readStringUntil('\r');
-    client.readStringUntil('\n');
+    if (!wsReadLine(client, out, WS_LINE_MAX)) return false;
     used += out.length() + 2;
     if (out.length()) last = millis();
     return used <= WS_FORM_MAX && (out.length() || (client.connected() && (uint32_t)(millis() - last) < WS_IDLE_MS));
@@ -75,12 +109,13 @@ inline bool ESP8266WebServerTemplate<WiFiServer>::_parseForm(ClientType& client,
   };
   String line;
   int retry = 0;
+  bool lineOk;
   do {
-    line = client.readStringUntil('\r');
+    lineOk = wsReadLine(client, line, WS_LINE_MAX);
     ++retry;
   } while (line.length() == 0 && retry < 3);
+  if (!lineOk) return false;
 
-  client.readStringUntil('\n');
   //start reading the form
   if (line == ("--"+boundary)){
     if(_postArgs) delete[] _postArgs;
@@ -226,8 +261,9 @@ inline bool ESP8266WebServerTemplate<WiFiServer>::_parseForm(ClientType& client,
 template <>
 inline ESP8266WebServerTemplate<WiFiServer>::ClientFuture ESP8266WebServerTemplate<WiFiServer>::_parseRequest(ClientType& client) {
   // Read the first line of HTTP request
-  String req = client.readStringUntil('\r');
-  client.readStringUntil('\n');
+  uint32_t headersStarted = millis();
+  String req;
+  if (!wsReadLine(client, req, WS_LINE_MAX, headersStarted, WS_HEADERS_MS)) return CLIENT_MUST_STOP;
   //reset header value
   for (int i = 0; i < _headerKeysCount; ++i) {
     _currentHeaders[i].value.clear();
@@ -299,8 +335,7 @@ inline ESP8266WebServerTemplate<WiFiServer>::ClientFuture ESP8266WebServerTempla
     uint32_t contentLength = 0;
     //parse headers
     while(1){
-      req = client.readStringUntil('\r');
-      client.readStringUntil('\n');
+      if (!wsReadLine(client, req, WS_LINE_MAX, headersStarted, WS_HEADERS_MS)) return CLIENT_MUST_STOP;
       if (req.isEmpty()) break; //no more headers
       int headerDiv = req.indexOf(':');
       if (headerDiv == -1){
@@ -376,8 +411,7 @@ inline ESP8266WebServerTemplate<WiFiServer>::ClientFuture ESP8266WebServerTempla
     String headerValue;
     //parse headers
     while(1){
-      req = client.readStringUntil('\r');
-      client.readStringUntil('\n');
+      if (!wsReadLine(client, req, WS_LINE_MAX, headersStarted, WS_HEADERS_MS)) return CLIENT_MUST_STOP;
       if (req.isEmpty()) break;//no moar headers
       int headerDiv = req.indexOf(':');
       if (headerDiv == -1){

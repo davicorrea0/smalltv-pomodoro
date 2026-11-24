@@ -10,6 +10,7 @@ struct WiFiClient {
   uint32_t timeout = 5000;         // prazo de cada readStringUntil
   uint64_t consumed = 0;
   void setTimeout(uint32_t t) { timeout = t; }
+  uint32_t getTimeout() const { return timeout; }
   int available() {
     if (junk && seg >= segs.size()) return 1 << 20;
     size_t n = 0;
@@ -40,6 +41,15 @@ struct WiFiClient {
       yield();
     } while ((uint32_t)(wsNow - t0) < timeout);
     return -1;
+  }
+  size_t readBytes(char* out, size_t len) {
+    size_t n = 0;
+    while (n < len) {
+      int c = timedRead();
+      if (c < 0) break;
+      out[n++] = (char)c;
+    }
+    return n;
   }
   String readStringUntil(char term) {
     String s;
