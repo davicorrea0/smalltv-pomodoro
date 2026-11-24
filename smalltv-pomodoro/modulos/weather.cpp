@@ -1,5 +1,6 @@
 // Cliente HTTP mínimo (DNS assíncrono) e busca do clima.
 #include "../app.h"
+#include "http_body.h"
 
 int16_t sunRise = -1, sunSet = -1;  // minutos do dia (hora local), da última busca do clima
 
@@ -56,7 +57,7 @@ void appendFixed(String &out, float value, uint8_t digits) {
 static uint32_t httpDateEpoch = 0;  // cabeçalho Date da última resposta (0 = não veio)
 
 // Devolve também HTTP_WAIT (buscando o nome: nada foi enviado, tente no próximo laço) e HTTP_DNS (nome não resolveu).
-// readMs vale para a primeira resposta e para cada pausa na leitura do corpo (o clima lê em pedaços).
+// readMs vale para o status e os cabeçalhos; o corpo do clima tem prazo próprio.
 int httpGet(WiFiClient &c, const String &url, uint16_t readMs) {
   httpDateEpoch = 0;
   if (!safeHttpUrl(url.c_str(), url.length())) return -1;
@@ -140,7 +141,8 @@ static bool fetchWeather() {
   filter["daily"]["sunrise"] = true;
   filter["daily"]["sunset"] = true;
   JsonDocument doc;
-  DeserializationError err = deserializeJson(doc, client, DeserializationOption::Filter(filter));
+  HttpBody body{client, millis(), HTTP_BODY_MAX};  // prazo e teto próprios do corpo
+  DeserializationError err = deserializeJson(doc, body, DeserializationOption::Filter(filter));
   client.stop();
   if (err || doc["current"]["temperature_2m"].isNull()) return false;
   wx.t = doc["current"]["temperature_2m"];
