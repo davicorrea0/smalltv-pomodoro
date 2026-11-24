@@ -1176,16 +1176,19 @@ void setupWeb() {
       // sem remove antes: o rename do LittleFS (lfs_rename) troca o destino num commit só; apagar antes abria uma janela
       // em que a queda de energia deixava o mostrador sem nenhuma das duas versões
       renamed = LittleFS.rename("/faces/_novo.json", "/faces/" + id + ".json");
-      LittleFS.remove("/faces/" + id + ".png");
-      if (LittleFS.exists("/faces/_novo.png")) LittleFS.rename("/faces/_novo.png", "/faces/" + id + ".png");
-      File t = LittleFS.open("/faces/" + id + ".txt", "w");  // metadados para a lista do painel
-      if (t) {
-        char campos[100];  // 4ª linha: os campos de fora que ele lê (miniapp); firmware antigo lê só as 3 primeiras
-        facePackFields(campos, sizeof campos);
-        t.printf_P(PSTR("%s\n%s\n%s\n%s\n"), facePackName(), facePackDesc(), facePackAuthor(), campos);
-        t.close();
+      if (renamed) {
+        LittleFS.remove("/faces/" + id + ".png");
+        if (LittleFS.exists("/faces/_novo.png")) LittleFS.rename("/faces/_novo.png", "/faces/" + id + ".png");
+        File t = LittleFS.open("/faces/" + id + ".txt", "w");  // metadados para a lista do painel
+        if (t) {
+          char campos[100];  // 4ª linha: os campos de fora que ele lê (miniapp); firmware antigo lê só as 3 primeiras
+          facePackFields(campos, sizeof campos);
+          t.printf_P(PSTR("%s\n%s\n%s\n%s\n"), facePackName(), facePackDesc(), facePackAuthor(), campos);
+          t.close();
+        }
       }
-    } else {
+    }
+    if (!renamed) {
       LittleFS.remove("/faces/_novo.json");
       LittleFS.remove("/faces/_novo.png");
     }
@@ -1194,6 +1197,10 @@ void setupWeb() {
     if (!(renamed && cfg.theme == THEME_PACK && id == cfg.facePkg)) restoreActivePack();
     if (!ok) {
       server.send(400, "text/plain", packUploadError.length() ? packUploadError : String(F("Pacote invalido: ")) + msg);
+      return;
+    }
+    if (!renamed) {
+      server.send_P(500, PSTR("text/plain"), PSTR("Falha ao salvar pacote"));
       return;
     }
     String reply;
