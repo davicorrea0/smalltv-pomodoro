@@ -149,7 +149,10 @@ static void statsWrite(uint16_t day, uint8_t count) {
 
 // histórico (o mais antigo primeiro) para o jardim, as conquistas, o cartão de compartilhar e o backup
 void sendStats() {
-  if (!readOk()) return;
+  // na recuperação dispensa a senha (como /update), mas mantém a conferência de Host do readOk()
+  if (recoveryMode) {
+    if (!hostOk()) { deny(); return; }
+  } else if (!readOk()) return;
   uint8_t d[STATS_DAYS];
   bool ok = stats.magic == STATS_MAGIC && statsRead(d);
   String j;
