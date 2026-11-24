@@ -47,6 +47,27 @@ for (const x of list) if (!x.notas) {  // release sem notas em nenhum lugar: usa
 
 // ---------- página ----------
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+// notas/proximas.json (opcional): o bloco "O que vem por aí" no topo da página, por idioma:
+// {"pt": {"titulo", "lead", "itens": [{"t", "d"}], "link": {"href", "texto"}}, "en": {...}}
+const proxFile = path.join(notasDir, 'proximas.json');
+const PROX = fs.existsSync(proxFile) ? JSON.parse(fs.readFileSync(proxFile, 'utf8')) : null;
+function proximas(code) {
+  const p = PROX && PROX[code];
+  if (!p || !Array.isArray(p.itens) || !p.itens.length) return '';
+  const cards = p.itens.map(i => `        <div class="card feature"><h3>${esc(i.t)}</h3><p>${esc(i.d)}</p></div>`).join('\n');
+  const link = p.link ? `\n      <a class="btn primary" href="${esc(p.link.href)}">${esc(p.link.texto)}</a>` : '';
+  return `  <section class="first" id="${code === 'en' ? 'coming' : 'em-breve'}">
+    <div class="wrap">
+      <h2>${esc(p.titulo)}</h2>
+      <p class="section-lead">${esc(p.lead)}</p>
+      <div class="grid three">
+${cards}
+      </div>${link}
+    </div>
+  </section>
+
+`;
+}
 const L = {
   pt: {
     lang: 'pt-BR', file: 'versoes.html', root: '', title: 'Versões — SmallTV Pomodoro', h1: 'Versões',
@@ -198,7 +219,7 @@ function page(t, code) {
     </div>
   </div>
 
-  <section class="first releases">
+${proximas(code)}  <section class="${proximas(code) ? '' : 'first '}releases">
     <div class="wrap">
       <p class="section-lead">${t.help}</p>
 ${entries.map(e => e.length > 1 ? serie(e, t) : item(e[0], t)).join('\n')}

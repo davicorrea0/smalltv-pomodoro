@@ -44,7 +44,8 @@ jobs:
         run: |
           arduino-cli core update-index --additional-urls "$ESP8266_INDEX"
           arduino-cli core install "$ESP8266_CORE" --additional-urls "$ESP8266_INDEX"
-          arduino-cli lib install "Adafruit GFX Library@1.13.0" "Adafruit ST7735 and ST7789 Library@1.11.0" \
+          # --no-deps: sem isso o ST7789 puxa a GFX mais nova (2.0.0, fontes em src/) por cima da 1.13.0 fixada e o simulador não acha o Adafruit_GFX.h
+          arduino-cli lib install --no-deps "Adafruit GFX Library@1.13.0" "Adafruit ST7735 and ST7789 Library@1.11.0" \
             "Adafruit BusIO@1.17.4" "ArduinoJson@7.4.3"
 
       - name: painel (terser da versão fixa do web/package.json)
