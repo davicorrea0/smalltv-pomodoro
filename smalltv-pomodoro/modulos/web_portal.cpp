@@ -1296,6 +1296,8 @@ void setupWeb() {
     if (fsOk) LittleFS.mkdir("/image");
     rebuildAlbum();
     server.send_P(fsOk ? 200 : 500, PSTR("text/plain"), fsOk ? PSTR("ok") : PSTR("falhou"));
+    delay(300);
+    safeRestart();  // limpa na RAM o que apontava para arquivos apagados (pacote, miniapps, rodízio, avisos)
   });
   // Arquivos de mídia para as miniaturas do painel
   server.on("/fs", HTTP_GET, [] {
