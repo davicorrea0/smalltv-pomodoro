@@ -205,7 +205,7 @@ void alexaApi() {
     server.send(404, "text/plain", "");
     return;
   }
-  if (server.hasHeader("Origin")) {  // o Echo não manda Origin; navegador manda: é outro site tentando mexer no timer
+  if (!hostOk() || server.hasHeader("Origin")) {  // o Echo usa o IP e não manda Origin; outro Host (DNS rebinding) ou Origin é site de fora
     server.send(403, "text/plain", "");
     return;
   }
@@ -281,6 +281,10 @@ void alexaLoop() {
 void sendHueDescription() {
   if (!cfg.alexa) {  // com a Alexa desligada não se anuncia (nem expõe o MAC)
     server.send(404, "text/plain", "");
+    return;
+  }
+  if (!hostOk()) {  // só pelo IP ou .local do relógio (bloqueia DNS rebinding em GET, onde não há Origin)
+    server.send(403, "text/plain", "");
     return;
   }
   String ip = WiFi.localIP().toString(), x;

@@ -41,6 +41,10 @@ for(const name of ['handleUpload','handlePackUpload','handlePanelUpload'])
 }
 const recovery=fn('startRecovery');
 if(!recovery.includes('WiFi.mode(WIFI_AP);')||recovery.includes('WiFi.begin()'))throw Error('recovery must be AP-only');
+{ // Alexa (Hue): bloqueia DNS rebinding em GET e PUT exigindo hostOk() antes de qualquer resposta 200
+ for(const name of ['alexaApi','sendHueDescription']){const b=fn(name),h=b.indexOf('!hostOk()');
+  if(h<0||b.indexOf('server.send(403',h)<0||h>b.indexOf('server.send(200'))throw Error(`${name} must check hostOk() before 200`);}
+}
 { // migração 4M3M→4M2M (storage_stats.cpp): nunca formatar 0x100000 se o LittleFS antigo não montar
  const fm=fn('fsMount');
  const oldDecl=fm.indexOf('FS old('),oldBeg=fm.indexOf('old.begin()',oldDecl);
