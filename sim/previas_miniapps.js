@@ -10,6 +10,7 @@ const MINIAPPS = [
   ['../docs/exemplos/casa-luzes.json', 'miniapps-estados/casa-luzes.json'],
   ['../docs/exemplos/casa-tomadas.json', 'miniapps-estados/casa-tomadas.json'],
   ['apps-seeds/tokensmall.json', 'miniapps-estados/tokensmall.json'],
+  ['apps-seeds/tokensmall-arcade.json', 'miniapps-estados/tokensmall-arcade.json'],
 ];
 
 const T = [];

@@ -97,6 +97,9 @@ g++ -std=c++17 -fsanitize=address,undefined -g -O1 -w -DARDUINO=100 -DARDUINOJSO
 # pacote tokensmall (miniapps/tokensmall): campos empurrados pelo companheiro, "--" na janela sem leitura, incremental x cheio
 g++ -std=c++17 -fsanitize=address,undefined -g -O1 -w -DARDUINO=100 -DARDUINOJSON_ENABLE_ARDUINO_STRING=0 -DARDUINOJSON_ENABLE_ARDUINO_STREAM=0   -DARDUINOJSON_ENABLE_ARDUINO_PRINT=0 -DARDUINOJSON_ENABLE_PROGMEM=0 -Ishim -I"$GFX" -I"$JSON" tokensmall_test.cpp "$FW/facepack.cpp" "$FW/appdata.cpp" "$FW/ui.cpp"   "$FW"/face_*.cpp "$FW/fonts.cpp" "$FW/src/qrcodegen/qrcodegen.cpp" "$GFX/Adafruit_GFX.cpp" -o "$T/tokensmall_test"
 "$T/tokensmall_test" apps-seeds/tokensmall.json
+# pacote tokensmall-arcade: mascotes animados (4 humores por assistente) que reagem so aos 6 campos do companheiro
+g++ -std=c++17 -fsanitize=address,undefined -g -O1 -w -DARDUINO=100 -DARDUINOJSON_ENABLE_ARDUINO_STRING=0 -DARDUINOJSON_ENABLE_ARDUINO_STREAM=0   -DARDUINOJSON_ENABLE_ARDUINO_PRINT=0 -DARDUINOJSON_ENABLE_PROGMEM=0 -Ishim -I"$GFX" -I"$JSON" tokensmall_arcade_test.cpp "$FW/facepack.cpp" "$FW/appdata.cpp" "$FW/ui.cpp"   "$FW"/face_*.cpp "$FW/fonts.cpp" "$FW/src/qrcodegen/qrcodegen.cpp" "$GFX/Adafruit_GFX.cpp" -o "$T/tokensmall_arcade_test"
+"$T/tokensmall_arcade_test" apps-seeds/tokensmall-arcade.json miniapps-estados/tokensmall-arcade.json
 # saída completa em arquivo; um erro em qualquer um interrompe tudo (set -e) e mostra o fim do log
 for f in gif jpeg; do
   if ! bash "test-$f.sh" "$f-seeds" "$N" > "$T/$f.log" 2>&1; then

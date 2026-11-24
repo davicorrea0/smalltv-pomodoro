@@ -1,0 +1,12 @@
+{
+ "capa": 1,
+ "estados": [
+  {"n":"Sem dados","en":"No data","es":"Sin datos","envios":[]},
+  {"n":"Trabalhando","en":"Working","es":"Trabajando","envios":[{"ttl":900,"values":{"tk_c5":"42","tk_c5r":"2h13","tk_c7":"71% 3d","tk_x5":"63","tk_x5r":"3h20","tk_x7":"12% 5d"}}]},
+  {"n":"Perto do limite","en":"Near the limit","es":"Cerca del límite","envios":[{"ttl":900,"values":{"tk_c5":"93","tk_c5r":"38m","tk_c7":"91% 2d","tk_x5":"90","tk_x5r":"1h05","tk_x7":"35% 3d"}}]},
+  {"n":"Limite atingido","en":"Limit reached","es":"Límite alcanzado","envios":[{"ttl":900,"values":{"tk_c5":"100","tk_c5r":"1h20","tk_c7":"100% 23h","tk_x5":"100","tk_x5r":"45m","tk_x7":"80% 3d"}}]},
+  {"n":"Descansado","en":"Rested","es":"Descansado","envios":[{"ttl":900,"values":{"tk_c5":"0","tk_c5r":"5h59","tk_c7":"7% 6d","tk_x5":"0","tk_x5r":"5h59","tk_x7":"0% 6d"}}]},
+  {"n":"Uma janela sem leitura","en":"One window unread","es":"Una ventana sin lectura","envios":[{"ttl":900,"values":{"tk_c5":"","tk_c5r":"","tk_c7":"--","tk_x5":"42","tk_x5r":"2h13","tk_x7":"71% 3d"}}]},
+  {"n":"Claude no limite, Codex descansado","en":"Claude maxed, Codex rested","es":"Claude al límite, Codex descansado","envios":[{"ttl":900,"values":{"tk_c5":"100","tk_c5r":"20m","tk_c7":"60% 2d","tk_x5":"0","tk_x5r":"4h10","tk_x7":"3% 6d"}}]}
+ ]
+}
