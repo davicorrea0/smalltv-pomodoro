@@ -48,39 +48,91 @@ class Formato(unittest.TestCase):
             self.assertEqual(ts.resto(seg), esperado, seg)
 
     def test_cabe_no_cartao_em_qualquer_caso(self):
-        """Todo percentual e todo tempo possível (até 7 dias) dão no máximo 9 caracteres: não passam do rótulo."""
+        """Todo percentual e todo tempo possível (até 7 dias): tk_?5 até 3 caracteres, tk_?5r até 5, o 7D até 9."""
         for pct in (0, 1, 9.5, 10, 99.4, 100, 250):
             for seg in range(0, 7 * 86400 + 1, 59):
-                texto = ts.valores({"claude": {"5": (pct, AGORA + max(seg, 1))}}, AGORA)["tk_c5"]
-                self.assertLessEqual(len(texto), 9, texto)
+                v = ts.valores({"claude": {"5": (pct, AGORA + max(seg, 1)), "7": (pct, AGORA + max(seg, 1))}}, AGORA)
+                self.assertLessEqual(len(v["tk_c5"]), 3, v)
+                self.assertLessEqual(len(v["tk_c5r"]), 5, v)
+                self.assertLessEqual(len(v["tk_c7"]), 9, v)
 
     def test_valores_cabem_no_relogio(self):
         v = ts.valores({"claude": {"5": (42.4, AGORA + 8000), "7": (100.0, AGORA + 6 * 86400 + 23 * 3600)},
                         "codex": {"5": (0.0, AGORA + 59), "7": (999.0, AGORA + 86400)}}, AGORA)
-        self.assertEqual(v["tk_c5"], "42% 2h14")
+        self.assertEqual(v["tk_c5"], "42")
+        self.assertEqual(v["tk_c5r"], "2h14")
         self.assertEqual(v["tk_c7"], "100% 6d")
-        self.assertEqual(v["tk_x5"], "0% 1m")
+        self.assertEqual(v["tk_x5"], "0")
+        self.assertEqual(v["tk_x5r"], "1m")
         self.assertEqual(v["tk_x7"], "100% 24h")  # nunca passa de 100
-        self.assertLessEqual(len(v), 4)
+        self.assertLessEqual(len(v), 6)
         for k, x in v.items():
             self.assertRegex(k, r"^[a-z0-9_]{1,8}$")
             self.assertLessEqual(len(x.encode()), 15)
 
     def test_todos_os_campos_em_cada_envio(self):
-        v = ts.completar({"tk_c5": "42% 2h13"})
-        self.assertEqual(v, {"tk_c5": "42% 2h13", "tk_c7": "--", "tk_x5": "--", "tk_x7": "--"})
+        v = ts.completar({"tk_c5": "42", "tk_c5r": "2h13"})
+        self.assertEqual(v, {"tk_c5": "42", "tk_c5r": "2h13", "tk_c7": "--",
+                             "tk_x5": "", "tk_x5r": "", "tk_x7": "--"})
         self.assertEqual(ts.completar({}), {})  # nada lido: nada enviado
         self.assertLessEqual(len(ts.montar(v)), 512)
+
+    NOMES = ["tk_c5", "tk_c5r", "tk_c7", "tk_x5", "tk_x5r", "tk_x7"]
+
+    def test_os_seis_nomes_de_campo(self):
+        v = ts.completar(ts.valores({"claude": {"5": (42.0, AGORA + 8000)}, "codex": {}}, AGORA))
+        self.assertEqual(sorted(v), sorted(self.NOMES))
+        self.assertEqual(ts.MAX_CAMPOS, 6)
+        for nome in v:
+            self.assertRegex(nome, r"^[a-z0-9_]{1,8}$")
+
+    def test_uma_leitura_so_devolve_os_seis_campos(self):
+        v = ts.completar(ts.valores({"codex": {"7": (71.0, AGORA + 3 * 86400)}, "claude": {}}, AGORA))
+        self.assertEqual(sorted(v), sorted(self.NOMES))
+        self.assertEqual(v["tk_x7"], "71% 3d")
+        self.assertEqual((v["tk_c5"], v["tk_c5r"], v["tk_x5"], v["tk_x5r"]), ("", "", "", ""))
+        self.assertEqual(v["tk_c7"], "--")
+        v = ts.completar(ts.valores({"claude": {"5": (93.0, AGORA + 38 * 60)}, "codex": {}}, AGORA))
+        self.assertEqual(sorted(v), sorted(self.NOMES))
+        self.assertEqual((v["tk_c5"], v["tk_c5r"]), ("93", "38m"))
+
+    def test_5h_sem_leitura_vira_vazio_nos_dois_campos(self):
+        """Sem dado, velha demais ou reinício que já passou: tk_?5 e tk_?5r vão como "" (a tela mostra SEM DADOS)."""
+        leituras = {"claude": {"5": (80.0, AGORA - 1), "7": (50.0, AGORA + 86400)},
+                    "codex": {"5": (None, AGORA + 100), "7": (10.0, AGORA + 2 * 86400)}}
+        v = ts.completar(ts.valores(leituras, AGORA))
+        for nome in ("tk_c5", "tk_c5r", "tk_x5", "tk_x5r"):
+            self.assertEqual(v[nome], "", nome)
+        self.assertEqual(v["tk_c7"], "50% 24h")
+        self.assertEqual(v["tk_x7"], "10% 2d")
+
+    def test_7d_sem_leitura_vira_traco(self):
+        leituras = {"claude": {"5": (42.0, AGORA + 8000), "7": (None, AGORA + 100)},
+                    "codex": {"5": (9.0, AGORA + 600), "7": (50.0, AGORA - 5)}}
+        v = ts.completar(ts.valores(leituras, AGORA))
+        self.assertEqual(v["tk_c7"], "--")
+        self.assertEqual(v["tk_x7"], "--")
+        self.assertEqual((v["tk_c5"], v["tk_c5r"]), ("42", "2h14"))
+        self.assertEqual((v["tk_x5"], v["tk_x5r"]), ("9", "10m"))
+
+    def test_todos_os_valores_cabem_em_15_bytes(self):
+        for pct in (0, 9.5, 100, 999):
+            for seg in (1, 59, 3600, 5 * 3600 + 59 * 60, 86400, 7 * 86400):
+                leituras = {p: {"5": (pct, AGORA + seg), "7": (pct, AGORA + seg)} for p in ("claude", "codex")}
+                for nome, x in ts.completar(ts.valores(leituras, AGORA)).items():
+                    self.assertLessEqual(len(x.encode()), 15, (nome, x))
+        for nome, x in ts.completar({"tk_c5": "1"}).items():  # "" e "--" também
+            self.assertLessEqual(len(x.encode()), 15, nome)
 
     def test_janela_que_vence_entre_dois_envios_vira_traco(self):
         """Envio parcial renova o ttl no relógio: o campo que perdeu a leitura tem de ir como "--", não sumir."""
         leituras = {"claude": {"5": (42.0, AGORA + 100), "7": (71.0, AGORA + 5 * 86400)}, "codex": {"5": (9.0, AGORA + 900)}}
         antes = ts.completar(ts.valores(leituras, AGORA))
         depois = ts.completar(ts.valores(leituras, AGORA + 101))  # a janela de 5 h do Claude venceu
-        self.assertEqual(antes["tk_c5"], "42% 2m")
-        self.assertEqual(depois["tk_c5"], "--")
+        self.assertEqual((antes["tk_c5"], antes["tk_c5r"]), ("42", "2m"))
+        self.assertEqual((depois["tk_c5"], depois["tk_c5r"]), ("", ""))
         self.assertEqual(depois["tk_c7"], "71% 4d")
-        self.assertEqual(sorted(antes), sorted(depois))  # mesmos 4 campos nos dois envios
+        self.assertEqual(sorted(antes), sorted(depois))  # mesmos 6 campos nos dois envios
 
     def test_sem_dado_nao_vira_zero(self):
         v = ts.valores({"claude": {"5": (None, AGORA + 100), "7": (50.0, None)}, "codex": {}}, AGORA)
@@ -88,10 +140,10 @@ class Formato(unittest.TestCase):
 
     def test_janela_vencida_fica_de_fora(self):
         v = ts.valores({"claude": {"5": (80.0, AGORA - 1), "7": (50.0, AGORA)}, "codex": {"5": (10.0, AGORA + 60)}}, AGORA)
-        self.assertEqual(list(v), ["tk_x5"])
+        self.assertEqual(list(v), ["tk_x5", "tk_x5r"])
 
     def test_corpo_valido_para_o_motor(self):
-        corpo = ts.montar({"tk_c5": "42% 2h13", "tk_c7": "71% 3d"}, 900)
+        corpo = ts.montar({"tk_c5": "42", "tk_c5r": "2h13", "tk_c7": "71% 3d"}, 900)
         d = json.loads(corpo)
         self.assertEqual(sorted(d), ["ttl", "values"])
         self.assertLessEqual(len(corpo), 512)
@@ -314,13 +366,13 @@ class Envio(unittest.TestCase):
 
     def test_envio_com_chave_bearer(self):
         srv, visto = self.servidor()
-        corpo = ts.montar({"tk_c5": "42% 2h13"}, 900)
+        corpo = ts.montar({"tk_c5": "42", "tk_c5r": "2h13"}, 900)
         self.assertIsNone(ts.enviar("127.0.0.1:%d" % srv.server_port, corpo, CHAVE))
         self.assertEqual(visto["caminho"], "/api/apps/data")
         self.assertEqual(visto["cab"]["x-smalltv"], "1")
         self.assertEqual(visto["cab"]["content-type"], "application/json")
         self.assertEqual(visto["cab"]["authorization"], "Bearer " + CHAVE)
-        self.assertEqual(json.loads(visto["corpo"]), {"ttl": 900, "values": {"tk_c5": "42% 2h13"}})
+        self.assertEqual(json.loads(visto["corpo"]), {"ttl": 900, "values": {"tk_c5": "42", "tk_c5r": "2h13"}})
         self.assertNotIn(CHAVE, visto["corpo"])  # a chave só vai no cabeçalho
 
     def test_erros_com_mensagem_curta_sem_a_chave(self):
@@ -359,7 +411,7 @@ class Envio(unittest.TestCase):
         os.environ.pop("NO_PROXY", None)
         os.environ.pop("no_proxy", None)
         try:
-            self.assertIsNone(ts.enviar("127.0.0.1:%d" % srv.server_port, ts.montar({"tk_c5": "1% 1m"}), CHAVE))
+            self.assertIsNone(ts.enviar("127.0.0.1:%d" % srv.server_port, ts.montar({"tk_c5": "1", "tk_c5r": "1m"}), CHAVE))
         finally:
             for k, v in antigos.items():
                 if v is None:
@@ -373,7 +425,7 @@ class Envio(unittest.TestCase):
         """Um 302 para outro endereço não é seguido: o destino do redirecionamento não recebe nada (nem o Authorization)."""
         outro, visto_outro = self.servidor()
         srv, visto = self.servidor(302, b"", "http://127.0.0.1:%d/api/apps/data" % outro.server_port)
-        erro = ts.enviar("127.0.0.1:%d" % srv.server_port, ts.montar({"tk_c5": "1% 1m"}), CHAVE)
+        erro = ts.enviar("127.0.0.1:%d" % srv.server_port, ts.montar({"tk_c5": "1", "tk_c5r": "1m"}), CHAVE)
         self.assertIn("redirecionamento", erro)
         self.assertNotIn(CHAVE, erro)
         self.assertEqual(visto["pedidos"], 1)
@@ -394,7 +446,7 @@ class Envio(unittest.TestCase):
                 os.environ["SMALLTV_CHAVE"] = CHAVE
                 ts.destino_seguro = lambda texto: texto
                 ts.coletar = lambda agora: {"claude": {"5": (42.0, agora + 8000)}, "codex": {}}
-                for status, esperado in ((None, r"enviado tk_c5,tk_c7,tk_x5,tk_x7\n$"), (401, r"erro: chave recusada \(401\)")):
+                for status, esperado in ((None, r"enviado tk_c5,tk_c5r,tk_c7,tk_x5,tk_x5r,tk_x7\n$"), (401, r"erro: chave recusada \(401\)")):
                     srv, _ = self.servidor(status) if status else self.servidor()
                     args = types.SimpleNamespace(relogio="127.0.0.1:%d" % srv.server_port, ttl=900, intervalo=60, uma_vez=True)
                     with contextlib.redirect_stdout(io.StringIO()):

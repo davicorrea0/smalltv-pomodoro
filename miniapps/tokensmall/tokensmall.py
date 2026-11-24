@@ -6,12 +6,14 @@ Roda no PC, só com a biblioteca padrão do Python. Lê números que as própria
   - Claude Code: o JSON que ele entrega ao comando `statusLine` (campo `rate_limits`);
   - Codex: as linhas `rate_limits` dos arquivos de sessão em ~/.codex/sessions.
 
-e empurra só o resultado (percentual e tempo até reiniciar) para o relógio, em POST /api/apps/data (campos tk_c5, tk_c7,
-tk_x5 e tk_x7).
+e empurra só o resultado (percentual e tempo até reiniciar) para o relógio, em POST /api/apps/data, em 6 campos de texto:
+tk_c5 e tk_x5 (só o percentual da janela de 5 h, "42"), tk_c5r e tk_x5r (tempo até reiniciar dela, "2h13") e tk_c7 e
+tk_x7 (janela de 7 dias, "71% 3d"). O percentual de 5 h vai separado porque a fonte grande da tela só desenha dígitos.
+Janela de 5 h sem leitura vai como texto vazio nos dois campos (a tela mostra "SEM DADOS"); a de 7 dias, como "--".
 
 Regra da K13: credencial não sai da máquina. Este programa NÃO abre arquivos de login (auth.json,
 .credentials.json), NÃO chama API de assinatura e NÃO grava nem envia token, cookie, caminho de projeto ou texto de
-conversa. O relógio recebe 4 textos curtos como "42% 2h13". A única coisa secreta que passa por aqui é a chave de
+conversa. O relógio recebe 6 textos curtos como "42", "2h13" e "71% 3d". A única coisa secreta que passa por aqui é a chave de
 escrita do relógio (criada por você no painel, Ajustes -> Home Assistant): vem da variável de ambiente SMALLTV_CHAVE,
 vai só ao relógio da rede local (Authorization: Bearer) e nunca é impressa nem gravada. A senha do painel não é usada.
 
@@ -39,10 +41,12 @@ import urllib.request
 JANELAS = {300: "5", 10080: "7"}
 PREFIXO = {"claude": "c", "codex": "x"}
 CAMPO = "tk_"       # prefixo dos campos no relógio (o armazém é dividido com outros miniapps)
-MAX_CAMPOS = 4      # campos deste miniapp (o armazém do relógio tem 16, somados todos os remetentes)
+MAX_CAMPOS = 6      # campos deste miniapp (o armazém do relógio tem 18, somados todos os remetentes: casa 12 + este 6)
 MAX_VALOR = 15      # bytes por valor (APPDATA_VALUE)
 MAX_NOME = 8        # caracteres do nome do campo (APPDATA_NAME)
-MAX_TELA = 9        # caracteres que o cartão do pacote comporta ("100% 5h59") sem tocar no rótulo
+MAX_TELA = 9        # caracteres do valor de 7 dias que a tela comporta ("100% 5h59") sem tocar no rótulo
+MAX_PCT5 = 3        # caracteres de tk_?5: o inteiro de 0 a 100 ("100")
+MAX_RESTO5 = 5      # caracteres de tk_?5r: o tempo até reiniciar ("2h13", "38m")
 TTL_PADRAO = 900    # s: o relógio mostra "--" se o PC parar de enviar por tanto tempo
 ARQUIVOS_CODEX = 5  # sessões mais recentes olhadas atrás da última leitura de limites
 CAUDA_CODEX = 256 * 1024
@@ -219,27 +223,40 @@ def resto(segundos):
 
 
 def valores(leituras, agora):
-    """{"tk_c5": "42% 2h13", ...}. Janela cujo reinício já passou, ou sem leitura, fica de fora (o relógio mostra "--").
+    """{"tk_c5": "42", "tk_c5r": "2h13", "tk_c7": "71% 3d", ...}. Janela de 5 h gera dois campos (percentual inteiro e
+    tempo até reiniciar); a de 7 dias, um ("71% 3d"). Janela cujo reinício já passou, ou sem leitura, fica de fora
+    (completar() a preenche: "" na de 5 h, "--" na de 7 dias).
     leituras: {"claude": {"5": (pct, reset)}, "codex": {...}}."""
     saida = {}
     for ferramenta, prefixo in PREFIXO.items():
         for janela, (pct, reset) in sorted(leituras.get(ferramenta, {}).items()):
             if pct is None or not reset or reset <= agora:
                 continue
-            saida[CAMPO + prefixo + janela] = "%d%% %s" % (min(100, int(round(pct))), resto(reset - agora))
-    for v in saida.values():
-        assert len(v.encode()) <= MAX_VALOR and len(v) <= MAX_TELA, v
+            inteiro, falta = min(100, int(round(pct))), resto(reset - agora)
+            if janela == "5":
+                saida[CAMPO + prefixo + "5"] = "%d" % inteiro
+                saida[CAMPO + prefixo + "5r"] = falta
+            else:
+                saida[CAMPO + prefixo + janela] = "%d%% %s" % (inteiro, falta)
+    for nome, v in saida.items():
+        limite = MAX_RESTO5 if nome.endswith("5r") else MAX_PCT5 if nome.endswith("5") else MAX_TELA
+        assert len(v.encode()) <= MAX_VALOR and len(v) <= limite, v
     assert len(saida) <= MAX_CAMPOS
     return saida
 
 
 def completar(valores_):
-    """Todos os campos do pacote em cada envio: o que não tem leitura vai como "--" (o relógio mostra "--" e a barra
-    vazia). Assim um campo antigo nunca fica na tela, tanto se o relógio mescla o envio com o conjunto atual quanto
-    se o substitui. Sem nenhuma leitura devolve {} (nada é enviado e o ttl esvazia a tela)."""
+    """Os 6 campos do pacote em cada envio: janela de 5 h sem leitura vai como "" nos dois campos (a tela mostra
+    "SEM DADOS"); a de 7 dias, como "--". Assim um campo antigo nunca fica na tela, tanto se o relógio mescla o envio
+    com o conjunto atual quanto se o substitui. Sem nenhuma leitura devolve {} (nada é enviado e o ttl esvazia a tela)."""
     if not valores_:
         return {}
-    return {CAMPO + p + j: valores_.get(CAMPO + p + j, "--") for p in PREFIXO.values() for j in JANELAS.values()}
+    saida = {}
+    for p in PREFIXO.values():
+        saida[CAMPO + p + "5"] = valores_.get(CAMPO + p + "5", "")
+        saida[CAMPO + p + "5r"] = valores_.get(CAMPO + p + "5r", "")
+        saida[CAMPO + p + "7"] = valores_.get(CAMPO + p + "7", "--")
+    return saida
 
 
 def montar(valores_, ttl=TTL_PADRAO):
