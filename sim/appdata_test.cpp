@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <algorithm>
 #include <string>
 #include <vector>
 #include <dirent.h>
@@ -407,12 +408,27 @@ static bool lerEnvios(const char *arq, std::vector<std::vector<std::string>> &en
   return !envios.empty();
 }
 
+// "b,a,c" -> "a,b,c": a ordem dos campos depende da ordem das camadas, o conjunto é o contrato
+static std::string camposOrdenados(const char *lista) {
+  std::vector<std::string> v;
+  for (const char *p = lista; *p;) {
+    const char *e = strchr(p, ',');
+    v.push_back(e ? std::string(p, e - p) : std::string(p));
+    p += e ? (e - p) + 1 : strlen(p);
+  }
+  std::sort(v.begin(), v.end());
+  std::string r;
+  for (const std::string &x : v) r += (r.empty() ? "" : ",") + x;
+  return r;
+}
+
 static void exemplos(Tela *tela) {
-  struct Caso { const char *arq; const char *estados; };
+  struct Caso { const char *arq; const char *estados; const char *campos; };
   const Caso casos[] = {
-    {"../docs/exemplos/casa-lavadora.json", "miniapps-estados/casa-lavadora.json"},
-    {"../docs/exemplos/casa-luzes.json", "miniapps-estados/casa-luzes.json"},
-    {"../docs/exemplos/casa-tomadas.json", "miniapps-estados/casa-tomadas.json"},
+    // campos = contrato congelado de cada miniapp (receitas do Home Assistant): redesenhar a tela não pode mudar a lista
+    {"../docs/exemplos/casa-lavadora.json", "miniapps-estados/casa-lavadora.json", "lv_est,lv_min,lv_pct,lv_txt"},
+    {"../docs/exemplos/casa-luzes.json", "miniapps-estados/casa-luzes.json", "lz_1,lz_2,lz_3,lz_n"},
+    {"../docs/exemplos/casa-tomadas.json", "miniapps-estados/casa-tomadas.json", "tm_1,tm_2,tm_w1,tm_w2"},
   };
   std::vector<std::vector<std::string>> enviosCasos[3];
   appDataClear();
@@ -422,6 +438,9 @@ static void exemplos(Tela *tela) {
   for (const Caso &c : casos) {
     if (!lerEnvios(c.estados, enviosCasos[caso])) { falhas++; caso++; continue; }
     if (!carregar(c.arq)) { falhas++; caso++; continue; }
+    char campos[96];
+    facePackFields(campos, sizeof campos);
+    CHECK(camposOrdenados(campos) == c.campos, "%s: campos lidos '%s', esperado '%s' (contrato congelado)", c.arq, campos, c.campos);
     facePackRender(st, true);
     uint32_t antes = hash(tela->px), primeiro = 0;
     int i = 0;

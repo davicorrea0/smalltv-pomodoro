@@ -4,11 +4,12 @@ Três mostradores que desenham o que o Home Assistant manda ao relógio: a **lav
 **tomadas**. Eles ficam fora da galeria de propósito: sem o Home Assistant configurado, a tela fica em `--`, e os
 nomes dos cômodos e das tomadas estão escritos no próprio arquivo.
 
-![Lavadora (lavando, pronta, erro, sem dados), luzes (2 acesas, apagadas, uma sem sinal, sem dados) e tomadas (café ligada, abajur ligado, uma sem sinal, sem dados)](casa.png)
+![Lavadora (enxágue, pronta, erro, sem dados), luzes (2 acesas, todas apagadas, uma sem sinal, sem dados) e tomadas (duas ligadas, café desligada, uma sem sinal, sem dados)](casa.png)
 
-Desenho de painel de aparelho: um número grande, rótulos pequenos e fixos, fundo preto e cor só quando quer dizer
-algo (verde = pronta, âmbar = sem sinal, vermelho = erro). O texto principal tem pelo menos 21 px de altura, para ler
-a 1 m.
+Cada tela segue a [diretriz de design dos miniapps](../DESIGN-MINIAPPS.md): fundo colorido, **um ponto focal** (o tempo, a
+contagem ou os watts) e o resto pequeno, cor que diz o estado de relance (verde = pronta, âmbar = sem sinal ou sem dados,
+vermelho = erro, cinza = desligada) e a hora sempre no mesmo canto. Os nomes e formatos dos campos não mudaram: as
+receitas abaixo continuam valendo.
 
 Antes, siga a [receita do Home Assistant](../HOME-ASSISTANT.md): crie a chave no painel e o `rest_command`
 `smalltv_dados`. Depois, para cada mostrador que quiser:
@@ -29,7 +30,7 @@ com ele os campos ficam em 16 de 16, e um quinto miniapp não cabe (o envio é r
 `lz_n` é quantas estão acesas. `lz_1` a `lz_3` valem `ACESA`, ou vazio quando a luz está apagada. A receita
 abaixo só manda esses dois. Se você mandar outro texto curto (por exemplo
 `{{ 'ACESA' if is_state('light.sala', 'on') else 'SEM SINAL' if is_state('light.sala', 'unavailable') else '' }}`),
-ele aparece em âmbar na linha do cômodo.
+a janela da casinha e a linha do cômodo ficam âmbar com o texto (até 9 letras, como `SEM SINAL`).
 
 ```yaml
 automation:
@@ -59,7 +60,8 @@ automation:
 
 `tm_1` e `tm_2` valem `1` (ligada) ou `0`. `tm_w1` e `tm_w2` são os watts. Se a tomada não mede consumo, tire os
 `tm_w`: no lugar dos watts aparece `--`. A receita abaixo só manda `1` ou `0`. Se você mandar um texto
-curto, entre aspas (por exemplo `"tm_1": "SEM SINAL"`), ele aparece em âmbar embaixo do nome.
+curto, entre aspas (por exemplo `"tm_1": "SEM SINAL"`), a coluna da tomada fica âmbar, com um `?` grande e o texto (até 9 letras, como `SEM SINAL`) no lugar dos watts. Os
+watts baixos (a partir de 1 W) aparecem na barra como um traço verde.
 
 ```yaml
 automation:
@@ -94,13 +96,13 @@ Os campos e o que a tela mostra em cada estado:
 
 | Campo | LAVANDO | PRONTA | DESLIGADA | ERRO (opcional) |
 |---|---|---|---|---|
-| `lv_est` | `LAVANDO`: tambor girando na barra de baixo | `PRONTA`: em verde, com "TIRE A ROUPA" | `DESLIGADA` | `ERRO`: em vermelho, com "VEJA A MAQUINA" |
-| `lv_txt` | a etapa (`ENXAGUE`) | a hora do fim (`AS 14:52`) | vazio | o código (`E21`) |
-| `lv_pct` | quanto do ciclo já foi (régua) | 100 (régua verde) | 0 | qualquer |
-| `lv_min` | minutos que faltam, em 7 segmentos | 0 | 0 | qualquer |
+| `lv_est` | `LAVANDO`: fundo azul-petróleo, anel de progresso e o ícone da máquina com o tambor girando | `PRONTA`: anel e fundo verdes, "FIM" no centro e "TIRE A ROUPA" | `DESLIGADA`: fundo grafite, ícone de liga/desliga e a palavra DESLIGADA | `ERRO`: anel e fundo vermelhos, o código no centro e "VEJA A MAQUINA" |
+| `lv_txt` | a etapa (`LAVAGEM`, `ENXAGUE`, `CENTRIFUGA`), na pílula embaixo | a hora do fim (`AS 14:52`) | vazio | o código (`E21`, até 4 caracteres) |
+| `lv_pct` | quanto do ciclo já foi (o anel) | 100 (anel cheio) | 0 | onde parou (o anel fica parado) |
+| `lv_min` | minutos que faltam, no centro do anel | 0 | 0 | qualquer |
 
 A receita manda só enquanto a máquina lava ou está pronta. Parada, ela não manda nada, e o dado vence em 15 minutos:
-a tela mostra "SEM DADOS" e "ESPERANDO O HA", com os segmentos apagados. `DESLIGADA` continua no desenho para quem
+a tela mostra um anel pontilhado âmbar, `--` e "SEM DADOS". `DESLIGADA` continua no desenho para quem
 quiser mandar esse estado de outro jeito. O `ERRO` também é opcional: se a sua integração expuser um código de erro,
 mande `"lv_est": "ERRO"` e o código em `lv_txt`.
 
