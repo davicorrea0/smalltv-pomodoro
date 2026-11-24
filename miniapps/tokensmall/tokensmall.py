@@ -46,6 +46,8 @@ MAX_TELA = 9        # caracteres que o cartão do pacote comporta ("100% 5h59") 
 TTL_PADRAO = 900    # s: o relógio mostra "--" se o PC parar de enviar por tanto tempo
 ARQUIVOS_CODEX = 5  # sessões mais recentes olhadas atrás da última leitura de limites
 CAUDA_CODEX = 256 * 1024
+IDADE_MAX = {"5": 3600, "7": 43200}
+ESPERA_RECUSA = 600
 
 
 def pasta_estado():
@@ -112,13 +114,20 @@ def gravar_claude(limites, agora, pasta=None):
         raise
 
 
-def ler_claude(pasta=None):
+def _idade_aceita(janela, momento, agora):
+    return (isinstance(momento, (int, float)) and not isinstance(momento, bool) and math.isfinite(momento)
+            and -300 <= agora - momento <= IDADE_MAX[janela])
+
+
+def ler_claude(pasta=None, agora=None):
     try:
         with open(os.path.join(pasta or pasta_estado(), "claude.json"), encoding="utf-8") as f:
             dados = json.load(f)
         limites = dados.get("limites", {})
+        momento = instante(dados.get("t"))
         return {j: (numero(v.get("pct")), instante(v.get("reset"))) for j, v in limites.items()
-                if j in ("5", "7") and isinstance(v, dict)}
+                if j in ("5", "7") and isinstance(v, dict)
+                and (agora is None or _idade_aceita(j, momento, agora))}
     except (OSError, ValueError, AttributeError):
         return {}
 
@@ -170,13 +179,14 @@ def _limites_da_linha(linha):
     return saida or None
 
 
-def ler_codex(home=None):
+def ler_codex(home=None, agora=None):
     """Última leitura de limites do Codex, olhando só as linhas que contêm "rate_limits" no fim das sessões mais novas.
     Não abre arquivo de login nem nenhum outro arquivo fora de sessions/."""
     raiz = os.path.join(home or pasta_codex(), "sessions")
     for caminho in sessoes_recentes(raiz):
         try:
             with open(caminho, "rb") as f:
+                momento = os.fstat(f.fileno()).st_mtime
                 f.seek(0, os.SEEK_END)
                 tam = f.tell()
                 f.seek(max(0, tam - CAUDA_CODEX))
@@ -188,7 +198,9 @@ def ler_codex(home=None):
                 continue
             achado = _limites_da_linha(linha)
             if achado:
-                return achado
+                if agora is None:
+                    return achado
+                return {j: valor for j, valor in achado.items() if _idade_aceita(j, momento, agora)}
     return {}
 
 
@@ -235,7 +247,7 @@ def montar(valores_, ttl=TTL_PADRAO):
 
 
 def coletar(agora, pasta=None, home=None):
-    return {"claude": ler_claude(pasta), "codex": ler_codex(home)}
+    return {"claude": ler_claude(pasta, agora), "codex": ler_codex(home, agora)}
 
 
 # ---------- envio ----------
@@ -281,6 +293,43 @@ def autenticacao(chave):
     return {"Authorization": "Bearer " + chave}
 
 
+class Recusa(str):
+    def __new__(cls, texto, definitiva=False):
+        obj = super().__new__(cls, texto)
+        obj.definitiva = definitiva
+        return obj
+
+
+def gravar_ultimo(resultado, quando=None, pasta=None):
+    """Registra somente o horário e o resultado, sem corpo nem valores."""
+    tmp = None
+    try:
+        pasta = pasta or pasta_estado()
+        os.makedirs(pasta, exist_ok=True)
+        instante_atual = time.time() if quando is None else quando
+        linha = "%s %s\n" % (time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(instante_atual)), resultado)
+        fd, tmp = tempfile.mkstemp(dir=pasta, prefix=".ultimo-", suffix=".tmp")
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(linha)
+        os.replace(tmp, os.path.join(pasta, "ultimo.txt"))
+        tmp = None
+    except Exception:
+        if tmp:
+            try:
+                os.unlink(tmp)
+            except OSError:
+                pass
+
+
+def _campos_enviados(corpo):
+    try:
+        dados = json.loads(corpo)
+        nomes = dados.get("values", {}).keys()
+        return ",".join(sorted(n for n in nomes if isinstance(n, str)))
+    except (ValueError, AttributeError):
+        return ""
+
+
 def enviar(host, corpo, chave, timeout=5):
     """POST /api/apps/data. Devolve None se o relógio aceitou, ou um texto curto com o motivo."""
     req = urllib.request.Request("http://%s/api/apps/data" % host, data=corpo.encode("utf-8"), method="POST")
@@ -294,18 +343,21 @@ def enviar(host, corpo, chave, timeout=5):
         return None
     except urllib.error.HTTPError as e:
         if 300 <= e.code < 400:
-            return "o relógio respondeu com redirecionamento (%d): recusado, nada foi seguido" % e.code
-        if e.code == 401:
-            return "chave recusada (401): confira SMALLTV_CHAVE com a do painel (Ajustes -> Home Assistant)"
-        if e.code == 403:
-            return "recusado (403): crie a chave no painel (Ajustes -> Home Assistant) e use o IP do relógio, não um nome"
-        if e.code == 429:
-            return "o relógio pediu espera (429): tentativas demais com chave errada"
-        if e.code == 404:
-            return "o relógio não tem /api/apps/data: falta o firmware com a rota de dados de fora"
-        return "recusado (%d): %s" % (e.code, e.read(80).decode("utf-8", "replace").strip())
+            texto = "o relógio respondeu com redirecionamento (%d): recusado, nada foi seguido" % e.code
+        elif e.code == 401:
+            texto = "chave recusada (401): confira SMALLTV_CHAVE com a do painel (Ajustes -> Home Assistant)"
+        elif e.code == 403:
+            texto = "recusado (403): crie a chave no painel (Ajustes -> Home Assistant) e use o IP do relógio, não um nome"
+        elif e.code == 429:
+            texto = "o relógio pediu espera (429): tentativas demais com chave errada"
+        elif e.code == 404:
+            texto = "o relógio não tem /api/apps/data: falta o firmware com a rota de dados de fora"
+        else:
+            detalhe = e.read(80).decode("utf-8", "replace").strip().replace(chave, "[oculto]")
+            texto = "recusado (%d): %s" % (e.code, detalhe)
+        return Recusa(texto, e.code in (401, 403, 404, 429) or 300 <= e.code < 400)
     except (urllib.error.URLError, OSError) as e:
-        return "sem resposta do relógio (%s)" % getattr(e, "reason", e)
+        return Recusa("sem resposta do relógio (%s)" % getattr(e, "reason", e))
 
 
 # ---------- linha de comando ----------
@@ -331,28 +383,45 @@ def cmd_ver(args):
     return 0
 
 
-def cmd_enviar(args):
+def cmd_enviar(args, agora=time.time, dormir=time.sleep):
     host = destino_seguro(args.relogio or os.environ.get("SMALLTV_IP"))
     chave = chave_do_ambiente()
-    ultimo, ultimo_envio, avisou = None, 0, False
+    ultimo, ultimo_envio, avisou, proxima_tentativa = None, 0, False, 0
     while True:
-        agora = int(time.time())
-        v = completar(valores(coletar(agora), agora))
-        if not v:
-            if not avisou:
-                print("sem leitura de limites ainda; o relógio mostra '--'", flush=True)
-                avisou = True
-        elif v != ultimo or agora - ultimo_envio >= args.ttl // 3:
-            erro = enviar(host, montar(v, args.ttl), chave)
-            print(time.strftime("%H:%M:%S"), ("erro: " + erro) if erro else "enviado " + ", ".join(sorted(v)), flush=True)
-            if not erro:
-                ultimo, ultimo_envio, avisou = v, agora, False
-        if args.uma_vez:
-            return 0 if v else 1
-        time.sleep(args.intervalo)
+        instante_atual = int(agora())
+        try:
+            v = completar(valores(coletar(instante_atual), instante_atual))
+            if not v:
+                gravar_ultimo("sem leitura", instante_atual)
+                if not avisou:
+                    print("sem leitura de limites ainda; o relógio mostra '--'", flush=True)
+                    avisou = True
+            elif instante_atual >= proxima_tentativa and (v != ultimo or instante_atual - ultimo_envio >= args.ttl // 3):
+                erro = enviar(host, montar(v, args.ttl), chave)
+                mensagem = ("erro: " + erro) if erro else "enviado " + ", ".join(sorted(v))
+                if erro and getattr(erro, "definitiva", False):
+                    proxima_tentativa = instante_atual + ESPERA_RECUSA
+                    mensagem += "; nova tentativa em 10 min"
+                print(time.strftime("%H:%M:%S", time.localtime(instante_atual)), mensagem, flush=True)
+                gravar_ultimo(("erro: " + erro) if erro else "enviado " + _campos_enviados(montar(v, args.ttl)), instante_atual)
+                if not erro:
+                    ultimo, ultimo_envio, avisou = v, instante_atual, False
+            if args.uma_vez:
+                return 0 if v else 1
+        except Exception as err:
+            if args.uma_vez:
+                raise
+            resultado = "erro inesperado: " + type(err).__name__
+            gravar_ultimo(resultado, instante_atual)
+            print(time.strftime("%H:%M:%S", time.localtime(instante_atual)), resultado, flush=True)
+        dormir(args.intervalo)
 
 
 def principal(argv=None):
+    if sys.stdout is None:
+        sys.stdout = open(os.devnull, "w")
+    if sys.stderr is None:
+        sys.stderr = open(os.devnull, "w")
     p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     sub = p.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("statusline", help="comando do statusLine do Claude Code")
