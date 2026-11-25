@@ -54,6 +54,14 @@ for(const name of ['handleUpload','handlePackUpload','handlePanelUpload'])
 }
 const recovery=fn('startRecovery');
 if(!recovery.includes('WiFi.mode(WIFI_AP);')||recovery.includes('WiFi.begin()'))throw Error('recovery must be AP-only');
+{ // recuperação: /api/stats baixa o histórico sem senha (com Host); fora dela continua com readOk()
+ const st=fn('sendStats'),web=fn('setupWeb');
+ if(!recovery.includes('server.on("/api/stats", HTTP_GET, sendStats);'))throw Error('recovery must expose /api/stats');
+ if(!web.includes('server.on(F("/api/stats"), HTTP_GET, sendStats);'))throw Error('setupWeb must expose /api/stats');
+ const rec=st.indexOf('if (recoveryMode)'),hk=st.indexOf('if (!hostOk()) { deny(); return; }'),ro=st.indexOf('else if (!readOk()) return;'),bg=st.indexOf('jsonBegin();');
+ if(!(rec>=0&&hk>rec&&ro>hk&&bg>ro))throw Error('sendStats: sem senha (com Host) na recuperacao; fora dela com readOk()');
+ if(/authed\(|readOk\(/.test(st.slice(rec,ro)))throw Error('sendStats: recuperacao nao pode exigir senha');
+}
 { // migração 4M3M→4M2M (storage_stats.cpp): nunca formatar 0x100000 se o LittleFS antigo não montar
  const fm=fn('fsMount');
  const oldDecl=fm.indexOf('FS old('),oldBeg=fm.indexOf('old.begin()',oldDecl);
