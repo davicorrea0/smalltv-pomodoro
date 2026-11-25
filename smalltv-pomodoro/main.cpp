@@ -91,6 +91,34 @@ void tftBitmapBE(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h) {
 // mostra uma estampa que tremula quando o VCOM está errado; a pessoa ajusta até ela parar e salva.
 void applyVcom(uint8_t v) { tft.sendCommand(0xBB, &v, 1); }
 
+// Calibração analógica padrão ST7789V 240x240 IPS (gama + contraste de fotos/GIFs).
+// A Adafruit_ST7789 não envia estes comandos, deixando os meios-tons lavados; VCOM (0xBB) segue em applyVcom().
+static const uint8_t PANEL_GAMMA_INIT[] PROGMEM = {
+  0xB2, 5, 0x0C, 0x0C, 0x00, 0x33, 0x33,                                                    // PORCTRL
+  0xB7, 1, 0x35,                                                                            // GCTRL (VGH/VGL)
+  0xC0, 1, 0x2C,                                                                            // LCMCTRL
+  0xC2, 2, 0x01, 0xFF,                                                                      // VDVVRHEN (habilita VRHS/VDVSET)
+  0xC3, 1, 0x12,                                                                            // VRHS (4,45 V: contraste)
+  0xC4, 1, 0x20,                                                                            // VDVSET (0 V)
+  0xC6, 1, 0x0F,                                                                            // FRCTRL2 (60 Hz)
+  0xD0, 2, 0xA4, 0xA1,                                                                      // PWCTRL1
+  0xE0, 14, 0xD0, 0x04, 0x0D, 0x11, 0x13, 0x2B, 0x3F, 0x54, 0x4C, 0x18, 0x0D, 0x0B, 0x1F, 0x23,  // PVGAMCTRL
+  0xE1, 14, 0xD0, 0x04, 0x0C, 0x11, 0x13, 0x2C, 0x3F, 0x44, 0x51, 0x2F, 0x1F, 0x1F, 0x20, 0x23,  // NVGAMCTRL
+  0
+};
+
+static void applyPanelGamma() {
+  uint8_t buf[14];
+  for (const uint8_t *p = PANEL_GAMMA_INIT;;) {
+    uint8_t cmd = pgm_read_byte(p++);
+    if (!cmd) break;
+    uint8_t n = pgm_read_byte(p++);
+    memcpy_P(buf, p, n);
+    p += n;
+    tft.sendCommand(cmd, buf, n);
+  }
+}
+
 uint32_t vcomTestUntil = 0;  // teste na tela até este millis()
 
 uint8_t vcomTest = UI_VCOM_DEFAULT;     // valor em teste (aplicado, ainda não salvo)
@@ -341,6 +369,7 @@ void setup() {
 
   tft.init(240, 240, SPI_MODE3);
   tft.setSPISpeed(40000000);  // 80 MHz passa do limite do ST7789: a imagem vira lixo
+  applyPanelGamma();
   applyVcom(cfg.vcom);
   uiBegin(&tft);
   uiSetLang(cfg.lang);
