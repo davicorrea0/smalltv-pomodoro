@@ -6,6 +6,8 @@ function fnFrom(text,name){const a=text.indexOf(`void ${name}() {`),b=text.index
 // 1.26.1: /api/fsdelete não pode ser driblado por "/./" e o rodízio sem vírgula não passa do limite
 if(!source.includes('f.indexOf("/.") >= 0'))throw Error('/api/fsdelete: recusar "/." (o littlefs ignora o componente "." e o fsKeep comparava o texto)');
 if(!source.includes('int cut = s.lastIndexOf(',', 300);')||!source.includes('s = cut > 0 ? s.substring(0, cut) : String();'))throw Error('rotSet: sem vírgula, substring(0, -1) não corta nada');
+{const i=source.indexOf('bool fsKeep(const String &p) {');if(i<0||!source.slice(i,source.indexOf('\n}',i)).includes('"/apps.key"'))throw Error('fsKeep deve proteger /apps.key');}
+{const i=source.indexOf('server.on(F("/api/format"), HTTP_POST'),b=source.slice(i,source.indexOf('\n  });',i));if(i<0||!b.includes('if (!guard()) return;')||b.indexOf('server.send_P(')<0||b.indexOf('safeRestart();')<b.indexOf('server.send_P('))throw Error('/api/format deve responder e chamar safeRestart()');}
 for(const name of ['handleUpload','handlePackUpload','handlePanelUpload'])
  if(!fn(name).includes('uploadAuthed()'))throw Error(`${name} bypasses upload throttle`);
 { // toda POST do painel começa com guard(); exceções fechadas: handler com nome, chave própria ou upload
