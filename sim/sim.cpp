@@ -1363,6 +1363,42 @@ static int checkExtraLang() {
   printf("idiomas extras 3/4 em ingles e 5 recusado: %s\n", fails ? "FALHOU" : "ok");
   return fails;
 }
+
+static bool mesmaArea(const Frame &a, const Frame &b, int x, int y, int w, int h) {
+  for (int r = 0; r < h; r++)
+    if (memcmp(a.px + (y + r) * 240 + x, b.px + (y + r) * 240 + x, w * sizeof(uint16_t))) return false;
+  return true;
+}
+
+// Nos dois Mundo, isola só os segmentos da data. 11/03 dá uma referência válida 03/11 ao trocar dia e mês em pt.
+static int testOrdemDataMundo() {
+  int fails = 0;
+  const uint8_t inicial = uiLang;
+  const uint8_t temas[] = {THEME_WORLD, THEME_WORLD_WATCH};
+  const char *nomes[] = {"mundo", "mundo-relogio"};
+  for (int t = 0; t < 2; t++) {
+    UiState st = base(14, 37, 25);
+    st.theme = temas[t]; st.now.tm_mon = 2; st.now.tm_mday = 11; st.now.tm_wday = 1;
+    Frame diaMes, mesDia;
+    uiSetLang(0); uiBegin(&diaMes); uiRenderClock(st);
+    UiState inv = st;
+    inv.now.tm_mon = 10; inv.now.tm_mday = 3;  // pt desenha 03-11, a referência do inglês para 11/03
+    uiSetLang(0); uiBegin(&mesDia); uiRenderClock(inv);
+    const int x = t ? 14 : 62, y = t ? 121 : 119, w = t ? 76 : 58, h = t ? 21 : 16;
+    for (int lang : {0, 2, 3, 4, 1}) {
+      Frame got;
+      uiSetLang(lang); uiBegin(&got); uiRenderClock(st);
+      const Frame &esperado = lang == 1 ? mesDia : diaMes;
+      if (!mesmaArea(got, esperado, x, y, w, h)) {
+        printf("ordem da data %s lang %d FALHOU\n", nomes[t], lang);
+        fails++;
+      }
+    }
+  }
+  uiSetLang(inicial);
+  printf("ordem da data nos Mundo: %s (pt/es/de/ru dia-mes; en mes-dia, somente nos segmentos)\n", fails ? "FALHOU" : "ok");
+  return fails;
+}
 #include "out/tint_test.inc"
 
 int main() {
@@ -1471,6 +1507,7 @@ int main() {
   // ---- redesenho incremental ----
   int fails = 0;
   fails += checkExtraLang();
+  fails += testOrdemDataMundo();
   fails += checkSetupQr();
   for (int t = 0; t < THEME_COUNT; t++) {
     UiState st = base(14, 58, 50);
