@@ -211,9 +211,6 @@ bool validGif(const String &path) {
   return error == nullptr;
 }
 
-// Elimina o degrau verde espúrio de ruído quase-preto (RGB565 BE 0x2000/0x4000, equiv. LE 0x0020/0x0040: R=0, B=0, G<=2) deixado por otimizadores lossy de GIF.
-static inline uint16_t gifCleanPx(uint16_t c) { return (c == 0x2000 || c == 0x4000) ? 0 : c; }
-
 static inline int clip240(int v) { return v < 0 ? 0 : v > 240 ? 240 : v; }
 
 static void gifDraw(GIFDRAW *p) {
@@ -254,7 +251,7 @@ static void gifDraw(GIFDRAW *p) {
   if (!p->ucHasTransparency || (rowRestore && x0 >= gifOldX0 && x0 + w <= gifOldX1)) {
     for (int i = 0; i < w; i++) {
       uint8_t px = s[i];
-      buf[i] = (p->ucHasTransparency && px == tr) ? 0 : gifCleanPx(pal[px]);
+      buf[i] = (p->ucHasTransparency && px == tr) ? 0 : pal[px];
     }
     tft.startWrite();
     tft.setAddrWindow(x0, y, w, 1);
@@ -271,7 +268,7 @@ static void gifDraw(GIFDRAW *p) {
     int start = x, n = 0;
     while (x < w && drawPx(x)) {
       uint8_t px = s[x++];
-      buf[n++] = (px == tr) ? 0 : gifCleanPx(pal[px]);
+      buf[n++] = (px == tr) ? 0 : pal[px];
     }
     tft.setAddrWindow(x0 + start, y, n, 1);
     tftPixelsBE(buf, n);
