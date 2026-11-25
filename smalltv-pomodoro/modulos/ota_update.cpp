@@ -187,6 +187,8 @@ void setupUpdate() {
   server.on("/update", HTTP_GET, [] {
     if (!hostOk()) { deny(); return; }
     if (!recoveryMode && !authed()) return;
+    secHeaders();
+    server.sendHeader(F("Cache-Control"), F("no-store"));
     String p = F("<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>SmallTV</title>"
                  "<style>body{font:16px system-ui;background:#111;color:#eee;max-width:420px;margin:auto;padding:20px}"
                  "input,button{width:100%;padding:12px;margin:8px 0;border-radius:10px;border:1px solid #333;background:#1c1c1c;color:#eee;font:inherit}"
@@ -204,8 +206,8 @@ void setupUpdate() {
            "<script>document.forms[0].onsubmit=async e=>{e.preventDefault();const f=e.target,h={'X-SmallTV':'1'},d=new FormData();"
            "d.append('firmware',f.firmware.files[0]);"
            "if(f.sig&&f.sig.files[0])h['X-Firmware-Sig']=btoa(String.fromCharCode(...new Uint8Array(await f.sig.files[0].arrayBuffer())));"
-           "document.body.innerHTML='...';"
-           "fetch('/update',{method:'POST',body:d,headers:h}).then(r=>r.text()).then(t=>document.body.innerHTML=t)}</script>");
+           "document.body.textContent='...';"
+           "fetch('/update',{method:'POST',body:d,headers:h}).then(async r=>{const t=await r.text();if(r.ok){document.body.textContent='Update Success! Rebooting...';setTimeout(()=>location='/',20000)}else document.body.textContent=t})}</script>");
     server.send(200, "text/html", p);
   });
   server.on("/update", HTTP_POST, [authOk] {
@@ -295,6 +297,9 @@ void startRecovery() {
   setupQrShown = -1;
   setupQrScreen(true);
   server.on("/", HTTP_GET, [] {
+    if (!hostOk()) { deny(); return; }
+    secHeaders();
+    server.sendHeader(F("Cache-Control"), F("no-store"));
     PageLang lang;  // idioma do navegador enquanto os ajustes são os de fábrica (ver pageLang)
     String p = F("<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>SmallTV</title>"
                  "<style>body{font:16px system-ui;background:#111;color:#eee;max-width:420px;margin:auto;padding:20px}"
@@ -329,7 +334,7 @@ void startRecovery() {
     server.send(303, "text/plain", msg);
   };
   server.on("/rec/factory", HTTP_POST, [done] {
-    if (!formOk()) { deny(); return; }
+    if (!hostOk() || !formOk()) { deny(); return; }
     uint8_t lang = cfg.lang;
     defaultSettings();
     cfg.lang = lang;
@@ -337,13 +342,13 @@ void startRecovery() {
     done(F("ok"));
   });
   server.on("/rec/wifi", HTTP_POST, [done] {
-    if (!formOk()) { deny(); return; }
+    if (!hostOk() || !formOk()) { deny(); return; }
     WiFi.persistent(true);
     WiFi.disconnect(true);
     done(F("ok"));
   });
   server.on("/rec/restart", HTTP_POST, [] {
-    if (!formOk()) { deny(); return; }
+    if (!hostOk() || !formOk()) { deny(); return; }
     server.send(200, "text/plain", "ok");
     delay(300);
     safeRestart();
@@ -351,7 +356,7 @@ void startRecovery() {
   // antes de doar ou vender o relógio: a flash não é criptografada, então apaga de fato
   // (arquivos, ajustes com senhas, rede salva) e volta como saído da caixa
   server.on("/rec/wipe", HTTP_POST, [] {
-    if (!formOk()) { deny(); return; }
+    if (!hostOk() || !formOk()) { deny(); return; }
     server.send(200, "text/plain", "ok");
     delay(300);
     if (fsOk) LittleFS.format();
