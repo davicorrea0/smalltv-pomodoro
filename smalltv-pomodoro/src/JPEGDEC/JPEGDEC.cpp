@@ -63,6 +63,7 @@ void JPEGDEC::setMaxOutputSize(int iMaxMCUs)
 //
 int JPEGDEC::openRAM(uint8_t *pData, int iDataSize, JPEG_DRAW_CALLBACK *pfnDraw)
 {
+    close();
     memset(&_jpeg, 0, sizeof(JPEGIMAGE));
     _jpeg.ucMemType = JPEG_MEM_RAM;
     _jpeg.pfnRead = readRAM;
@@ -78,6 +79,7 @@ int JPEGDEC::openRAM(uint8_t *pData, int iDataSize, JPEG_DRAW_CALLBACK *pfnDraw)
 
 int JPEGDEC::openFLASH(const uint8_t *pData, int iDataSize, JPEG_DRAW_CALLBACK *pfnDraw)
 {
+    close();
     memset(&_jpeg, 0, sizeof(JPEGIMAGE));
     _jpeg.ucMemType = JPEG_MEM_FLASH;
     _jpeg.pfnRead = readFLASH;
@@ -154,6 +156,7 @@ int JPEGDEC::getJPEGType()
 #ifdef __LINUX__
 int JPEGDEC::open(const char *szFilename, JPEG_DRAW_CALLBACK *pfnDraw)
 {
+    close();
     memset(&_jpeg, 0, sizeof(JPEGIMAGE));
     _jpeg.pfnRead = readFile;
     _jpeg.pfnClose = closeFile;
@@ -170,6 +173,7 @@ int JPEGDEC::open(const char *szFilename, JPEG_DRAW_CALLBACK *pfnDraw)
 //
 int JPEGDEC::open(const char *szFilename, JPEG_OPEN_CALLBACK *pfnOpen, JPEG_CLOSE_CALLBACK *pfnClose, JPEG_READ_CALLBACK *pfnRead, JPEG_SEEK_CALLBACK *pfnSeek, JPEG_DRAW_CALLBACK *pfnDraw)
 {
+    close();
     memset(&_jpeg, 0, sizeof(JPEGIMAGE));
     _jpeg.pfnRead = pfnRead;
     _jpeg.pfnSeek = pfnSeek;
@@ -189,6 +193,7 @@ int JPEGDEC::open(const char *szFilename, JPEG_OPEN_CALLBACK *pfnOpen, JPEG_CLOS
 //
 int JPEGDEC::open(void *fHandle, int iDataSize, JPEG_CLOSE_CALLBACK *pfnClose, JPEG_READ_CALLBACK *pfnRead, JPEG_SEEK_CALLBACK *pfnSeek, JPEG_DRAW_CALLBACK *pfnDraw)
 {
+    close();
     memset(&_jpeg, 0, sizeof(JPEGIMAGE));
     _jpeg.pfnRead = pfnRead;
     _jpeg.pfnSeek = pfnSeek;
@@ -217,6 +222,7 @@ static void FileClose(void *handle)
 int JPEGDEC::open(File &file, JPEG_DRAW_CALLBACK *pfnDraw)
 {
     if (!file) return 0;
+    close();
     memset(&_jpeg, 0, sizeof(JPEGIMAGE));
     _jpeg.pfnRead = FileRead;
     _jpeg.pfnSeek = FileSeek;
@@ -231,8 +237,12 @@ int JPEGDEC::open(File &file, JPEG_DRAW_CALLBACK *pfnDraw)
 
 void JPEGDEC::close()
 {
-    if (_jpeg.pfnClose)
-        (*_jpeg.pfnClose)(_jpeg.JPEGFile.fHandle);
+    if (_jpeg.pfnClose) {
+        JPEG_CLOSE_CALLBACK *fn = _jpeg.pfnClose;
+        _jpeg.pfnClose = NULL;
+        (*fn)(_jpeg.JPEGFile.fHandle);
+    }
+    JPEGFreeHuffAC(&_jpeg);
 } /* close() */
 
 //

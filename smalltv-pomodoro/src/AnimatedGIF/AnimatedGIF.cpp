@@ -258,8 +258,12 @@ int AnimatedGIF::open(const char *szFilename, GIF_OPEN_CALLBACK *pfnOpen, GIF_CL
 
 void AnimatedGIF::close()
 {
-    if (_gif.pfnClose)
-        (*_gif.pfnClose)(_gif.GIFFile.fHandle);
+    if (_gif.pfnClose) {
+        GIF_CLOSE_CALLBACK *fn = _gif.pfnClose;
+        _gif.pfnClose = NULL;
+        (*fn)(_gif.GIFFile.fHandle);
+    }
+    gifWorkEnd(&_gif);
 } /* close() */
 
 void AnimatedGIF::reset()
@@ -270,22 +274,13 @@ void AnimatedGIF::reset()
 
 void AnimatedGIF::begin(unsigned char ucPaletteType)
 {
-uint8_t *p;
-uint32_t u32;
-
+    gifWorkEnd(&_gif);
     memset(&_gif, 0, sizeof(_gif));
-    if (ucPaletteType != GIF_PALETTE_RGB565_LE && ucPaletteType != GIF_PALETTE_RGB565_BE && ucPaletteType != GIF_PALETTE_RGB888)
+    if (ucPaletteType != GIF_PALETTE_RGB565_LE && ucPaletteType != GIF_PALETTE_RGB565_BE)
         _gif.iError = GIF_INVALID_PARAMETER;
     _gif.ucPaletteType = ucPaletteType;
     _gif.ucDrawType = GIF_DRAW_RAW; // assume RAW pixel handling
     _gif.pFrameBuffer = NULL;
-    p = &_gif.ucLineBuf[0];
-    u32 = (uint32_t)(intptr_t)p;
-    u32 &= 15; // align on 16-byte boundary
-    if (u32 > 0) {
-        p += (16-u32);
-    }
-    _gif.pLineBufAligned = p;
 } /* begin() */
 //
 // Play a single frame
@@ -299,6 +294,16 @@ int rc;
 #if !defined( __MACH__ ) && !defined( __LINUX__ )
 long lTime = millis();
 #endif
+    struct GifWorkGuard {
+        GIFIMAGE *g;
+        ~GifWorkGuard() { gifWorkEnd(g); }
+    };
+    if (!gifWorkBegin(&_gif)) {
+        if (delayMilliseconds)
+            *delayMilliseconds = 0;
+        return -1;
+    }
+    GifWorkGuard workGuard{&_gif};
 
     if (_gif.GIFFile.iPos >= _gif.GIFFile.iSize-1) // no more data exists
     {
