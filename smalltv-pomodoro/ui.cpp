@@ -38,9 +38,9 @@ void uiSetLang(uint8_t lang) {
   uiInvalidate();
 }
 const char *trP(PGM_P pt, PGM_P en, PGM_P es) {
-  static char buf[6][48];
+  static char buf[4][48];
   static uint8_t k = 0;
-  char *b = buf[k++ % 6];
+  char *b = buf[k++ & 3];
   strncpy_P(b, uiLang == 1 ? en : uiLang == 2 ? es : pt, sizeof buf[0] - 1);
   b[sizeof buf[0] - 1] = 0;
   return b;
@@ -807,8 +807,8 @@ void uiRenderPomodoro(const UiState &s) {
   notifyLcdView(false);
   bool full = enter(SCR_POMO);
   uint16_t col = phaseColor(s.phase);
-  // anel: trilho apagado + progresso na cor da fase, desenhado só no trecho novo
-  int target = s.totalMs ? (int)((uint64_t)(s.totalMs - s.remainingMs) * 360 / s.totalMs) : 0;
+  // anel: trilho apagado + progresso na cor da fase, desenhado só no trecho novo (totalMs <= 99 min cabe em 32 bits x 360)
+  int target = (s.totalMs && s.remainingMs < s.totalMs) ? (int)((uint32_t)(s.totalMs - s.remainingMs) * 360u / s.totalMs) : 0;
   if (full || target < lastRing) {
     for (int d = 0; d < 360; d += 1) ringDot(d, DIM);
     lastRing = 0;

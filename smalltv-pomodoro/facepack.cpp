@@ -1056,10 +1056,13 @@ static inline uint8_t sprPixel(const uint8_t *px, uint8_t bits, int i) {
 // número de quadros do sprite (1 a 16; ver o cabeçalho em sprEncode)
 static inline uint8_t sprNf(const uint8_t *p) { return (p[3] & 15) + 1; }
 
-// quadro do sprite no instante s.ms (1 quadro = parado)
+// quadro do sprite no instante s.ms (1 quadro = parado); aritmética de 32 bits evita __moddi3 na IRAM
 static uint8_t sprFrame(const Layer &L, const UiState &s) {
   uint8_t nf = sprNf(spr + L.str);
-  return nf > 1 ? (uint64_t)s.ms * (spr[L.str + 3] >> 4) / 1000 % nf : 0;  // 64 bits: ms x fps estouraria em ~5 dias
+  if (nf <= 1) return 0;
+  uint32_t fps = spr[L.str + 3] >> 4;
+  uint32_t sec = s.ms / 1000u, rem = s.ms % 1000u;
+  return (uint8_t)(((sec % nf) * (fps % nf) + (rem * fps) / 1000u) % nf);
 }
 
 // Sprite com "motion": a posição do instante s.ms vai para a própria camada (as posições do movimento são absolutas,

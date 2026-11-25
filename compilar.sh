@@ -45,7 +45,7 @@ mkdir -p build
 # Vai em compiler.cpp.extra_flags (vazio no platform.txt do core 3.1.2), nunca em build.extra_flags, que é das opções
 # da placa. A CI e o scripts/publicar.sh compilam por aqui.
 "$CLI" compile --fqbn "esp8266:esp8266:generic:eesz=$LAYOUT,xtal=160,ip=lm2n" --build-property "build.float=" \
-  --build-property "compiler.cpp.extra_flags=-DNO_GLOBAL_TWOWIRE \"-include{build.source.path}/sem_wire.h\"" \
+  --build-property "compiler.cpp.extra_flags=-DNO_GLOBAL_TWOWIRE -DARDUINOJSON_USE_DOUBLE=0 -fno-threadsafe-statics \"-include{build.source.path}/sem_wire.h\"" \
   --output-dir build smalltv-pomodoro "$@" > build/compilar.log 2>&1; rc=$?
 cat build/compilar.log
 [ $rc -eq 0 ] || exit 1

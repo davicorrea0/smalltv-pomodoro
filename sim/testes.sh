@@ -60,15 +60,15 @@ if [ ! -d "$GFX" ] || [ ! -d "$JSON" ]; then
 fi
 [ -d "$GFX" ] && [ -d "$JSON" ] || { echo "testes: Adafruit GFX e ArduinoJson não encontrados (defina GFX e JSON)"; exit 1; }
 FW=../smalltv-pomodoro
-g++ -std=c++17 -fsanitize=address,undefined -g -O1 -w -DARDUINO=100 -DARDUINOJSON_ENABLE_ARDUINO_STRING=0 -DARDUINOJSON_ENABLE_ARDUINO_STREAM=0 \
+g++ -std=c++17 -fsanitize=address,undefined -g -O1 -w -DARDUINO=100 -DARDUINOJSON_USE_DOUBLE=0 -DARDUINOJSON_ENABLE_ARDUINO_STRING=0 -DARDUINOJSON_ENABLE_ARDUINO_STREAM=0 \
   -DARDUINOJSON_ENABLE_ARDUINO_PRINT=0 -DARDUINOJSON_ENABLE_PROGMEM=0 -Ishim -I"$GFX" -I"$JSON" facepack_fuzz.cpp "$FW/facepack.cpp" "$FW/appdata.cpp" "$FW/ui.cpp" \
   "$FW"/face_*.cpp "$FW/fonts.cpp" "$FW/src/qrcodegen/qrcodegen.cpp" "$GFX/Adafruit_GFX.cpp" -o "$T/facepack_fuzz"
 "$T/facepack_fuzz" ../faces "$N" apps-seeds ../docs/exemplos
 # dados empurrados: POST /api/apps/data, {x.campo}, ttl na volta do millis, incremental x cheio, fuzz do parser
-g++ -std=c++17 -fsanitize=address,undefined -g -O1 -w -DARDUINO=100 -DARDUINOJSON_ENABLE_ARDUINO_STRING=0 -DARDUINOJSON_ENABLE_ARDUINO_STREAM=0   -DARDUINOJSON_ENABLE_ARDUINO_PRINT=0 -DARDUINOJSON_ENABLE_PROGMEM=0 -Ishim -I"$GFX" -I"$JSON" appdata_test.cpp "$FW/facepack.cpp" "$FW/appdata.cpp" "$FW/ui.cpp"   "$FW"/face_*.cpp "$FW/fonts.cpp" "$FW/src/qrcodegen/qrcodegen.cpp" "$GFX/Adafruit_GFX.cpp" -o "$T/appdata_test"
+g++ -std=c++17 -fsanitize=address,undefined -g -O1 -w -DARDUINO=100 -DARDUINOJSON_USE_DOUBLE=0 -DARDUINOJSON_ENABLE_ARDUINO_STRING=0 -DARDUINOJSON_ENABLE_ARDUINO_STREAM=0   -DARDUINOJSON_ENABLE_ARDUINO_PRINT=0 -DARDUINOJSON_ENABLE_PROGMEM=0 -Ishim -I"$GFX" -I"$JSON" appdata_test.cpp "$FW/facepack.cpp" "$FW/appdata.cpp" "$FW/ui.cpp"   "$FW"/face_*.cpp "$FW/fonts.cpp" "$FW/src/qrcodegen/qrcodegen.cpp" "$GFX/Adafruit_GFX.cpp" -o "$T/appdata_test"
 "$T/appdata_test" apps-seeds/bento-casa.json "$N"
 # pacote tokensmall (miniapps/tokensmall): campos empurrados pelo companheiro, "--" na janela sem leitura, incremental x cheio
-g++ -std=c++17 -fsanitize=address,undefined -g -O1 -w -DARDUINO=100 -DARDUINOJSON_ENABLE_ARDUINO_STRING=0 -DARDUINOJSON_ENABLE_ARDUINO_STREAM=0   -DARDUINOJSON_ENABLE_ARDUINO_PRINT=0 -DARDUINOJSON_ENABLE_PROGMEM=0 -Ishim -I"$GFX" -I"$JSON" tokensmall_test.cpp "$FW/facepack.cpp" "$FW/appdata.cpp" "$FW/ui.cpp"   "$FW"/face_*.cpp "$FW/fonts.cpp" "$FW/src/qrcodegen/qrcodegen.cpp" "$GFX/Adafruit_GFX.cpp" -o "$T/tokensmall_test"
+g++ -std=c++17 -fsanitize=address,undefined -g -O1 -w -DARDUINO=100 -DARDUINOJSON_USE_DOUBLE=0 -DARDUINOJSON_ENABLE_ARDUINO_STRING=0 -DARDUINOJSON_ENABLE_ARDUINO_STREAM=0   -DARDUINOJSON_ENABLE_ARDUINO_PRINT=0 -DARDUINOJSON_ENABLE_PROGMEM=0 -Ishim -I"$GFX" -I"$JSON" tokensmall_test.cpp "$FW/facepack.cpp" "$FW/appdata.cpp" "$FW/ui.cpp"   "$FW"/face_*.cpp "$FW/fonts.cpp" "$FW/src/qrcodegen/qrcodegen.cpp" "$GFX/Adafruit_GFX.cpp" -o "$T/tokensmall_test"
 "$T/tokensmall_test" apps-seeds/tokensmall.json
 # saída completa em arquivo; um erro em qualquer um interrompe tudo (set -e) e mostra o fim do log
 for f in gif jpeg; do
