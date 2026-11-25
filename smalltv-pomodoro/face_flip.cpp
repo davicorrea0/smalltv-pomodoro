@@ -108,7 +108,6 @@ static const int FL_X[2] = {8, 124};     // cartão das horas e dos minutos
 static const float FL_D = 14.0f * FL_HALF;  // distância do observador (perspectiva sutil)
 static const uint16_t FL_TOP = uiRgb(46, 46, 52), FL_BOT = uiRgb(37, 37, 42), FL_FG = uiRgb(244, 242, 234);
 static const uint8_t FL_CORNER[10] = {7, 5, 3, 2, 2, 1, 1, 0, 0, 0};  // recuo dos cantos arredondados (raio 10)
-static uint8_t flCov[FL_BW];
 
 // Mistura inteira de cores RGB565: n/16 de b sobre a.
 uint16_t mix16(uint16_t a, uint16_t b, int n) {
@@ -120,7 +119,7 @@ uint16_t mix16(uint16_t a, uint16_t b, int n) {
 }
 
 // Acumula a cobertura de um trecho [a, b) em 1/16 de pixel.
-static void flSpan(int a, int b) {
+static void flSpan(uint8_t *flCov, int a, int b) {
   if (a < 0) a = 0;
   if (b > FL_BW * 16) b = FL_BW * 16;
   if (b <= a) return;
@@ -136,19 +135,23 @@ static void flSpan(int a, int b) {
 
 // Uma sub-linha de um dígito: cruzamentos com as arestas (regra par-ímpar, que trata os furos).
 // ox16 = origem do dígito (1/16 px, coordenadas do buffer); sx16 = escala horizontal x16 em torno do centro.
-static void flSubline(int d, int ox16, int sy, int sx16) {
+static void flSubline(uint8_t *flCov, int d, int ox16, int sy, int sx16) {
   if (sy < 0 || sy >= FLIP_CH) return;
   int xs[24], n = 0;
   for (int c = FLIP_DIG[d]; c < FLIP_DIG[d + 1]; c++) {
-    // tabelas em PROGMEM (flash): no ESP8266, "const" comum ocuparia RAM
+    // tabelas em PROGMEM (flash): reutiliza prevY e só lê X quando a aresta cruza sy
     int s = c ? pgm_read_word(&FLIP_CEND[c - 1]) : 0, e = pgm_read_word(&FLIP_CEND[c]);
+    if (e <= s) continue;
+    int prevI = e - 1;
+    int prevY = (int16_t)pgm_read_word(&FLIP_PT[prevI][1]);
     for (int i = s; i < e; i++) {
-      int j = i + 1 < e ? i + 1 : s;
-      int ay = (int16_t)pgm_read_word(&FLIP_PT[i][1]), by = (int16_t)pgm_read_word(&FLIP_PT[j][1]);
-      if ((ay <= sy && sy < by) || (by <= sy && sy < ay)) {
-        int ax = (int16_t)pgm_read_word(&FLIP_PT[i][0]), bx = (int16_t)pgm_read_word(&FLIP_PT[j][0]);
-        if (n < 24) xs[n++] = ax * 16 + (sy - ay) * (bx - ax) * 16 / (by - ay);
+      int curY = (int16_t)pgm_read_word(&FLIP_PT[i][1]);
+      if ((prevY <= sy && sy < curY) || (curY <= sy && sy < prevY)) {
+        int ax = (int16_t)pgm_read_word(&FLIP_PT[prevI][0]), bx = (int16_t)pgm_read_word(&FLIP_PT[i][0]);
+        if (n < 24) xs[n++] = ax * 16 + (sy - prevY) * (bx - ax) * 16 / (curY - prevY);
       }
+      prevI = i;
+      prevY = curY;
     }
   }
   for (int i = 1; i < n; i++)  // ordenação por inserção (poucos cruzamentos)
@@ -160,20 +163,21 @@ static void flSubline(int d, int ox16, int sy, int sx16) {
   const int c16 = FL_BW * 8;  // centro do buffer em 1/16 px
   for (int k = 0; k + 1 < n; k += 2) {
     int a = ox16 + xs[k] / 8, b = ox16 + xs[k + 1] / 8;  // fonte/8 = px
-    flSpan(c16 + (a - c16) * sx16 / 16, c16 + (b - c16) * sx16 / 16);
+    flSpan(flCov, c16 + (a - c16) * sx16 / 16, c16 + (b - c16) * sx16 / 16);
   }
 }
 
 // Desenha a linha de tela FL_Y+yr do cartão em cx mostrando a linha de origem srcTop (px do
 // cartão, fracionária, altura dy) do par "value", com escala horizontal sx e escurecida em shade/16.
 static void flRow(int cx, int yr, int value, float srcTop, float dy, int shade, float sx = 1) {
+  uint8_t flCov[FL_BW];  // na pilha para não ocupar BSS ociosa
   memset(flCov, 0, sizeof flCov);
   int sx16 = (int)(sx * 16 + 0.5f);
   if (value >= 0)
     for (int j = 0; j < 4; j++) {
       int sy = (int)((srcTop + (j + 0.5f) * dy / 4 - FL_DTOP) * 8);  // linha de origem em unidades da fonte
-      flSubline(value / 10, (FL_EXT + 4) * 16, sy, sx16);
-      flSubline(value % 10, (FL_EXT + 54) * 16, sy, sx16);
+      flSubline(flCov, value / 10, (FL_EXT + 4) * 16, sy, sx16);
+      flSubline(flCov, value % 10, (FL_EXT + 54) * 16, sy, sx16);
     }
   uint16_t bg = srcTop < FL_HALF ? FL_TOP : FL_BOT;
   uint16_t pal[17], b = mix16(bg, BG, shade), f = mix16(FL_FG, BG, shade);
