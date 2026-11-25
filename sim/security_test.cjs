@@ -8,6 +8,19 @@ if(!source.includes('f.indexOf("/.") >= 0'))throw Error('/api/fsdelete: recusar 
 if(!source.includes('int cut = s.lastIndexOf(',', 300);')||!source.includes('s = cut > 0 ? s.substring(0, cut) : String();'))throw Error('rotSet: sem vírgula, substring(0, -1) não corta nada');
 for(const name of ['handleUpload','handlePackUpload','handlePanelUpload'])
  if(!fn(name).includes('uploadAuthed()'))throw Error(`${name} bypasses upload throttle`);
+{ // toda POST do painel começa com guard(); exceções fechadas: handler com nome, chave própria ou upload
+ const web=fn('setupWeb'),sem=['/api/statsimport','/api/apps/data','/api/faceinstall'],re=/server\.on\(F\("([^"]+)"\), HTTP_POST, \[\] \{[^\n]*\n\s*([^\n]*)/g;
+ for(const m of web.matchAll(re))if(!sem.includes(m[1])&&m[2]!=='if (!guard()) return;')throw Error(`${m[1]}: POST must start with if (!guard()) return;`);
+ for(const r of sem)if(!web.includes(`server.on(F("${r}"), HTTP_POST`))throw Error(`${r}: exception list is stale`);
+ for(const r of ['/api/settings','/api/format','/api/otapass'])  // risco alto: registradas uma vez, só POST
+  if(web.split(`server.on(F("${r}")`).length!==2||!web.includes(`server.on(F("${r}"), HTTP_POST, [] {`))throw Error(`${r} must be registered once, POST only`);
+ const blk=r=>{const i=web.indexOf(`server.on(F("${r}")`);return web.slice(i,web.indexOf('\n  });',i));};
+ const ota=blk('/api/otapass'),cp=ota.indexOf('strlcpy(cfg.otaPass');
+ const antes=t=>{const k=ota.indexOf(t);return k>=0&&k<cp;};
+ if(cp<0||!antes('server.arg("old")')||!antes('sizeof(cfg.otaPass)'))throw Error('/api/otapass must check the old password and the length before strlcpy');
+ if(ota.split('\n').some(l=>l.includes('send')&&/otaPass|c_str\(\)/.test(l)))throw Error('/api/otapass must never send the password back');
+ if(/otaPass|apPass/.test(blk('/api/settings')))throw Error('/api/settings must not touch the passwords');
+}
 { // dados de fora: POST /api/apps/data só com a chave (nunca a senha do painel), Host e X-SmallTV, espera por IP na
  // chave errada, corpo limitado; desligado (403) sem /apps.key; a chave só sai num POST com guard() e fica fora do backup
  const i=source.indexOf('server.on(F("/api/apps/data"), HTTP_POST'),blk=source.slice(i,source.indexOf('\n  });',i));
