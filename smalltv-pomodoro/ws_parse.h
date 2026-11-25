@@ -37,8 +37,35 @@
 #define WS_FORM_MAX 4096       // multipart: cabeçalhos das partes e campos comuns (os arquivos não contam)
 #define WS_BODY_MAX 4096       // corpo que não é multipart (POST urlencoded, JSON do Alexa)
 #define WS_BOUNDARY_MAX 80     // o RFC 2046 limita o boundary a 70
+#define WS_LINE_MAX 768        // limite por linha (request line, header e linha de cabeçalho multipart)
+#define WS_HDR_MAX 32          // máximo de cabeçalhos HTTP por requisição
+#define WS_HDR_MS 10000UL      // prazo total para terminar a linha inicial e os cabeçalhos
+#define WS_UPLOAD_MAX (3UL * 1024 * 1024 + 65536UL)  // teto de bytes por arquivo no multipart
 
 namespace esp8266webserver {
+
+template <typename ClientType>
+static bool wsReadLine(ClientType& client, String& out, size_t maxLen, uint32_t idleMs, uint32_t deadline = 0, bool hasDeadline = false) {
+  out.clear();
+  uint32_t last = millis();
+  for (;;) {
+    int ch = client.read();
+    if (ch >= 0) {
+      last = millis();
+      if (ch == '\n') {
+        if (out.length() && out.charAt(out.length() - 1) == '\r') out = out.substring(0, out.length() - 1);
+        return true;
+      }
+      if (out.length() >= maxLen) return false;
+      out += (char)ch;
+      continue;
+    }
+    if (!client.connected()) return false;
+    uint32_t now = millis();
+    if ((uint32_t)(now - last) >= idleMs || (hasDeadline && (int32_t)(now - deadline) >= 0)) return false;
+    yield();
+  }
+}
 
 template <>
 inline int ESP8266WebServerTemplate<WiFiServer>::_uploadReadByte(ClientType& client) {
@@ -58,14 +85,11 @@ inline bool ESP8266WebServerTemplate<WiFiServer>::_parseForm(ClientType& client,
   // PATCH C5: o boundary vira um array na pilha (fastBoundary) e vem do cabeçalho, sem limite
   if (boundary.length() > WS_BOUNDARY_MAX) return false;
   // PATCH C1/C2: lê uma linha; false = o cliente foi embora, parou de enviar ou mandou texto demais fora dos arquivos
-  uint32_t last = millis();
   size_t used = 0;
   auto readLine = [&](String& out) -> bool {
-    out = client.readStringUntil('\r');
-    client.readStringUntil('\n');
+    if (!wsReadLine(client, out, WS_LINE_MAX, WS_IDLE_MS)) return false;
     used += out.length() + 2;
-    if (out.length()) last = millis();
-    return used <= WS_FORM_MAX && (out.length() || (client.connected() && (uint32_t)(millis() - last) < WS_IDLE_MS));
+    return used <= WS_FORM_MAX;
   };
   auto bail = [&]() -> bool {  // libera os campos e recusa a requisição (o servidor fecha o socket)
     if (_postArgs) delete[] _postArgs;
@@ -76,11 +100,9 @@ inline bool ESP8266WebServerTemplate<WiFiServer>::_parseForm(ClientType& client,
   String line;
   int retry = 0;
   do {
-    line = client.readStringUntil('\r');
+    if (!wsReadLine(client, line, WS_LINE_MAX, WS_IDLE_MS)) return false;
     ++retry;
   } while (line.length() == 0 && retry < 3);
-
-  client.readStringUntil('\n');
   //start reading the form
   if (line == ("--"+boundary)){
     if(_postArgs) delete[] _postArgs;
@@ -150,9 +172,10 @@ inline bool ESP8266WebServerTemplate<WiFiServer>::_parseForm(ClientType& client,
             char fastBoundary[ fastBoundaryLen ];
             snprintf(fastBoundary, fastBoundaryLen, "\r\n--%s", boundary.c_str());
             int boundaryPtr = 0;
+            uint32_t fileBytes = 0;
             while ( true ) {
                 int ret = _uploadReadByte(client);
-                if (ret < 0) {
+                if (ret < 0 || ++fileBytes > WS_UPLOAD_MAX) {
                     // Unexpected, we should have had data available per above
                     return _parseFormUploadAborted();
                 }
@@ -187,8 +210,7 @@ inline bool ESP8266WebServerTemplate<WiFiServer>::_parseForm(ClientType& client,
             if (_currentHandler && _currentHandler->canUpload(_currentUri))
                 _currentHandler->upload(*this, _currentUri, *_currentUpload);
             if (!client.connected()) return _parseFormUploadAborted();
-            last = millis();  // PATCH C2: o arquivo pode ter levado muito mais que o prazo; o prazo recomeça aqui
-            if (!readLine(line)) return bail();  // PATCH C2
+            if (!readLine(line)) return bail();  // PATCH C2: cada linha pós-arquivo usa seu próprio idle timeout (WS_IDLE_MS)
             if (line == "--") {     // extra two dashes mean we reached the end of all form fields
                 break;
             }
@@ -225,13 +247,17 @@ inline bool ESP8266WebServerTemplate<WiFiServer>::_parseForm(ClientType& client,
 
 template <>
 inline ESP8266WebServerTemplate<WiFiServer>::ClientFuture ESP8266WebServerTemplate<WiFiServer>::_parseRequest(ClientType& client) {
+  const uint32_t hdrDeadline = millis() + WS_HDR_MS;
   // Read the first line of HTTP request
-  String req = client.readStringUntil('\r');
-  client.readStringUntil('\n');
+  String req;
+  if (!wsReadLine(client, req, WS_LINE_MAX, WS_IDLE_MS, hdrDeadline, true)) {
+    return CLIENT_MUST_STOP;
+  }
   //reset header value
   for (int i = 0; i < _headerKeysCount; ++i) {
     _currentHeaders[i].value.clear();
    }
+  _hostHeader.clear();  // PATCH: evita herdar Host da requisição anterior quando vier sem cabeçalho Host
 
   // First line of HTTP request looks like "GET /path HTTP/1.1"
   // Retrieve the "/path" part by finding the spaces
@@ -298,10 +324,11 @@ inline ESP8266WebServerTemplate<WiFiServer>::ClientFuture ESP8266WebServerTempla
     bool isEncoded = false;
     uint32_t contentLength = 0;
     //parse headers
+    int hdrCount = 0;
     while(1){
-      req = client.readStringUntil('\r');
-      client.readStringUntil('\n');
+      if (!wsReadLine(client, req, WS_LINE_MAX, WS_IDLE_MS, hdrDeadline, true)) return CLIENT_MUST_STOP;
       if (req.isEmpty()) break; //no more headers
+      if (++hdrCount > WS_HDR_MAX) return CLIENT_MUST_STOP;
       int headerDiv = req.indexOf(':');
       if (headerDiv == -1){
         break;
@@ -367,6 +394,10 @@ inline ESP8266WebServerTemplate<WiFiServer>::ClientFuture ESP8266WebServerTempla
       }
     } else { // isForm is true
       // here: content is not yet read (plainBuf is still empty)
+      // PATCH: bloqueia multipart antes de ler qualquer byte em rotas sem handler de upload
+      if (!_currentHandler || !_currentHandler->canUpload(_currentUri)) {
+        return CLIENT_MUST_STOP;
+      }
       if (!_parseForm(client, boundaryStr, contentLength)) {
         return CLIENT_MUST_STOP;
       }
@@ -375,16 +406,18 @@ inline ESP8266WebServerTemplate<WiFiServer>::ClientFuture ESP8266WebServerTempla
     String headerName;
     String headerValue;
     //parse headers
+    int hdrCount = 0;
     while(1){
-      req = client.readStringUntil('\r');
-      client.readStringUntil('\n');
+      if (!wsReadLine(client, req, WS_LINE_MAX, WS_IDLE_MS, hdrDeadline, true)) return CLIENT_MUST_STOP;
       if (req.isEmpty()) break;//no moar headers
+      if (++hdrCount > WS_HDR_MAX) return CLIENT_MUST_STOP;
       int headerDiv = req.indexOf(':');
       if (headerDiv == -1){
         break;
       }
       headerName = req.substring(0, headerDiv);
-      headerValue = req.substring(headerDiv + 2);
+      headerValue = req.substring(headerDiv + 1);
+      headerValue.trim();
       _collectHeader(headerName.c_str(),headerValue.c_str());
 
       if (headerName.equalsIgnoreCase(F("Host"))){

@@ -49,7 +49,7 @@ jobs:
             "Adafruit BusIO@1.17.4" "ArduinoJson@7.4.3"
 
       - name: painel (terser da versão fixa do web/package.json)
-        run: cd web && npm install --no-audit --no-fund
+        run: cd web && npm ci --no-audit --no-fund
 
       - name: simulador (mostradores, redesenho incremental, troca de telas) e painel
         run: |

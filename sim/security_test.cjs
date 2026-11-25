@@ -165,6 +165,22 @@ for(const [name,hs] of [['setupWeb',['Origin','X-Firmware-Sig','Authorization','
  const tp=fn('tickPomodoro');if(tp.includes('hookFire')||tp.includes('httpGet')||tp.includes('hookLoop'))throw Error('tickPomodoro must not call HTTP');
  if(!source.includes('stallAt\\"')||!source.includes('diagStallAt = diagWhere'))throw Error('diag must report the longest loop stall and where');
 }
+{ // endurecimento de autenticacao, Alexa/DNS rebinding, SSRF, XSS em /update, recovery e /apps.key
+ const po=source.slice(source.indexOf('static bool passOk() {'),source.indexOf('\n}',source.indexOf('static bool passOk() {'))) ;
+ if(!po.includes('constTimeEq('))throw Error('passOk must compare Authorization in constant time');
+ const op=source.slice(source.indexOf('server.on(F("/api/otapass")'),source.indexOf('server.on(F("/api/wifireset")'));
+ if(!op.includes('constTimeEq(')||!op.includes('authThrottle.fail('))throw Error('/api/otapass must compare old password in constant time and throttle failures');
+ const hd=fn('sendHueDescription'),ax=fn('alexaApi');
+ if(!hd.includes('if (!hostOk()) { deny(); return; }'))throw Error('sendHueDescription must enforce hostOk()');
+ if(!ax.includes('if (!hostOk()) { deny(); return; }')||!ax.includes('!req.startsWith(F("/api"))'))throw Error('alexaApi must enforce hostOk() and /api prefix');
+ const fk=source.slice(source.indexOf('bool fsKeep('),source.indexOf('\n}',source.indexOf('bool fsKeep(')));
+ if(!fk.includes('"/apps.key"'))throw Error('fsKeep must protect /apps.key');
+ const hs=source.indexOf('int httpGet(WiFiClient'),hg=source.slice(hs,source.indexOf('\n}',hs));
+ if(!hg.includes('addr == WiFi.localIP()')||!hg.includes('addr[0] == 127'))throw Error('httpGet must block loopback, link-local, multicast and self IP');
+ if(update.includes('innerHTML'))throw Error('setupUpdate must not assign response text with innerHTML');
+ if(!recovery.includes('secHeaders();')||!recovery.includes('no-store')||!recovery.includes('!hostOk() || !formOk()'))
+  throw Error('startRecovery must enforce hostOk, secHeaders and Cache-Control: no-store');
+}
 const out=process.argv[2];if(!out)throw Error('output.cpp required');
 const header=path.relative(path.dirname(path.resolve(out)),path.resolve(__dirname,'../smalltv-pomodoro/security.h')).replaceAll('\\','/');
 fs.writeFileSync(out,`#include "${header}"
