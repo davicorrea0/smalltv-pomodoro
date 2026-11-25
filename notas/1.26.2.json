@@ -12,7 +12,8 @@
     "Home Assistant (para quem usa): mostradores podem mostrar dados enviados pela rede com uma chave de escrita criada em Ajustes",
     "Álbum: fotos e GIFs usam menos memória, com menos avisos de falta de memória",
     "Tela: cores mais fiéis, com o ajuste de cor do painel feito na partida",
-    "Segurança: o relógio recusa pedidos malformados ou grandes demais e protege melhor a senha e a chave do Home Assistant"
+    "Segurança: o relógio recusa pedidos malformados ou grandes demais e protege melhor a senha e a chave do Home Assistant",
+    "Sessões: crie suas próprias sessões de foco no painel (até 8), além de Deep focus e Gentle focus"
   ],
   "en": [
     "Version 1.26.2: fixes for 1.26.1 plus memory, colour and security improvements",
@@ -27,7 +28,8 @@
     "Home Assistant (if you use it): faces can show data sent over the network with a write key created in Settings",
     "Album: photos and GIFs use less memory, with fewer out-of-memory warnings",
     "Screen: more faithful colours, with the display colour calibration done at startup",
-    "Security: the clock refuses malformed or oversized requests and better protects the password and the Home Assistant key"
+    "Security: the clock refuses malformed or oversized requests and better protects the password and the Home Assistant key",
+    "Sessions: create your own focus sessions in the panel (up to 8), besides Deep focus and Gentle focus"
   ],
   "es": [
     "Versión 1.26.2: correcciones de la 1.26.1 y mejoras de memoria, color y seguridad",
@@ -42,6 +44,7 @@
     "Home Assistant (si lo usas): las esferas pueden mostrar datos enviados por la red con una clave de escritura creada en Ajustes",
     "Álbum: las fotos y los GIF usan menos memoria, con menos avisos de falta de memoria",
     "Pantalla: colores más fieles, con el ajuste de color de la pantalla hecho al arrancar",
-    "Seguridad: el reloj rechaza pedidos malformados o demasiado grandes y protege mejor la contraseña y la clave de Home Assistant"
+    "Seguridad: el reloj rechaza pedidos malformados o demasiado grandes y protege mejor la contraseña y la clave de Home Assistant",
+    "Sesiones: crea tus propias sesiones de enfoque en el panel (hasta 8), además de Deep focus y Gentle focus"
   ]
 }
