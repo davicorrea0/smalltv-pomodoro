@@ -138,6 +138,64 @@ estão em texto.
 - Claude é marca da Anthropic e Codex é marca da OpenAI. Este pacote é não oficial: não tem afiliação, patrocínio nem aprovação
   da Anthropic, da OpenAI ou dos autores do Clawd Quest e do TokenTV.
 
+## Versão mascote grande: um pacote por assistente
+
+Dois pacotes a mais, cada um com um mascote só, grande, no meio da tela: [`tokensmall-clawd.json`](../../sim/apps-seeds/tokensmall-clawd.json)
+(o Clawd de boné) e [`tokensmall-codex.json`](../../sim/apps-seeds/tokensmall-codex.json) (a nuvem do Codex). O mascote tem
+96 px de largura, com o chão embaixo dele. Embaixo do chão ficam a barra de 5 h, o percentual (`bebas` 52), o tempo até
+reiniciar (`pixel` 3, 24 px) e o 7 dias no alto (`pixel` 2, 16 px). Cada pacote lê só os 3 campos do seu assistente
+(`tk_c5`, `tk_c5r`, `tk_c7` ou `tk_x5`, `tk_x5r`, `tk_x7`). Firmware e companheiro não mudam.
+
+| Humor | Quando (`when` exato) | O que o mascote faz |
+|---|---|---|
+| Trabalhando | leitura de 1 a 99 % | balança; os braços digitam alternados e um pé bate. O Clawd olha a tela, pisca e olha para os lados (16 quadros nos olhos). O Codex digita um comando no `>_`, com o cursor piscando (16 quadros no rosto) |
+| Perto do limite | 90 % ou mais | o mesmo, com uma gota de suor de cada lado |
+| Limite atingido | `x.tk_?5=100` | fica vermelho, com olhos X e boca aberta; treme e solta fumaça; os braços se debatem (8 quadros) |
+| Descansado | `x.tk_?5=0` | comemora pulando com squash-and-stretch: amassa, estica no ar e amassa ao cair (8 quadros, no tempo do pulo). Cai confete, e o Clawd joga o boné para cima e pega de volta |
+| Sem dados | `!x.tk_?5r` | dorme respirando, com Z subindo; "SEM DADOS" no lugar do tempo |
+
+**Como coube.** O teto é de 8192 B de sprites, contados a 4 bits por célula, e um sprite de 32 x 32 com 16 quadros já passa
+disso. Por isso:
+- balanço, pulo, tremor e respiração são `motion` (0 B);
+- o corpo de trabalho tem 8 quadros, e os olhos (Clawd) ou o rosto (Codex) são um sprite à parte, de 16 quadros, que anda
+  junto: 16 poses diferentes por ciclo pelo preço de 8;
+- o boné do Clawd é um sprite só, com um `motion` por humor;
+- a gota de suor é feita de barras de 1 px com `max` 90, que só enchem a partir de 90 %;
+- no 100 %, um retângulo da cor da parede tapa o mascote de trabalho, porque `x.tk_?5` também é verdadeiro no 100.
+
+Limites usados:
+
+| Pacote | Sprites (B) | Sprites | Camadas | Com `motion` | Arquivo (B) | Refs `x.` |
+|---|---|---|---|---|---|---|
+| Clawd | 8147 de 8192 | 9 de 12 | 32 de 48 | 12 de 12 | 23 336 de 24 576 | 4 de 8 |
+| Codex | 8133 de 8192 | 8 de 12 | 28 de 48 | 8 de 12 | 22 748 de 24 576 | 4 de 8 |
+
+O que não coube:
+- **Tremer perto do limite.** O `when` só compara por igualdade exata. "90 % ou mais" só existe nas barras, que não têm
+  quadros, por isso o tremor ficou para o 100 %.
+- **Atenção quando você manda um prompt ou quando a sessão espera por você.** Pede um campo de atividade, que o companheiro
+  ainda não manda.
+
+Prévias em `sim/apps-seeds/`:
+- capa: [`tokensmall-clawd.png`](../../sim/apps-seeds/tokensmall-clawd.png) e
+  [`tokensmall-codex.png`](../../sim/apps-seeds/tokensmall-codex.png);
+- os 5 humores: [`tokensmall-clawd-estados.png`](../../sim/apps-seeds/tokensmall-clawd-estados.png) e
+  [`tokensmall-codex-estados.png`](../../sim/apps-seeds/tokensmall-codex-estados.png);
+- animados, 2,4 s por humor: [`tokensmall-clawd.gif`](../../sim/apps-seeds/tokensmall-clawd.gif) e
+  [`tokensmall-codex.gif`](../../sim/apps-seeds/tokensmall-codex.gif).
+
+O gerador é [`sim/gerar_tokensmall_grande.py`](../../sim/gerar_tokensmall_grande.py), com os desenhos em texto.
+
+**Créditos.**
+- Clawd, boné, olhos e poses: Clawd Quest, como na versão arcade (MIT, licença em
+  [`sim/apps-seeds/LICENSE-clawd-quest.txt`](../../sim/apps-seeds/LICENSE-clawd-quest.txt)). As versões amassada e esticada
+  da comemoração foram desenhadas aqui sobre o mesmo corpo.
+- Nuvem: TokenTV (MIT, licença em [`sim/apps-seeds/LICENSE-token-tv.txt`](../../sim/apps-seeds/LICENSE-token-tv.txt)).
+  O arranjo da cena também vem dele: mascote grande no meio, chão simples e barra de uso embaixo. As versões vermelha,
+  amassada e esticada da nuvem e o rosto digitando foram desenhados aqui.
+- Nada do Clawdmeter (sem licença) foi usado: nem imagem, nem código, nem fonte.
+- O aviso de marcas acima vale também para estes dois pacotes.
+
 ## Limites desta versão
 
 - Só o percentual **usado** (o que o Claude Code e o TokenTV também mostram). A barra não muda de cor perto do limite: o pacote só compara valores por igualdade exata.
@@ -150,7 +208,7 @@ estão em texto.
 
 ```bash
 python -I miniapps/tokensmall/test_tokensmall.py     # companheiro (relógio de mentira em 127.0.0.1)
-bash sim/testes.sh                                    # inclui tokensmall_test e tokensmall_arcade_test: os pacotes desenhados com e sem dados, incremental x cheio, humores
+bash sim/testes.sh                                    # inclui tokensmall_test, tokensmall_arcade_test e tokensmall_grande_test: os pacotes desenhados com e sem dados, incremental x cheio, humores
 ```
 
 ## Crédito
