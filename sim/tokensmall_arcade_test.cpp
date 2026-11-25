@@ -45,9 +45,10 @@ static uint32_t hashRet(const uint16_t *p, int x, int y, int w, int h) {
   return r;
 }
 static uint32_t hash(const uint16_t *p) { return hashRet(p, 0, 0, 240, 240); }
-// o quarto (sprite, 72 x 60) e o cartão inteiro de cada assistente: Claude em cima, Codex embaixo
-static uint32_t cenaC(const uint16_t *p) { return hashRet(p, 16, 22, 72, 60); }
-static uint32_t cenaX(const uint16_t *p) { return hashRet(p, 16, 138, 72, 60); }
+// o mascote (caixa de 64 x 50 a partir de x 18, até o tampo da mesa) e o cartão inteiro de cada assistente:
+// Claude em cima (cartão em y 4), Codex embaixo (cartão em y 120)
+static uint32_t cenaC(const uint16_t *p) { return hashRet(p, 14, 4, 72, 46); }
+static uint32_t cenaX(const uint16_t *p) { return hashRet(p, 14, 120, 72, 46); }
 static uint32_t cartaoC(const uint16_t *p) { return hashRet(p, 8, 4, 224, 112); }
 static uint32_t cartaoX(const uint16_t *p) { return hashRet(p, 8, 120, 224, 112); }
 

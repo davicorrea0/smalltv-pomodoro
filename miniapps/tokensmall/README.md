@@ -86,51 +86,57 @@ Um cartão por assistente com duas linhas (5 horas e 7 dias). A linha de 5 horas
 
 ## Versão arcade: mascotes que reagem ao limite
 
-![Os dois quartos: Claude e Codex trabalhando](../../sim/apps-seeds/tokensmall-arcade.png)
+![Os dois quartos: Clawd e a nuvem do Codex trabalhando](../../sim/apps-seeds/tokensmall-arcade.png)
 
 [`sim/apps-seeds/tokensmall-arcade.json`](../../sim/apps-seeds/tokensmall-arcade.json) é um segundo pacote para os **mesmos 6
 campos** (`tk_c5`, `tk_c5r`, `tk_c7`, `tk_x5`, `tk_x5r`, `tk_x7`): nada muda no companheiro nem no firmware. Cada assistente
-ganha um quartinho com um mascote de pixel art animado (respira e pisca o tempo todo) e o humor dele segue o limite de 5 h:
+tem um quarto no estilo do Clawd Quest (parede escura, mesa de madeira, monitor com código rolando e cursor piscando) e um
+mascote que balança o corpo, digita e pisca; o humor segue o limite de 5 h:
 
-| Humor | Quando | Claude | Codex |
+| Humor | Quando | Claude (Clawd, de boné) | Codex (nuvem lilás) |
 |---|---|---|---|
-| Trabalhando | há leitura entre 1 e 99 % | o caranguejo Clawd digita atrás da mesa e pisca | digita; o `_` da viseira pisca |
+| Trabalhando | há leitura entre 1 e 99 % | balança 2 px a cada 0,6 s, braços alternados digitando, pisca a cada 4 s | balança, digita, o `_` do `>_` pisca |
 | Perto do limite | 90 % ou mais | o mesmo, com uma gota de suor | o mesmo, com uma gota de suor |
-| Limite atingido | `100` | corpo mais vermelho, olhos em X, fumaça | de olhos em X, fumaça |
-| Descansado | `0` (a janela acabou de reiniciar) | comemora: olhos ^ ^, bochechas e confete | de pé, feliz, com uma caneca fumegando |
-| Sem dados | `tk_?5r` vazio ou ausente | dorme de olhos fechados, com Z subindo e "SEM DADOS" | dorme, idem |
+| Limite atingido | `100` | pose de erro: corpo mais vermelho, olhos em X, fumaça subindo | olhos em X, fumaça subindo |
+| Descansado | `0` (a janela acabou de reiniciar) | comemora pulando, com coroa de festa, olhos `^ ^` e bochechas | pula com olhos `^ ^` e bochechas |
+| Sem dados | `tk_?5r` vazio ou ausente | dorme de olhos fechados, respirando, com Z subindo e "SEM DADOS" | dorme, idem |
 
-O número grande é o percentual da janela de 5 h; o relógio com o tempo até reiniciar fica ao lado, e a linha de baixo (ícone
-de calendário com o 7) mostra a janela de 7 dias (`71% 3d`). O pacote só compara valores por igualdade exata, então os humores
-vêm dos valores que o companheiro já manda: `0` e `100` (e "vazio") são exatos; "perto do limite" usa a barra de 1 px de largura
-com `max` 90, que só enche quando o percentual chega a 90 e é o que desenha a gota. Um assistente nunca muda o quarto do outro.
+Embaixo do quarto ficam a barra da janela de 5 h, o percentual em número grande (`bebas` 32) e, à direita, `5H 2h13` (tempo
+até reiniciar) e `7D 71% 3d` (janela de 7 dias) em `pixel` 2 (16 px). O pacote só compara valores por igualdade exata, então
+os humores vêm dos valores que o companheiro já manda: `0` e `100` (e "vazio") são exatos; "perto do limite" usa barras de
+1 px de largura com `max` 90, que só enchem quando o percentual chega a 90 e desenham a gota. Um assistente nunca muda o
+quarto do outro.
 
-Limites do formato que o pacote usa por inteiro: 8 de 8 referências `x.` (`tk_?5`, `tk_?5r`, `=0` e `=100` de cada assistente),
-44 de 48 camadas, 10 de 12 sprites (8 animados, 13 quadros de 32 x 22 px no Claude e 11 de 24 x 20 px no Codex, e 2 ícones), 7981 de 8192 bytes de
-sprites (a conta crua do firmware) e 23458 de 24576 bytes de arquivo. Por isso
-**não dá para acrescentar humores por atividade** (digitando, lendo, no terminal, terminou) a este pacote sem antes mudar o firmware
-(mais referências `x.`) ou separar um pacote por assistente.
+Como o movimento cabe: o balanço, o pulo e a respiração são `motion` da camada (sem custo de sprite, em passos de 1 px), os
+quadros só trocam braços e rostos, a piscada do Clawd é um sprite pequeno só com os olhos (16 quadros, 1 fechado), cada humor é
+um sprite opaco do mesmo tamanho (cobre o de baixo sem camada extra) e o quarto é de retângulos. Usa 8 de 8 referências `x.`,
+45 de 48 camadas, 12 de 12 sprites, 11 de 12 camadas com `motion`, 7702 de 8192 bytes de sprites (a conta crua do firmware) e
+23467 de 24576 bytes de arquivo. Por isso **não dá para acrescentar humores por atividade** (digitando, lendo, no terminal,
+terminou) a este pacote sem antes mudar o firmware (mais referências `x.`) ou separar um pacote por assistente.
 
 Prévias do simulador: [`tokensmall-arcade.png`](../../sim/apps-seeds/tokensmall-arcade.png) (capa),
 [`tokensmall-arcade-estados.png`](../../sim/apps-seeds/tokensmall-arcade-estados.png) (7 estados: sem dados, trabalhando, perto do
 limite, no limite, descansado, só o Claude sem leitura e Claude no limite com Codex descansado) e os laços animados
 [`tokensmall-arcade-claude.gif`](../../sim/apps-seeds/tokensmall-arcade-claude.gif) e
-[`tokensmall-arcade-codex.gif`](../../sim/apps-seeds/tokensmall-arcade-codex.gif).
+[`tokensmall-arcade-codex.gif`](../../sim/apps-seeds/tokensmall-arcade-codex.gif) (os 5 humores, 2 s cada).
 
 Instalar é igual ao pacote normal (*Relógio → Mais mostradores → Instalar de um arquivo*); os dois pacotes não precisam estar
-juntos. O `.json` é gerado por [`sim/gerar_tokensmall_arcade.py`](../../sim/gerar_tokensmall_arcade.py) (os desenhos estão ali,
-em texto).
+juntos. O `.json` é gerado por [`sim/gerar_tokensmall_arcade.py`](../../sim/gerar_tokensmall_arcade.py), onde os desenhos
+estão em texto.
 
-**Créditos e marcas.** A arte do Claude é o caranguejo laranja **Clawd** do [Clawd Quest](https://github.com/ImTBY/clawd-quest)
-(MIT, © 2026 ImTBY): as formas (corpo, garrinhas, quatro perninhas, olhos), as cores (`#D97757`, o tom de erro `#C8553D`, as
-bochechas) e as poses de trabalhar, errar, comemorar e dormir vêm dos SVGs dele (`stations/coding.svg`, `error.svg`,
-`sleeping.svg` e `celebration.svg`), refeitos em quadros de 32 x 22 px para os limites do pacote; o texto da licença está em
-[`sim/apps-seeds/LICENSE-clawd-quest.txt`](../../sim/apps-seeds/LICENSE-clawd-quest.txt). A nuvem com viseira `>_` do Codex, o
-quarto e as animações foram desenhados do zero para este projeto; a ideia de cenas em que o mascote vira o medidor vem do
-[TokenTV](https://github.com/click6067-ship-it/token-tv) (MIT, © 2026 click6067-ship-it; licença em
-[`LICENSE-token-tv.txt`](../../sim/apps-seeds/LICENSE-token-tv.txt)), cujo código e imagens não foram copiados. Nada do
-Clawdmeter (sem licença) foi usado. Claude é marca da Anthropic e Codex é marca da OpenAI; este projeto é não oficial, sem
-afiliação, patrocínio nem aprovação das duas empresas.
+**Créditos e marcas.**
+- **Clawd** (o caranguejo do Claude), o boné, a coroa de festa, as poses de trabalhar, errar, comemorar e dormir, o ritmo das
+  animações (balanço de 0,6 s, braços alternados, piscada) e as cores do quarto vêm do
+  [Clawd Quest](https://github.com/ImTBY/clawd-quest) (MIT, © 2026 ImTBY), dos SVGs `stations/coding.svg`, `error.svg`,
+  `sleeping.svg` e `celebration.svg`, convertidos para a grade de 4 unidades deles (1 célula = 2 px na tela). Licença:
+  [`sim/apps-seeds/LICENSE-clawd-quest.txt`](../../sim/apps-seeds/LICENSE-clawd-quest.txt).
+- **A nuvem do Codex** é o `pixel/codex-pixel.png` do [TokenTV](https://github.com/click6067-ship-it/token-tv)
+  (MIT, © 2026 click6067-ship-it), reduzido de 32 x 30 para 24 x 19 com as cores dele; o rosto (`>_`, `^ ^`, X, dormindo) e os
+  bracinhos foram redesenhados aqui. A ideia de cena em que o mascote vira o medidor também vem do TokenTV. Licença:
+  [`sim/apps-seeds/LICENSE-token-tv.txt`](../../sim/apps-seeds/LICENSE-token-tv.txt).
+- Nada do Clawdmeter (sem licença) foi usado.
+- Claude é marca da Anthropic e Codex é marca da OpenAI. Este pacote é não oficial: não tem afiliação, patrocínio nem aprovação
+  da Anthropic, da OpenAI ou dos autores do Clawd Quest e do TokenTV.
 
 ## Limites desta versão
 
