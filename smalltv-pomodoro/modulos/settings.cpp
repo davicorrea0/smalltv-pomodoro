@@ -5,7 +5,7 @@ Settings cfg;
 
 void defaultSettings() {
   cfg = Settings{SETTINGS_MAGIC, 25, 5, 15, 4, 80, 0, 0, "<-03>3", "", 0, -1,
-                 THEME_MATRIX, 0, 10, 0, 22, 7, 15, 1, 242, 242, 242, 0, 0, "", 0, 1, 0, 8, ACT_READ, "", /*lang*/ 1, 0, 0, 1, "", UI_VCOM_DEFAULT, 0, 0, 1, 0, 0, 0, 1};
+                 THEME_MATRIX, 0, 10, 0, 22, 7, 15, 1, 242, 242, 242, 0, 0, "", 0, 1, 0, 8, ACT_READ, "", /*lang*/ 1, 0, 0, 1, "", UI_VCOM_DEFAULT, 0, 0, 1, 0, 0, 0, 1, 0};
 }
 
 uint8_t bootCount = 0;
@@ -99,6 +99,7 @@ void loadSettings() {
   if (cfg.beta > 1) cfg.beta = 0;
   if (cfg.warm > 100) cfg.warm = 0;
   if (cfg.lcdGreen > 1) cfg.lcdGreen = 1;
+  if (cfg.cycles > 99) cfg.cycles = 0;
   cfg.spi80 = 0;  // quem ligou no teste volta aos 40 MHz
   if (!(fabsf(cfg.lat) <= 90 && fabsf(cfg.lon) <= 180)) cfg.lat = cfg.lon = 0;  // lixo ou NaN estouraria o String(float)
   // senha das redes do relógio: 8 letras/dígitos sem os que se confundem, sorteada pelo gerador do chip
