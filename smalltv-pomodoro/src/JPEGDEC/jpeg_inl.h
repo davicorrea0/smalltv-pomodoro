@@ -73,36 +73,31 @@ static void closeFile(void *handle);
 #endif
 static void JPEGDither(JPEGIMAGE *pJPEG, int iWidth, int iHeight);
 /* JPEG tables */
-// SmallTV Pomodoro: as 5 tabelas de faixa e de cor (7,7 KB) ficavam na RAM o tempo todo. Agora são
-// calculadas no início de cada DecodeJPEG() e liberadas no fim (mesmos valores, conferidos um a um).
-static uint8_t *ucRangeTable;
-static uint16_t *usGrayTo565, *usRangeTableR, *usRangeTableG, *usRangeTableB;
-static void jpegTablesEnd(void)
+// SmallTV Pomodoro: as 5 tabelas de faixa e de cor (7,7 KB) foram substituídas por aritmética
+// inline idêntica bit a bit (0 B de heap e 0 B de flash para tabelas).
+static inline uint8_t jpegRange(int i)
 {
-    free(ucRangeTable);
-    free(usGrayTo565);
-    ucRangeTable = NULL;
-    usGrayTo565 = usRangeTableR = usRangeTableG = usRangeTableB = NULL;
+    int v = ((i & 0x3ff) ^ 512) - 512 + 128;
+    return (uint8_t)(v < 0 ? 0 : (v > 255 ? 255 : v));
 }
-static int jpegTablesBegin(void)
+static inline uint32_t jpegClamp10(int i)
 {
-    ucRangeTable = (uint8_t *)malloc(1024);
-    usGrayTo565 = (uint16_t *)malloc((256 + 3 * 1024) * sizeof(uint16_t));
-    if (!ucRangeTable || !usGrayTo565) { jpegTablesEnd(); return 0; }
-    usRangeTableR = usGrayTo565 + 256;
-    usRangeTableG = usRangeTableR + 1024;
-    usRangeTableB = usRangeTableG + 1024;
-    for (int i = 0; i < 1024; i++) {
-        int v = i < 512 ? i : i - 1024;  // índice de 10 bits com sinal
-        int c = v < 0 ? 0 : v > 255 ? 255 : v;
-        int r = v + 128;
-        ucRangeTable[i] = (uint8_t)(r < 0 ? 0 : r > 255 ? 255 : r);
-        usRangeTableR[i] = (uint16_t)((c >> 3) << 11);
-        usRangeTableG[i] = (uint16_t)((c >> 2) << 5);
-        usRangeTableB[i] = (uint16_t)(c >> 3);
-        if (i < 256) usGrayTo565[i] = (uint16_t)(((i >> 3) << 11) | ((i >> 2) << 5) | (i >> 3));
-    }
-    return 1;
+    int v = ((i & 0x3ff) ^ 512) - 512;
+    return (uint32_t)(v < 0 ? 0 : (v > 255 ? 255 : v));
+}
+static inline uint16_t jpegGrayTo565(uint8_t pix)
+{
+    return (uint16_t)(((pix >> 3) << 11) | ((pix >> 2) << 5) | (pix >> 3));
+}
+static inline uint16_t jpegRangeR(int i) { return (uint16_t)((jpegClamp10(i) >> 3) << 11); }
+static inline uint16_t jpegRangeG(int i) { return (uint16_t)((jpegClamp10(i) >> 2) << 5); }
+static inline uint16_t jpegRangeB(int i) { return (uint16_t)(jpegClamp10(i) >> 3); }
+static void JPEGFreeHuffAC(JPEGIMAGE *pJPEG)
+{
+    free(pJPEG->usHuffAC[0]);
+    free(pJPEG->usHuffAC[1]);
+    pJPEG->usHuffAC[0] = NULL;
+    pJPEG->usHuffAC[1] = NULL;
 }
 const int iBitMasks[33] = {0,1,3,7,0xf,0x1f,0x3f,0x7f,0xff,0x1ff,0x3ff,0x7ff,0x0fff,0x1fff,0x3fff,0x7fff,0xffff,0x1ffff,0x3ffff,0x7ffff,0xfffff,0x1fffff,0x3fffff,0x7fffff,0xffffff,0x1ffffff,0x3ffffff,0x7ffffff,0xfffffff,0x1fffffff,0x3fffffff,0x7fffffff,1};
 // zigzag ordering of DCT coefficients (SmallTV: na flash, lidas com pgm_read_byte)
@@ -187,24 +182,24 @@ static const int iScaleBits[64] PROGMEM = {16384, 22725, 21407, 19266, 16384, 12
 // input value is 0 to 255, then another 256 for overflow to FF, then 512 more for negative values wrapping around
 // Trims a few instructions off the final output stage
 //
-/* ucRangeTable: gerada em jpegTablesBegin() */
+/* ucRangeTable: substituída por jpegRange() */
 
 //
 // Convert 8-bit grayscale into RGB565
 //
-/* usGrayTo565: gerada em jpegTablesBegin() */
+/* usGrayTo565: substituída por jpegGrayTo565() */
 //
 // Clip and convert red value into 5-bits for RGB565
 //
-/* usRangeTableR: gerada em jpegTablesBegin() */
+/* usRangeTableR: substituída por jpegRangeR() */
 //
 // Clip and convert green value into 5-bits for RGB565
 //
-/* usRangeTableG: gerada em jpegTablesBegin() */
+/* usRangeTableG: substituída por jpegRangeG() */
 //
 // Clip and convert blue value into 5-bits for RGB565
 //
-/* usRangeTableB: gerada em jpegTablesBegin() */
+/* usRangeTableB: substituída por jpegRangeB() */
 #if defined (__MACH__) || defined( __LINUX__ ) || defined( __MCUXPRESSO ) || defined(_WIN64)
 //
 // API for C
@@ -321,8 +316,12 @@ int JPEG_decodeDither(JPEGIMAGE *pJPEG, uint8_t *pDither, int iOptions)
 
 void JPEG_close(JPEGIMAGE *pJPEG)
 {
-    if (pJPEG->pfnClose)
-        (*pJPEG->pfnClose)(pJPEG->JPEGFile.fHandle);
+    if (pJPEG->pfnClose) {
+        JPEG_CLOSE_CALLBACK *fn = pJPEG->pfnClose;
+        pJPEG->pfnClose = NULL;
+        (*fn)(pJPEG->JPEGFile.fHandle);
+    }
+    JPEGFreeHuffAC(pJPEG);
 } /* JPEG_close() */
 
 #endif // !__cplusplus
@@ -481,7 +480,18 @@ static int32_t readFile(JPEGFILE *pFile, uint8_t *pBuf, int32_t iLen)
 //
 static int JPEGInit(JPEGIMAGE *pJPEG)
 {
-    return JPEGParseInfo(pJPEG, 0); // gather info for image
+    pJPEG->usHuffAC[0] = (uint16_t *)calloc(HUFF11SIZE, sizeof(uint16_t));
+    pJPEG->usHuffAC[1] = (uint16_t *)calloc(HUFF11SIZE, sizeof(uint16_t));
+    if (!pJPEG->usHuffAC[0] || !pJPEG->usHuffAC[1]) {
+        JPEGFreeHuffAC(pJPEG);
+        pJPEG->iError = JPEG_ERROR_MEMORY;
+        return 0;
+    }
+    if (!JPEGParseInfo(pJPEG, 0)) { // gather info for image
+        JPEGFreeHuffAC(pJPEG);
+        return 0;
+    }
+    return 1;
 } /* JPEGInit() */
 //
 // Unpack the Huffman tables
@@ -663,8 +673,8 @@ static int JPEGMakeHuffTables_Slow(JPEGIMAGE *pJPEG, int bThumbnail)
             pBits = &pJPEG->ucHuffVals[(iTable+4) * HUFF_TABLEN];
             p = pBits;
             p += 16; // point to bit data
-            pShort = &pJPEG->usHuffAC[iTable*HUFF11SIZE];
-            pLong = &pJPEG->usHuffAC[iTable*HUFF11SIZE + 1024]; // long codes start here
+            pShort = pJPEG->usHuffAC[iTable];
+            pLong = pShort + 1024; // long codes start here
             cc = 0; // start with a code of 0
             // construct the decode table
             for (iBitNum = 1; iBitNum <= 16; iBitNum++)
@@ -846,10 +856,10 @@ static int JPEGMakeHuffTables(JPEGIMAGE *pJPEG, int bThumbnail)
             pBits = &pHuffVals[(iTable+4) * HUFF_TABLEN];
             p = pBits;
             p += 16; // point to bit data
-            if (iTable * HUFF11SIZE >= (int)sizeof(pJPEG->usHuffAC) / 2)
+            if (iTable >= 2)
                 return 0;
-            pShort = &pJPEG->usHuffAC[iTable*HUFF11SIZE];
-            pLong = &pJPEG->usHuffAC[iTable*HUFF11SIZE + 1024];
+            pShort = pJPEG->usHuffAC[iTable];
+            pLong = pShort + 1024;
             cc = 0; // start with a code of 0
             // construct the decode table
             for (iBitNum = 1; iBitNum <= 16; iBitNum++)
@@ -1530,7 +1540,8 @@ static int JPEGDecodeMCU_P(JPEGIMAGE *pJPEG, int iMCU, int *iDCPredictor)
         pMCU[0] = (short)*iDCPredictor; // store in MCU[0]
     }
     // Now get the other 63 AC coefficients
-    pFast = &pJPEG->usHuffAC[pJPEG->ucACTable * HUFF11SIZE];
+    if (pJPEG->ucACTable > 1) return -1;
+    pFast = pJPEG->usHuffAC[pJPEG->ucACTable];
     if (pJPEG->iScanStart)
         iIndex = pJPEG->iScanStart; // starting index of this scan (progressive JPEG)
     else
@@ -1816,7 +1827,7 @@ static int JPEGDecodeMCU(JPEGIMAGE *pJPEG, int iMCU, int *iDCPredictor)
         return 0; // we're done
     }
     // Now get the other 63 AC coefficients
-    pFast = &pJPEG->usHuffAC[pJPEG->ucACTable * HUFF11SIZE];
+    pFast = pJPEG->usHuffAC[pJPEG->ucACTable];
     if (pJPEG->b11Bit) // 11-bit "slow" tables used
     {
 //            if (pJPEG->pHuffACFast == pJPEG->huffacFast[1]) // second table
@@ -1970,11 +1981,11 @@ int16x8_t mmxZ5, mmxZ10, mmxZ11, mmxZ12, mmxZ13;
         /* Pass 2: process 2 rows, store into output array. */
         /* Row 0 */
         pOutput = (unsigned char *)pMCUSrc; // store output pixels back into MCU
-        pOutput[0] = ucRangeTable[(((tmp0 + tmp1)>>5) & 0x3ff)];
-        pOutput[1] = ucRangeTable[(((tmp0 - tmp1)>>5) & 0x3ff)];
+        pOutput[0] = jpegRange((((tmp0 + tmp1)>>5) & 0x3ff));
+        pOutput[1] = jpegRange((((tmp0 - tmp1)>>5) & 0x3ff));
         /* Row 1 */
-        pOutput[2] = ucRangeTable[(((tmp2 + tmp3)>>5) & 0x3ff)];
-        pOutput[3] = ucRangeTable[(((tmp2 - tmp3)>>5) & 0x3ff)];
+        pOutput[2] = jpegRange((((tmp2 + tmp3)>>5) & 0x3ff));
+        pOutput[3] = jpegRange((((tmp2 - tmp3)>>5) & 0x3ff));
         return;
     }
 #ifdef HAS_SSE // SSE2 version
@@ -2436,14 +2447,14 @@ int16x8_t mmxZ5, mmxZ10, mmxZ11, mmxZ12, mmxZ13;
             vst1_u8(pOutput, LR_out_8x8);
         }
 #else
-        pOutput[0] = ucRangeTable[(((tmp0 + tmp7)>>5) & 0x3ff)];
-        pOutput[1] = ucRangeTable[(((tmp1 + tmp6)>>5) & 0x3ff)];
-        pOutput[2] = ucRangeTable[(((tmp2 + tmp5)>>5) & 0x3ff)];
-        pOutput[3] = ucRangeTable[(((tmp3 - tmp4)>>5) & 0x3ff)];
-        pOutput[4] = ucRangeTable[(((tmp3 + tmp4)>>5) & 0x3ff)];
-        pOutput[5] = ucRangeTable[(((tmp2 - tmp5)>>5) & 0x3ff)];
-        pOutput[6] = ucRangeTable[(((tmp1 - tmp6)>>5) & 0x3ff)];
-        pOutput[7] = ucRangeTable[(((tmp0 - tmp7)>>5) & 0x3ff)];
+        pOutput[0] = jpegRange((((tmp0 + tmp7)>>5) & 0x3ff));
+        pOutput[1] = jpegRange((((tmp1 + tmp6)>>5) & 0x3ff));
+        pOutput[2] = jpegRange((((tmp2 + tmp5)>>5) & 0x3ff));
+        pOutput[3] = jpegRange((((tmp3 - tmp4)>>5) & 0x3ff));
+        pOutput[4] = jpegRange((((tmp3 + tmp4)>>5) & 0x3ff));
+        pOutput[5] = jpegRange((((tmp2 - tmp5)>>5) & 0x3ff));
+        pOutput[6] = jpegRange((((tmp1 - tmp6)>>5) & 0x3ff));
+        pOutput[7] = jpegRange((((tmp0 - tmp7)>>5) & 0x3ff));
 #endif // !HAS_NEON
 #endif
         pOutput += 8;
@@ -2703,7 +2714,7 @@ static void JPEGPutMCUGray(JPEGIMAGE *pJPEG, int x, int iPitch)
                 for (j=0; j<4; j++)
                 {
                     pix = (pSrc[0] + pSrc[1] + pSrc[8] + pSrc[9] + 2) >> 2; // average 2x2 block
-                    usDest[j] = usGrayTo565[pix];
+                    usDest[j] = jpegGrayTo565(pix);
                     pSrc += 2;
                 }
             }
@@ -2712,7 +2723,7 @@ static void JPEGPutMCUGray(JPEGIMAGE *pJPEG, int x, int iPitch)
                 for (j=0; j<4; j++)
                 {
                     pix = (pSrc[0] + pSrc[1] + pSrc[8] + pSrc[9] + 2) >> 2; // average 2x2 block
-                    usDest[j] = __builtin_bswap16(usGrayTo565[pix]);
+                    usDest[j] = __builtin_bswap16(jpegGrayTo565(pix));
                     pSrc += 2;
                 }
             }
@@ -2738,12 +2749,12 @@ static void JPEGPutMCUGray(JPEGIMAGE *pJPEG, int x, int iPitch)
         if (pJPEG->ucPixelType == RGB565_LITTLE_ENDIAN)
         {
             for (j=0; j<xcount; j++)
-                *usDest++ = usGrayTo565[*pSrc++];
+                *usDest++ = jpegGrayTo565(*pSrc++);
         }
         else
         {
             for (j=0; j<xcount; j++)
-                *usDest++ = __builtin_bswap16(usGrayTo565[*pSrc++]);
+                *usDest++ = __builtin_bswap16(jpegGrayTo565(*pSrc++));
         }
         usDest -= xcount;
         usDest += iPitch; // next line
@@ -2780,9 +2791,9 @@ static void JPEGPixelLE(uint16_t *pDest, int iY, int iCb, int iCr)
     iCBG = -1409 * (iCb-0x80);
     iCRG = -2925 * (iCr-0x80);
     iCRR = 5742  * (iCr-0x80);
-    usPixel = usRangeTableB[((iCBB + iY) >> 12) & 0x3ff]; // blue pixel
-    usPixel |= usRangeTableG[((iCBG + iCRG + iY) >> 12) & 0x3ff]; // green pixel
-    usPixel |= usRangeTableR[((iCRR + iY) >> 12) & 0x3ff]; // red pixel
+    usPixel = jpegRangeB(((iCBB + iY) >> 12) & 0x3ff); // blue pixel
+    usPixel |= jpegRangeG(((iCBG + iCRG + iY) >> 12) & 0x3ff); // green pixel
+    usPixel |= jpegRangeR(((iCRR + iY) >> 12) & 0x3ff); // red pixel
     pDest[0] = usPixel;
 #endif
 } /* JPEGPixelLE() */
@@ -2796,9 +2807,9 @@ static void JPEGPixelBE(uint16_t *pDest, int iY, int iCb, int iCr)
     iCBG = -1409 * (iCb-0x80);
     iCRG = -2925 * (iCr-0x80);
     iCRR = 5742  * (iCr-0x80);
-    usPixel = usRangeTableB[((iCBB + iY) >> 12) & 0x3ff]; // blue pixel
-    usPixel |= usRangeTableG[((iCBG + iCRG + iY) >> 12) & 0x3ff]; // green pixel
-    usPixel |= usRangeTableR[((iCRR + iY) >> 12) & 0x3ff]; // red pixel
+    usPixel = jpegRangeB(((iCBB + iY) >> 12) & 0x3ff); // blue pixel
+    usPixel |= jpegRangeG(((iCBG + iCRG + iY) >> 12) & 0x3ff); // green pixel
+    usPixel |= jpegRangeR(((iCRR + iY) >> 12) & 0x3ff); // red pixel
     pDest[0] = __builtin_bswap16(usPixel);
 } /* JPEGPixelBE() */
 
@@ -2860,13 +2871,13 @@ static void JPEGPixel2LE(uint16_t *pDest, int iY1, int iY2, int iCb, int iCr)
     iCBG = -1409 * (iCb-0x80);
     iCRG = -2925 * (iCr-0x80);
     iCRR = 5742  * (iCr-0x80);
-    ulPixel1 = usRangeTableB[((iCBB + iY1) >> 12) & 0x3ff]; // blue pixel
-    ulPixel1 |= usRangeTableG[((iCBG + iCRG + iY1) >> 12) & 0x3ff]; // green pixel
-    ulPixel1 |= usRangeTableR[((iCRR + iY1) >> 12) & 0x3ff]; // red pixel
+    ulPixel1 = jpegRangeB(((iCBB + iY1) >> 12) & 0x3ff); // blue pixel
+    ulPixel1 |= jpegRangeG(((iCBG + iCRG + iY1) >> 12) & 0x3ff); // green pixel
+    ulPixel1 |= jpegRangeR(((iCRR + iY1) >> 12) & 0x3ff); // red pixel
     
-    ulPixel2 = usRangeTableB[((iCBB + iY2) >> 12) & 0x3ff]; // blue pixel
-    ulPixel2 |= usRangeTableG[((iCBG + iCRG + iY2) >> 12) & 0x3ff]; // green pixel
-    ulPixel2 |= usRangeTableR[((iCRR + iY2) >> 12) & 0x3ff]; // red pixel
+    ulPixel2 = jpegRangeB(((iCBB + iY2) >> 12) & 0x3ff); // blue pixel
+    ulPixel2 |= jpegRangeG(((iCBG + iCRG + iY2) >> 12) & 0x3ff); // green pixel
+    ulPixel2 |= jpegRangeR(((iCRR + iY2) >> 12) & 0x3ff); // red pixel
     *(uint32_t *)&pDest[0] = (ulPixel1 | (ulPixel2<<16));
 #endif
 } /* JPEGPixel2LE() */
@@ -2880,13 +2891,13 @@ static void JPEGPixel2BE(uint16_t *pDest, int32_t iY1, int32_t iY2, int32_t iCb,
     iCBG = -1409L * (iCb-0x80);
     iCRG = -2925L * (iCr-0x80);
     iCRR = 5742L  * (iCr-0x80);
-    ulPixel1 = usRangeTableB[((iCBB + iY1) >> 12) & 0x3ff]; // blue pixel
-    ulPixel1 |= usRangeTableG[((iCBG + iCRG + iY1) >> 12) & 0x3ff]; // green pixel
-    ulPixel1 |= usRangeTableR[((iCRR + iY1) >> 12) & 0x3ff]; // red pixel
+    ulPixel1 = jpegRangeB(((iCBB + iY1) >> 12) & 0x3ff); // blue pixel
+    ulPixel1 |= jpegRangeG(((iCBG + iCRG + iY1) >> 12) & 0x3ff); // green pixel
+    ulPixel1 |= jpegRangeR(((iCRR + iY1) >> 12) & 0x3ff); // red pixel
     
-    ulPixel2 = usRangeTableB[((iCBB + iY2) >> 12) & 0x3ff]; // blue pixel
-    ulPixel2 |= usRangeTableG[((iCBG + iCRG + iY2) >> 12) & 0x3ff]; // green pixel
-    ulPixel2 |= usRangeTableR[((iCRR + iY2) >> 12) & 0x3ff]; // red pixel
+    ulPixel2 = jpegRangeB(((iCBB + iY2) >> 12) & 0x3ff); // blue pixel
+    ulPixel2 |= jpegRangeG(((iCBG + iCRG + iY2) >> 12) & 0x3ff); // green pixel
+    ulPixel2 |= jpegRangeR(((iCRR + iY2) >> 12) & 0x3ff); // red pixel
     *(uint32_t *)&pDest[0] = __builtin_bswap16(ulPixel1) | ((uint32_t)__builtin_bswap16(ulPixel2)<<16);
 } /* JPEGPixel2BE() */
 
@@ -4803,7 +4814,7 @@ static int DecodeJPEGBody(JPEGIMAGE *pJPEG)
             if (pJPEG->u16MCUFlags == 0 || bThumbnail) // no AC components, save some time
             {
                 pl = (uint32_t *)&pJPEG->sMCUs[iLum0];
-                c = ucRangeTable[((iDCPred0 * iQuant1) >> 5) & 0x3ff];
+                c = jpegRange(((iDCPred0 * iQuant1) >> 5) & 0x3ff);
                 l = c | ((uint32_t) c << 8) | ((uint32_t) c << 16) | ((uint32_t) c << 24);
                 // dct stores byte values
                 for (i = 0; i<iMaxFill; i++) // 8x8 bytes = 16 longs
@@ -4823,7 +4834,7 @@ static int DecodeJPEGBody(JPEGIMAGE *pJPEG)
                 }
                 if (pJPEG->u16MCUFlags == 0 || bThumbnail) // no AC components, save some time
                 {
-                    c = ucRangeTable[((iDCPred0 * iQuant1) >> 5) & 0x3ff];
+                    c = jpegRange(((iDCPred0 * iQuant1) >> 5) & 0x3ff);
                     l = c | ((uint32_t) c << 8) | ((uint32_t) c << 16) | ((uint32_t) c << 24);
                     // dct stores byte values
                     pl = (uint32_t *)&pJPEG->sMCUs[iLum1];
@@ -4843,7 +4854,7 @@ static int DecodeJPEGBody(JPEGIMAGE *pJPEG)
                     }
                     if (pJPEG->u16MCUFlags == 0 || bThumbnail) // no AC components, save some time
                     {
-                        c = ucRangeTable[((iDCPred0 * iQuant1) >> 5) & 0x3ff];
+                        c = jpegRange(((iDCPred0 * iQuant1) >> 5) & 0x3ff);
                         l = c | ((uint32_t) c << 8) | ((uint32_t) c << 16) | ((uint32_t) c << 24);
                         // dct stores byte values
                         pl = (uint32_t *)&pJPEG->sMCUs[iLum2];
@@ -4861,7 +4872,7 @@ static int DecodeJPEGBody(JPEGIMAGE *pJPEG)
                     }
                     if (pJPEG->u16MCUFlags == 0 || bThumbnail) // no AC components, save some time
                     {
-                        c = ucRangeTable[((iDCPred0 * iQuant1) >> 5) & 0x3ff];
+                        c = jpegRange(((iDCPred0 * iQuant1) >> 5) & 0x3ff);
                         l = c | ((uint32_t) c << 8) | ((uint32_t) c << 16) | ((uint32_t) c << 24);
                         // dct stores byte values
                         pl = (uint32_t *)&pJPEG->sMCUs[iLum3];
@@ -4896,7 +4907,7 @@ static int DecodeJPEGBody(JPEGIMAGE *pJPEG)
                     }
                     if (pJPEG->u16MCUFlags == 0 || bThumbnail) // no AC components, save some time
                     {
-                        c = ucRangeTable[((iDCPred1 * iQuant2) >> 5) & 0x3ff];
+                        c = jpegRange(((iDCPred1 * iQuant2) >> 5) & 0x3ff);
                         l = c | ((uint32_t) c << 8) | ((uint32_t) c << 16) | ((uint32_t) c << 24);
                         // dct stores byte values
                         pl = (uint32_t *)&pJPEG->sMCUs[iCr];
@@ -4917,7 +4928,7 @@ static int DecodeJPEGBody(JPEGIMAGE *pJPEG)
                     }
                     if (pJPEG->u16MCUFlags == 0 || bThumbnail) // no AC components, save some time
                     {
-                        c = ucRangeTable[((iDCPred2 * iQuant3) >> 5) & 0x3ff];
+                        c = jpegRange(((iDCPred2 * iQuant3) >> 5) & 0x3ff);
                         l = c | ((uint32_t) c << 8) | ((uint32_t) c << 16) | ((uint32_t) c << 24);
                         // dct stores byte values
                         pl = (uint32_t *)&pJPEG->sMCUs[iCb];
@@ -5015,11 +5026,9 @@ static int DecodeJPEGBody(JPEGIMAGE *pJPEG)
 
 static int DecodeJPEG(JPEGIMAGE *pJPEG)
 {
-    if (!jpegTablesBegin()) {
-        pJPEG->iError = JPEG_ERROR_MEMORY;  // falta de RAM, não arquivo estragado: quem chama não deve condenar a foto
+    if (!pJPEG->usHuffAC[0] || !pJPEG->usHuffAC[1]) {
+        pJPEG->iError = JPEG_ERROR_MEMORY;
         return 0;
     }
-    int r = DecodeJPEGBody(pJPEG);
-    jpegTablesEnd();
-    return r;
+    return DecodeJPEGBody(pJPEG);
 }

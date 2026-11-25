@@ -72,9 +72,13 @@
 // sequence (1<<MAX_CODE_SIZE)
 #define FILE_BUF_SIZE (1<<MAX_CODE_SIZE)
 
+#define GIF_TABLE_BYTES ((1<<MAX_CODE_SIZE) * sizeof(uint16_t)) // 8192 B: prefixos LZW uint16_t (0 B residentes)
+#define GIF_PIXELS_BYTES (1<<MAX_CODE_SIZE)                    // 4096 B: PIXEL_LAST apenas (PIXEL_FIRST removido)
+#define GIF_SMALL_WORK_BYTES (MAX_COLORS * sizeof(uint16_t) + LZW_BUF_SIZE + MAX_WIDTH + 16 + 8) // 512 + 1530 + 480 + 24 = 2546 B
+
 #define PIXEL_FIRST 0
 #define PIXEL_LAST (1<<MAX_CODE_SIZE)
-#define LINK_UNUSED 5911 // 0x1717 to use memset
+#define LINK_UNUSED 5911 // kept for compatibility; bounds checked via validLim = nextcode
 #define LINK_END 5912
 #define MAX_HASH 5003
 // expanded LZW buffer for Turbo mode
@@ -199,15 +203,17 @@ typedef struct gif_image_tag
     unsigned char *pFrameBuffer;
     unsigned char *pTurboBuffer;
     unsigned char *pPixels, *pOldPixels;
-    unsigned char ucFileBuf[FILE_BUF_SIZE]; // holds temp data and pixel stack
-    unsigned short pPalette[(MAX_COLORS * 3)/2]; // can hold RGB565 or RGB888 - set in begin()
-    unsigned short pLocalPalette[(MAX_COLORS * 3)/2]; // color palettes for GIF images
+    uint16_t pPalette[MAX_COLORS]; // 512 B resident global palette (RGB565 or 1-bpp)
     int iLocalPalSize, iGlobalPalSize;
-    uint8_t ucLZW[LZW_BUF_SIZE]; // holds de-chunked LZW data
-    // These next 3 are used in Turbo mode to have a larger ucLZW buffer
-    uint16_t usGIFTable[1<<MAX_CODE_SIZE];
-    uint8_t ucGIFPixels[(PIXEL_LAST*2)];
-    uint8_t ucLineBuf[MAX_WIDTH+15]; // current line
+    // Buffers de trabalho por quadro: alocados no inicio de playFrame() e liberados ao sair
+    // (mantem o objeto residente em 668 B e o maior bloco contiguo em 8.192 B).
+    uint8_t *ucFileBuf;       // 4.096 + 8 B (pilha reversa de pixels LZW)
+    uint16_t *usGIFTable;     // 8.192 B (links LZW 16 bits p/ lookup direto em 1 instrucao)
+    uint8_t *ucGIFPixels;     // 4.096 B (PIXEL_LAST apenas)
+    void    *pSmallWork;      // 2.546 B: bloco unico para pLocalPalette + ucLZW + ucLineBuf
+    uint16_t *pLocalPalette;  // 512 B dentro de pSmallWork
+    uint8_t *ucLZW;           // 1.530 B dentro de pSmallWork
+    uint8_t *ucLineBuf;       // MAX_WIDTH + 24 B dentro de pSmallWork
     uint8_t *pLineBufAligned;
 } GIFIMAGE;
 
@@ -218,6 +224,10 @@ typedef struct gif_image_tag
 class AnimatedGIF
 {
   public:
+    AnimatedGIF() { memset(&_gif, 0, sizeof(_gif)); }
+    ~AnimatedGIF() { close(); }
+    AnimatedGIF(const AnimatedGIF &) = delete;
+    AnimatedGIF &operator=(const AnimatedGIF &) = delete;
     int open(uint8_t *pData, int iDataSize, GIF_DRAW_CALLBACK *pfnDraw);
     int openFLASH(uint8_t *pData, int iDataSize, GIF_DRAW_CALLBACK *pfnDraw);
 #ifdef __LINUX__
