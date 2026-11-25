@@ -20,6 +20,12 @@
 //===========================================================================
 #include "AnimatedGIF.h"
 
+#ifndef GIF_MALLOC
+#define GIF_MALLOC(sz) malloc(sz)
+#define GIF_CALLOC(n, sz) calloc((n), (sz))
+#define GIF_FREE(p) free(p)
+#endif
+
 #if defined( HAL_ESP32_HAL_H_ )
 #define memcpy_P memcpy
 #pragma GCC optimize("O2")
@@ -47,10 +53,10 @@ int GIF_getInfo(GIFIMAGE *pPage, GIFINFO *pInfo);
 // Buffers de trabalho por quadro: alocados no inicio de playFrame() e liberados ao sair.
 static void gifWorkEnd(GIFIMAGE *g)
 {
-    free(g->usGIFTable);
-    free(g->ucGIFPixels);
-    free(g->ucFileBuf);
-    free(g->pSmallWork);
+    GIF_FREE(g->usGIFTable);
+    GIF_FREE(g->ucGIFPixels);
+    GIF_FREE(g->ucFileBuf);
+    GIF_FREE(g->pSmallWork);
     g->usGIFTable = NULL;
     g->ucGIFPixels = NULL;
     g->ucFileBuf = NULL;
@@ -63,10 +69,10 @@ static void gifWorkEnd(GIFIMAGE *g)
 
 static int gifWorkBegin(GIFIMAGE *g)
 {
-    g->usGIFTable  = (uint16_t *)malloc(GIF_TABLE_BYTES);    // 8.192 B (validLim limita leituras)
-    g->ucGIFPixels = (uint8_t *)malloc(GIF_PIXELS_BYTES);    // 4.096 B
-    g->ucFileBuf   = (uint8_t *)malloc(FILE_BUF_SIZE + 8);   // 4.104 B (+8 folga p/ ALLOWS_UNALIGNED)
-    g->pSmallWork  = calloc(1, GIF_SMALL_WORK_BYTES);        // 2.546 B (limpo p/ paleta local < 256)
+    g->usGIFTable  = (uint16_t *)GIF_MALLOC(GIF_TABLE_BYTES);    // 8.192 B (validLim limita leituras)
+    g->ucGIFPixels = (uint8_t *)GIF_MALLOC(GIF_PIXELS_BYTES);    // 4.096 B
+    g->ucFileBuf   = (uint8_t *)GIF_MALLOC(FILE_BUF_SIZE + 8);   // 4.104 B (+8 folga p/ ALLOWS_UNALIGNED)
+    g->pSmallWork  = GIF_CALLOC(1, GIF_SMALL_WORK_BYTES);        // 2.546 B (limpo p/ paleta local < 256)
     if (!g->usGIFTable || !g->ucGIFPixels || !g->ucFileBuf || !g->pSmallWork) {
         gifWorkEnd(g);
         g->iError = GIF_ERROR_MEMORY;
@@ -1166,6 +1172,7 @@ static void GIFMakePels(GIFIMAGE *pPage, unsigned int code, unsigned int cc, uns
     {
         if (s == pEnd) { pPage->iError = GIF_DECODE_ERROR; return; }
         if (code < cc) { *(--s) = gifpels[code]; break; }
+        // Lazy reset do AnimatedGIF-LowMem (Apache-2.0): nextcode invalida entradas antigas sem memset.
         if (code >= validLim || code <= cc + 1) /* invalid dictionary link */
         {
             pPage->iError = GIF_DECODE_ERROR;
@@ -1182,6 +1189,12 @@ static void GIFMakePels(GIFIMAGE *pPage, unsigned int code, unsigned int cc, uns
     {
         if (pPage->iXCount > iPixCount)  /* Pixels fit completely on the line */
         {
+#ifndef ALLOWS_UNALIGNED
+            // ESP8266: memcpy copia em palavras quando dá; o laço byte a byte custava mais no quadro
+            memcpy(buf, s, iPixCount);
+            pPage->iXCount -= iPixCount;
+            return;
+#endif
             pEnd = buf + iPixCount;
             while (buf < pEnd) {
 #ifdef ALLOWS_UNALIGNED
@@ -1203,11 +1216,9 @@ static void GIFMakePels(GIFIMAGE *pPage, unsigned int code, unsigned int cc, uns
         else  /* Pixels cross into next line */
         {
             GIFDRAW gd;
-            pEnd = buf + pPage->iXCount;
-            while (buf < pEnd)
-            {
-                *buf++ = *s++;
-            }
+            memcpy(buf, s, pPage->iXCount);  // resto da linha de uma vez
+            buf += pPage->iXCount;
+            s += pPage->iXCount;
             iPixCount -= pPage->iXCount;
             pPage->iXCount = pPage->iWidth; /* Reset pixel count */
             // Prepare GIDRAW structure for callback
@@ -1462,5 +1473,3 @@ const uint32_t RBMask = 0xf81f, GMask = 0x7e0;
          *d++ = (uint16_t)(gSum + rbSum); // store finished pixel
    } // for x
 } /* GIF_scaleHalf() */
-
-

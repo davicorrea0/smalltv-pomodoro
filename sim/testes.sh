@@ -20,6 +20,7 @@
 #    (facepack_fuzz.cpp); precisa das bibliotecas Adafruit GFX e ArduinoJson (GFX e JSON, como no sim/build.sh).
 # Uso: sim/testes.sh [casos de fuzzing por formato, padrão 5000]
 # Os .cpp dos testes são gerados com node; sem node (WSL), passe a pasta já gerada em GEN.
+# Benchmark de desempenho separado: bash sim/test-gif-bench.sh [repeticoes].
 set -euo pipefail
 cd "$(dirname "$0")"
 N="${1:-5000}"
