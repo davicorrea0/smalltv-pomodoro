@@ -16,7 +16,7 @@ struct UploadGate {
   void stop() { active = false; }
 };
 struct AuthThrottle {
-  struct Entry { uint32_t ip = 0, until = 0, last = 0; uint8_t failures = 0; } entries[4];
+  struct Entry { uint32_t ip = 0, until = 0, last = 0; uint8_t failures = 0; } entries[8];
   static bool before(uint32_t now, uint32_t deadline) { return (int32_t)(deadline - now) > 0; }
   Entry *find(uint32_t ip, uint32_t now, bool create) {
     Entry *empty = nullptr;
@@ -61,12 +61,16 @@ static bool appsKeyOk(const char *k, size_t n) {
     if (!((k[i] >= '0' && k[i] <= '9') || (k[i] >= 'a' && k[i] <= 'f'))) return false;
   return true;
 }
+// Comparação em tempo constante (não vaza pelo tempo até o 1º byte diferente).
+static bool constTimeEq(const char *a, size_t an, const char *b, size_t bn) {
+  if (an != bn) return false;
+  uint8_t d = 0;
+  for (size_t i = 0; i < an; i++) d |= (uint8_t)(a[i] ^ b[i]);
+  return d == 0;
+}
 // "Bearer <chave>" do cabeçalho Authorization contra a chave guardada, em tempo constante (não para no 1º byte diferente)
 static bool appsBearerOk(const char *h, size_t hn, const char *key) {
-  if (hn != 7 + 32 || memcmp(h, "Bearer ", 7) || !appsKeyOk(key, strlen(key))) return false;
-  uint8_t d = 0;
-  for (size_t i = 0; i < 32; i++) d |= (uint8_t)(h[7 + i] ^ key[i]);
-  return d == 0;
+  return hn == 7 + 32 && !memcmp(h, "Bearer ", 7) && appsKeyOk(key, strlen(key)) && constTimeEq(h + 7, 32, key, 32);
 }
 static bool safeHttpUrl(const char *s, size_t n) {
   if (n < 8 || n > 400 || memcmp(s, "http://", 7)) return false;

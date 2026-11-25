@@ -24,8 +24,9 @@ uint64_t wsSteps = 0;
 
 struct Rec : RequestHandler {  // anota o que o handler de upload do firmware receberia
   std::string eventos, dados;
+  bool allowUpload = true;
   bool canHandle(HTTPMethod, const String&) override { return true; }
-  bool canUpload(const String&) override { return true; }
+  bool canUpload(const String&) override { return allowUpload; }
   void upload(esp8266webserver::ESP8266WebServerTemplate<WiFiServer>&, const String&, HTTPUpload& up) override {
     static const char* nome = "SWEA";
     eventos += nome[up.status];
@@ -35,6 +36,7 @@ struct Rec : RequestHandler {  // anota o que o handler de upload do firmware re
 struct Srv : ESP8266WebServer {
   ClientFuture parse(WiFiClient& c) { return _parseRequest(c); }
   bool semPostArgs() const { return _postArgs == nullptr && _postArgsLen == 0; }
+  const String& hostHeader() const { return _hostHeader; }
   int nargs() const { return _currentArgCount; }
   Srv(Rec& h) { _firstHandler = &h; }
   ~Srv() { delete[] _currentArgs; delete[] _postArgs; }
@@ -212,10 +214,45 @@ static void c5() {
   CONFERE(h.eventos.empty(), "sem chegar a abrir o upload");
 }
 
+// ---- C6: Host nao pode vazar para a requisicao seguinte ----
+static void c6_host_stale() {
+  novo();
+  WiFiClient c1, c2; Rec h; Srv s(h);
+  c1.segs.push_back({0, "GET /x HTTP/1.1\r\nHost: 192.168.0.9\r\n\r\n"});
+  CONFERE(s.parse(c1) == OK && s.hostHeader() == "192.168.0.9", "primeiro pedido registra Host");
+  c2.segs.push_back({0, "GET /x HTTP/1.0\r\n\r\n"});
+  CONFERE(s.parse(c2) == OK && s.hostHeader() == "", "pedido seguinte sem Host zera _hostHeader");
+}
+
+// ---- C7: linha de cabecalho gigante ou excesso de cabecalhos ----
+static void c7_hdr_enorme() {
+  novo();
+  { WiFiClient c; Rec h; Srv s(h);
+    std::string p = "GET /x HTTP/1.1\r\nHost: 192.168.0.9\r\nX-Junk: " + std::string(5000, 'a') + "\r\n\r\n";
+    c.segs.push_back({0, p});
+    CONFERE(s.parse(c) == PARAR && c.consumed < 1200, "linha de cabecalho gigante recusada no teto"); }
+  { WiFiClient c; Rec h; Srv s(h);
+    std::string p = "GET /x HTTP/1.1\r\nHost: 192.168.0.9\r\n";
+    for (int i = 0; i < 40; i++) p += "X-H" + std::to_string(i) + ": v\r\n";
+    p += "\r\n";
+    c.segs.push_back({0, p});
+    CONFERE(s.parse(c) == PARAR, "excesso de cabecalhos recusado"); }
+}
+
+// ---- C8: multipart em rota sem upload ----
+static void c8_multipart_sem_upload() {
+  novo();
+  WiFiClient c; Rec h; h.allowUpload = false; Srv s(h);
+  std::string p = pedido(arquivo("f", bytes(5000), true), "multipart");
+  c.segs.push_back({0, p});
+  CONFERE(s.parse(c) == PARAR && h.eventos.empty() && c.consumed < 400, "multipart em rota sem upload para antes do corpo");
+}
+
 int main(int argc, char** argv) {
   std::map<std::string, void (*)()> casos = {{"ok_arquivo_e_campo", ok_arquivo_e_campo}, {"ok_dois_arquivos", ok_dois_arquivos}, {"ok_envio_lento", ok_envio_lento},
       {"ok_json", ok_json}, {"c1", c1}, {"c2_fechado", c2_fechado}, {"c2_fechado_cabecalho", c2_fechado_cabecalho}, {"c2_mudo", c2_mudo}, {"c2_lixo", c2_lixo},
-      {"c2_valor_enorme", c2_valor_enorme}, {"c4_mudo", c4_mudo}, {"c4_fechado", c4_fechado}, {"c3", c3}, {"c5", c5}};
+      {"c2_valor_enorme", c2_valor_enorme}, {"c4_mudo", c4_mudo}, {"c4_fechado", c4_fechado}, {"c3", c3}, {"c5", c5},
+      {"c6_host_stale", c6_host_stale}, {"c7_hdr_enorme", c7_hdr_enorme}, {"c8_multipart_sem_upload", c8_multipart_sem_upload}};
   std::string quer = argc > 1 ? argv[1] : "todos";
   for (auto& k : casos) {
     if (quer != "todos" && quer != k.first) continue;
