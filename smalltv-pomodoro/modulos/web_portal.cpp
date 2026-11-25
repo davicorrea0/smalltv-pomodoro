@@ -161,6 +161,18 @@ static void diagJson(String &j, uint8_t frag) {
   j += diagStall;
   j += F(",\"stallAt\":");
   j += diagStallAt;
+#ifdef GIF_CRONO
+  {
+    extern uint32_t gifCronoN, gifCronoSum, gifCronoMax;
+    j += F(",\"gifus\":[");  // quadros, média e pior em microssegundos (só no build de medição)
+    j += gifCronoN;
+    j += ',';
+    j += gifCronoN ? gifCronoSum / gifCronoN : 0;
+    j += ',';
+    j += gifCronoMax;
+    j += ']';
+  }
+#endif
   j += F(",\"minblk\":");  // menor maior bloco livre desde que ligou (bytes)
   j += diagMinBlk;
   j += F(",\"stack\":");  // menor folga da pilha do laço desde que ligou (bytes)

@@ -354,11 +354,26 @@ bool showAlbumItem(const String &f) {
   return true;
 }
 
+#ifdef GIF_CRONO
+uint32_t gifCronoN = 0, gifCronoSum = 0, gifCronoMax = 0;
+#endif
+
 void albumLoop() {
   if (!gif || (int32_t)(millis() - nextFrameAt) < 0) return;
   albumMakeRoom(19456 + 1024);
   int delayMs = 0;
+#ifdef GIF_CRONO  // build de medição: tempo de cada quadro (decodificar + mandar à tela), lido no diag
+  uint32_t cronoT0 = micros();
+#endif
   int r = gif->playFrame(false, &delayMs);
+#ifdef GIF_CRONO
+  uint32_t cronoDt = micros() - cronoT0;
+  if (r >= 0) {
+    gifCronoN++;
+    gifCronoSum += cronoDt;
+    if (cronoDt > gifCronoMax) gifCronoMax = cronoDt;
+  }
+#endif
   if (r < 0) {
     if (gif->getLastError() == GIF_ERROR_MEMORY) {
       if (++gifNoMemTries < 5) {
