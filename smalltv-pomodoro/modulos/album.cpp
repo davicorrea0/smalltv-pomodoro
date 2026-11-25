@@ -3,6 +3,7 @@
 #include "../src/JPEGDEC/JPEGDEC.h"
 #include "../src/AnimatedGIF/AnimatedGIF.h"
 #include "../gifcheck.h"
+#include "../album_gif_renderer.h"
 
 // ---------- álbum: fotos (JPG) e GIFs no LittleFS; rodízio de mostradores ----------
 // Lista "t:1,p:bento,..." (embutido pelo número, pacote pelo id) em /rotation.txt; a cada cfg.rotMin
@@ -38,10 +39,7 @@ static int gifOffX = 0, gifOffY = 0;
 
 static uint32_t nextFrameAt = 0;
 static uint8_t gifNoMemTries = 0;
-static uint8_t gifPrevDisp = 0;
-static bool gifClearTrans = false;
-static int16_t gifPrevX = 0, gifPrevY = 0, gifPrevW = 0, gifPrevH = 0;
-static int16_t gifOldX0 = 0, gifOldY0 = 0, gifOldX1 = 0, gifOldY1 = 0;
+static AlbumGifRenderState gifRender;
 
 static bool endsWithIgnoreCase(const String &s, const char *suffix) {
   size_t n = s.length(), m = strlen(suffix);
@@ -219,70 +217,17 @@ bool validGif(const String &path) {
   return error == nullptr;
 }
 
-static inline int clip240(int v) { return v < 0 ? 0 : v > 240 ? 240 : v; }
+struct AlbumGifDisplay {
+  void startWrite() { tft.startWrite(); }
+  void endWrite() { tft.endWrite(); }
+  void setAddrWindow(int x, int y, int w, int h) { tft.setAddrWindow(x, y, w, h); }
+  void writePixelsBE(uint16_t *p, int n) { tftPixelsBE(p, n); }
+  void fillRect(int x, int y, int w, int h, uint16_t c) { tft.fillRect(x, y, w, h, c); }
+};
 
 static void gifDraw(GIFDRAW *p) {
-  uint16_t *buf = uiRowBuf();  // alinhado: tftPixelsBE não copia
-  if (p->y == 0) {
-    int fx0 = clip240(p->iX + gifOffX), fy0 = clip240(p->iY + gifOffY);
-    int fx1 = clip240(p->iX + gifOffX + p->iWidth), fy1 = clip240(p->iY + gifOffY + p->iHeight);
-    gifClearTrans = (gifPrevDisp == 2 && gifPrevW > 0 && gifPrevH > 0);
-    if (gifClearTrans) {
-      gifOldX0 = gifPrevX; gifOldY0 = gifPrevY;
-      gifOldX1 = gifPrevX + gifPrevW; gifOldY1 = gifPrevY + gifPrevH;
-      if (gifOldX1 <= fx0 || fx1 <= gifOldX0 || gifOldY1 <= fy0 || fy1 <= gifOldY0) {
-        tft.fillRect(gifOldX0, gifOldY0, gifOldX1 - gifOldX0, gifOldY1 - gifOldY0, 0);
-      } else {
-        int cy0 = max<int>(gifOldY0, fy0), cy1 = min<int>(gifOldY1, fy1);
-        if (gifOldY0 < cy0) tft.fillRect(gifOldX0, gifOldY0, gifOldX1 - gifOldX0, cy0 - gifOldY0, 0);
-        if (cy1 < gifOldY1) tft.fillRect(gifOldX0, cy1, gifOldX1 - gifOldX0, gifOldY1 - cy1, 0);
-        if (cy0 < cy1 && gifOldX0 < fx0) tft.fillRect(gifOldX0, cy0, fx0 - gifOldX0, cy1 - cy0, 0);
-        if (cy0 < cy1 && fx1 < gifOldX1) tft.fillRect(fx1, cy0, gifOldX1 - fx1, cy1 - cy0, 0);
-      }
-    }
-    gifPrevDisp = p->ucDisposalMethod;
-    gifPrevX = (int16_t)fx0;
-    gifPrevY = (int16_t)fy0;
-    gifPrevW = (int16_t)(fx1 > fx0 ? fx1 - fx0 : 0);
-    gifPrevH = (int16_t)(fy1 > fy0 ? fy1 - fy0 : 0);
-  }
-  int y = p->iY + p->y + gifOffY;
-  if (y < 0 || y >= 240) return;
-  uint8_t *s = p->pPixels;
-  int x0 = p->iX + gifOffX, w = p->iWidth;
-  if (x0 < 0) { s -= x0; w += x0; x0 = 0; }
-  if (x0 + w > 240) w = 240 - x0;
-  if (w <= 0) return;
-  uint16_t *pal = p->pPalette;
-  bool rowRestore = gifClearTrans && y >= gifOldY0 && y < gifOldY1;
-  uint8_t tr = p->ucTransparent;
-  if (!p->ucHasTransparency || (rowRestore && x0 >= gifOldX0 && x0 + w <= gifOldX1)) {
-    for (int i = 0; i < w; i++) {
-      uint8_t px = s[i];
-      buf[i] = (p->ucHasTransparency && px == tr) ? 0 : pal[px];
-    }
-    tft.startWrite();
-    tft.setAddrWindow(x0, y, w, 1);
-    tftPixelsBE(buf, w);
-    tft.endWrite();
-    return;
-  }
-  auto drawPx = [&](int x) { return s[x] != tr || (rowRestore && x0 + x >= gifOldX0 && x0 + x < gifOldX1); };
-  int x = 0;
-  while (x < w && !drawPx(x)) x++;
-  if (x >= w) return;
-  tft.startWrite();
-  while (x < w) {
-    int start = x, n = 0;
-    while (x < w && drawPx(x)) {
-      uint8_t px = s[x++];
-      buf[n++] = (px == tr) ? 0 : pal[px];
-    }
-    tft.setAddrWindow(x0 + start, y, n, 1);
-    tftPixelsBE(buf, n);
-    while (x < w && !drawPx(x)) x++;
-  }
-  tft.endWrite();
+  AlbumGifDisplay out;
+  albumGifDraw(gifRender, out, uiRowBuf(), gifOffX, gifOffY, p);
 }
 
 static void releaseGif() {
@@ -292,7 +237,7 @@ static void releaseGif() {
     gif = nullptr;
   }
   gifNoMemTries = 0;
-  gifPrevDisp = 0;
+  gifRender = AlbumGifRenderState();
 }
 
 void stopAlbum() {

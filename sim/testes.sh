@@ -106,4 +106,5 @@ for f in gif jpeg; do
     exit 1
   fi
 done
-echo "testes: ok (handlers, histórico, cor quente, $N casos de fuzzing de mostrador de pacote, de GIF e de JPEG)"
+bash test-gif-qualidade.sh
+echo "testes: ok (handlers, histórico, cor quente, render dourado, $N casos de fuzzing de mostrador de pacote, de GIF e de JPEG)"
