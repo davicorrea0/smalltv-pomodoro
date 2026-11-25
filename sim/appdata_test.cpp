@@ -1,5 +1,5 @@
 // Teste do POST /api/apps/data (appdata.cpp) e do {x.campo} nos pacotes (facepack.cpp), com ASan/UBSan (sim/testes.sh).
-// Cobre: os envios inválidos recusados (e o armazém intacto depois deles), os limites exatos (16 campos no armazém, 8 por
+// Cobre: os envios inválidos recusados (e o armazém intacto depois deles), os limites exatos (18 campos no armazém, 8 por
 // envio), ttl por campo, armazém cheio, atomicidade, ttl com a volta do millis() (49,7 dias) e o "ressuscitar" após 24,8 dias, o pacote
 // bento-casa desenhado (valor / "--" / vencido) e a equivalência do redesenho incremental com o quadro cheio, e um fuzz
 // do parser (corpos estragados; o sanitizer aborta em erro de memória e as invariantes do armazém são conferidas).
@@ -82,10 +82,11 @@ static void limites() {
   appDataClear();
   CHECK(!put("{\"ttl\":900,\"values\":{\"a\":1,\"b\":2,\"c\":3,\"d\":4,\"e\":5,\"f\":6,\"g\":7,\"h\":8}}", t), "8 campos num envio");
   CHECK(!put("{\"ttl\":900,\"values\":{\"i\":1,\"j\":2,\"k\":3,\"l\":4,\"m\":5,\"n\":6,\"o\":7,\"p\":8}}", t), "16 no armazem");
-  CHECK(get("a", t) == "1" && get("p", t) == "8", "16 campos guardados");
-  CHECK(!put("{\"ttl\":900,\"values\":{\"a\":11,\"p\":88}}", t), "armazem cheio, mas so campos que ja existem");
-  CHECK(put("{\"ttl\":900,\"values\":{\"a\":12,\"q\":1}}", t), "17o campo deveria ser recusado");
-  CHECK(get("a", t) == "11" && get("q", t) == "<nada>", "recusa por armazem cheio aplicou algo");
+  CHECK(!put("{\"ttl\":900,\"values\":{\"q\":1,\"r\":2}}", t), "18 no armazem");
+  CHECK(get("a", t) == "1" && get("p", t) == "8" && get("r", t) == "2", "18 campos guardados");
+  CHECK(!put("{\"ttl\":900,\"values\":{\"a\":11,\"r\":88}}", t), "armazem cheio, mas so campos que ja existem");
+  CHECK(put("{\"ttl\":900,\"values\":{\"a\":12,\"s\":1}}", t), "19o campo deveria ser recusado");
+  CHECK(get("a", t) == "11" && get("s", t) == "<nada>", "recusa por armazem cheio aplicou algo");
   appDataClear();
   std::string s = "{\"ttl\":900,\"values\":{\"a\":\"";
   s += std::string(APPDATA_BODY_MAX - s.size() - 3, 'z');  // 512 B exatos; o valor passa de 15: recusa pelo valor, não pelo corpo
@@ -114,14 +115,15 @@ static void parcial_e_atomico() {
   // dois remetentes dividem o armazém: um não apaga o outro
   appDataClear();
   CHECK(!put("{\"ttl\":900,\"values\":{\"estado\":\"LAVANDO\",\"pct\":70,\"min\":18}}", t), "lavadora");
-  CHECK(!put("{\"ttl\":900,\"values\":{\"tk_c5\":\"42% 2h13\",\"tk_c7\":\"9%\"}}", t + 10), "tokensmall");
+  CHECK(!put("{\"ttl\":900,\"values\":{\"tk_c5\":\"42\",\"tk_c5r\":\"2h13\",\"tk_c7\":\"9%\"}}", t + 10), "tokensmall");
   CHECK(!put("{\"ttl\":900,\"values\":{\"estado\":\"PRONTA\",\"fim\":\"14:52\"}}", t + 20), "campo novo de um remetente");
-  CHECK(get("estado", t + 30) == "PRONTA" && get("fim", t + 30) == "14:52" && get("pct", t + 30) == "70" && get("tk_c5", t + 30) == "42% 2h13",
+  CHECK(get("estado", t + 30) == "PRONTA" && get("fim", t + 30) == "14:52" && get("pct", t + 30) == "70" && get("tk_c5", t + 30) == "42",
         "os campos dos outros remetentes ficam");
   // um campo vencido libera o lugar (e não volta com o envio seguinte)
   appDataClear();
   CHECK(!put("{\"ttl\":10,\"values\":{\"a\":1,\"b\":2,\"c\":3,\"d\":4,\"e\":5,\"f\":6,\"g\":7,\"h\":8}}", t), "8 curtos");
   CHECK(!put("{\"ttl\":900,\"values\":{\"i\":1,\"j\":2,\"k\":3,\"l\":4,\"m\":5,\"n\":6,\"o\":7,\"p\":8}}", t), "8 longos");
+  CHECK(!put("{\"ttl\":900,\"values\":{\"q\":1,\"r\":2}}", t), "mais 2 longos (18 no armazem)");
   CHECK(put("{\"ttl\":900,\"values\":{\"novo\":1}}", t + 9999), "ainda cheio");
   CHECK(!put("{\"ttl\":900,\"values\":{\"novo\":1}}", t + 10000), "vencidos liberam lugar");
   CHECK(get("novo", t + 10001) == "1" && get("a", t + 10001) == "<nada>" && get("p", t + 10001) == "8", "lugar reaproveitado");
@@ -135,7 +137,7 @@ static void parcial_e_atomico() {
     vivos++;
     CHECK(left > 0 && left <= 900, "appDataAt: %s com %u s", k, (unsigned)left);
   }
-  CHECK(vivos == 10, "appDataAt: %d vivos (esperado 10)", vivos);
+  CHECK(vivos == 12, "appDataAt: %d vivos (esperado 12)", vivos);
 }
 
 static void volta_do_millis() {
@@ -480,11 +482,19 @@ static void exemplos(Tela *tela) {
     facePackUnload();
     caso++;
   }
-  // os três juntos cabem no armazém (12 dos 16 campos)
+  // os três juntos cabem no armazém (12 dos 18 campos)
   appDataClear();
   for (int k = 0; k < 3; k++) {
     CHECK(enviosCasos[k].size() > 1 && !enviosCasos[k][1].empty(), "%s sem primeiro estado de dados", casos[k].estados);
     if (enviosCasos[k].size() > 1 && !enviosCasos[k][1].empty()) CHECK(!put(enviosCasos[k][1][0], st.ms), "%s nao coube junto com os outros", casos[k].arq);
+  }
+  // com o Uso de IA (6 campos) são 18 de 18: o quarto miniapp ainda cabe e um quinto não
+  std::vector<std::vector<std::string>> ia;
+  if (lerEnvios("miniapps-estados/tokensmall.json", ia) && ia.size() > 1 && !ia[1].empty()) {
+    CHECK(!put(ia[1][0], st.ms), "tokensmall nao coube junto com a casa (18 de 18)");
+    CHECK(put("{\"ttl\":900,\"values\":{\"extra\":1}}", st.ms), "o 19o campo deveria ser recusado");
+  } else {
+    CHECK(false, "miniapps-estados/tokensmall.json sem estado de dados");
   }
 }
 

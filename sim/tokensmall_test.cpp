@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <algorithm>
 #include <string>
 #include <vector>
 #include <ArduinoJson.h>
@@ -39,6 +40,15 @@ static bool carregar(const char *arq) {
   buf.push_back(0);
   char err[96] = "";
   if (!facePackLoad(buf.data(), s.size(), err, sizeof err)) { printf("tokensmall_test: pacote recusado: %s\n", err); return false; }
+  // contrato congelado com o companheiro (miniapps/tokensmall): redesenhar a tela não pode mudar a lista de campos
+  char campos[96];
+  facePackFields(campos, sizeof campos);
+  std::vector<std::string> v;
+  for (const char *p = campos; *p;) { const char *e = strchr(p, ','); v.push_back(e ? std::string(p, e - p) : std::string(p)); p += e ? (e - p) + 1 : strlen(p); }
+  std::sort(v.begin(), v.end());
+  std::string r;
+  for (const std::string &x : v) r += (r.empty() ? "" : ",") + x;
+  CHECK(r == "tk_c5,tk_c5r,tk_c7,tk_x5,tk_x5r,tk_x7", "campos lidos '%s', esperado tk_c5,tk_c5r,tk_c7,tk_x5,tk_x5r,tk_x7 (contrato com o companheiro)", campos);
   return true;
 }
 
@@ -93,12 +103,12 @@ int main(int argc, char **argv) {
   facePackRender(st, true);
   const uint32_t semDados = hash(tela->px);
 
-  // o que o companheiro manda: sempre os 4 campos ("--" na janela sem leitura)
+  // o que o companheiro manda: sempre os 6 campos ("" nos dois campos do 5H sem leitura, "--" no 7D)
   struct Passo { std::string corpo; uint32_t dt; };
   const Passo passos[] = {
     {corpos[1], 300},
     {std::string(), 700},
-    {trocar(corpos[1], "tk_c5", "43% 2h12"), 60000},
+    {trocar(corpos[1], "tk_c5", "43"), 60000},
     {corpos[2], 60000},
     {corpos[3], 1000},
     {std::string(), 899000},  // quase vence
@@ -124,14 +134,14 @@ int main(int argc, char **argv) {
   }
   CHECK(comDados != semDados, "os valores nao mudaram a tela");
   CHECK(antesC5 != comDados, "c5 novo nao mudou a tela");
-  CHECK(venceuC5 != antesC5, "c5 '--' nao mudou a tela");
-  CHECK(vencido == semDados, "vencido deveria ficar igual a sem dados (tudo '--')");
+  CHECK(venceuC5 != antesC5, "c5 sem leitura nao mudou a tela");
+  CHECK(vencido == semDados, "vencido deveria ficar igual a sem dados");
 
   // idiomas e hora ausente também têm de bater
   for (int lang = 0; lang < 3; lang++) {
     uiSetLang(lang);
     st.timeOk = lang != 1;
-    std::string idioma = trocar(trocar(corpos[1], "tk_c5", "100% 5h59"), "tk_x5", "--");
+    std::string idioma = trocar(trocar(corpos[1], "tk_c5", "100"), "tk_x5", "");
     put(idioma.c_str(), st.ms);
     st.ms += 50;
     facePackRender(st, false);
