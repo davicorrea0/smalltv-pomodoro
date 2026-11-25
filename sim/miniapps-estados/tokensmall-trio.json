@@ -1,0 +1,12 @@
+{
+ "capa": 1,
+ "estados": [
+  {"n":"Sem dados","en":"No data","es":"Sin datos","envios":[]},
+  {"n":"Trabalhando","en":"Working","es":"Trabajando","envios":[{"ttl":900,"values":{"tk_c5":"42","tk_c5r":"2h13","tk_c7":"71% 3d","tk_x5":"63","tk_x5r":"3h20","tk_x7":"12% 5d"}}]},
+  {"n":"Perto do limite","en":"Near the limit","es":"Cerca del límite","envios":[{"ttl":900,"values":{"tk_c5":"93","tk_c5r":"38m","tk_c7":"91% 2d","tk_x5":"92","tk_x5r":"1h05","tk_x7":"35% 3d"}}]},
+  {"n":"Limite atingido","en":"Limit reached","es":"Límite alcanzado","envios":[{"ttl":900,"values":{"tk_c5":"100","tk_c5r":"1h20","tk_c7":"100% 5h59","tk_x5":"100","tk_x5r":"45m","tk_x7":"80% 3d"}}]},
+  {"n":"Descansado","en":"Rested","es":"Descansado","envios":[{"ttl":900,"values":{"tk_c5":"0","tk_c5r":"5h59","tk_c7":"7% 6d","tk_x5":"0","tk_x5r":"5h59","tk_x7":"0% 6d"}}]},
+  {"n":"Com Antigravity (campos tk_a*, depois do 18 -> 21)","en":"With Antigravity (tk_a* fields, after 18 -> 21)","es":"Con Antigravity (campos tk_a*, tras 18 -> 21)","envios":[{"ttl":900,"values":{"tk_c5":"42","tk_c5r":"2h13","tk_x5":"100","tk_x5r":"45m","tk_a5":"91","tk_a5r":"1h10"}}]},
+  {"n":"Antigravity no limite, Claude descansado","en":"Antigravity maxed, Claude rested","es":"Antigravity al límite, Claude descansado","envios":[{"ttl":900,"values":{"tk_c5":"0","tk_c5r":"5h59","tk_x5":"42","tk_x5r":"2h13","tk_a5":"100","tk_a5r":"30m"}}]}
+ ]
+}

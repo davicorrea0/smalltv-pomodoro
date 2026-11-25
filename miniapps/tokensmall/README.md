@@ -196,6 +196,52 @@ O gerador é [`sim/gerar_tokensmall_grande.py`](../../sim/gerar_tokensmall_grand
 - Nada do Clawdmeter (sem licença) foi usado: nem imagem, nem código, nem fonte.
 - O aviso de marcas acima vale também para estes dois pacotes.
 
+## Variações: Clawd na mesa, rosto do Clawd e trio com Antigravity
+
+Mais três pacotes, gerados por [`sim/gerar_tokensmall_variacoes.py`](../../sim/gerar_tokensmall_variacoes.py). Os humores
+são os mesmos da versão de mascote grande.
+
+| Pacote | O que mostra | Campos |
+|---|---|---|
+| [`tokensmall-clawd-mesa.json`](../../sim/apps-seeds/tokensmall-clawd-mesa.json) | O Clawd grande atrás de uma mesa comprida, digitando. Tem um monitor com código rolando, que fica vermelho com "!" no limite, e uma caneca soltando vapor. Sem dados, ele cochila apoiado na mesa; descansado, pula de trás dela e joga o boné | `tk_c5`, `tk_c5r`, `tk_c7` |
+| [`tokensmall-clawd-rosto.json`](../../sim/apps-seeds/tokensmall-clawd-rosto.json) | Close no Clawd: o corpo laranja enche a tela, com a aba do boné na testa e os braços digitando dos lados. Os olhos (144 x 48 px) olham, apertam concentrados e piscam; no limite viram X, com o rosto vermelho e tremendo; descansado, ficam `^ ^` com bochechas; sem dados, dormem | `tk_c5`, `tk_c5r`, `tk_c7` |
+| [`tokensmall-trio.json`](../../sim/apps-seeds/tokensmall-trio.json) | Claude, Codex e Antigravity ao mesmo tempo, um cartão por assistente com mascote médio animado, percentual de 5 h, tempo até zerar e barra | `tk_c5`, `tk_c5r`, `tk_x5`, `tk_x5r`, `tk_a5`, `tk_a5r` |
+
+**Por que essas três.** Também pensei na nuvem do Codex fazendo chover código para crescer flores conforme o uso, mas
+deixei de fora. O `when` só compara valores exatos, e a única coisa que cresce com o percentual é a barra: um retângulo que
+enche na horizontal. Uma flor que cresce teria de ser montada com colunas de 1 px de largura, cada uma uma camada que
+aparece a partir de um percentual. Daria uns riscos finos que leem pior que a própria barra. As três escolhidas usam o que o
+formato faz bem: sprites grandes, `motion` e humores por valor exato.
+
+**Trio: humores com 8 referências `x.` para 3 assistentes.** Cada assistente gasta 2 referências: `x.tk_?5` (barra,
+trabalhando e, negada, dormindo) e `x.tk_?5=100` (limite). São 6 de 8. Por isso, no trio, "sem dados" e "descansado (0 %)"
+são o mesmo humor: o mascote dorme. O texto mostra a diferença: `0` e o tempo de volta, ou `--`. A gota de suor a 90 % não
+gasta referência, porque usa a mesma da barra.
+
+**Antigravity e o orçamento de campos.** O mascote é o "A" de arco-íris do TokenTV (`pixel/antigravity-pixel.png`, MIT),
+redesenhado aqui numa grade de 18 x 16: o original tem um gradiente suave que não cabe em 15 cores. Ele flutua devagar
+("zero G", como no mockup 110), balança as pernas e pisca. Os campos dele são `tk_a5`, `tk_a5r` e `tk_a7`, no mesmo
+formato dos do Claude e do Codex; o trio usa os dois primeiros. Mas **o companheiro ainda não manda esses campos**: até lá o Antigravity aparece dormindo, com
+`--`, e isso é o esperado. Mandar os 3 depende de subir `APPDATA_FIELDS` de 18 para 21 no relógio: hoje os 18 estão
+ocupados pelos 6 `tk_` do tokensmall mais os 12 dos exemplos da casa. Se o campo de atividade (`tk_ca`, `tk_xa`) também
+entrar, a conta passa de 21.
+
+Limites usados:
+
+| Pacote | Sprites (B) | Sprites | Camadas | Com `motion` | Arquivo (B) | Refs `x.` |
+|---|---|---|---|---|---|---|
+| Clawd na mesa | 7350 de 8192 | 12 de 12 | 36 de 48 | 12 de 12 | 21 935 de 24 576 | 4 de 8 |
+| Rosto do Clawd | 3503 de 8192 | 11 de 12 | 34 de 48 | 6 de 12 | 12 938 de 24 576 | 4 de 8 |
+| Trio | 6017 de 8192 | 10 de 12 | 42 de 48 | 9 de 12 | 19 586 de 24 576 | 6 de 8 |
+
+Prévias em `sim/apps-seeds/`: `tokensmall-clawd-mesa.png`, `tokensmall-clawd-rosto.png` e `tokensmall-trio.png` (capa),
+`-estados.png` (todos os estados; o trio tem mais dois, com Antigravity com dados) e `.gif` (animado, 2,4 s por estado).
+
+**Créditos.** Clawd, boné, olhos, poses e monitor: Clawd Quest (MIT). Nuvem do Codex e Antigravity: TokenTV (MIT). As
+licenças estão em `sim/apps-seeds/`. A ideia de um rosto grande que reage vem do Clawdmeter, mas o desenho é próprio, com os
+olhos do Clawd Quest ampliados. Do Clawdmeter não foi copiado nada: nem imagem, nem código, nem fonte. O aviso de marcas
+acima vale também aqui, e o Antigravity é marca do Google.
+
 ## Limites desta versão
 
 - Só o percentual **usado** (o que o Claude Code e o TokenTV também mostram). A barra não muda de cor perto do limite: o pacote só compara valores por igualdade exata.
@@ -208,7 +254,7 @@ O gerador é [`sim/gerar_tokensmall_grande.py`](../../sim/gerar_tokensmall_grand
 
 ```bash
 python -I miniapps/tokensmall/test_tokensmall.py     # companheiro (relógio de mentira em 127.0.0.1)
-bash sim/testes.sh                                    # inclui tokensmall_test, tokensmall_arcade_test e tokensmall_grande_test: os pacotes desenhados com e sem dados, incremental x cheio, humores
+bash sim/testes.sh                                    # inclui tokensmall_test, tokensmall_arcade_test e tokensmall_grande_test (5 pacotes de mascote): os pacotes desenhados com e sem dados, incremental x cheio, humores
 ```
 
 ## Crédito

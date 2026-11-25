@@ -1,12 +1,12 @@
-// Teste dos pacotes de mascote grande (sim/apps-seeds/tokensmall-clawd.json e tokensmall-codex.json): um mascote por
-// pacote que reage aos 3 campos do seu assistente, entre os 6 que o companheiro do PC empurra (miniapps/tokensmall).
+// Teste dos pacotes de mascote do tokensmall (sim/apps-seeds/tokensmall-clawd*.json, tokensmall-codex.json e
+// tokensmall-trio.json): mascotes que reagem aos campos de limite que o companheiro do PC empurra (miniapps/tokensmall).
 // Com ASan/UBSan (sim/testes.sh). Confere:
 //  - o pacote carrega, lê exatamente os 3 campos esperados e cabe no teto de sprites;
 //  - cada humor (sem dados, trabalhando, perto do limite, no limite, descansado) muda o mascote;
-//  - os campos do outro assistente não mudam a tela;
+//  - um campo que o pacote não lê (o do outro assistente) não muda a tela;
 //  - com os sprites andando (100 ms por passo, vários ciclos, na volta do millis) o redesenho incremental dá o mesmo
 //    quadro que o quadro cheio, em cada estado, nas trocas de estado e nos 3 idiomas.
-// Uso: tokensmall_grande_test <pacote> <estados> <campos em ordem alfabética> <campo do outro assistente>
+// Uso: tokensmall_grande_test <pacote> <estados> <campos em ordem alfabética> <campo que o pacote não lê>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -72,8 +72,9 @@ int main(int argc, char **argv) {
     if (!envios.isNull() && envios.size()) serializeJson(envios[0], c);
     corpos.push_back(c);
   }
-  // 0 sem dados, 1 trabalhando, 2 perto do limite, 3 no limite, 4 descansado
-  if (corpos.size() != 5) { printf("tokensmall_grande_test: esperava 5 estados, vieram %d\n", (int)corpos.size()); return 1; }
+  // 0 sem dados, 1 trabalhando, 2 perto do limite, 3 no limite, 4 descansado; depois, estados a mais do pacote (o trio)
+  const int n = (int)corpos.size();
+  if (n < 5 || n > 8) { printf("tokensmall_grande_test: esperava de 5 a 8 estados, vieram %d\n", n); return 1; }
 
   Tela *tela = new Tela();
   uiBegin(tela);
@@ -94,8 +95,8 @@ int main(int argc, char **argv) {
   UiState st = estado();
   uiSetLang(0);
   const uint32_t base = 4000000000u - 200;  // os sprites andam atravessando a volta do millis()
-  uint32_t quadro[5], m[5];
-  for (int e = 0; e < 5; e++) {
+  uint32_t quadro[8], m[8];
+  for (int e = 0; e < n; e++) {
     appDataClear();
     if (!corpos[e].empty()) { const char *msg = appDataPut(corpos[e].c_str(), corpos[e].size(), base); CHECK(!msg, "estado %d recusado: %s", e, msg ? msg : ""); }
     st.ms = base + 1000;  // mesmo instante da animacao em todos os estados
@@ -104,13 +105,13 @@ int main(int argc, char **argv) {
     quadro[e] = hash(tela->px);
     m[e] = cena(tela->px);
   }
-  for (int a = 0; a < 5; a++)
-    for (int b = a + 1; b < 5; b++) {
+  for (int a = 0; a < n; a++)
+    for (int b = a + 1; b < n; b++) {
       CHECK(quadro[a] != quadro[b], "estados %d e %d geraram o mesmo quadro", a, b);
       CHECK(m[a] != m[b], "estados %d e %d com o mesmo mascote", a, b);
     }
   // os campos do outro assistente nao mexem na tela
-  for (int e = 1; e < 5; e++) {
+  for (int e = 1; e < n; e++) {
     appDataClear();
     appDataPut(corpos[e].c_str(), corpos[e].size(), base);
     st.ms = base + 1000;
@@ -128,8 +129,9 @@ int main(int argc, char **argv) {
     uiSetLang(lang);
     st.timeOk = lang != 1;
     uint32_t ms = base;
-    const int ordem[] = {0, 1, 2, 3, 4, 3, 1, 0, 4, 2};
+    const int ordem[] = {0, 1, 2, 3, 4, 3, 1, 0, 4, 2, 5, 6, 7, 1};
     for (int k : ordem) {
+      if (k >= n) continue;
       appDataClear();
       if (!corpos[k].empty()) appDataPut(corpos[k].c_str(), corpos[k].size(), ms);
       for (int passo = 0; passo < 30; passo++) {  // 3 s: mais de um ciclo de cada sprite e de cada motion

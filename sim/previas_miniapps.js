@@ -13,6 +13,9 @@ const MINIAPPS = [
   ['apps-seeds/tokensmall-arcade.json', 'miniapps-estados/tokensmall-arcade.json'],
   ['apps-seeds/tokensmall-clawd.json', 'miniapps-estados/tokensmall-clawd.json'],
   ['apps-seeds/tokensmall-codex.json', 'miniapps-estados/tokensmall-codex.json'],
+  ['apps-seeds/tokensmall-clawd-mesa.json', 'miniapps-estados/tokensmall-clawd-mesa.json'],
+  ['apps-seeds/tokensmall-clawd-rosto.json', 'miniapps-estados/tokensmall-clawd-rosto.json'],
+  ['apps-seeds/tokensmall-trio.json', 'miniapps-estados/tokensmall-trio.json'],
 ];
 
 const T = [];

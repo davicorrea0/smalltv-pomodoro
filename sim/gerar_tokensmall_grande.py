@@ -366,15 +366,15 @@ def pulo(x, y, alto=21):
     return mov(1000, (0, x, y), (250, x, y), (450, x, y - alto), (700, x, y), (1000, x, y))
 
 
-def textos(v5, v5r, v7, barra, parede):
+def textos(v5, v5r, v7, barra, parede, y0=160):
     return [
         {"type": "text", "x": 12, "y": 12, "font": "pixel", "size": 2, "color": "#8A8A82", "text": "7D {%s}" % v7},
-        {"type": "bar", "x": 12, "y": 160, "w": 216, "h": 6, "r": 3, "value": v5, "max": 100, "color": barra, "track": "#3a3936"},
-        {"type": "text", "x": 92, "y": 174, "font": "bebas", "size": 52, "color": "#F2EFE6", "text": "{%s}" % v5, "align": "right", "bg": parede},
-        {"type": "text", "x": 96, "y": 202, "font": "pixel", "size": 3, "color": "#F2EFE6", "text": "%", "when": v5r},
-        {"type": "text", "x": 228, "y": 180, "font": "pixel", "size": 2, "color": "#8A8A82", "text": {"pt": "REINICIA", "en": "RESETS", "es": "REINICIA"}, "align": "right", "when": v5r},
-        {"type": "text", "x": 228, "y": 200, "font": "pixel", "size": 3, "color": "#F2EFE6", "text": "{%s}" % v5r, "align": "right", "when": v5r},
-        {"type": "text", "x": 228, "y": 190, "font": "pixel", "size": 2, "color": "#E2B84A",
+        {"type": "bar", "x": 12, "y": y0, "w": 216, "h": 6, "r": 3, "value": v5, "max": 100, "color": barra, "track": "#3a3936"},
+        {"type": "text", "x": 92, "y": y0 + 14, "font": "bebas", "size": 52, "color": "#F2EFE6", "text": "{%s}" % v5, "align": "right", "bg": parede},
+        {"type": "text", "x": 96, "y": y0 + 42, "font": "pixel", "size": 3, "color": "#F2EFE6", "text": "%", "when": v5r},
+        {"type": "text", "x": 228, "y": y0 + 20, "font": "pixel", "size": 2, "color": "#8A8A82", "text": {"pt": "REINICIA", "en": "RESETS", "es": "REINICIA"}, "align": "right", "when": v5r},
+        {"type": "text", "x": 228, "y": y0 + 40, "font": "pixel", "size": 3, "color": "#F2EFE6", "text": "{%s}" % v5r, "align": "right", "when": v5r},
+        {"type": "text", "x": 228, "y": y0 + 30, "font": "pixel", "size": 2, "color": "#E2B84A",
          "text": {"pt": "SEM DADOS", "en": "NO DATA", "es": "SIN DATOS"}, "align": "right", "when": "!" + v5r},
     ]
 

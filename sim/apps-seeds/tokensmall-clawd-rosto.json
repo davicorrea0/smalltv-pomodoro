@@ -1,0 +1,115 @@
+{
+  "format": 2,
+  "author": "davicorrea0",
+  "id": "tokensmall-clawd-rosto",
+  "name": "Uso de IA: rosto do Clawd",
+  "desc": "Rosto grande do Clawd que reage ao limite de 5 h (arte MIT: Clawd Quest)",
+  "name_en": "AI usage: Clawd face",
+  "desc_en": "Big Clawd face reacting to the 5 h limit (MIT art: Clawd Quest)",
+  "name_es": "Uso de IA: cara de Clawd",
+  "desc_es": "Cara grande de Clawd que reacciona al limite de 5 h (arte MIT)",
+  "bg": "#262624",
+  "sprites": {
+    "otrab": {"fps":4,"pal":{"k":"#1F1E1D","o":"#D97757"},"frames":[
+      ["oooooooooooooooooooooooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","oooooooooooooooooooooooo"],
+      ["oooooooooooooooooooooooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","oooooooooooooooooooooooo"],
+      ["oooooooooooooooooooooooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","oooooooooooooooooooooooo"],
+      ["oooooooooooooooooooooooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","oooooooooooooooooooooooo"],
+      ["oooooooooooooooooooooooo","oooooooooooooooooooooooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","oooooooooooooooooooooooo","oooooooooooooooooooooooo"],
+      ["oooooooooooooooooooooooo","oooooooooooooooooooooooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","oooooooooooooooooooooooo","oooooooooooooooooooooooo"],
+      ["oooooooooooooooooooooooo","oooooooooooooooooooooooo","oooooooooooooooooooooooo","oooooooooooooooooooooooo","oookkkkkooooooookkkkkooo","oooooooooooooooooooooooo","oooooooooooooooooooooooo","oooooooooooooooooooooooo"],
+      ["oooooooooooooooooooooooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","oooooooooooooooooooooooo"],
+      ["oooooooooooooooooooooooo","ooooookkkooooooooookkkoo","ooooookkkooooooooookkkoo","ooooookkkooooooooookkkoo","ooooookkkooooooooookkkoo","ooooookkkooooooooookkkoo","ooooookkkooooooooookkkoo","oooooooooooooooooooooooo"],
+      ["oooooooooooooooooooooooo","ooooookkkooooooooookkkoo","ooooookkkooooooooookkkoo","ooooookkkooooooooookkkoo","ooooookkkooooooooookkkoo","ooooookkkooooooooookkkoo","ooooookkkooooooooookkkoo","oooooooooooooooooooooooo"],
+      ["oooooooooooooooooooooooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","oooooooooooooooooooooooo"],
+      ["oooooooooooooooooooooooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","oooooooooooooooooooooooo"],
+      ["oooooooooooooooooooooooo","ookkkooooooooookkkoooooo","ookkkooooooooookkkoooooo","ookkkooooooooookkkoooooo","ookkkooooooooookkkoooooo","ookkkooooooooookkkoooooo","ookkkooooooooookkkoooooo","oooooooooooooooooooooooo"],
+      ["oooooooooooooooooooooooo","ookkkooooooooookkkoooooo","ookkkooooooooookkkoooooo","ookkkooooooooookkkoooooo","ookkkooooooooookkkoooooo","ookkkooooooooookkkoooooo","ookkkooooooooookkkoooooo","oooooooooooooooooooooooo"],
+      ["oooooooooooooooooooooooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","ooookkkooooooooookkkoooo","oooooooooooooooooooooooo"],
+      ["oooooooooooooooooooooooo","oooooooooooooooooooooooo","oooooooooooooooooooooooo","oooooooooooooooooooooooo","oookkkkkooooooookkkkkooo","oooooooooooooooooooooooo","oooooooooooooooooooooooo","oooooooooooooooooooooooo"]
+    ]},
+    "oerro": {"fps":8,"pal":{"R":"#C8553D","k":"#1F1E1D"},"frames":[
+      ["RRRRRRRRRRRRRRRRRRRRRRRRRR","RRRRRRRRRRRRRRRRRRRRRRRRRR","RRRRkRRRkRRRRRRRRkRRRkRRRR","RRRRRkRkRRRRRRRRRRkRkRRRRR","RRRRRRkRRRRRRRRRRRRkRRRRRR","RRRRRkRkRRRRRRRRRRkRkRRRRR","RRRRkRRRkRRRRRRRRkRRRkRRRR","RRRRRRRRRRRRRRRRRRRRRRRRRR","RRRRRRRRRRRRRRRRRRRRRRRRRR","RRRRRRRRRRRRRRRRRRRRRRRRRR"],
+      ["RRRRRRRRRRRRRRRRRRRRRRRRRR","RRRRRRRRRRRRRRRRRRRRRRRRRR","RRRRRRRRRRRRRRRRRRRRRRRRRR","RRRRkRRRkRRRRRRRRkRRRkRRRR","RRRRRkRkRRRRRRRRRRkRkRRRRR","RRRRRRkRRRRRRRRRRRRkRRRRRR","RRRRRkRkRRRRRRRRRRkRkRRRRR","RRRRkRRRkRRRRRRRRkRRRkRRRR","RRRRRRRRRRRRRRRRRRRRRRRRRR","RRRRRRRRRRRRRRRRRRRRRRRRRR"]
+    ]},
+    "ofesta": {"fps":6,"pal":{"k":"#1F1E1D","o":"#D97757","p":"#F2A0A0"},"frames":[
+      ["oooooooooooooooooooooooo","oooooooooooooooooooooooo","oooooooooooooooooooooooo","oooookooooooooooookooooo","ooookokooooooooookokoooo","oookoookooooooookoookooo","oooooooooooooooooooooooo","ooopppppoooooooopppppooo"],
+      ["oooooooooooooooooooooooo","oooooooooooooooooooooooo","oooookooooooooooookooooo","ooookokooooooooookokoooo","oookoookooooooookoookooo","oooooooooooooooooooooooo","oooooooooooooooooooooooo","ooopppppoooooooopppppooo"],
+      ["oooooooooooooooooooooooo","oooooooooooooooooooooooo","oooooooooooooooooooooooo","oooookooooooooooookooooo","ooookokooooooooookokoooo","oookoookooooooookoookooo","oooooooooooooooooooooooo","ooopppppoooooooopppppooo"],
+      ["oooooooooooooooooooooooo","oooooooooooooooooooooooo","oooooooooooooooooooooooo","oooooooooooooooooooooooo","oooookooooooooooookooooo","ooookokooooooooookokoooo","oookoookooooooookoookooo","ooopppppoooooooopppppooo"]
+    ]},
+    "odorme": {"pal":{"k":"#1F1E1D","o":"#D97757"},"px":["oooooooooooooooooooooooo","oooooooooooooooooooooooo","oooooooooooooooooooooooo","ookoooookooooookoooookoo","oookkkkkooooooookkkkkooo","oooooooooooooooooooooooo","oooooooooooooooooooooooo","oooooooooooooooooooooooo"]},
+    "be": {"fps":8,"pal":{"W":"#262624","o":"#D97757"},"frames":[
+      ["WWWW","oooo","oooo","oooo","WWWW","WWWW"],
+      ["WWWW","WWWW","oooo","oooo","oooo","WWWW"],
+      ["WWWW","oooo","oooo","oooo","WWWW","WWWW"],
+      ["oooo","oooo","oooo","WWWW","WWWW","WWWW"]
+    ]},
+    "bd": {"fps":8,"pal":{"W":"#262624","o":"#D97757"},"frames":[
+      ["WWWW","oooo","oooo","oooo","WWWW","WWWW"],
+      ["oooo","oooo","oooo","WWWW","WWWW","WWWW"],
+      ["WWWW","oooo","oooo","oooo","WWWW","WWWW"],
+      ["WWWW","WWWW","oooo","oooo","oooo","WWWW"]
+    ]},
+    "bre": {"fps":8,"pal":{"R":"#C8553D","W":"#262624"},"frames":[
+      ["RRRR","RRRR","RRRR","WWWW","WWWW","WWWW"],
+      ["WWWW","WWWW","WWWW","RRRR","RRRR","RRRR"],
+      ["WWWW","RRRR","RRRR","RRRR","WWWW","WWWW"],
+      ["WWWW","WWWW","RRRR","RRRR","RRRR","WWWW"]
+    ]},
+    "brd": {"fps":8,"pal":{"R":"#C8553D","W":"#262624"},"frames":[
+      ["WWWW","WWWW","WWWW","RRRR","RRRR","RRRR"],
+      ["WWWW","RRRR","RRRR","RRRR","WWWW","WWWW"],
+      ["WWWW","WWWW","RRRR","RRRR","RRRR","WWWW"],
+      ["RRRR","RRRR","RRRR","WWWW","WWWW","WWWW"]
+    ]},
+    "zz": {"pal":{"Z":"#7B9BC9"},"px":["ZZZZZ","...Z.","..Z..",".Z...","ZZZZZ"]},
+    "confete": {"fps":6,"pal":{"o":"#D97757","p":"#F2A0A0","t":"#4FD6E8","v":"#8A6CE0","w":"#E8EEF8","y":"#F6D365"},"frames":[
+      ["..y..............ww......vv...t.","................................","................................",".....wwtt.............p.........","................................","................................","............v..o...........yy...","................................","................................"],
+      ["................................","................................","..yy.............w.......v....tt","................................","................................",".....w.t..............pp........","................................","................................","............vv.oo..........y...."],
+      ["................................","............v..o...........yy...","................................","................................","..y..............ww......vv...t.","................................","................................",".....wwtt.............p.........","................................"],
+      [".....w.t..............pp........","................................","................................","............vv.oo..........y....","................................","................................","..yy.............w.......v....tt","................................","................................"]
+    ]},
+    "fumaca": {"fps":5,"pal":{"u":"#8A8A82"},"frames":[
+      ["........","....uuu.","....uuu.",".uuuuuu.",".uuu....",".uuu...."],
+      ["....uuu.","....uuu.","uuuuuuu.","uuuu....","uuuu....","........"],
+      ["...uuuu.","...uuuu.","...uuuu.","..uuu...","..uuu...","..uuu..."]
+    ]}
+  },
+  "layers": [
+    {"type":"rect","x":24,"y":40,"w":192,"h":110,"color":"#D97757"},
+    {"type":"rect","x":24,"y":40,"w":192,"h":110,"color":"#C8553D","when":"x.tk_c5=100"},
+    {"type":"rect","x":24,"y":40,"w":192,"h":10,"color":"#3B6FC8"},
+    {"type":"rect","x":24,"y":50,"w":192,"h":3,"color":"#24407A"},
+    {"type":"rect","x":4,"y":106,"w":20,"h":15,"color":"#D97757"},
+    {"type":"rect","x":216,"y":106,"w":20,"h":15,"color":"#D97757"},
+    {"type":"sprite","sprite":"be","x":4,"y":96,"size":5,"when":"x.tk_c5"},
+    {"type":"sprite","sprite":"bd","x":216,"y":96,"size":5,"when":"x.tk_c5"},
+    {"type":"sprite","sprite":"bre","x":4,"y":96,"size":5,"when":"x.tk_c5=100"},
+    {"type":"sprite","sprite":"brd","x":216,"y":96,"size":5,"when":"x.tk_c5=100"},
+    {"type":"sprite","sprite":"otrab","size":6,"when":"x.tk_c5","motion":{"period":1200,"keys":[{"t":0,"x":48,"y":72},{"t":600,"x":48,"y":70},{"t":1200,"x":48,"y":72}]}},
+    {"type":"sprite","sprite":"oerro","size":6,"when":"x.tk_c5=100","motion":{"period":300,"keys":[{"t":0,"x":42,"y":66},{"t":75,"x":44,"y":66},{"t":150,"x":42,"y":66},{"t":225,"x":40,"y":66},{"t":300,"x":42,"y":66}]}},
+    {"type":"sprite","sprite":"ofesta","x":48,"y":72,"size":6,"when":"x.tk_c5=0"},
+    {"type":"sprite","sprite":"odorme","size":6,"when":"!x.tk_c5r","motion":{"period":2400,"keys":[{"t":0,"x":48,"y":76},{"t":1200,"x":48,"y":74},{"t":2400,"x":48,"y":76}]}},
+    {"type":"sprite","sprite":"zz","size":3,"when":"!x.tk_c5r","motion":{"period":2400,"keys":[{"t":0,"x":186,"y":86},{"t":2400,"x":200,"y":56}]}},
+    {"type":"sprite","sprite":"confete","size":3,"when":"x.tk_c5=0","motion":{"period":1000,"keys":[{"t":0,"x":72,"y":56},{"t":1000,"x":72,"y":62}]}},
+    {"type":"sprite","sprite":"fumaca","size":3,"when":"x.tk_c5=100","motion":{"period":1500,"keys":[{"t":0,"x":170,"y":60},{"t":1500,"x":186,"y":30}]}},
+    {"type":"bar","x":190,"y":80,"w":1,"h":5,"value":"x.tk_c5","max":90,"color":"#8fdcff","when":"!x.tk_c5=100"},
+    {"type":"bar","x":191,"y":77,"w":1,"h":9,"value":"x.tk_c5","max":90,"color":"#8fdcff","when":"!x.tk_c5=100"},
+    {"type":"bar","x":192,"y":74,"w":1,"h":13,"value":"x.tk_c5","max":90,"color":"#8fdcff","when":"!x.tk_c5=100"},
+    {"type":"bar","x":193,"y":77,"w":1,"h":9,"value":"x.tk_c5","max":90,"color":"#8fdcff","when":"!x.tk_c5=100"},
+    {"type":"bar","x":194,"y":80,"w":1,"h":5,"value":"x.tk_c5","max":90,"color":"#8fdcff","when":"!x.tk_c5=100"},
+    {"type":"bar","x":44,"y":86,"w":1,"h":5,"value":"x.tk_c5","max":90,"color":"#8fdcff","when":"!x.tk_c5=100"},
+    {"type":"bar","x":45,"y":83,"w":1,"h":9,"value":"x.tk_c5","max":90,"color":"#8fdcff","when":"!x.tk_c5=100"},
+    {"type":"bar","x":46,"y":80,"w":1,"h":13,"value":"x.tk_c5","max":90,"color":"#8fdcff","when":"!x.tk_c5=100"},
+    {"type":"bar","x":47,"y":83,"w":1,"h":9,"value":"x.tk_c5","max":90,"color":"#8fdcff","when":"!x.tk_c5=100"},
+    {"type":"bar","x":48,"y":86,"w":1,"h":5,"value":"x.tk_c5","max":90,"color":"#8fdcff","when":"!x.tk_c5=100"},
+    {"type":"text","x":12,"y":12,"font":"pixel","size":2,"color":"#8A8A82","text":"7D {x.tk_c7}"},
+    {"type":"bar","x":12,"y":160,"w":216,"h":6,"r":3,"value":"x.tk_c5","max":100,"color":"#D97757","track":"#3a3936"},
+    {"type":"text","x":92,"y":174,"font":"bebas","size":52,"color":"#F2EFE6","text":"{x.tk_c5}","align":"right","bg":"#262624"},
+    {"type":"text","x":96,"y":202,"font":"pixel","size":3,"color":"#F2EFE6","text":"%","when":"x.tk_c5r"},
+    {"type":"text","x":228,"y":180,"font":"pixel","size":2,"color":"#8A8A82","text":{"pt":"REINICIA","en":"RESETS","es":"REINICIA"},"align":"right","when":"x.tk_c5r"},
+    {"type":"text","x":228,"y":200,"font":"pixel","size":3,"color":"#F2EFE6","text":"{x.tk_c5r}","align":"right","when":"x.tk_c5r"},
+    {"type":"text","x":228,"y":190,"font":"pixel","size":2,"color":"#E2B84A","text":{"pt":"SEM DADOS","en":"NO DATA","es":"SIN DATOS"},"align":"right","when":"!x.tk_c5r"}
+  ]
+}
