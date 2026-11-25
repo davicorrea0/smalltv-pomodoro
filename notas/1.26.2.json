@@ -10,7 +10,7 @@
     "Início cerca de 1 segundo mais rápido com o rodízio ligado",
     "Álbum: o painel avisa antes de enviar um GIF grande que o relógio cortaria ou recusaria, e as fotos reduzidas ficam mais nítidas",
     "Home Assistant (para quem usa): mostradores podem mostrar dados enviados pela rede com uma chave de escrita criada em Ajustes",
-    "Álbum: fotos e GIFs usam menos memória, com menos avisos de falta de memória e menos travamentos",
+    "Álbum: fotos e GIFs usam menos memória, com menos avisos de falta de memória",
     "Tela: cores mais fiéis, com o ajuste de cor do painel feito na partida",
     "Segurança: o relógio recusa pedidos malformados ou grandes demais e protege melhor a senha e a chave do Home Assistant"
   ],
@@ -25,7 +25,7 @@
     "Starts about 1 second faster with rotation on",
     "Album: the panel warns before sending a large GIF that the clock would crop or refuse, and resized photos are sharper",
     "Home Assistant (if you use it): faces can show data sent over the network with a write key created in Settings",
-    "Album: photos and GIFs use less memory, with fewer out-of-memory warnings and fewer freezes",
+    "Album: photos and GIFs use less memory, with fewer out-of-memory warnings",
     "Screen: more faithful colours, with the display colour calibration done at startup",
     "Security: the clock refuses malformed or oversized requests and better protects the password and the Home Assistant key"
   ],
@@ -40,7 +40,7 @@
     "Arranca cerca de 1 segundo más rápido con la rotación activada",
     "Álbum: el panel avisa antes de enviar un GIF grande que el reloj recortaría o rechazaría, y las fotos reducidas salen más nítidas",
     "Home Assistant (si lo usas): las esferas pueden mostrar datos enviados por la red con una clave de escritura creada en Ajustes",
-    "Álbum: las fotos y los GIF usan menos memoria, con menos avisos de falta de memoria y menos bloqueos",
+    "Álbum: las fotos y los GIF usan menos memoria, con menos avisos de falta de memoria",
     "Pantalla: colores más fieles, con el ajuste de color de la pantalla hecho al arrancar",
     "Seguridad: el reloj rechaza pedidos malformados o demasiado grandes y protege mejor la contraseña y la clave de Home Assistant"
   ]
