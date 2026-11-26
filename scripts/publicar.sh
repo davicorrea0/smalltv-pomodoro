@@ -143,6 +143,7 @@ console.log(json+":",s(out),out.ponte?"(ponte)":"");if(out.l2)console.log("  l2 
   die "a ponte não permite publicar esta versão (veja acima)"
 PONTE=$(node -p 'require(process.argv[1]).version' "$W/$JSON")
 # versão, contagens, galeria estática, SEO do <head> e sitemap.xml: tudo derivado dos JSON acima, do catalog/ e de faces_list.h
+node scripts/noticias-page.cjs "$W" > /dev/null || die "não consegui gerar a página de novidades"  # antes do SEO: ele confere novidades.html
 node scripts/site-seo.cjs "$W"
 git -C "$W" add -A
 git -C "$W" status --short
