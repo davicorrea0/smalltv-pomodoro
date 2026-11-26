@@ -89,6 +89,12 @@ const PAGES = [
       pt: 'Versões do firmware SmallTV Pomodoro (atual: {version}): o que mudou em cada uma e os arquivos .bin.gz com assinatura para atualizar o GeekMagic SmallTV Ultra.',
       en: 'SmallTV Pomodoro firmware releases (current: {version}): what changed in each one and the signed .bin.gz files to update the GeekMagic SmallTV Ultra.' },
     alt: { pt: 'Os mostradores do SmallTV Pomodoro', en: 'SmallTV Pomodoro clock faces' } },
+  { pt: 'novidades.html', en: 'en/news.html', img: 'img/mostradores.png',
+    title: { pt: 'Novidades e o que vem por aí — SmallTV Pomodoro', en: 'News and what is coming — SmallTV Pomodoro' },
+    desc: {
+      pt: 'Novidades do SmallTV Pomodoro: versões em teste, novos idiomas e o que vem por aí no firmware do GeekMagic SmallTV Ultra.',
+      en: 'SmallTV Pomodoro news: test versions, new languages and what is coming to the GeekMagic SmallTV Ultra firmware.' },
+    alt: { pt: 'Os mostradores do SmallTV Pomodoro', en: 'SmallTV Pomodoro clock faces' } },
   { pt: 'jogo.html', en: 'en/game.html', img: { pt: 'img/jogo/cartao-pt.png', en: 'img/jogo/cartao-en.png' },
     title: { pt: 'Jogo do foco: sequência, planta e horta — SmallTV Pomodoro', en: 'Focus game: streaks, plant and garden — SmallTV Pomodoro' },
     desc: {
