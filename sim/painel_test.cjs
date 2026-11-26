@@ -3,6 +3,30 @@
 const fs = require('fs'), path = require('path'), assert = require('assert');
 const html = fs.readFileSync(path.join(__dirname, '../web/index.html'), 'utf8');
 
+// Cidade do clima: translitera nomes para o formato ASCII do firmware e nunca grava nome vazio.
+{
+  const i = html.indexOf('function cityAscii('), cityAscii = new Function('return ' + html.slice(i, html.indexOf('\n', i)))();
+  assert.strictEqual(cityAscii('Москва'), 'Moskva');
+  assert.strictEqual(cityAscii('München'), 'Muenchen');
+  assert.strictEqual(cityAscii('Санкт-Петербург'), 'Sankt-Peterburg');
+  assert.strictEqual(cityAscii('Straße'), 'Strasse');
+  assert.strictEqual(cityAscii('São Paulo'), 'Sao Paulo');
+  assert.strictEqual(cityAscii('Київ'), 'Kyiv');
+  assert.strictEqual(cityAscii('漢字', { latitude: 35.6895, longitude: 139.6917 }), '35.69,139.69');
+  assert.strictEqual(cityAscii('漢字'), '?');
+  assert.strictEqual(cityAscii('Ёлка'), 'Elka');
+  assert.strictEqual(cityAscii('Щёлково'), 'Shchelkovo');
+  assert.strictEqual(cityAscii('Подъезд Мальчик'), 'Podezd Malchik');
+  assert.strictEqual(cityAscii('漢字', {}), '?');   // sem coordenadas: nunca lança
+  const safe = cityAscii('Cidade "com\\barra e um nome longo demais para o limite');
+  assert(safe.length <= 31 && !/["\\]/.test(safe), 'cidade fora do limite ou com aspas/barra');
+  const city = html.slice(html.indexOf('// ---------- cidade'), html.indexOf('// ---------- fotos ----------'));
+  assert(city.includes('const name=cityAscii(p.name,p);'), 'busca de cidade não chama cityAscii(p.name,p)');
+  const click = city.slice(city.indexOf('b.onclick='));
+  assert(!click.includes("replace(/[^\\x20-\\x7e]/g,'')"), 'normalização ASCII antiga ainda está solta no clique da cidade');
+  console.log('painel: cidade transliterada para ASCII, limitada e com coordenadas quando o nome fica vazio');
+}
+
 // Ajustes > Memória: flash fecha no total, reserva nunca fica negativa, teto do linker e firmware antigo seguro.
 {
   const line = s => { const i = html.indexOf(s); assert(i >= 0, s); return html.slice(i, html.indexOf('\n', i)); };

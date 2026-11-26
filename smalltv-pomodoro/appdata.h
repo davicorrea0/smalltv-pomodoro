@@ -1,5 +1,5 @@
 // appdata.h — dados empurrados de fora (Home Assistant, scripts) para os pacotes de mostrador: POST /api/apps/data.
-// Armazém estático de 16 campos, só na RAM (nada na flash, nada no backup; religar zera). Os pacotes leem com {x.campo}.
+// Armazém estático de 18 campos, só na RAM (nada na flash, nada no backup; religar zera). Os pacotes leem com {x.campo}.
 // Contrato e receita do Home Assistant: docs/HOME-ASSISTANT.md.
 #pragma once
 #include <stddef.h>
@@ -7,7 +7,7 @@
 
 static const size_t APPDATA_BODY_MAX = 512;  // corpo do POST
 static const size_t APPSHOW_BODY_MAX = 64;   // corpo do POST /api/apps/show
-static const int APPDATA_FIELDS = 16;        // campos no armazém (somados todos os remetentes)
+static const int APPDATA_FIELDS = 18;        // campos no armazém (somados todos os remetentes)
 static const int APPDATA_PUT_MAX = 8;        // campos por envio
 static const int APPDATA_NAME = 8;           // caracteres do nome, [a-z0-9_]
 static const int APPDATA_VALUE = 15;         // bytes do valor (texto, ou inteiro guardado como texto)

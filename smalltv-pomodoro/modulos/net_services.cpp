@@ -203,10 +203,11 @@ static void hueCommand(int i, const String &body) {
 
 void alexaApi() {
   const String &req = server.uri(), &body = server.arg("plain");
-  if (!cfg.alexa || req.indexOf("api") < 0) {
+  if (!cfg.alexa || !req.startsWith(F("/api"))) {
     server.send(404, "text/plain", "");
     return;
   }
+  if (!hostOk()) { deny(); return; }
   if (server.hasHeader("Origin")) {  // o Echo não manda Origin; navegador manda: é outro site tentando mexer no timer
     server.send(403, "text/plain", "");
     return;
@@ -285,6 +286,7 @@ void sendHueDescription() {
     server.send(404, "text/plain", "");
     return;
   }
+  if (!hostOk()) { deny(); return; }
   String ip = WiFi.localIP().toString(), x;
   x.reserve(900);
   x = F("<?xml version=\"1.0\" ?><root xmlns=\"urn:schemas-upnp-org:device-1-0\"><specVersion><major>1</major><minor>0</minor></specVersion><URLBase>http://");

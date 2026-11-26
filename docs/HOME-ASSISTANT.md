@@ -125,7 +125,7 @@ Mostradores prontos para lavadora, luzes e tomadas, com a automação de cada um
 | Corpo | Até 512 B; só as chaves `ttl` e `values`; JSON com no máximo 2 níveis |
 | `ttl` | Obrigatório: inteiro de 10 a 86.400 s. Vale para os campos deste envio |
 | `values` | 1 a 8 campos por envio. Nome com 1 a 8 caracteres `a-z`, `0-9` e `_`. Valor: texto de até 15 bytes ou inteiro de 32 bits. Recusa número com vírgula, `true`/`false`, `null`, lista e objeto |
-| Armazém | 16 campos no total, **somados todos os remetentes** (Home Assistant, scripts, outros mostradores). Cada envio grava só os seus campos, e os outros ficam como estão até vencerem |
+| Armazém | 18 campos no total, **somados todos os remetentes** (Home Assistant, scripts, outros mostradores). Cada envio grava só os seus campos, e os outros ficam como estão até vencerem |
 | Cheio | Se não houver lugar para um campo novo, o envio inteiro é recusado e nada muda. Espere campos vencerem ou use menos nomes |
 | Atômico | O envio é conferido inteiro antes de gravar: um campo ruim recusa todos |
 | Memória | Os valores ficam só na RAM: nada é gravado na memória do relógio, nada vai no backup, e religar apaga tudo |
@@ -197,7 +197,7 @@ installed format-2 face draws them with `{x.field}`.
    (or the clock's IP address if your Home Assistant does not resolve `.local` names), and send the header
    `X-SmallTV: 1`.
 3. Body: `{"ttl": 10..86400, "values": {...}}`, 1 to 8 fields per request, names `[a-z0-9_]{1,8}`, values text up to
-   15 bytes or a 32-bit integer, 512 bytes max. The clock keeps 16 fields in RAM, shared by all senders. Each field
+   15 bytes or a 32-bit integer, 512 bytes max. The clock keeps 18 fields in RAM, shared by all senders. Each field
    expires after its `ttl` and then shows `--`. Use a prefix per sender.
 4. Send on state change and every 5 minutes, not every few seconds.
 

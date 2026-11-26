@@ -15,6 +15,9 @@ const hash = webh.match(/#define PANEL_HASH "([0-9a-f]{24})"/)[1];
 const sig = 'static void sendPanel() {', a = source.indexOf(sig), b = source.indexOf('\n}', a);
 if (a < 0 || b < 0) throw Error('não achei o sendPanel()');
 const body = source.slice(a + sig.length, b);
+const secSig = 'void secHeaders() {', sa = source.indexOf(secSig), sb = source.indexOf('\n}', sa);
+if (sa < 0 || sb < 0) throw Error('não achei o secHeaders()');
+const secBody = source.slice(sa, sb + 2);
 const web = source.slice(source.indexOf('void setupWeb() {'), source.indexOf('\n}', source.indexOf('void setupWeb() {')));
 if (!web.includes('server.on("/", HTTP_GET, sendPanel);')) throw Error('setupWeb: o GET / precisa ser o sendPanel');
 if (!body.includes('readOk()') || body.indexOf('readOk()') > body.indexOf('304')) throw Error('GET /: readOk() antes do 304');
@@ -57,6 +60,7 @@ struct {
   void streamFile(File &f, const char *) { assert(!r.code && f); r.code = 200; r.streamed = true; }
 } server;
 static bool readOk() { if (logged) return true; r.code = 401; return false; }
+static ${secBody}
 static void panelGet() {${body}
 }
 static Reply get(const char *ifNoneMatch) { r = Reply(); inm = ifNoneMatch; opened.clear(); closes = 0; panelGet(); assert(r.h("Accept-Ranges").empty()); return r; }
@@ -65,6 +69,7 @@ int main() {
   // 1ª abertura: painel inteiro, com o ETag desta versão e revalidação obrigatória
   Reply x = get("");
   assert(x.code == 200 && x.streamed && x.h("ETag") == et && x.h("Cache-Control") == "no-cache");
+  assert(x.h("X-Content-Type-Options") == "nosniff" && x.h("X-Frame-Options") == "DENY" && x.h("Referrer-Policy") == "no-referrer");
   assert(opened == "/www/" PANEL_HASH ".gz");
   // mesma versão: 304 sem corpo, com o ETag e o Cache-Control de novo
   x = get(et.c_str());

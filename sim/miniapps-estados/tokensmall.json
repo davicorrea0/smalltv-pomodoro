@@ -2,8 +2,11 @@
  "capa": 1,
  "estados": [
   {"n":"Sem dados","en":"No data","es":"Sin datos","envios":[]},
-  {"n":"Os 4 limites","en":"All 4 limits","es":"Los 4 límites","envios":[{"ttl":900,"values":{"tk_c5":"42% 2h13","tk_c7":"71% 3d","tk_x5":"93% 38m","tk_x7":"12% 5d"}}]},
-  {"n":"Uma janela sem leitura","en":"One window unread","es":"Una ventana sin lectura","envios":[{"ttl":900,"values":{"tk_c5":"--","tk_c7":"71% 3d","tk_x5":"93% 38m","tk_x7":"12% 5d"}}]},
-  {"n":"Limites no máximo","en":"Limits maxed","es":"Límites al máximo","envios":[{"ttl":900,"values":{"tk_c5":"100% 5h59","tk_c7":"100% 24h","tk_x5":"0% 1m","tk_x7":"7% 47h"}}]}
+  {"n":"Os 4 limites","en":"All 4 limits","es":"Los 4 límites","envios":[{"ttl":900,"values":{"tk_c5":"42","tk_c5r":"2h13","tk_c7":"71% 3d","tk_x5":"93","tk_x5r":"38m","tk_x7":"12% 5d"}}]},
+  {"n":"Uma janela sem leitura","en":"One window unread","es":"Una ventana sin lectura","envios":[{"ttl":900,"values":{"tk_c5":"","tk_c5r":"","tk_c7":"71% 3d","tk_x5":"93","tk_x5r":"38m","tk_x7":"12% 5d"}}]},
+  {"n":"Limites no máximo","en":"Limits maxed","es":"Límites al máximo","envios":[{"ttl":900,"values":{"tk_c5":"100","tk_c5r":"5h59","tk_c7":"100% 24h","tk_x5":"0","tk_x5r":"1m","tk_x7":"7% 47h"}}]},
+  {"n":"Perto do limite","en":"Near the limit","es":"Cerca del límite","envios":[{"ttl":900,"values":{"tk_c5":"78","tk_c5r":"1h05","tk_c7":"91% 2d","tk_x5":"100","tk_x5r":"5h59","tk_x7":"35% 3d"}}]},
+  {"n":"Faixas","en":"Bands","es":"Franjas","envios":[{"ttl":900,"values":{"tk_c5":"69","tk_c5r":"1h","tk_c7":"70% 1h","tk_x5":"71","tk_x5r":"1h","tk_x7":"89% 1h"}}]},
+  {"n":"Faixas 2","en":"Bands 2","es":"Franjas 2","envios":[{"ttl":900,"values":{"tk_c5":"90","tk_c5r":"1h","tk_c7":"91% 1h","tk_x5":"100","tk_x5r":"1h","tk_x7":"0% 1h"}}]}
  ]
 }
