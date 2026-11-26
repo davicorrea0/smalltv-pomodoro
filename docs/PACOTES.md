@@ -48,6 +48,7 @@ Vale para qualquer mostrador, em qualquer formato. Os números de limite (camada
 | Verde LCD | O verde de LCD antigo é um estilo dos mostradores retrô embutidos, aplicado só neles. Não conte com ele num pacote; se quiser esse visual, escolha as cores no próprio `.json`. |
 | Animação calma | No máximo **10 fps** (o relógio desenha 10 vezes por segundo). Movimento pequeno e lento. **Nunca piscar nem fazer strobe.** Camadas com `{SS}` ou ponteiro de segundos são redesenhadas a cada segundo: mantenha-as pequenas. |
 | Timer do foco | O timer do Pomodoro é o coração do projeto. Não desenhe por cima dele; deixe o meio livre durante o foco ou esconda camadas cheias com `"when"`. |
+| Miniapps | Todo miniapp mostra a hora, nem que seja pequena (o relógio fica no rodízio com os outros mostradores). |
 | Identidade própria | Faça do seu jeito. Pixel art é muito bem-vinda. |
 | Direitos | Sem logos, marcas ou personagens que não sejam seus (jogos, filmes, marcas, animes…). Desenhado do zero e "inspirado em" pode; cópia não. |
 | Remix | Diga quem fez o original em `author`/`desc` e na postagem. |

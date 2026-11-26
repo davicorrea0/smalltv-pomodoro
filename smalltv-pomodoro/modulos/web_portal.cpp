@@ -344,6 +344,7 @@ static uint32_t cfgVersion() {
   fnvMix(h, ota + sizeof cfg.otaPass, ap - (ota + sizeof cfg.otaPass));
   fnvMix(h, ap + sizeof cfg.apPass, end - (ap + sizeof cfg.apPass));
   if (rotList.length()) fnvMix(h, rotList.c_str(), rotList.length());
+  if (rotTimes.length()) fnvMix(h, rotTimes.c_str(), rotTimes.length());  // os tempos do rodízio (/rotime.txt) não estão na Settings
   fnvMix(h, &wifiDowngrades, sizeof wifiDowngrades);
   fnvMix(h, &timeGuard.undone, sizeof timeGuard.undone);
   fnvMix(h, &timeGuard.confirmed, sizeof timeGuard.confirmed);
@@ -519,6 +520,12 @@ static void sendState() {
     jsonFlush(j);
     if (rotList.length()) {
       server.sendContent(rotList);
+      yield();
+    }
+    j = F("\",\"rott\":\"");
+    jsonFlush(j);
+    if (rotTimes.length()) {
+      server.sendContent(rotTimes);
       yield();
     }
     j = F("\"}");
@@ -795,6 +802,34 @@ static bool appsKeyLoad(char out[33]) {
   out[0] = 0;
   return false;
 }
+
+// Autenticação comum às escritas de miniapps: a senha do painel nunca substitui a chave dedicada.
+static bool appsWriteAuth() {
+  if (!panelOk()) { deny(); return false; }
+  uint32_t ip = requestIp(), wait = 0;
+  if (authThrottle.blocked(ip, millis(), &wait)) {
+    server.sendHeader(F("Retry-After"), String((wait + 999) / 1000));
+    server.send_P(429, PSTR("text/plain"), PSTR("Tente novamente em alguns segundos"));
+    return false;
+  }
+  char key[33];
+  if (!appsKeyLoad(key)) {
+    server.send_P(403, PSTR("text/plain"), PSTR("desligado: crie a chave no painel"));
+    return false;
+  }
+  const String &h = server.header(F("Authorization"));
+  bool ok = appsBearerOk(h.c_str(), h.length(), key);
+  memset(key, 0, sizeof key);
+  if (!ok) {
+    authThrottle.fail(ip, millis());
+    server.send_P(401, PSTR("text/plain"), PSTR("chave invalida"));
+    return false;
+  }
+  return true;
+}
+
+static uint32_t showFim;
+static bool showVisto;
 
 // ---------- painel na memória de arquivos ----------
 // O painel (~19 KB comprimido) não ocupa a flash do programa: fica em /www/<hash>.gz, onde <hash> são os
@@ -1148,32 +1183,50 @@ void setupWeb() {
     command(server.arg("c"));
     sendState();
   });
-  // Dados empurrados de fora (Home Assistant, scripts) para os {x.campo} dos pacotes. Contrato: appdata.h e
-  // docs/HOME-ASSISTANT.md. Só com a chave de escrita (/apps.key, criada no painel), nunca com a senha do painel: quem
-  // tem a chave só escreve dados. Sem a chave, a rota fica desligada (403).
+  // Dados e troca temporária de tela vindos de fora (Home Assistant, scripts). Contrato: appdata.h e
+  // docs/HOME-ASSISTANT.md. Só com a chave de escrita (/apps.key, criada no painel), nunca com a senha do painel.
   server.on(F("/api/apps/data"), HTTP_POST, [] {
-    if (!panelOk()) { deny(); return; }  // Host = IP ou o .local do relógio, e X-SmallTV: 1
-    uint32_t ip = requestIp(), wait = 0;
-    if (authThrottle.blocked(ip, millis(), &wait)) {
-      server.sendHeader(F("Retry-After"), String((wait + 999) / 1000));
-      server.send_P(429, PSTR("text/plain"), PSTR("Tente novamente em alguns segundos"));
-      return;
-    }
-    char key[33];
-    if (!appsKeyLoad(key)) { server.send_P(403, PSTR("text/plain"), PSTR("desligado: crie a chave no painel")); return; }
-    const String &h = server.header(F("Authorization"));
-    bool ok = appsBearerOk(h.c_str(), h.length(), key);
-    memset(key, 0, sizeof key);
-    if (!ok) {
-      authThrottle.fail(ip, millis());
-      server.send_P(401, PSTR("text/plain"), PSTR("chave invalida"));
-      return;
-    }
+    if (!appsWriteAuth()) return;
     const String &b = server.arg("plain");
     if (b.length() > APPDATA_BODY_MAX) { server.send_P(413, PSTR("text/plain"), PSTR("corpo grande demais")); return; }
     const char *err = appDataPut(b.c_str(), b.length(), millis());
     if (err) server.send_P(400, PSTR("text/plain"), err);
     else server.send_P(200, PSTR("application/json"), PSTR("{\"ok\":true}"));
+  });
+  // Mostra agora um pacote instalado usando a mesma prévia que o painel; não grava configuração nem acorda a tela.
+  server.on(F("/api/apps/show"), HTTP_POST, [] {
+    if (!appsWriteAuth()) return;
+    const String &b = server.arg("plain");
+    if (b.length() > APPSHOW_BODY_MAX) { server.send_P(413, PSTR("text/plain"), PSTR("corpo grande demais")); return; }
+    char pkg[24];
+    uint8_t secs;
+    const char *err = appShowParse(b.c_str(), b.length(), pkg, sizeof pkg, &secs);
+    if (err) { server.send_P(400, PSTR("text/plain"), err); return; }
+    // tela livre (o show interrompe o álbum) e, em tempo decorrido sem sinal (a volta do millis() não pode deixar a recusa presa), fora dos 60 s depois do último show
+    if (!telaLivre(true) || (showVisto && (uint32_t)(millis() - showFim) < 60000UL)) {
+      server.send_P(409, PSTR("text/plain"), PSTR("ocupado"));
+      return;
+    }
+    String path = String(F("/faces/")) + pkg + F(".json");
+    if (!fsOk || !LittleFS.exists(path)) {
+      server.send_P(404, PSTR("text/plain"), PSTR("pacote nao instalado"));
+      return;
+    }
+    if (inAlbum) stopAlbum();  // o GIF em andamento segura ~24 KB: sem isso a carga falharia justo com o álbum tocando
+    if (!loadPack(pkg)) {
+      restoreActivePack();
+      server.send_P(503, PSTR("text/plain"), PSTR("sem memoria"));
+      return;
+    }
+    previewTheme = THEME_PACK;
+    previewUntil = millis() + (uint32_t)secs * 1000UL;
+    if (!previewUntil) previewUntil = 1;
+    viewUntil = previewUntil;
+    showFim = previewUntil;
+    showVisto = true;
+    char reply[24];
+    snprintf_P(reply, sizeof reply, PSTR("{\"ok\":true,\"s\":%u}"), (unsigned)secs);
+    server.send_P(200, PSTR("application/json"), reply, strlen(reply));
   });
   // valores guardados agora (painel e depuração): {"on":1,"f":[["temp","22",840],...]}, o último número em segundos
   server.on(F("/api/apps/data"), HTTP_GET, [] {
@@ -1269,6 +1322,7 @@ void setupWeb() {
     cfg.alexa = argRange("alexa", cfg.alexa, 0, 1);
     alexaBegin();  // ligada agora: começa a responder à descoberta sem reiniciar
     if (server.hasArg("rot")) rotSet(server.arg("rot"));
+    if (server.hasArg("rott")) rotTimesSet(server.arg("rott"));
     uint8_t won = argRange("won", cfg.weatherOn, 0, 1);
     uint8_t fahr = argRange("fahr", cfg.fahr, 0, 1), rain = argRange("rain", cfg.rainAlert, 0, 1);
     cfg.beta = argRange("beta", cfg.beta, 0, 1);

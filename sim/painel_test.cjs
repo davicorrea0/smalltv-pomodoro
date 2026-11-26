@@ -149,30 +149,44 @@ const i = html.indexOf('async function runSteps('), runSteps = new Function('ret
   // limite conferido no toque, ao salvar e no incluir de um: nunca grava pela metade
   const ed = html.slice(html.indexOf('function rotEdit('), html.indexOf('function rotToggle('));
   assert((ed.match(/rotOver\(/g) || []).length == 2, 'rotEdit confere o teto no toque e ao salvar');
-  assert(line('function rotToggle(').includes('if(!on&&rotOver(l.concat(k)))return;'), 'rotToggle confere o teto');
+  assert(line('function rotToggle(').includes('if(!on&&rotOver(n))return;'), 'rotToggle confere o teto');
   const toasts = [], rotOver = new Function('ROTMAX', 'toast', 't', 'return ' + line('const rotOver=').replace(/^const rotOver=/, '').replace(/;\s*\/\/.*$/, ''))(ROTMAX, m => toasts.push(m), x => x);
   assert(!rotOver(['x'.repeat(ROTMAX)]) && !toasts.length);   // no teto ainda cabe
   assert(rotOver(['x'.repeat(ROTMAX - 1), 'y']) && toasts.length == 1);   // a vírgula conta
   const big = Array.from({ length: 30 }, (_, i) => 'p:pacote-numero-' + String(i).padStart(2, '0'));
   assert(rotMerge([], big, big).join(',').length > ROTMAX);   // 13 nativos + 41 pacotes podem passar do teto
-  // salvar: um POST só (rotPost), sem POST quando nada mudou
-  assert(ed.includes("if(l.join(',')==rotKeys().join(','))closeSheet();else if(!rotOver(l))") && (ed.match(/rotPost\(/g) || []).length == 1);
-  assert(line('function rotPost(').includes('s.cfg.rot!=l?'), 'rotPost confere o rodízio devolvido pelo relógio');
+  // salvar: um POST só (rotPost), inclusive se só os tempos mudaram
+  assert(ed.includes("ls==rotKeys().join(',')&&tt==old") && ed.includes("rotPost(ls,tt,'Rodízio salvo')") && (ed.match(/rotPost\(/g) || []).length == 1);
+  assert(line('function rotPost(').includes('save({rot:l,rott:tt})') && line('function rotPost(').includes('s.cfg.rott!=tt'), 'rotPost grava e confere rodízio e tempos juntos');
   // tirar todos: cancelar não grava; confirmar grava a lista vazia uma vez; rodízio vazio nem pergunta
   const mk = (keys, ok) => { const calls = [], asked = [];
-    const f = new Function('rotKeys', 'confirm', 't', 'rotPost', 'return ' + line('function rotClear('))(() => keys, q => (asked.push(q), ok), (s, ...a) => s.replace(/\{(\d)\}/g, (m, i) => a[i]), (l, m) => calls.push([l, m]));
+    const f = new Function('rotKeys', 'confirm', 't', 'rotPost', 'return ' + line('function rotClear('))(() => keys, q => (asked.push(q), ok), (s, ...a) => s.replace(/\{(\d)\}/g, (m, i) => a[i]), (...a) => calls.push(a));
     f(); return { calls, asked }; };
   assert.deepStrictEqual(mk(['t:1', 't:2'], false).calls, []);
   const yes = mk(['t:1', 't:2', 'p:koi'], true);
-  assert.deepStrictEqual(yes.calls, [['', 'Rodízio vazio']]);
+  assert.deepStrictEqual(yes.calls, [['', '', 'Rodízio vazio']]);
   assert(yes.asked[0].includes('3 mostradores'));
   assert.deepStrictEqual(mk([], true), { calls: [], asked: [] });
   const dict = JSON.parse(fs.readFileSync(path.join(__dirname, '../web/i18n.json'), 'utf8')).dict;
-  for (const k of ['Editar rodízio', 'Tirar todos do rodízio', 'Os novos entram no fim, na ordem do toque.',
+  for (const k of ['Editar rodízio', 'Tirar todos do rodízio', 'Os novos entram no fim, na ordem do toque.', 'Padrão', '30 s', '1 min', '5 min', '15 min',
+    'Escolha o intervalo em "Trocar de mostrador": sem ele o rodízio fica parado e os tempos não valem.',
     'Não cabe mais no relógio', 'Rodízio salvo', 'Rodízio salvo. Escolha o intervalo em "Trocar de mostrador".',
     'O relógio não guardou. Tente de novo.', 'Tirar os {0} mostradores do rodízio? O relógio fica no atual.', 'Rodízio vazio', 'Cancelar', 'Salvar'])
     assert(dict[k] && dict[k].length == 2 && dict[k].every(x => x), 'sem tradução: ' + k);
   console.log('painel: rodízio em lote mantém a ordem, não duplica, preserva pacote sem cartão, respeita o teto de ' + ROTMAX + ' e confirma antes de esvaziar');
+}
+// Tempos por item: parse de rott, poda pela lista final e opção recebida fora das opções fixas.
+{
+  const line = s => { const i = html.indexOf(s); assert(i >= 0, s); return html.slice(i, html.indexOf('\n', i)); };
+  const expr = line('const rotTimes=').replace(/^const rotTimes=/, '').replace(/;$/, '');
+  const tempos = new Function('st', 'return (' + expr + ')()')({ cfg: { rott: 'p:casa=45,t:3=300' } });
+  assert.deepStrictEqual(tempos, { 'p:casa': 45, 't:3': 300 });
+  const str = new Function('return ' + line('const rotTimeStr=').replace(/^const rotTimeStr=/, '').replace(/;$/, ''))();
+  assert.strictEqual(str(tempos, ['t:3']), 't:3=300', 'tempo de item retirado precisa ser podado');
+  const ed = html.slice(html.indexOf('function rotEdit('), html.indexOf('function rotToggle('));
+  assert(ed.includes("![30,60,300,900].includes(v)") && ed.includes("[[v,t('{0} s',v)]]"), 'valor fora da lista vira opção própria');
+  assert(ed.includes('!rotTimeOver(tt)') && html.includes("rott:rotTimeStr(rotTimes(),n)"), 'teto e poda de rott antes de gravar');
+  console.log('painel: tempos por item parseados, podados e com opção extra preservada');
 }
 // Editor de mostrador (web/editor.js, baixado do site só ao abrir): o painel só tem o botão e o carregador com SRI;
 // todo texto do editor tem inglês e espanhol; o id é próprio (não substitui um pacote da galeria com o mesmo nome).

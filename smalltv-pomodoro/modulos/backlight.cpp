@@ -3,6 +3,8 @@
 
 static int curBri = -1;
 
+bool screenDark() { return curBri == 0; }
+
 static int curWarm = -1;
 
 bool tftReady = false;  // a tela já foi iniciada (o brilho é ajustado antes, no começo do setup)

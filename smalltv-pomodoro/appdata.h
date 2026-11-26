@@ -6,6 +6,7 @@
 #include <stdint.h>
 
 static const size_t APPDATA_BODY_MAX = 512;  // corpo do POST
+static const size_t APPSHOW_BODY_MAX = 64;   // corpo do POST /api/apps/show
 static const int APPDATA_FIELDS = 18;        // campos no armazém (somados todos os remetentes)
 static const int APPDATA_PUT_MAX = 8;        // campos por envio
 static const int APPDATA_NAME = 8;           // caracteres do nome, [a-z0-9_]
@@ -15,6 +16,11 @@ static const int APPDATA_VALUE = 15;         // bytes do valor (texto, ou inteir
 // como estão (cada campo vence no seu prazo); se não houver lugar para os campos novos, o envio é recusado sem mudar nada.
 // `now` é o millis(). Devolve nullptr se aceitou, ou uma mensagem curta (PROGMEM) com o motivo da recusa.
 const char *appDataPut(const char *body, size_t len, uint32_t now);
+
+// Valida {"pkg":"id","s":30} sem ArduinoJson. O pacote tem 1..23 caracteres [a-z0-9_-] e o tempo,
+// sem sinal, zeros à esquerda ou fração, vai de 5 a 60 s. Só preenche as saídas depois de validar tudo.
+// Devolve nullptr se aceitou, ou uma mensagem curta (PROGMEM) com o motivo da recusa.
+const char *appShowParse(const char *body, size_t len, char *pkg, size_t pkgCap, uint8_t *secs);
 
 // Valor do campo (nome sem o "x."), ou nullptr se nunca chegou, venceu, ou o campo não foi enviado.
 const char *appDataGet(const char *name, uint32_t now);

@@ -1,4 +1,4 @@
-// Teste do POST /api/apps/data (appdata.cpp) e do {x.campo} nos pacotes (facepack.cpp), com ASan/UBSan (sim/testes.sh).
+// Teste dos POST /api/apps/data e /api/apps/show (appdata.cpp) e do {x.campo} nos pacotes (facepack.cpp), com ASan/UBSan (sim/testes.sh).
 // Cobre: os envios inválidos recusados (e o armazém intacto depois deles), os limites exatos (18 campos no armazém, 8 por
 // envio), ttl por campo, armazém cheio, atomicidade, ttl com a volta do millis() (49,7 dias) e o "ressuscitar" após 24,8 dias, o pacote
 // bento-casa desenhado (valor / "--" / vencido) e a equivalência do redesenho incremental com o quadro cheio, e um fuzz
@@ -36,6 +36,71 @@ static uint32_t semente = 0xA99DA7Au;
 static uint32_t rnd(uint32_t n) {
   semente ^= semente << 13; semente ^= semente >> 17; semente ^= semente << 5;
   return n ? semente % n : 0;
+}
+
+static const char *showParse(const std::string &s, char *pkg, size_t cap, uint8_t *secs) {
+  return appShowParse(s.data(), s.size(), pkg, cap, secs);
+}
+
+static void show_parser_basico() {
+  char pkg[24] = {};
+  uint8_t secs = 0;
+  CHECK(!showParse("{\"pkg\":\"casa-lavadora\",\"s\":30}", pkg, sizeof pkg, &secs) && !strcmp(pkg, "casa-lavadora") && secs == 30,
+        "show valido");
+  CHECK(!showParse(" \n { \"s\" : 5, \"pkg\" : \"a_1-b\" } \t", pkg, sizeof pkg, &secs) && !strcmp(pkg, "a_1-b") && secs == 5,
+        "show valido com espacos e ordem inversa");
+  CHECK(!showParse("{\"pkg\":\"abcdefghijklmnopqrstuvw\",\"s\":60}", pkg, sizeof pkg, &secs) && strlen(pkg) == 23 && secs == 60,
+        "limites validos de pkg e s");
+
+  const char *ruins[] = {
+    "", "{}", "[]", "{", "{\"pkg\":\"a\",\"s\":4}", "{\"pkg\":\"a\",\"s\":61}",
+    "{\"pkg\":\"abcdefghijklmnopqrstuvwx\",\"s\":30}", "{\"pkg\":\"\",\"s\":30}",
+    "{\"pkg\":\"A\",\"s\":30}", "{\"pkg\":\"_novo\",\"s\":30}", "{\"pkg\":\"a\\nb\",\"s\":30}",
+    "{\"pkg\":\"a\",\"pkg\":\"b\",\"s\":30}", "{\"pkg\":\"a\",\"s\":30,\"s\":31}",
+    "{\"pkg\":\"a\",\"s\":30,\"x\":1}", "{\"pkg\":\"a\",\"s\":\"30\"}",
+    "{\"pkg\":\"a\",\"s\":30.5}", "{\"pkg\":\"a\",\"s\":-5}", "{\"pkg\":\"a\",\"s\":1e1}",
+    "{\"pkg\":\"a\",\"s\":05}", "{\"pkg\":\"a\",\"s\":999999999999999999999999999999999999}",
+    "{\"pkg\":\"a\",\"s\":30", "{\"pkg\":\"a\",\"s\":30}x", "{\"pkg\":\"a\"}", "{\"s\":30}",
+  };
+  for (const char *r : ruins) CHECK(showParse(r, pkg, sizeof pkg, &secs), "show deveria recusar: %s", r);
+
+  std::string limite = "{\"pkg\":\"a\",\"s\":30}";
+  limite.append(APPSHOW_BODY_MAX - limite.size(), ' ');
+  CHECK(limite.size() == APPSHOW_BODY_MAX && !showParse(limite, pkg, sizeof pkg, &secs), "show de 64 B valido");
+  limite.push_back(' ');
+  CHECK(showParse(limite, pkg, sizeof pkg, &secs), "show acima de 64 B");
+  CHECK(showParse("{\"pkg\":\"abcdefghijklmnopqrstuvw\",\"s\":30}", pkg, 23, &secs), "buffer curto deveria recusar");
+}
+
+static void show_parser_fuzz(long casos) {
+  static const char *const PARTES_SHOW[] = {"pkg", "s", "casa-lavadora", "30", "null", "[]", "{}", "\\", "\"", "-5", "1e1"};
+  long aceitos = 0;
+  for (long c = 0; c < casos; c++) {
+    std::string s = "{\"pkg\":\"casa-lavadora\",\"s\":30}";
+    for (int k = 1 + rnd(4); k-- && !s.empty();) {
+      size_t a = rnd(s.size());
+      switch (rnd(6)) {
+        case 0: s.resize(a); break;
+        case 1: s[a] = "{}[]\",:0123456789-.az_ #\\u"[rnd(26)]; break;
+        case 2: s.erase(a, 1 + rnd(6)); break;
+        case 3: s.insert(a, PARTES_SHOW[rnd(sizeof PARTES_SHOW / sizeof *PARTES_SHOW)]); break;
+        case 4: s.insert(a, s.substr(rnd(s.size()), 1 + rnd(60))); break;
+        default: s[a] = (char)rnd(256); break;
+      }
+    }
+    if (rnd(40) == 0) s.append(APPSHOW_BODY_MAX + rnd(32), ' ');
+    struct { uint8_t antes; char pkg[24]; uint8_t depois; } out = {0xA5, {}, 0x5A};
+    uint8_t secs = 0;
+    const char *e = showParse(s, out.pkg, sizeof out.pkg, &secs);
+    CHECK(out.antes == 0xA5 && out.depois == 0x5A, "show fuzz alterou guardas");
+    if (!e) {
+      aceitos++;
+      CHECK(s.size() <= APPSHOW_BODY_MAX, "show aceitou corpo de %zu B", s.size());
+      CHECK(strlen(out.pkg) >= 1 && strlen(out.pkg) <= 23, "show aceitou pkg com tamanho invalido");
+      CHECK(secs >= 5 && secs <= 60, "show aceitou s=%u", (unsigned)secs);
+    } else CHECK(*e, "show recusa sem motivo");
+  }
+  printf("appdata_test: fuzz do parser de show: %ld casos, %ld aceitos\n", casos, aceitos);
 }
 
 static void invalidos() {
@@ -543,6 +608,7 @@ int main(int argc, char **argv) {
   long casos = argc > 2 ? atol(argv[2]) : 5000;
   Tela *tela = new Tela();
   uiBegin(tela);
+  show_parser_basico();
   invalidos();
   limites();
   parcial_e_atomico();
@@ -553,6 +619,7 @@ int main(int argc, char **argv) {
   varredura();
   exemplos(tela);
   fuzz(casos);
+  show_parser_fuzz(casos);
   delete tela;
   if (falhas) { printf("appdata_test: %d falha(s)\n", falhas); return 1; }
   printf("appdata_test: ok\n");

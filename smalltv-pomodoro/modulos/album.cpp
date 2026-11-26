@@ -4,12 +4,14 @@
 #include "../src/AnimatedGIF/AnimatedGIF.h"
 #include "../gifcheck.h"
 #include "../album_gif_renderer.h"
+#include "../rodizio.h"
 
 // ---------- álbum: fotos (JPG) e GIFs no LittleFS; rodízio de mostradores ----------
 // Lista "t:1,p:bento,..." (embutido pelo número, pacote pelo id) em /rotation.txt; a cada cfg.rotMin
 // minutos, com o relógio parado (sem Pomodoro nem prévia), passa para o próximo. A troca não grava na
 // EEPROM (seria uma gravação a cada troca): vale o que estiver salvo ao reiniciar.
 String rotList;
+String rotTimes;
 
 // Troca do rodízio: a espera é o tempo DECORRIDO desde a última troca (não um prazo em millis(), que parece "no futuro"
 // depois de 24,8 dias sem trocar, por exemplo se o rodízio for ligado só depois disso). Sem troca ainda, a primeira vale já.
@@ -486,6 +488,60 @@ void handlePackUpload() {
   }
 }
 
+bool telaLivre(bool comAlbum) {
+  uint32_t now = millis();
+  return phase == IDLE && !previewActive() && (comAlbum || !inAlbum) && !vcomTestUntil && !colorTestRequested && !colorTestUntil &&
+         !(bootHoldUntil && (int32_t)(now - bootHoldUntil) < 0) && !(alertUntil && (int32_t)(now - alertUntil) < 0) &&
+         !recoveryMode && !portalMode && !screenDark();
+}
+
+static uint32_t rotDadosAgora;
+
+static bool rotTemCampo(const char *campo) { return appDataGet(campo, rotDadosAgora) != nullptr; }
+
+static bool rotPularPacote(const char *id) {
+  char path[40];
+  snprintf(path, sizeof path, "/faces/%s.txt", id);
+  File f = LittleFS.open(path, "r");
+  if (!f) return false;
+  f.setTimeout(0);
+  char linha[104];
+  for (int i = 0; i < 3; i++) {
+    if (!f.available()) { f.close(); return false; }
+    size_t n = f.readBytesUntil('\n', linha, sizeof linha - 1);
+    if (n == sizeof linha - 1) { f.close(); return false; }
+  }
+  if (!f.available()) { f.close(); return false; }
+  size_t n = f.readBytesUntil('\n', linha, sizeof linha - 1);
+  f.close();
+  if (n && linha[n - 1] == '\r') n--;
+  linha[n] = 0;
+  rotDadosAgora = millis();
+  return rodPularMiniapp(linha, rotTemCampo);
+}
+
+// chave do mostrador que está na tela, no formato da lista: "t:N" ou "p:id"
+static void rotChave(char *out, size_t n) {
+  if (cfg.theme == THEME_PACK) snprintf(out, n, "p:%s", cfg.facePkg);
+  else snprintf(out, n, "t:%u", (unsigned)cfg.theme);
+}
+
+// Quanto o mostrador que está na tela fica (ms): o tempo dele em /rotime.txt (só vale para item que está na lista) ou o
+// "Trocar de mostrador". Calculado a cada volta, sem guardar: mudar o intervalo, a lista ou os tempos vale na hora, e
+// o tempo é o do item que ESTÁ na tela, não o do próximo.
+static uint32_t rotEspera() {
+  char cur[32];
+  rotChave(cur, sizeof cur);
+  uint16_t padrao = (uint16_t)cfg.rotMin * 60;
+  return (uint32_t)(rodNaLista(rotList.c_str(), cur) ? rodSegundos(rotTimes.c_str(), cur, padrao) : padrao) * 1000UL;
+}
+
+// recomeça a contagem agora (a espera vem de rotEspera())
+static void rotRecomecar() {
+  rotAt = millis();
+  rotArmed = true;
+}
+
 void rotSet(const String &v) {
   String s;
   s.reserve(min((size_t)300, v.length()) + 1);
@@ -496,8 +552,7 @@ void rotSet(const String &v) {
     s = cut > 0 ? s.substring(0, cut) : String();
   }
   rotList = s;
-  rotAt = millis();
-  rotArmed = true;
+  rotRecomecar();
   if (!fsOk) return;
   if (!s.length()) LittleFS.remove("/rotation.txt");
   else {
@@ -510,28 +565,75 @@ void rotSet(const String &v) {
 }
 
 void rotLoop() {
-  if (!cfg.rotMin || !rotList.length() || phase != IDLE || previewActive() || inAlbum) return;
-  if (rotArmed && (uint32_t)(millis() - rotAt) < cfg.rotMin * 60000UL) return;
-  rotAt = millis();
-  rotArmed = true;
-  // o item depois do mostrador atual (ou o primeiro, se o atual não está na lista)
-  String cur = cfg.theme == THEME_PACK ? String("p:") + cfg.facePkg : String("t:") + cfg.theme, l = rotList + ",";
-  int at = ("," + l).indexOf("," + cur + ","), start = at >= 0 ? at + cur.length() + 1 : 0;
-  for (int tries = 0; tries < 32; tries++) {  // pula itens inválidos (pacote removido)
-    if (start >= (int)l.length()) start = 0;
-    int e = l.indexOf(',', start);
-    String it = l.substring(start, e);
-    start = e + 1;
+  if (!cfg.rotMin || !rotList.length() || !telaLivre()) return;
+  if (rotArmed && (uint32_t)(millis() - rotAt) < rotEspera()) return;
+  String cur = cfg.theme == THEME_PACK ? String("p:") + cfg.facePkg : String("t:") + cfg.theme;
+  static String rotParou;
+  String anterior = rotParou.length() ? rotParou : cur, primeiro;
+  int cargas = 0;
+  for (int tries = 0; tries < 32; tries++) {
+    char item[32];
+    if (!rodProximo(rotList.c_str(), anterior.c_str(), item, sizeof item)) break;
+    String it(item);
+    if (!primeiro.length()) primeiro = it;
+    else if (it == primeiro) break;
+    anterior = it;
+    if (it == cur) {
+      rotParou = "";
+      rotRecomecar();
+      return;
+    }
     if (it.startsWith("t:")) {
       int t = it.substring(2).toInt();
       if (t < 0 || t >= THEME_COUNT) continue;
       cfg.theme = t;
       facePackUnload();
-    } else if (it.startsWith("p:") && loadPack(it.substring(2))) {
+    } else if (it.startsWith("p:")) {
+      String id = it.substring(2);
+      if (rotPularPacote(id.c_str())) continue;
+      cargas++;
+      if (!loadPack(id)) {
+        rotParou = it;
+        if (cargas >= 2) { rotAt = millis() - (rotEspera() - 2000); rotArmed = true; return; }  // tenta de novo em ~2 s
+        continue;
+      }
       cfg.theme = THEME_PACK;
-      strlcpy(cfg.facePkg, it.substring(2).c_str(), sizeof cfg.facePkg);
+      strlcpy(cfg.facePkg, id.c_str(), sizeof cfg.facePkg);
     } else continue;
-    uiInvalidateSlide();  // mostrador novo entra rolando (ui.cpp)
+    rotParou = "";
+    rotRecomecar();
+    uiInvalidateSlide();
     return;
   }
+  rotParou = "";
+  rotRecomecar();
+}
+
+void rotTimesSet(const String &v) {
+  char limpo[301];
+  rodLimparTempos(v.c_str(), limpo, sizeof limpo);
+  rotTimes = limpo;
+  rotRecomecar();
+  if (!fsOk) return;
+  if (!rotTimes.length()) LittleFS.remove("/rotime.txt");
+  else {
+    File f = LittleFS.open("/rotime.txt", "w");
+    if (f) {
+      f.print(rotTimes);
+      f.close();
+    }
+  }
+}
+
+// Só no início: lê o /rotime.txt sem regravá-lo (o rotTimesSet grava) e sem rearmar a contagem.
+void rotTimesLoad() {
+  File f = fsOk ? LittleFS.open("/rotime.txt", "r") : File();
+  if (!f) return;
+  f.setTimeout(0);
+  char buf[301], limpo[301];
+  size_t n = f.readBytes(buf, sizeof buf - 1);
+  f.close();
+  buf[n] = 0;
+  rodLimparTempos(buf, limpo, sizeof limpo);
+  rotTimes = limpo;
 }
