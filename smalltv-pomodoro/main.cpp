@@ -61,6 +61,30 @@ void tftBitmap(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h) {
   tft.endWrite();
 }
 
+// Versão para pixels já em Big-Endian (ST7789 nativo): evita os dois swapBytes() da Adafruit_SPITFT em fotos/GIFs.
+void tftPixelsBE(uint16_t *px, int n) {
+  if (!((uintptr_t)px & 3)) {
+    tft.writePixels(px, n, true, true);
+    return;
+  }
+  while (n > 0) {
+    int k = n < 240 ? n : 240;
+    memmove(uiRowBuf(), px, k * 2);
+    tft.writePixels(uiRowBuf(), k, true, true);
+    px += k;
+    n -= k;
+  }
+}
+
+void tftBitmapBE(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h) {
+  int x0 = max<int>(x, 0), y0 = max<int>(y, 0), x1 = min<int>(x + w, tft.width()), y1 = min<int>(y + h, tft.height());
+  if (x1 <= x0 || y1 <= y0) return;
+  tft.startWrite();
+  tft.setAddrWindow(x0, y0, x1 - x0, y1 - y0);
+  for (int r = y0; r < y1; r++) tftPixelsBE(px + (r - y) * w + (x0 - x), x1 - x0);
+  tft.endWrite();
+}
+
 // ---------- tela (desenho em ui.cpp) ----------
 // Ajuste anti-fantasma: a tensão comum (VCOM) ideal muda de painel para painel. Fora do ponto, sobra
 // corrente contínua no cristal líquido e uma imagem parada por horas fica marcada ("fantasma"). O painel

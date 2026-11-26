@@ -23,19 +23,31 @@ static bool GIFSkipExact(GIFIMAGE *g, int n) {
 }
 
 static bool GIFReadPalette(GIFIMAGE *g, uint16_t *pal, int colors) {
-    uint8_t *p = g->ucFileBuf;
-    if (!GIFReadExact(g, p, colors * 3)) return false;
-    for (int i = 0; i < colors; i++) {
-        uint8_t *rgb = p + i * 3;
-        if (g->ucPaletteType == GIF_PALETTE_RGB565_LE || g->ucPaletteType == GIF_PALETTE_RGB565_BE) {
-            uint16_t color = ((rgb[0] >> 3) << 11) | ((rgb[1] >> 2) << 5) | (rgb[2] >> 3);
-            pal[i] = g->ucPaletteType == GIF_PALETTE_RGB565_BE ? __builtin_bswap16(color) : color;
-        } else if (g->ucPaletteType == GIF_PALETTE_1BPP || g->ucPaletteType == GIF_PALETTE_1BPP_OLED) {
-            ((uint8_t *)pal)[i] = (rgb[0] + 2 * rgb[1] + rgb[2]) >= 512;
-        }
+    if (!pal || colors <= 0 || colors > MAX_COLORS) { g->iError = GIF_DECODE_ERROR; return false; }
+    if (g->ucPaletteType == GIF_PALETTE_RGB888 || g->ucPaletteType == GIF_PALETTE_RGB8888) {
+        g->iError = GIF_UNSUPPORTED_FEATURE;
+        return false;
     }
-    if (g->ucPaletteType == GIF_PALETTE_RGB888 || g->ucPaletteType == GIF_PALETTE_RGB8888)
-        memcpy(pal, p, colors * 3);
+    uint8_t stackBuf[48]; // 16 cores x 3 B na pilha: GIFInit() nao precisa de alocacao no heap
+    int maxBatch = g->ucFileBuf ? colors : 16;
+    uint8_t *buf = g->ucFileBuf ? g->ucFileBuf : stackBuf;
+    int done = 0;
+    while (done < colors) {
+        int batch = colors - done;
+        if (batch > maxBatch) batch = maxBatch;
+        if (!GIFReadExact(g, buf, batch * 3)) return false;
+        for (int i = 0; i < batch; i++) {
+            uint8_t *rgb = buf + i * 3;
+            int idx = done + i;
+            if (g->ucPaletteType == GIF_PALETTE_RGB565_LE || g->ucPaletteType == GIF_PALETTE_RGB565_BE) {
+                uint16_t color = ((rgb[0] >> 3) << 11) | ((rgb[1] >> 2) << 5) | (rgb[2] >> 3);
+                pal[idx] = g->ucPaletteType == GIF_PALETTE_RGB565_BE ? __builtin_bswap16(color) : color;
+            } else if (g->ucPaletteType == GIF_PALETTE_1BPP || g->ucPaletteType == GIF_PALETTE_1BPP_OLED) {
+                ((uint8_t *)pal)[idx] = (rgb[0] + 2 * rgb[1] + rgb[2]) >= 512;
+            }
+        }
+        done += batch;
+    }
     return true;
 }
 
@@ -104,7 +116,11 @@ static int GIFParseInfo(GIFIMAGE *g, int infoOnly) {
         (int)g->iX + g->iWidth > g->iCanvasWidth || (int)g->iY + g->iHeight > g->iCanvasHeight) goto bad;
     if (g->ucMap & 0x80) {
         g->iLocalPalSize = 2 << (g->ucMap & 7);
-        if (!GIFReadPalette(g, g->pLocalPalette, g->iLocalPalSize)) return 0;
+        if (infoOnly) {
+            if (!GIFSkipExact(g, g->iLocalPalSize * 3)) return 0;
+        } else {
+            if (!g->pLocalPalette || !GIFReadPalette(g, g->pLocalPalette, g->iLocalPalSize)) return 0;
+        }
         g->bUseLocalPalette = 1;
     } else if (!g->iGlobalPalSize) goto bad;
     if (!GIFReadExact(g, b, 1)) return 0;

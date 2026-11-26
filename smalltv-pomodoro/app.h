@@ -349,6 +349,8 @@ void wifiHintSave();
 void startPortal();
 void tftPixels(uint16_t *px, int n);
 void tftBitmap(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);
+void tftPixelsBE(uint16_t *px, int n);
+void tftBitmapBE(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);
 void applyVcom(uint8_t v);
 void applyPanel();
 String hhmm(const struct tm &t);
