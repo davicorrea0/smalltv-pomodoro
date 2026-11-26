@@ -72,7 +72,7 @@ const PAGES = [
       en: 'Open source firmware for the GeekMagic SmallTV Ultra desk clock: {builtin} built-in clock faces and {catalog} installable ones, a Pomodoro timer with a tomato mascot, keyless weather, photo album and a web panel.' },
     alt: { pt: 'Os mostradores do SmallTV Pomodoro no relógio GeekMagic SmallTV Ultra', en: 'SmallTV Pomodoro clock faces on the GeekMagic SmallTV Ultra' }, home: true },
   { pt: 'galeria.html', en: 'en/gallery.html', img: 'img/mostradores.png',
-    title: { pt: 'Galeria de mostradores para o SmallTV Ultra — SmallTV Pomodoro', en: 'Clock faces for the GeekMagic SmallTV Ultra — SmallTV Pomodoro' },
+    title: { pt: 'Recursos para o SmallTV Ultra: mostradores e mais — SmallTV Pomodoro', en: 'Add-ons for the GeekMagic SmallTV Ultra: clock faces and more — SmallTV Pomodoro' },
     desc: {
       pt: '{catalog} mostradores para instalar no GeekMagic SmallTV Ultra com o firmware SmallTV Pomodoro, além dos {builtin} que já vêm no firmware. Prévia em tamanho real e download do .json.',
       en: '{catalog} clock faces to install on the GeekMagic SmallTV Ultra with the SmallTV Pomodoro firmware, plus the {builtin} built-in ones. Full-size previews and .json download.' },
@@ -88,6 +88,12 @@ const PAGES = [
     desc: {
       pt: 'Versões do firmware SmallTV Pomodoro (atual: {version}): o que mudou em cada uma e os arquivos .bin.gz com assinatura para atualizar o GeekMagic SmallTV Ultra.',
       en: 'SmallTV Pomodoro firmware releases (current: {version}): what changed in each one and the signed .bin.gz files to update the GeekMagic SmallTV Ultra.' },
+    alt: { pt: 'Os mostradores do SmallTV Pomodoro', en: 'SmallTV Pomodoro clock faces' } },
+  { pt: 'novidades.html', en: 'en/news.html', img: 'img/mostradores.png',
+    title: { pt: 'Novidades e o que vem por aí — SmallTV Pomodoro', en: 'News and what is coming — SmallTV Pomodoro' },
+    desc: {
+      pt: 'Novidades do SmallTV Pomodoro: versões em teste, novos idiomas e o que vem por aí no firmware do GeekMagic SmallTV Ultra.',
+      en: 'SmallTV Pomodoro news: test versions, new languages and what is coming to the GeekMagic SmallTV Ultra firmware.' },
     alt: { pt: 'Os mostradores do SmallTV Pomodoro', en: 'SmallTV Pomodoro clock faces' } },
   { pt: 'jogo.html', en: 'en/game.html', img: { pt: 'img/jogo/cartao-pt.png', en: 'img/jogo/cartao-en.png' },
     title: { pt: 'Jogo do foco: sequência, planta e horta — SmallTV Pomodoro', en: 'Focus game: streaks, plant and garden — SmallTV Pomodoro' },

@@ -47,27 +47,6 @@ for (const x of list) if (!x.notas) {  // release sem notas em nenhum lugar: usa
 
 // ---------- página ----------
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
-// notas/proximas.json (opcional): o bloco "O que vem por aí" no topo da página, por idioma:
-// {"pt": {"titulo", "lead", "itens": [{"t", "d"}], "link": {"href", "texto"}}, "en": {...}}
-const proxFile = path.join(notasDir, 'proximas.json');
-const PROX = fs.existsSync(proxFile) ? JSON.parse(fs.readFileSync(proxFile, 'utf8')) : null;
-function proximas(code) {
-  const p = PROX && PROX[code];
-  if (!p || !Array.isArray(p.itens) || !p.itens.length) return '';
-  const cards = p.itens.map(i => `        <div class="card feature"><h3>${esc(i.t)}</h3><p>${esc(i.d)}</p></div>`).join('\n');
-  const link = p.link ? `\n      <a class="btn primary" href="${esc(p.link.href)}">${esc(p.link.texto)}</a>` : '';
-  return `  <section class="first" id="${code === 'en' ? 'coming' : 'em-breve'}">
-    <div class="wrap">
-      <h2>${esc(p.titulo)}</h2>
-      <p class="section-lead">${esc(p.lead)}</p>
-      <div class="grid three">
-${cards}
-      </div>${link}
-    </div>
-  </section>
-
-`;
-}
 const L = {
   pt: {
     lang: 'pt-BR', file: 'versoes.html', root: '', title: 'Versões — SmallTV Pomodoro', h1: 'Versões',
@@ -78,7 +57,7 @@ const L = {
     serie: (s, a, b) => `${s} (teste) — ${a} a ${b}`, each: 'Ver cada versão',
     files: 'Arquivos', gh: 'Ver no GitHub', sig: 'assinatura', sums: 'SHA256SUMS',
     help: 'Pelo <code>/update</code>, envie o <code>.bin.gz</code> sem descompactar; a partir da 1.20.1 envie junto o <code>.bin.gz.sig</code> (a assinatura). O <code>.bin</code> sem compressão serve para gravar pelo cabo USB-TTL. <code>SHA256SUMS.txt</code> confere os arquivos.',
-    count: n => `${n} versões`, nav: ['Início', 'Galeria', 'Docs', 'Versões', 'Jogo'], navHref: ['./', 'galeria.html', 'docs.html', 'versoes.html', 'jogo.html'],
+    count: n => `${n} versões`, nav: ['Início', 'Recursos', 'Docs', 'Versões', 'Novidades', 'Jogo'], navHref: ['./', 'galeria.html', 'docs.html', 'versoes.html', 'novidades.html', 'jogo.html'],
     other: 'en/releases.html', otherLang: 'EN',
     date: { locale: 'pt-BR', opt: { day: 'numeric', month: 'short', year: 'numeric' } },
   },
@@ -91,7 +70,7 @@ const L = {
     serie: (s, a, b) => `${s} (test) — ${a} to ${b}`, each: 'See each version',
     files: 'Files', gh: 'View on GitHub', sig: 'signature', sums: 'SHA256SUMS',
     help: 'Through <code>/update</code>, send the <code>.bin.gz</code> without unpacking it; from 1.20.1 on, send the <code>.bin.gz.sig</code> (the signature) with it. The uncompressed <code>.bin</code> is for flashing over a USB-TTL cable. <code>SHA256SUMS.txt</code> checks the files.',
-    count: n => `${n} releases`, nav: ['Home', 'Gallery', 'Docs', 'Releases', 'Game'], navHref: ['./', 'gallery.html', 'docs.html', 'releases.html', 'game.html'],
+    count: n => `${n} releases`, nav: ['Home', 'Add-ons', 'Docs', 'Releases', 'News', 'Game'], navHref: ['./', 'gallery.html', 'docs.html', 'releases.html', 'news.html', 'game.html'],
     other: 'versoes.html', otherLang: 'PT',
     date: { locale: 'en-US', opt: { day: 'numeric', month: 'short', year: 'numeric' } },
   },
@@ -193,7 +172,7 @@ function page(t, code) {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Silkscreen&display=swap">
-<link rel="stylesheet" href="${t.root}style.css?v=19">
+<link rel="stylesheet" href="${t.root}style.css?v=21">
 </head>
 <body>
 <!-- gerado por scripts/releases-page.cjs (repositório principal); não edite à mão -->
@@ -201,9 +180,10 @@ function page(t, code) {
 <header class="top">
   <div class="wrap">
     <a class="brand" href="./"><img class="px" src="${t.root}img/tomate.svg" alt=""><span>SmallTV Pomodoro</span></a>
+    <input type="checkbox" id="menu-t" class="menu-t" aria-label="Menu"><label for="menu-t" class="menu-b" title="Menu"><span></span></label>
     <nav class="nav">
       ${nav}
-      <a class="opt" href="https://github.com/${REPO}"><span class="gh" aria-hidden="true"></span>GitHub</a>
+      <a class="opt" href="https://github.com/${REPO}" aria-label="GitHub"><span class="gh" aria-hidden="true"></span><span class="gt">Git<span class="hub">Hub</span></span></a>
     </nav>
     <a class="lang" href="${code === 'en' ? '../' : ''}${t.other}" hreflang="${code === 'en' ? 'pt-BR' : 'en'}"><img class="px" src="${t.root}img/icons/globo.svg" alt="">${t.otherLang}</a>
   </div>
@@ -219,7 +199,7 @@ function page(t, code) {
     </div>
   </div>
 
-${proximas(code)}  <section class="${proximas(code) ? '' : 'first '}releases">
+  <section class="first releases">
     <div class="wrap">
       <p class="section-lead">${t.help}</p>
 ${entries.map(e => e.length > 1 ? serie(e, t) : item(e[0], t)).join('\n')}
