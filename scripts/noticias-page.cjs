@@ -27,7 +27,7 @@ const L = {
     desc: 'Novidades do SmallTV Pomodoro: o que saiu, o que está em teste e o que vem por aí.',
     lead: 'O que saiu, o que está em teste e o que vem por aí, da mais nova para a mais antiga. Os arquivos de cada versão estão em <a href="versoes.html">Versões</a>.',
     eyebrow: 'Projeto', empty: 'Ainda não há novidades por aqui.',
-    nav: ['Início', 'Galeria', 'Docs', 'Versões', 'Novidades', 'Jogo'], navHref: ['./', 'galeria.html', 'docs.html', 'versoes.html', 'novidades.html', 'jogo.html'],
+    nav: ['Início', 'Recursos', 'Docs', 'Versões', 'Novidades', 'Jogo'], navHref: ['./', 'galeria.html', 'docs.html', 'versoes.html', 'novidades.html', 'jogo.html'],
     other: 'en/news.html', otherLang: 'EN', date: { locale: 'pt-BR', opt: { day: 'numeric', month: 'short', year: 'numeric' } },
   },
   en: {
@@ -35,7 +35,7 @@ const L = {
     desc: 'SmallTV Pomodoro news: what is out, what is being tested and what is coming.',
     lead: 'What is out, what is being tested and what is coming, newest first. The files for each version are under <a href="releases.html">Releases</a>.',
     eyebrow: 'Project', empty: 'No news here yet.',
-    nav: ['Home', 'Gallery', 'Docs', 'Releases', 'News', 'Game'], navHref: ['./', 'gallery.html', 'docs.html', 'releases.html', 'news.html', 'game.html'],
+    nav: ['Home', 'Add-ons', 'Docs', 'Releases', 'News', 'Game'], navHref: ['./', 'gallery.html', 'docs.html', 'releases.html', 'news.html', 'game.html'],
     other: 'novidades.html', otherLang: 'PT', date: { locale: 'en-US', opt: { day: 'numeric', month: 'short', year: 'numeric' } },
   },
 };

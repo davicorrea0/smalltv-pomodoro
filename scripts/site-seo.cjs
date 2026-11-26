@@ -72,7 +72,7 @@ const PAGES = [
       en: 'Open source firmware for the GeekMagic SmallTV Ultra desk clock: {builtin} built-in clock faces and {catalog} installable ones, a Pomodoro timer with a tomato mascot, keyless weather, photo album and a web panel.' },
     alt: { pt: 'Os mostradores do SmallTV Pomodoro no relógio GeekMagic SmallTV Ultra', en: 'SmallTV Pomodoro clock faces on the GeekMagic SmallTV Ultra' }, home: true },
   { pt: 'galeria.html', en: 'en/gallery.html', img: 'img/mostradores.png',
-    title: { pt: 'Galeria de mostradores para o SmallTV Ultra — SmallTV Pomodoro', en: 'Clock faces for the GeekMagic SmallTV Ultra — SmallTV Pomodoro' },
+    title: { pt: 'Recursos para o SmallTV Ultra: mostradores e mais — SmallTV Pomodoro', en: 'Add-ons for the GeekMagic SmallTV Ultra: clock faces and more — SmallTV Pomodoro' },
     desc: {
       pt: '{catalog} mostradores para instalar no GeekMagic SmallTV Ultra com o firmware SmallTV Pomodoro, além dos {builtin} que já vêm no firmware. Prévia em tamanho real e download do .json.',
       en: '{catalog} clock faces to install on the GeekMagic SmallTV Ultra with the SmallTV Pomodoro firmware, plus the {builtin} built-in ones. Full-size previews and .json download.' },
