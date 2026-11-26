@@ -1,0 +1,50 @@
+{
+  "pt": [
+    "Versão 1.26.3 (teste): francês, alemão e russo, GIFs na velocidade certa e na tela inteira, sessões suas, miniapps com Home Assistant e várias correções de segurança e de rede",
+    "Só para relógios já no layout novo de memória (4M2M): quem ainda está numa versão antiga recebe primeiro a 1.26.2, que faz a troca, e depois a 1.26.3. Antes, baixe o backup em Ajustes",
+    "Francês, alemão e russo no menu de idiomas (beta), no painel e na tela do relógio, com dias, meses e mensagens traduzidos. As traduções aguardam revisão de quem fala a língua",
+    "GIFs: tocam na velocidade que o arquivo pede (antes o tempo de desenhar somava a cada quadro), GIF pequeno ocupa a tela inteira e o ruído de GIF comprimido (pontos e quase pretos) some; pixel art limpa sai como veio",
+    "Fotos e GIFs usam menos memória, e a cor da tela fica mais fiel (gama do painel calibrado na partida)",
+    "Sessões criadas por você: a lista fica guardada no relógio e o painel ganhou um editor",
+    "Miniapps: o rodízio passa a ter tempo por item, miniapp sem dados perde a vez, o Home Assistant pode mostrar um deles na hora (de 5 a 60 s) e os da casa ganharam um visual novo",
+    "Uso de IA com número grande: tela nova e mais campos para o programa companheiro",
+    "Painel: o nome da cidade nunca fica vazio (cirílico e alemão viram letras simples)",
+    "Segurança: a API da Alexa só responde pelo endereço do próprio relógio, a chave dos miniapps fica protegida ao apagar arquivos, o relógio reinicia depois de formatar, e uma conexão lenta ou com linha enorme não trava mais o login",
+    "Recuperação: dá para baixar o histórico sem a senha do painel",
+    "Clima: resposta com prazo de 3 segundos e tamanho limitado",
+    "Instalar mostrador: falha ao gravar não apaga mais a miniatura nem responde que deu certo",
+    "Uso de IA: atualize também o programa no PC (tokensmall), porque a tela nova usa mais campos"
+  ],
+  "en": [
+    "Version 1.26.3 (test): French, German and Russian, GIFs at the right speed and full screen, your own focus plans, miniapps with Home Assistant and several security and network fixes",
+    "Only for clocks already on the new memory layout (4M2M): older versions first get 1.26.2, which does the switch, and then 1.26.3. Download the backup in Settings first",
+    "French, German and Russian in the language menu (beta), in the panel and on the clock screen, with translated days, months and messages. The translations are waiting for review by native speakers",
+    "GIFs: they play at the speed the file asks for (drawing time used to add up on every frame), small GIFs fill the screen and noise from compressed GIFs (dots and near-blacks) is gone; clean pixel art is shown as is",
+    "Photos and GIFs use less memory, and screen colors are more accurate (panel gamma calibrated at startup)",
+    "Sessions you create: the list is stored on the clock and the panel has a new editor",
+    "Miniapps: the rotation now has a time per item, a miniapp with no data loses its turn, Home Assistant can show one right away (5 to 60 s) and the home ones have a new look",
+    "AI usage with a big number: new screen and more fields for the companion program",
+    "Panel: the city name is never empty (Cyrillic and German turn into plain letters)",
+    "Security: the Alexa API only answers on the clock's own address, the miniapps key is kept when deleting files, the clock restarts after a format, and a slow connection or a huge line no longer blocks the login",
+    "Recovery: you can download the history without the panel password",
+    "Weather: the response has a 3-second deadline and a size limit",
+    "Installing a face: a write failure no longer deletes the thumbnail or reports success",
+    "AI usage: also update the PC companion (tokensmall), because the new screen uses more fields"
+  ],
+  "es": [
+    "Versión 1.26.3 (prueba): francés, alemán y ruso, GIF a la velocidad correcta y en pantalla completa, tus propias sesiones, miniapps con Home Assistant y varias correcciones de seguridad y de red",
+    "Solo para relojes que ya están en el nuevo diseño de memoria (4M2M): las versiones antiguas reciben primero la 1.26.2, que hace el cambio, y después la 1.26.3. Antes, descarga la copia de seguridad en Ajustes",
+    "Francés, alemán y ruso en el menú de idiomas (beta), en el panel y en la pantalla del reloj, con días, meses y mensajes traducidos. Las traducciones esperan la revisión de hablantes nativos",
+    "GIF: se reproducen a la velocidad que pide el archivo (antes el tiempo de dibujo se sumaba en cada cuadro), los GIF pequeños ocupan toda la pantalla y el ruido de los GIF comprimidos (puntos y casi negros) desaparece; el pixel art limpio se muestra tal cual",
+    "Fotos y GIF usan menos memoria, y los colores de la pantalla son más fieles (gamma del panel calibrada al arrancar)",
+    "Sesiones creadas por ti: la lista se guarda en el reloj y el panel tiene un editor nuevo",
+    "Miniapps: la rotación ahora tiene tiempo por elemento, un miniapp sin datos pierde su turno, Home Assistant puede mostrar uno al instante (de 5 a 60 s) y los de la casa tienen un aspecto nuevo",
+    "Uso de IA con número grande: pantalla nueva y más campos para el programa acompañante",
+    "Panel: el nombre de la ciudad nunca queda vacío (el cirílico y el alemán pasan a letras simples)",
+    "Seguridad: la API de Alexa solo responde por la dirección del propio reloj, la clave de los miniapps se conserva al borrar archivos, el reloj se reinicia tras formatear, y una conexión lenta o con una línea enorme ya no bloquea el inicio de sesión",
+    "Recuperación: se puede descargar el historial sin la contraseña del panel",
+    "Clima: la respuesta tiene un plazo de 3 segundos y un tamaño limitado",
+    "Instalar esfera: un fallo al guardar ya no borra la miniatura ni responde que salió bien",
+    "Uso de IA: actualiza también el programa del PC (tokensmall), porque la pantalla nueva usa más campos"
+  ]
+}
