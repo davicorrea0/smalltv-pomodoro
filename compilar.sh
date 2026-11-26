@@ -82,5 +82,43 @@ if [ "$LIMITE_JANELA_KB" -gt 0 ] && [ "$folga" -lt $(( LIMITE_JANELA_KB * 1024 )
   echo "ERRO firmware: folga na janela de 1 MB do layout antigo = $(( folga / 1024 )) KB ($folga bytes), abaixo do mínimo de $LIMITE_JANELA_KB KB (firmware $size bytes, .gz $gz bytes). Reduza o código, ou mude o limite (LIMITE_JANELA_KB; 0 desliga) justificando no PR."
   falhou=1
 fi
+if [ $falhou -eq 0 ]; then
+  echo "firmware: limites ok (RAM fixa $ram de $LIMITE_RAM bytes; folga da janela $(( folga / 1024 )) KB, mínimo $LIMITE_JANELA_KB KB)"
+fi
+# ---- informativo: 15 maiores símbolos de RAM fixa (.data, .rodata, .bss) ----
+nm_bin=""
+tc_dir=$("$CLI" compile --fqbn "esp8266:esp8266:generic:eesz=$LAYOUT,xtal=160,ip=lm2n" smalltv-pomodoro --show-properties 2>/dev/null | awk -F= '
+  { sub(/\r$/, "") }
+  $1 == "compiler.path" && $2 != "" && $2 !~ /\{/ { p = substr($0, index($0, "=") + 1) }
+  $1 == "runtime.tools.xtensa-lx106-elf-gcc.path" && $2 != "" && $2 !~ /\{/ && !p { p = substr($0, index($0, "=") + 1) "/bin" }
+  END { gsub(/\\/, "/", p); sub(/\/+$/, "", p); print p }
+')
+if [ -n "$tc_dir" ]; then
+  if [ -x "$tc_dir/xtensa-lx106-elf-nm" ]; then
+    nm_bin="$tc_dir/xtensa-lx106-elf-nm"
+  elif [ -x "$tc_dir/xtensa-lx106-elf-nm.exe" ]; then
+    nm_bin="$tc_dir/xtensa-lx106-elf-nm.exe"
+  fi
+fi
+if [ -z "$nm_bin" ]; then
+  nm_bin=$(command -v xtensa-lx106-elf-nm 2>/dev/null || true)
+fi
+if [ -z "$nm_bin" ]; then
+  echo "aviso: xtensa-lx106-elf-nm não encontrado; pulando lista dos maiores símbolos de RAM fixa"
+elif [ -f build/smalltv-pomodoro.ino.elf ]; then
+  echo "maiores símbolos em RAM fixa (.data, .rodata, .bss):"
+  "$nm_bin" -C -S -t d -f sysv build/smalltv-pomodoro.ino.elf 2>/dev/null | awk -F'|' '
+    { sub(/\r$/, "") }
+    NF >= 7 {
+      sec = $NF; gsub(/^[ \t]+|[ \t]+$/, "", sec)
+      if (sec != ".data" && sec != ".rodata" && sec != ".bss") next
+      sz = $(NF - 2); gsub(/[ \t]+/, "", sz); sub(/^0+/, "", sz)
+      if (sz !~ /^[0-9]+$/) next
+      name = $1
+      for (i = 2; i <= NF - 6; i++) name = name "|" $i
+      gsub(/^[ \t]+|[ \t]+$/, "", name)
+      if (name != "") printf "  %7d  %-7s  %s\n", sz + 0, sec, name
+    }
+  ' | LC_ALL=C sort -rn | head -n 15 || true
+fi
 [ $falhou -eq 0 ] || exit 1
-echo "firmware: limites ok (RAM fixa $ram de $LIMITE_RAM bytes; folga da janela $(( folga / 1024 )) KB, mínimo $LIMITE_JANELA_KB KB)"

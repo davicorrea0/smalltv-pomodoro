@@ -341,6 +341,7 @@ void diagNoMem(uint8_t what);  // conta uma falta de memória: 0 foto, 1 GIF (di
 bool hostOk();
 bool panelOk();
 bool deny();
+void secHeaders();
 void askLogin();
 bool authed();
 bool uploadAuthed();

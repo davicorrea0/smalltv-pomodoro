@@ -623,12 +623,21 @@ bool deny() {
   return false;
 }
 
+void secHeaders() {
+  server.sendHeader(F("X-Content-Type-Options"), F("nosniff"));
+  server.sendHeader(F("X-Frame-Options"), F("DENY"));
+  server.sendHeader(F("Referrer-Policy"), F("no-referrer"));
+}
+
 // Senha do painel (a mesma do /update, usuário admin): com ela definida, todo o painel e a API pedem
 // login HTTP (o navegador pergunta uma vez e lembra). Erros usam espera progressiva por IP sem bloquear
 // o loop do relógio. A API da Alexa e o modo de recuperação não pedem senha.
 // O login Basic é conferido aqui: o authenticate() do servidor traz junto o modo Digest e o MD5 (~2,5 KB).
 static bool passOk() {
-  return !cfg.otaPass[0] || server.header("Authorization") == "Basic " + base64::encode(String("admin:") + cfg.otaPass, false);
+  if (!cfg.otaPass[0]) return true;
+  const String &h = server.header("Authorization");
+  String want = "Basic " + base64::encode(String("admin:") + cfg.otaPass, false);
+  return constTimeEq(h.c_str(), h.length(), want.c_str(), want.length());
 }
 
 void askLogin() {
@@ -748,6 +757,7 @@ static void handlePanelUpload() {
 // novo. O 304 só sai depois do login (readOk) e só com /www/<hash>.gz presente: o carregador não leva ETag.
 static void sendPanel() {
   if (!readOk()) return;  // com senha, o navegador pede o login já ao abrir o painel
+  secHeaders();
   server.sendHeader("Cache-Control", "no-cache");  // depois de atualizar o firmware, o navegador busca o painel novo
   File f = fsOk ? LittleFS.open("/www/" PANEL_HASH ".gz", "r") : File();
   if (f) {
@@ -927,6 +937,7 @@ void setupWeb() {
         return;
       }
       server.sendHeader("Cache-Control", F("max-age=300"));
+      secHeaders();
       server.streamFile(f, F("image/png"));
       f.close();
       return;
@@ -1184,16 +1195,19 @@ void setupWeb() {
       // sem remove antes: o rename do LittleFS (lfs_rename) troca o destino num commit só; apagar antes abria uma janela
       // em que a queda de energia deixava o mostrador sem nenhuma das duas versões
       renamed = LittleFS.rename("/faces/_novo.json", "/faces/" + id + ".json");
-      LittleFS.remove("/faces/" + id + ".png");
-      if (LittleFS.exists("/faces/_novo.png")) LittleFS.rename("/faces/_novo.png", "/faces/" + id + ".png");
-      File t = LittleFS.open("/faces/" + id + ".txt", "w");  // metadados para a lista do painel
-      if (t) {
-        char campos[100];  // 4ª linha: os campos de fora que ele lê (miniapp); firmware antigo lê só as 3 primeiras
-        facePackFields(campos, sizeof campos);
-        t.printf_P(PSTR("%s\n%s\n%s\n%s\n"), facePackName(), facePackDesc(), facePackAuthor(), campos);
-        t.close();
+      if (renamed) {
+        LittleFS.remove("/faces/" + id + ".png");
+        if (LittleFS.exists("/faces/_novo.png")) LittleFS.rename("/faces/_novo.png", "/faces/" + id + ".png");
+        File t = LittleFS.open("/faces/" + id + ".txt", "w");  // metadados para a lista do painel
+        if (t) {
+          char campos[100];  // 4ª linha: os campos de fora que ele lê (miniapp); firmware antigo lê só as 3 primeiras
+          facePackFields(campos, sizeof campos);
+          t.printf_P(PSTR("%s\n%s\n%s\n%s\n"), facePackName(), facePackDesc(), facePackAuthor(), campos);
+          t.close();
+        }
       }
-    } else {
+    }
+    if (!renamed) {
       LittleFS.remove("/faces/_novo.json");
       LittleFS.remove("/faces/_novo.png");
     }
@@ -1202,6 +1216,10 @@ void setupWeb() {
     if (!(renamed && cfg.theme == THEME_PACK && id == cfg.facePkg)) restoreActivePack();
     if (!ok) {
       server.send(400, "text/plain", packUploadError.length() ? packUploadError : String(F("Pacote invalido: ")) + msg);
+      return;
+    }
+    if (!renamed) {
+      server.send_P(500, PSTR("text/plain"), PSTR("Falha ao salvar pacote"));
       return;
     }
     String reply;
@@ -1304,6 +1322,8 @@ void setupWeb() {
     if (fsOk) LittleFS.mkdir("/image");
     rebuildAlbum();
     server.send_P(fsOk ? 200 : 500, PSTR("text/plain"), fsOk ? PSTR("ok") : PSTR("falhou"));
+    delay(300);
+    safeRestart();  // limpa na RAM o que apontava para arquivos apagados (pacote, miniapps, rodízio, avisos)
   });
   // Arquivos de mídia para as miniaturas do painel
   server.on("/fs", HTTP_GET, [] {
@@ -1316,13 +1336,16 @@ void setupWeb() {
       return;
     }
     server.sendHeader("Cache-Control", F("max-age=86400"));
+    secHeaders();
     server.streamFile(file, isGif(f) ? F("image/gif") : F("image/jpeg"));
     file.close();
   });
   // Troca a senha do /update. Se já houver senha, exige a atual.
   server.on(F("/api/otapass"), HTTP_POST, [] {
     if (!guard()) return;
-    if (cfg.otaPass[0] && server.arg("old") != cfg.otaPass) {
+    const String &old = server.arg("old");
+    if (cfg.otaPass[0] && !constTimeEq(old.c_str(), old.length(), cfg.otaPass, strlen(cfg.otaPass))) {
+      authThrottle.fail(requestIp(), millis());
       server.send_P(403, PSTR("text/plain"), PSTR("Senha atual incorreta"));
       return;
     }
@@ -1565,6 +1588,7 @@ void startPortal() {
                              [](int i) { return (int)WiFi.RSSI(i); }, pick, PORTAL_LIST_MAX)
                   : 0;
     server.sendHeader(F("Cache-Control"), F("no-store"));
+    secHeaders();
     server.setContentLength(CONTENT_LENGTH_UNKNOWN);  // HTTP em partes: a página não é montada inteira no heap
     server.send(200, "text/html", "");
     String c;

@@ -1,9 +1,12 @@
 {
- "capa": 1,
+ "capa": 3,
  "estados": [
   {"n":"Sem dados","en":"No data","es":"Sin datos","envios":[]},
-  {"n":"Café ligada, 640 W","en":"Coffee on, 640 W","es":"Café encendido, 640 W","envios":[{"ttl":60,"values":{"tm_1":1,"tm_w1":640,"tm_2":0,"tm_w2":0}}]},
-  {"n":"Abajur ligado, 9 W","en":"Lamp on, 9 W","es":"Lámpara encendida, 9 W","envios":[{"ttl":60,"values":{"tm_1":0,"tm_w1":0,"tm_2":1,"tm_w2":9}}]},
-  {"n":"Uma sem sinal","en":"One offline","es":"Una sin señal","envios":[{"ttl":60,"values":{"tm_1":"SEM SINAL","tm_w1":0,"tm_2":1,"tm_w2":1200}}]}
+  {"n":"Cafe ligada, 640 W","en":"Coffee on, 640 W","es":"Cafe encendido, 640 W","envios":[{"ttl":60,"values":{"tm_1":1,"tm_w1":640,"tm_2":0,"tm_w2":0}}]},
+  {"n":"Abajur ligado, 9 W","en":"Lamp on, 9 W","es":"Lampara encendida, 9 W","envios":[{"ttl":60,"values":{"tm_1":0,"tm_w1":0,"tm_2":1,"tm_w2":9}}]},
+  {"n":"As duas ligadas, 1200 W e 60 W","en":"Both on, 1200 W and 60 W","es":"Las dos encendidas, 1200 W y 60 W","envios":[{"ttl":60,"values":{"tm_1":1,"tm_w1":1200,"tm_2":1,"tm_w2":60}}]},
+  {"n":"As duas ligadas sem medicao","en":"Both on, no metering","es":"Las dos encendidas, sin medicion","envios":[{"ttl":60,"values":{"tm_1":1,"tm_2":1}}]},
+  {"n":"Uma sem sinal","en":"One offline","es":"Una sin senal","envios":[{"ttl":60,"values":{"tm_1":1,"tm_w1":640,"tm_2":1,"tm_w2":9}},{"ttl":60,"values":{"tm_1":"SEM SINAL"}}]},
+  {"n":"Pior caso, 1200 W","en":"Worst case, 1200 W","es":"Peor caso, 1200 W","envios":[{"ttl":60,"values":{"tm_1":1,"tm_w1":1200,"tm_2":1,"tm_w2":1200}},{"ttl":60,"values":{"tm_1":"SEM SINAL"}}]}
  ]
 }

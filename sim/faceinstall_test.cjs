@@ -16,6 +16,19 @@ if (/LittleFS\.remove\("\/faces\/" \+ id \+ "\.json"\)/.test(h)) throw Error('o 
 // reinstalar o pacote ativo: o motor já tem o novo; só pula a recarga se o .json foi mesmo trocado no disco
 if (h.indexOf('renamed = LittleFS.rename("/faces/_novo.json", "/faces/" + id + ".json")') < 0) throw Error('o /api/faceinstall deve guardar o resultado do rename do .json');
 if (h.indexOf('if (!(renamed && cfg.theme == THEME_PACK && id == cfg.facePkg)) restoreActivePack();') < 0) throw Error('o /api/faceinstall só pode pular o restoreActivePack com o rename feito e o pacote novo sendo o ativo');
+{ // falha no rename do .json: não mexe no .png/.txt antigo, apaga os temporários e responde erro
+  const ir = h.indexOf('if (renamed) {', ren), ob = h.indexOf('{', ir);
+  let dp = 0, ib = ob;
+  for (; ob >= 0 && ib < h.length; ib++) { if (h[ib] === '{') dp++; else if (h[ib] === '}' && --dp === 0) break; }
+  if (ir < 0 || ob < 0 || dp !== 0) throw Error('o /api/faceinstall deve guardar .png/.txt dentro de if (renamed)');
+  const dentro = h.slice(ob, ib), fora = h.slice(0, ob) + h.slice(ib);
+  if (!dentro.includes('id + ".png"') || !dentro.includes('id + ".txt"') || fora.includes('id + ".png"') || fora.includes('id + ".txt"'))
+    throw Error('o /api/faceinstall só pode mexer no .png e no .txt com renamed verdadeiro');
+  const nr = h.indexOf('if (!renamed)', ib), s200 = h.indexOf('server.send(200,');
+  if (nr < 0 || s200 < 0 || nr > s200 || !h.slice(nr, s200).includes('LittleFS.remove("/faces/_novo.json")') ||
+      !h.slice(nr, s200).includes('LittleFS.remove("/faces/_novo.png")') || !/if \(!renamed\)\s*\{\s*server\.send(_P)?\(\s*500\b/.test(h.slice(nr, s200)))
+    throw Error('o /api/faceinstall deve apagar os temporários e responder erro quando !renamed');
+}
 console.log('faceinstall: o .json novo substitui o antigo só pelo rename, sem remove antes; o ativo reinstalado não é recarregado');
 // Pacote instalado com um firmware anterior (o <id>.txt sem a 4ª linha dos campos de fora): a listagem acha os campos
 // lendo o .json, sem carregar o pacote no motor, e grava a linha uma vez só, em modo de acréscimo, depois de percorrer o

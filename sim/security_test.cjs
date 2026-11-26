@@ -6,8 +6,23 @@ function fnFrom(text,name){const a=text.indexOf(`void ${name}() {`),b=text.index
 // 1.26.1: /api/fsdelete não pode ser driblado por "/./" e o rodízio sem vírgula não passa do limite
 if(!source.includes('f.indexOf("/.") >= 0'))throw Error('/api/fsdelete: recusar "/." (o littlefs ignora o componente "." e o fsKeep comparava o texto)');
 if(!source.includes('int cut = s.lastIndexOf(',', 300);')||!source.includes('s = cut > 0 ? s.substring(0, cut) : String();'))throw Error('rotSet: sem vírgula, substring(0, -1) não corta nada');
+{const i=source.indexOf('bool fsKeep(const String &p) {');if(i<0||!source.slice(i,source.indexOf('\n}',i)).includes('"/apps.key"'))throw Error('fsKeep deve proteger /apps.key');}
+{const i=source.indexOf('server.on(F("/api/format"), HTTP_POST'),b=source.slice(i,source.indexOf('\n  });',i));if(i<0||!b.includes('if (!guard()) return;')||b.indexOf('server.send_P(')<0||b.indexOf('safeRestart();')<b.indexOf('server.send_P('))throw Error('/api/format deve responder e chamar safeRestart()');}
 for(const name of ['handleUpload','handlePackUpload','handlePanelUpload'])
  if(!fn(name).includes('uploadAuthed()'))throw Error(`${name} bypasses upload throttle`);
+{ // toda POST do painel começa com guard(); exceções fechadas: handler com nome, chave própria ou upload
+ const web=fn('setupWeb'),sem=['/api/statsimport','/api/apps/data','/api/faceinstall'],re=/server\.on\(F\("([^"]+)"\), HTTP_POST, \[\] \{[^\n]*\n\s*([^\n]*)/g;
+ for(const m of web.matchAll(re))if(!sem.includes(m[1])&&m[2]!=='if (!guard()) return;')throw Error(`${m[1]}: POST must start with if (!guard()) return;`);
+ for(const r of sem)if(!web.includes(`server.on(F("${r}"), HTTP_POST`))throw Error(`${r}: exception list is stale`);
+ for(const r of ['/api/settings','/api/format','/api/otapass'])  // risco alto: registradas uma vez, só POST
+  if(web.split(`server.on(F("${r}")`).length!==2||!web.includes(`server.on(F("${r}"), HTTP_POST, [] {`))throw Error(`${r} must be registered once, POST only`);
+ const blk=r=>{const i=web.indexOf(`server.on(F("${r}")`);return web.slice(i,web.indexOf('\n  });',i));};
+ const ota=blk('/api/otapass'),cp=ota.indexOf('strlcpy(cfg.otaPass');
+ const antes=t=>{const k=ota.indexOf(t);return k>=0&&k<cp;};
+ if(cp<0||!antes('server.arg("old")')||!antes('sizeof(cfg.otaPass)'))throw Error('/api/otapass must check the old password and the length before strlcpy');
+ if(ota.split('\n').some(l=>l.includes('send')&&/otaPass|c_str\(\)/.test(l)))throw Error('/api/otapass must never send the password back');
+ if(/otaPass|apPass/.test(blk('/api/settings')))throw Error('/api/settings must not touch the passwords');
+}
 { // dados de fora: POST /api/apps/data só com a chave (nunca a senha do painel), Host e X-SmallTV, espera por IP na
  // chave errada, corpo limitado; desligado (403) sem /apps.key; a chave só sai num POST com guard() e fica fora do backup
  const i=source.indexOf('server.on(F("/api/apps/data"), HTTP_POST'),blk=source.slice(i,source.indexOf('\n  });',i));
@@ -41,6 +56,14 @@ for(const name of ['handleUpload','handlePackUpload','handlePanelUpload'])
 }
 const recovery=fn('startRecovery');
 if(!recovery.includes('WiFi.mode(WIFI_AP);')||recovery.includes('WiFi.begin()'))throw Error('recovery must be AP-only');
+{ // recuperação: /api/stats baixa o histórico sem senha (com Host); fora dela continua com readOk()
+ const st=fn('sendStats'),web=fn('setupWeb');
+ if(!recovery.includes('server.on("/api/stats", HTTP_GET, sendStats);'))throw Error('recovery must expose /api/stats');
+ if(!web.includes('server.on(F("/api/stats"), HTTP_GET, sendStats);'))throw Error('setupWeb must expose /api/stats');
+ const rec=st.indexOf('if (recoveryMode)'),hk=st.indexOf('if (!hostOk()) { deny(); return; }'),ro=st.indexOf('else if (!readOk()) return;'),bg=st.indexOf('jsonBegin();');
+ if(!(rec>=0&&hk>rec&&ro>hk&&bg>ro))throw Error('sendStats: sem senha (com Host) na recuperacao; fora dela com readOk()');
+ if(/authed\(|readOk\(/.test(st.slice(rec,ro)))throw Error('sendStats: recuperacao nao pode exigir senha');
+}
 { // migração 4M3M→4M2M (storage_stats.cpp): nunca formatar 0x100000 se o LittleFS antigo não montar
  const fm=fn('fsMount');
  const oldDecl=fm.indexOf('FS old('),oldBeg=fm.indexOf('old.begin()',oldDecl);
@@ -145,6 +168,22 @@ for(const [name,hs] of [['setupWeb',['Origin','X-Firmware-Sig','Authorization','
  if(!hl.includes('hookBack.fail(millis())')||!hl.includes('hookBack.ok(millis(), 0)')||!hl.includes('code == HTTP_WAIT'))throw Error('hookLoop: backoff and dns wait required');
  const tp=fn('tickPomodoro');if(tp.includes('hookFire')||tp.includes('httpGet')||tp.includes('hookLoop'))throw Error('tickPomodoro must not call HTTP');
  if(!source.includes('stallAt\\"')||!source.includes('diagStallAt = diagWhere'))throw Error('diag must report the longest loop stall and where');
+}
+{ // endurecimento de autenticacao, Alexa/DNS rebinding, SSRF, XSS em /update, recovery e /apps.key
+ const po=source.slice(source.indexOf('static bool passOk() {'),source.indexOf('\n}',source.indexOf('static bool passOk() {'))) ;
+ if(!po.includes('constTimeEq('))throw Error('passOk must compare Authorization in constant time');
+ const op=source.slice(source.indexOf('server.on(F("/api/otapass")'),source.indexOf('server.on(F("/api/wifireset")'));
+ if(!op.includes('constTimeEq(')||!op.includes('authThrottle.fail('))throw Error('/api/otapass must compare old password in constant time and throttle failures');
+ const hd=fn('sendHueDescription'),ax=fn('alexaApi');
+ if(!hd.includes('if (!hostOk()) { deny(); return; }'))throw Error('sendHueDescription must enforce hostOk()');
+ if(!ax.includes('if (!hostOk()) { deny(); return; }')||!ax.includes('!req.startsWith(F("/api"))'))throw Error('alexaApi must enforce hostOk() and /api prefix');
+ const fk=source.slice(source.indexOf('bool fsKeep('),source.indexOf('\n}',source.indexOf('bool fsKeep(')));
+ if(!fk.includes('"/apps.key"'))throw Error('fsKeep must protect /apps.key');
+ const hs=source.indexOf('int httpGet(WiFiClient'),hg=source.slice(hs,source.indexOf('\n}',hs));
+ if(!hg.includes('addr == WiFi.localIP()')||!hg.includes('addr[0] == 127'))throw Error('httpGet must block loopback, link-local, multicast and self IP');
+ if(update.includes('innerHTML'))throw Error('setupUpdate must not assign response text with innerHTML');
+ if(!recovery.includes('secHeaders();')||!recovery.includes('no-store')||!recovery.includes('!hostOk() || !formOk()'))
+  throw Error('startRecovery must enforce hostOk, secHeaders and Cache-Control: no-store');
 }
 const out=process.argv[2];if(!out)throw Error('output.cpp required');
 const header=path.relative(path.dirname(path.resolve(out)),path.resolve(__dirname,'../smalltv-pomodoro/security.h')).replaceAll('\\','/');
