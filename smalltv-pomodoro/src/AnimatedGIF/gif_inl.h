@@ -20,6 +20,12 @@
 //===========================================================================
 #include "AnimatedGIF.h"
 
+#ifndef GIF_MALLOC
+#define GIF_MALLOC(sz) malloc(sz)
+#define GIF_CALLOC(n, sz) calloc((n), (sz))
+#define GIF_FREE(p) free(p)
+#endif
+
 #if defined( HAL_ESP32_HAL_H_ )
 #define memcpy_P memcpy
 #pragma GCC optimize("O2")
@@ -35,7 +41,7 @@ typedef void (GIF_MAKE_PELS)(GIFIMAGE *pFile, unsigned int code);
 static int GIFInit(GIFIMAGE *pGIF);
 static int GIFParseInfo(GIFIMAGE *pPage, int bInfoOnly);
 static int GIFGetMoreData(GIFIMAGE *pPage);
-static void GIFMakePels(GIFIMAGE *pPage, unsigned int code);
+static void GIFMakePels(GIFIMAGE *pPage, unsigned int code, unsigned int cc, unsigned int validLim, uint8_t *pFirst);
 
 static void GIFMakeRGB565Pels(GIFIMAGE *pPage, unsigned int code);
 static int DecodeLZW(GIFIMAGE *pImage, int iOptions);
@@ -43,6 +49,44 @@ static int DecodeLZWTurbo(GIFIMAGE *pImage, int iOptions);
 static int32_t readMem(GIFFILE *pFile, uint8_t *pBuf, int32_t iLen);
 static int32_t seekMem(GIFFILE *pFile, int32_t iPosition);
 int GIF_getInfo(GIFIMAGE *pPage, GIFINFO *pInfo);
+
+// Buffers de trabalho por quadro: alocados no inicio de playFrame() e liberados ao sair.
+static void gifWorkEnd(GIFIMAGE *g)
+{
+    GIF_FREE(g->usGIFTable);
+    GIF_FREE(g->ucGIFPixels);
+    GIF_FREE(g->ucFileBuf);
+    GIF_FREE(g->pSmallWork);
+    g->usGIFTable = NULL;
+    g->ucGIFPixels = NULL;
+    g->ucFileBuf = NULL;
+    g->pSmallWork = NULL;
+    g->pLocalPalette = NULL;
+    g->ucLZW = NULL;
+    g->ucLineBuf = NULL;
+    g->pLineBufAligned = NULL;
+}
+
+static int gifWorkBegin(GIFIMAGE *g)
+{
+    g->usGIFTable  = (uint16_t *)GIF_MALLOC(GIF_TABLE_BYTES);    // 8.192 B (validLim limita leituras)
+    g->ucGIFPixels = (uint8_t *)GIF_MALLOC(GIF_PIXELS_BYTES);    // 4.096 B
+    g->ucFileBuf   = (uint8_t *)GIF_MALLOC(FILE_BUF_SIZE + 8);   // 4.104 B (+8 folga p/ ALLOWS_UNALIGNED)
+    g->pSmallWork  = GIF_CALLOC(1, GIF_SMALL_WORK_BYTES);        // 2.546 B (limpo p/ paleta local < 256)
+    if (!g->usGIFTable || !g->ucGIFPixels || !g->ucFileBuf || !g->pSmallWork) {
+        gifWorkEnd(g);
+        g->iError = GIF_ERROR_MEMORY;
+        return 0;
+    }
+    uint8_t *w = (uint8_t *)g->pSmallWork;
+    g->pLocalPalette = (uint16_t *)w;
+    g->ucLZW = w + MAX_COLORS * sizeof(uint16_t);
+    g->ucLineBuf = g->ucLZW + LZW_BUF_SIZE;
+    uintptr_t addr = (uintptr_t)g->ucLineBuf;
+    uintptr_t rem = addr & 15U;
+    g->pLineBufAligned = rem ? (g->ucLineBuf + (16U - rem)) : g->ucLineBuf;
+    return 1;
+}
 #if defined( PICO_BUILD ) || defined( __LINUX__ ) || defined( __MCUXPRESSO )
 static int32_t readFile(GIFFILE *pFile, uint8_t *pBuf, int32_t iLen);
 static int32_t seekFile(GIFFILE *pFile, int32_t iPosition);
@@ -84,8 +128,12 @@ int GIF_openFile(GIFIMAGE *pGIF, const char *szFilename, GIF_DRAW_CALLBACK *pfnD
 
 void GIF_close(GIFIMAGE *pGIF)
 {
-    if (pGIF->pfnClose)
-        (*pGIF->pfnClose)(pGIF->GIFFile.fHandle);
+    if (pGIF->pfnClose) {
+        GIF_CLOSE_CALLBACK *fn = pGIF->pfnClose;
+        pGIF->pfnClose = NULL;
+        (*fn)(pGIF->GIFFile.fHandle);
+    }
+    gifWorkEnd(pGIF);
 } /* GIF_close() */
 
 void GIF_begin(GIFIMAGE *pGIF, unsigned char ucPaletteType)
@@ -107,9 +155,12 @@ void GIF_reset(GIFIMAGE *pGIF)
 int GIF_playFrame(GIFIMAGE *pGIF, int *delayMilliseconds, void *pUser)
 {
 int rc;
+int ret = 0;
 
     if (delayMilliseconds)
        *delayMilliseconds = 0; // clear any old valid
+    if (!gifWorkBegin(pGIF))
+        return -1;
     if (pGIF->GIFFile.iPos >= pGIF->GIFFile.iSize-1) // no more data exists
     {   
         (*pGIF->pfnSeek)(&pGIF->GIFFile, 0); // seek to start
@@ -118,23 +169,26 @@ int rc;
     {
         pGIF->pUser = pUser;
         if (pGIF->iError == GIF_EMPTY_FRAME) // don't try to decode it
-            return 0;
+            goto done;
         if (pGIF->pTurboBuffer) { // the presence of the Turbo buffer indicates Turbo mode
             rc = DecodeLZWTurbo(pGIF, 0);
         } else {
             rc = DecodeLZW(pGIF, 0);
         }
         if (rc != 0) // problem
-            return 0;
+            goto done;
     }
     else
     {
-        return 0; // error parsing the frame info, we may be at the end of the file
+        goto done; // error parsing the frame info, we may be at the end of the file
     }
     // Return 1 for more frames or 0 if this was the last frame
     if (delayMilliseconds) // if not NULL, return the frame delay time
         *delayMilliseconds = pGIF->iFrameDelay;
-    return (pGIF->GIFFile.iPos < pGIF->GIFFile.iSize-1);
+    ret = (pGIF->GIFFile.iPos < pGIF->GIFFile.iSize-1);
+done:
+    gifWorkEnd(pGIF);
+    return ret;
 } /* GIF_playFrame() */
 
 int GIF_getCanvasWidth(GIFIMAGE *pGIF)
@@ -290,7 +344,13 @@ int GIF_getInfo(GIFIMAGE *pPage, GIFINFO *pInfo)
     iMinDelay = 10000;
     iNumFrames = 1;
     iDataRemaining = pPage->GIFFile.iSize;
+    uint8_t *tmpBuf = NULL;
     cBuf = (uint8_t *) pPage->ucFileBuf;
+    if (!cBuf) {
+        tmpBuf = (uint8_t *)malloc(FILE_BUF_SIZE);
+        if (!tmpBuf) { pPage->iError = GIF_ERROR_MEMORY; return 0; }
+        cBuf = tmpBuf;
+    }
     (*pPage->pfnSeek)(&pPage->GIFFile, 0);
     iDataAvailable = (*pPage->pfnRead)(&pPage->GIFFile, cBuf, FILE_BUF_SIZE);
     iDataRemaining -= iDataAvailable;
@@ -455,6 +515,7 @@ int GIF_getInfo(GIFIMAGE *pPage, GIFINFO *pInfo)
         }
     } /* while !bDone */
 gifpagesz:
+    free(tmpBuf);
     pInfo->iFrameCount = iNumFrames;
     pInfo->iMaxDelay = iMaxDelay;
     pInfo->iMinDelay = iMinDelay;
@@ -1079,6 +1140,7 @@ init_codetable:
             gd.ucTransparent = pImage->ucTransparent;
             gd.ucHasTransparency = pImage->ucGIFBits & 1;
             gd.ucBackground = pImage->ucBackground;
+            gd.ucIsInterlaced = (pImage->ucMap & 0x40) != 0;
             gd.iCanvasWidth = pImage->iCanvasWidth;
             if (pImage->pfnDraw) {
                 DrawCooked(pImage, &gd, &buf[pImage->iCanvasHeight * pImage->iCanvasWidth]); // dest = one line past end of canvas
@@ -1096,35 +1158,44 @@ init_codetable:
 //
 // GIFMakePels
 //
-static void GIFMakePels(GIFIMAGE *pPage, unsigned int code)
+static void GIFMakePels(GIFIMAGE *pPage, unsigned int code, unsigned int cc, unsigned int validLim, uint8_t *pFirst)
 {
     int iPixCount;
-    unsigned short *giftabs;
     unsigned char *buf, *s, *pEnd, *gifpels;
+    uint16_t *giftabs;
     /* Copy this string of sequential pixels to output buffer */
-    //   iPixCount = 0;
     pEnd = pPage->ucFileBuf;
     s = pEnd + FILE_BUF_SIZE; /* Pixels will come out in reversed order */
     buf = pPage->pLineBufAligned + (pPage->iWidth - pPage->iXCount);
     giftabs = pPage->usGIFTable;
-    gifpels = &pPage->ucGIFPixels[PIXEL_LAST];
-    while (code < LINK_UNUSED)
+    gifpels = pPage->ucGIFPixels;
+    for (;;)
     {
-        if (s == pEnd || code >= (1U << MAX_CODE_SIZE)) /* invalid dictionary link */
+        if (s == pEnd) { pPage->iError = GIF_DECODE_ERROR; return; }
+        if (code < cc) { *(--s) = gifpels[code]; break; }
+        // Lazy reset do AnimatedGIF-LowMem (Apache-2.0): nextcode invalida entradas antigas sem memset.
+        if (code >= validLim || code <= cc + 1) /* invalid dictionary link */
         {
             pPage->iError = GIF_DECODE_ERROR;
             return; /* Exit with error */
         }
         *(--s) = gifpels[code];
         unsigned int link = giftabs[code];
-        if (link < LINK_UNUSED && link >= code) { pPage->iError = GIF_DECODE_ERROR; return; }
+        if (link >= code) { pPage->iError = GIF_DECODE_ERROR; return; }
         code = link;
     }
+    if (pFirst) *pFirst = *s;
     iPixCount = (int)(intptr_t)(pEnd + FILE_BUF_SIZE - s);
     while (iPixCount && pPage->iYCount > 0)
     {
         if (pPage->iXCount > iPixCount)  /* Pixels fit completely on the line */
         {
+#ifndef ALLOWS_UNALIGNED
+            // ESP8266: memcpy copia em palavras quando dá; o laço byte a byte custava mais no quadro
+            memcpy(buf, s, iPixCount);
+            pPage->iXCount -= iPixCount;
+            return;
+#endif
             pEnd = buf + iPixCount;
             while (buf < pEnd) {
 #ifdef ALLOWS_UNALIGNED
@@ -1146,11 +1217,9 @@ static void GIFMakePels(GIFIMAGE *pPage, unsigned int code)
         else  /* Pixels cross into next line */
         {
             GIFDRAW gd;
-            pEnd = buf + pPage->iXCount;
-            while (buf < pEnd)
-            {
-                *buf++ = *s++;
-            }
+            memcpy(buf, s, pPage->iXCount);  // resto da linha de uma vez
+            buf += pPage->iXCount;
+            s += pPage->iXCount;
             iPixCount -= pPage->iXCount;
             pPage->iXCount = pPage->iWidth; /* Reset pixel count */
             // Prepare GIDRAW structure for callback
@@ -1180,6 +1249,7 @@ static void GIFMakePels(GIFIMAGE *pPage, unsigned int code)
             gd.ucTransparent = pPage->ucTransparent;
             gd.ucHasTransparency = pPage->ucGIFBits & 1;
             gd.ucBackground = pPage->ucBackground;
+            gd.ucIsInterlaced = (pPage->ucMap & 0x40) != 0;
             gd.iCanvasWidth = pPage->iCanvasWidth;
             gd.pUser = pPage->pUser;
             gd.ucPaletteType = pPage->ucPaletteType;
@@ -1235,8 +1305,9 @@ static int DecodeLZW(GIFIMAGE *pImage, int iOptions)
 {
     int i, bitnum;
     unsigned short oldcode, codesize, nextcode, nextlim;
-    unsigned short *giftabs, cc, eoi;
+    unsigned short cc, eoi;
     signed short sMask;
+    uint16_t *giftabs;
     unsigned char c, *gifpels, *p;
     //    int iStripSize;
     //unsigned char **index;
@@ -1296,8 +1367,7 @@ static int DecodeLZW(GIFIMAGE *pImage, int iOptions)
     // this part only needs to be initialized once
     for (i = 0; i < cc; i++)
     {
-        gifpels[PIXEL_FIRST + i] = gifpels[PIXEL_LAST + i] = (unsigned short) i;
-        giftabs[i] = LINK_END;
+        gifpels[i] = (uint8_t) i;
     }
 init_codetable:
     codesize = pImage->ucCodeStart + 1;
@@ -1305,8 +1375,6 @@ init_codetable:
     sMask = 0xffff - sMask;
     nextcode = cc + 2;
     nextlim = (unsigned short) ((1 << codesize));
-    // This part of the table needs to be reset multiple times
-    memset(&giftabs[cc], LINK_UNUSED, sizeof(pImage->usGIFTable) - sizeof(giftabs[0])*cc);
     GET_CODE
     while (code == cc) // repeated clear codes are legal; checked reads bound this loop
     {
@@ -1314,7 +1382,8 @@ init_codetable:
     }
     if (code >= cc) { pImage->iError = GIF_DECODE_ERROR; return 1; }
     c = oldcode = code;
-    GIFMakePels(pImage, code); // first code is output as the first pixel
+    GIFMakePels(pImage, code, cc, nextcode, NULL); // first code is output as the first pixel
+    if (pImage->iError != GIF_SUCCESS) return 1;
     // Main decode loop
     while (code != eoi && pImage->iYCount > 0) // && y < pImage->iHeight+1) /* Loop through all lines of the image (or strip) */
     {
@@ -1324,21 +1393,32 @@ init_codetable:
         if (code != eoi)
         {
             if (code > nextcode || code >= (1 << MAX_CODE_SIZE)) { pImage->iError = GIF_DECODE_ERROR; return 1; }
+            uint8_t firstPx = c;
+            if (code == nextcode)
+            {
+                giftabs[nextcode] = oldcode;
+                gifpels[nextcode] = c;
+                GIFMakePels(pImage, code, cc, nextcode + 1, &firstPx);
+                if (pImage->iError != GIF_SUCCESS) return 1;
+            }
+            else
+            {
+                GIFMakePels(pImage, code, cc, nextcode, &firstPx);
+                if (pImage->iError != GIF_SUCCESS) return 1;
                 if (nextcode < nextlim) // for deferred cc case, don't let it overwrite the last entry (fff)
                 {
                     giftabs[nextcode] = oldcode;
-                    gifpels[PIXEL_FIRST + nextcode] = c; // oldcode pixel value
-                    gifpels[PIXEL_LAST + nextcode] = c = gifpels[PIXEL_FIRST + code];
+                    gifpels[nextcode] = firstPx;
                 }
-                if (nextcode < (1 << MAX_CODE_SIZE)) nextcode++;
-                if (nextcode >= nextlim && codesize < MAX_CODE_SIZE)
-                {
-                    codesize++;
-                    nextlim <<= 1;
-                    sMask = nextlim - 1;
-                }
-            GIFMakePels(pImage, code);
-            if (pImage->iError != GIF_SUCCESS) return 1;
+            }
+            c = firstPx;
+            if (nextcode < (1 << MAX_CODE_SIZE)) nextcode++;
+            if (nextcode >= nextlim && codesize < MAX_CODE_SIZE)
+            {
+                codesize++;
+                nextlim <<= 1;
+                sMask = nextlim - 1;
+            }
             oldcode = code;
         }
     } /* while not end of LZW code stream */
@@ -1395,5 +1475,3 @@ const uint32_t RBMask = 0xf81f, GMask = 0x7e0;
          *d++ = (uint16_t)(gSum + rbSum); // store finished pixel
    } // for x
 } /* GIF_scaleHalf() */
-
-

@@ -4,6 +4,7 @@
 #include <lwip/tcp.h>  // tcp_abort (tcpTwPurge)
 #include "../web.h"
 #include "../appdata.h"
+#include "../sessoes.h"
 
 // respostas curtas repetidas nas rotas: um só corpo no binário em vez de três String temporárias em cada uso
 static void sendOk() { server.send_P(200, PSTR("text/plain"), PSTR("ok")); }
@@ -62,6 +63,100 @@ void jsonEscapeAppend(String &o, const char *s) {
 }
 
 static bool safeText(const String &s) { return s.indexOf('"') < 0 && s.indexOf('\\') < 0; }
+
+struct SessoesJson {
+  String *json;
+  bool primeira;
+};
+
+static void sessoesJsonLinha(const SessaoLinha *s, void *contexto) {
+  SessoesJson &c = *(SessoesJson *)contexto;
+  String nome;
+  nome.concat(s->nome, s->nome_len);
+  *c.json += c.primeira ? F("{\"name\":\"") : F(",{\"name\":\"");
+  c.primeira = false;
+  jsonEscapeAppend(*c.json, nome.c_str());
+  *c.json += F("\",\"work\":");
+  *c.json += s->work;
+  *c.json += F(",\"short\":");
+  *c.json += s->short_break;
+  *c.json += F(",\"long\":");
+  *c.json += s->long_break;
+  *c.json += F(",\"every\":");
+  *c.json += s->every;
+  *c.json += F(",\"cycles\":");
+  *c.json += s->cycles;
+  *c.json += '}';
+}
+
+// Devolve também o arquivo vazio como set:1. Só a ausência real vira set:0; uma falha de
+// montagem/leitura nunca se disfarça de lista ainda não configurada.
+static bool sendSessoes() {
+  server.sendHeader("Cache-Control", F("no-store"));
+  if (!fsOk) {
+    server.send_P(500, PSTR("text/plain"), PSTR("memoria indisponivel"));
+    return false;
+  }
+  if (!LittleFS.exists(F("/sessoes.txt"))) {
+    server.send_P(200, PSTR("application/json"), PSTR("{\"set\":0,\"l\":[]}"));
+    return true;
+  }
+  File f = LittleFS.open(F("/sessoes.txt"), "r");
+  if (!f) {
+    server.send_P(500, PSTR("text/plain"), PSTR("falha de leitura"));
+    return false;
+  }
+  f.setTimeout(0);
+  size_t esperado = f.size();
+  if (esperado > SESSOES_TEXTO_MAX) {  // arquivo normal tem no máximo 1024: maior que isso está corrompido
+    f.close();
+    server.send_P(500, PSTR("text/plain"), PSTR("falha de leitura"));
+    return false;
+  }
+  String texto;
+  bool ok = texto.reserve(esperado + 1);
+  char bloco[96];
+  while (ok && texto.length() < esperado) {
+    size_t falta = esperado - texto.length(), pedir = falta < sizeof bloco ? falta : sizeof bloco;
+    size_t n = f.read((uint8_t *)bloco, pedir);
+    if (!n) { ok = false; break; }
+    texto.concat(bloco, n);
+  }
+  f.close();
+  if (!ok || texto.length() != esperado) {
+    server.send_P(500, PSTR("text/plain"), PSTR("falha de leitura"));
+    return false;
+  }
+  String j;
+  if (!j.reserve(160 + texto.length() * 2)) {
+    server.send_P(500, PSTR("text/plain"), PSTR("memoria insuficiente"));
+    return false;
+  }
+  j = F("{\"set\":1,\"l\":[");
+  SessoesJson contexto = {&j, true};
+  sessoesLer(texto.c_str(), texto.length(), sessoesJsonLinha, &contexto);
+  j += F("]}");
+  server.send(200, PSTR("application/json"), j);
+  return true;
+}
+
+struct SessoesGrava {
+  File *arquivo;
+  bool ok;
+  size_t bytes;  // o que foi pedido ao arquivo: o tamanho final tem de bater (flush/close do LittleFS não devolvem erro)
+};
+
+static void sessoesGravaLinha(const SessaoLinha *s, void *contexto) {
+  SessoesGrava &c = *(SessoesGrava *)contexto;
+  if (!c.ok) return;
+  c.ok = c.arquivo->write((const uint8_t *)s->nome, s->nome_len) == s->nome_len;
+  c.bytes += s->nome_len;
+  char numeros[24];
+  int n = snprintf_P(numeros, sizeof numeros, PSTR("\t%u\t%u\t%u\t%u\t%u\n"), s->work, s->short_break,
+                     s->long_break, s->every, s->cycles);
+  if (c.ok) c.ok = n > 0 && c.arquivo->write((const uint8_t *)numeros, n) == (size_t)n;
+  if (c.ok) c.bytes += n;
+}
 
 // ---------- diagnóstico (painel: Ajustes -> Sistema) ----------
 // Motivo do último reinício (e, se foi travamento, a causa e o endereço), sinal do Wi-Fi, menor memória livre
@@ -161,6 +256,22 @@ static void diagJson(String &j, uint8_t frag) {
   j += diagStall;
   j += F(",\"stallAt\":");
   j += diagStallAt;
+#ifdef GIF_CRONO
+  {
+    extern uint32_t gifCronoN, gifCronoSum, gifCronoMax, gifCronoDelay, gifCronoGap;
+    j += F(",\"gifus\":[");  // quadros, média e pior em microssegundos (só no build de medição)
+    j += gifCronoN;
+    j += ',';
+    j += gifCronoN ? gifCronoSum / gifCronoN : 0;
+    j += ',';
+    j += gifCronoMax;
+    j += ',';
+    j += gifCronoN ? gifCronoDelay / gifCronoN : 0;  // atraso médio pedido pelo GIF (ms)
+    j += ',';
+    j += gifCronoN > 1 ? gifCronoGap / (gifCronoN - 1) : 0;  // intervalo médio real entre quadros (ms)
+    j += ']';
+  }
+#endif
   j += F(",\"minblk\":");  // menor maior bloco livre desde que ligou (bytes)
   j += diagMinBlk;
   j += F(",\"stack\":");  // menor folga da pilha do laço desde que ligou (bytes)
@@ -233,6 +344,7 @@ static uint32_t cfgVersion() {
   fnvMix(h, ota + sizeof cfg.otaPass, ap - (ota + sizeof cfg.otaPass));
   fnvMix(h, ap + sizeof cfg.apPass, end - (ap + sizeof cfg.apPass));
   if (rotList.length()) fnvMix(h, rotList.c_str(), rotList.length());
+  if (rotTimes.length()) fnvMix(h, rotTimes.c_str(), rotTimes.length());  // os tempos do rodízio (/rotime.txt) não estão na Settings
   fnvMix(h, &wifiDowngrades, sizeof wifiDowngrades);
   fnvMix(h, &timeGuard.undone, sizeof timeGuard.undone);
   fnvMix(h, &timeGuard.confirmed, sizeof timeGuard.confirmed);
@@ -408,6 +520,12 @@ static void sendState() {
     jsonFlush(j);
     if (rotList.length()) {
       server.sendContent(rotList);
+      yield();
+    }
+    j = F("\",\"rott\":\"");
+    jsonFlush(j);
+    if (rotTimes.length()) {
+      server.sendContent(rotTimes);
       yield();
     }
     j = F("\"}");
@@ -685,6 +803,34 @@ static bool appsKeyLoad(char out[33]) {
   return false;
 }
 
+// Autenticação comum às escritas de miniapps: a senha do painel nunca substitui a chave dedicada.
+static bool appsWriteAuth() {
+  if (!panelOk()) { deny(); return false; }
+  uint32_t ip = requestIp(), wait = 0;
+  if (authThrottle.blocked(ip, millis(), &wait)) {
+    server.sendHeader(F("Retry-After"), String((wait + 999) / 1000));
+    server.send_P(429, PSTR("text/plain"), PSTR("Tente novamente em alguns segundos"));
+    return false;
+  }
+  char key[33];
+  if (!appsKeyLoad(key)) {
+    server.send_P(403, PSTR("text/plain"), PSTR("desligado: crie a chave no painel"));
+    return false;
+  }
+  const String &h = server.header(F("Authorization"));
+  bool ok = appsBearerOk(h.c_str(), h.length(), key);
+  memset(key, 0, sizeof key);
+  if (!ok) {
+    authThrottle.fail(ip, millis());
+    server.send_P(401, PSTR("text/plain"), PSTR("chave invalida"));
+    return false;
+  }
+  return true;
+}
+
+static uint32_t showFim;
+static bool showVisto;
+
 // ---------- painel na memória de arquivos ----------
 // O painel (~19 KB comprimido) não ocupa a flash do programa: fica em /www/<hash>.gz, onde <hash> são os
 // 24 primeiros hex do SHA-256 do arquivo, calculado aqui ao receber. O firmware só serve o arquivo com o
@@ -854,6 +1000,50 @@ void setupWeb() {
     }
     server.send_P(saved ? 200 : 500, PSTR("text/plain"), saved ? PSTR("ok") : PSTR("falhou"));
   });
+  // Sessões criadas no painel: o arquivo é a fonte compartilhada por todos os navegadores.
+  server.on(F("/api/sessoes"), HTTP_GET, [] {
+    if (!readOk()) return;
+    sendSessoes();
+  });
+  server.on(F("/api/sessoes"), HTTP_POST, [] {
+    if (!guard()) return;
+    if (!fsOk) {
+      server.send_P(500, PSTR("text/plain"), PSTR("memoria indisponivel"));
+      return;
+    }
+    if (!server.hasArg("t")) {
+      server.send_P(400, PSTR("text/plain"), PSTR("lista ausente"));
+      return;
+    }
+    const String &texto = server.arg("t");
+    SessoesErro erro = sessoesValidar(texto.c_str(), texto.length());
+    if (erro != SESSOES_OK) {
+      server.send_P(400, PSTR("text/plain"), sessoesErroTexto(erro));
+      return;
+    }
+    LittleFS.remove(F("/sessoes.tmp"));
+    File f = LittleFS.open(F("/sessoes.tmp"), "w");
+    SessoesGrava contexto = {&f, (bool)f, 0};
+    if (contexto.ok) sessoesLer(texto.c_str(), texto.length(), sessoesGravaLinha, &contexto);
+    if (f) {
+      f.flush();
+      f.close();
+    }
+    // flush e close não informam falha (flash cheia): só troca o arquivo bom se o tmp releu com o tamanho certo
+    if (contexto.ok) {
+      File v = LittleFS.open(F("/sessoes.tmp"), "r");
+      contexto.ok = v && v.size() == contexto.bytes;
+      if (v) v.close();
+    }
+    bool salva = contexto.ok && LittleFS.rename(F("/sessoes.tmp"), F("/sessoes.txt"));
+    if (!salva) {
+      LittleFS.remove(F("/sessoes.tmp"));
+      server.send_P(500, PSTR("text/plain"), PSTR("nao foi possivel salvar"));
+      return;
+    }
+    fsInfoAt = 0;
+    sendSessoes();
+  });
   server.on(F("/api/statsimport"), HTTP_POST, handleStatsImport);
   // lista dos mostradores para a galeria do painel (vem de faces_list.h)
   server.on(F("/api/faces"), HTTP_GET, [] {
@@ -993,32 +1183,50 @@ void setupWeb() {
     command(server.arg("c"));
     sendState();
   });
-  // Dados empurrados de fora (Home Assistant, scripts) para os {x.campo} dos pacotes. Contrato: appdata.h e
-  // docs/HOME-ASSISTANT.md. Só com a chave de escrita (/apps.key, criada no painel), nunca com a senha do painel: quem
-  // tem a chave só escreve dados. Sem a chave, a rota fica desligada (403).
+  // Dados e troca temporária de tela vindos de fora (Home Assistant, scripts). Contrato: appdata.h e
+  // docs/HOME-ASSISTANT.md. Só com a chave de escrita (/apps.key, criada no painel), nunca com a senha do painel.
   server.on(F("/api/apps/data"), HTTP_POST, [] {
-    if (!panelOk()) { deny(); return; }  // Host = IP ou o .local do relógio, e X-SmallTV: 1
-    uint32_t ip = requestIp(), wait = 0;
-    if (authThrottle.blocked(ip, millis(), &wait)) {
-      server.sendHeader(F("Retry-After"), String((wait + 999) / 1000));
-      server.send_P(429, PSTR("text/plain"), PSTR("Tente novamente em alguns segundos"));
-      return;
-    }
-    char key[33];
-    if (!appsKeyLoad(key)) { server.send_P(403, PSTR("text/plain"), PSTR("desligado: crie a chave no painel")); return; }
-    const String &h = server.header(F("Authorization"));
-    bool ok = appsBearerOk(h.c_str(), h.length(), key);
-    memset(key, 0, sizeof key);
-    if (!ok) {
-      authThrottle.fail(ip, millis());
-      server.send_P(401, PSTR("text/plain"), PSTR("chave invalida"));
-      return;
-    }
+    if (!appsWriteAuth()) return;
     const String &b = server.arg("plain");
     if (b.length() > APPDATA_BODY_MAX) { server.send_P(413, PSTR("text/plain"), PSTR("corpo grande demais")); return; }
     const char *err = appDataPut(b.c_str(), b.length(), millis());
     if (err) server.send_P(400, PSTR("text/plain"), err);
     else server.send_P(200, PSTR("application/json"), PSTR("{\"ok\":true}"));
+  });
+  // Mostra agora um pacote instalado usando a mesma prévia que o painel; não grava configuração nem acorda a tela.
+  server.on(F("/api/apps/show"), HTTP_POST, [] {
+    if (!appsWriteAuth()) return;
+    const String &b = server.arg("plain");
+    if (b.length() > APPSHOW_BODY_MAX) { server.send_P(413, PSTR("text/plain"), PSTR("corpo grande demais")); return; }
+    char pkg[24];
+    uint8_t secs;
+    const char *err = appShowParse(b.c_str(), b.length(), pkg, sizeof pkg, &secs);
+    if (err) { server.send_P(400, PSTR("text/plain"), err); return; }
+    // tela livre (o show interrompe o álbum) e, em tempo decorrido sem sinal (a volta do millis() não pode deixar a recusa presa), fora dos 60 s depois do último show
+    if (!telaLivre(true) || (showVisto && (uint32_t)(millis() - showFim) < 60000UL)) {
+      server.send_P(409, PSTR("text/plain"), PSTR("ocupado"));
+      return;
+    }
+    String path = String(F("/faces/")) + pkg + F(".json");
+    if (!fsOk || !LittleFS.exists(path)) {
+      server.send_P(404, PSTR("text/plain"), PSTR("pacote nao instalado"));
+      return;
+    }
+    if (inAlbum) stopAlbum();  // o GIF em andamento segura ~24 KB: sem isso a carga falharia justo com o álbum tocando
+    if (!loadPack(pkg)) {
+      restoreActivePack();
+      server.send_P(503, PSTR("text/plain"), PSTR("sem memoria"));
+      return;
+    }
+    previewTheme = THEME_PACK;
+    previewUntil = millis() + (uint32_t)secs * 1000UL;
+    if (!previewUntil) previewUntil = 1;
+    viewUntil = previewUntil;
+    showFim = previewUntil;
+    showVisto = true;
+    char reply[24];
+    snprintf_P(reply, sizeof reply, PSTR("{\"ok\":true,\"s\":%u}"), (unsigned)secs);
+    server.send_P(200, PSTR("application/json"), reply, strlen(reply));
   });
   // valores guardados agora (painel e depuração): {"on":1,"f":[["temp","22",840],...]}, o último número em segundos
   server.on(F("/api/apps/data"), HTTP_GET, [] {
@@ -1093,7 +1301,7 @@ void setupWeb() {
       statsCompute();
     }
     cfg.activity = argRange("act", cfg.activity, 0, ACT_COUNT - 1);
-    uint8_t lang = argRange("lang", cfg.lang, 0, 2);
+    uint8_t lang = argRange("lang", cfg.lang, 0, 5);
     if (lang != cfg.lang) uiSetLang(cfg.lang = lang);
     uint8_t bgr = argRange("bgr", cfg.bgr, 0, 1), inv = argRange("inv", cfg.invert, 0, 1),
             flip = argRange("flip", cfg.flip, 0, 1);
@@ -1114,6 +1322,7 @@ void setupWeb() {
     cfg.alexa = argRange("alexa", cfg.alexa, 0, 1);
     alexaBegin();  // ligada agora: começa a responder à descoberta sem reiniciar
     if (server.hasArg("rot")) rotSet(server.arg("rot"));
+    if (server.hasArg("rott")) rotTimesSet(server.arg("rott"));
     uint8_t won = argRange("won", cfg.weatherOn, 0, 1);
     uint8_t fahr = argRange("fahr", cfg.fahr, 0, 1), rain = argRange("rain", cfg.rainAlert, 0, 1);
     cfg.beta = argRange("beta", cfg.beta, 0, 1);
@@ -1529,10 +1738,12 @@ static void htmlEscapeAppend(String &o, const String &s) {
 
 // Idioma das páginas do portal e da recuperação: com o idioma dos ajustes em inglês (o padrão de fábrica) vale o do
 // navegador (Accept-Language), que serve a quem acabou de instalar e nunca escolheu; português e espanhol nos ajustes são
-// respeitados. Não há como saber se o inglês foi escolhido ou é o padrão (um campo novo na EEPROM não vale para duas
+// respeitados, e alemão/russo usam inglês enquanto o portal não tem esses textos. Não há como saber se o inglês foi escolhido
+// ou é o padrão (um campo novo na EEPROM não vale para duas
 // páginas): quem escolheu inglês com o navegador em outra língua vê a página na língua do navegador. A tela do relógio
 // não muda.
 uint8_t pageLang() {
+  if (cfg.lang >= 3) return 1;
   if (cfg.lang != 1) return cfg.lang;
   const String &al = server.header("Accept-Language");  // tamanho zero = sem o cabeçalho (os bytes podem ser do pedido anterior)
   uint8_t l = langFromAccept(al.length() ? al.c_str() : "");
@@ -1540,7 +1751,7 @@ uint8_t pageLang() {
 }
 
 // Texto longo no idioma da página (o tr() corta em 47 bytes)
-static void addTr(String &o, PGM_P pt, PGM_P en, PGM_P es) { o += FPSTR(uiLang == 1 ? en : uiLang == 2 ? es : pt); }
+static void addTr(String &o, PGM_P pt, PGM_P en, PGM_P es) { o += FPSTR(uiLang == 1 || uiLang >= 3 ? en : uiLang == 2 ? es : pt); }
 
 #define ADD_TR(o, pt, en, es) addTr(o, PSTR(pt), PSTR(en), PSTR(es))
 

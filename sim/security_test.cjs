@@ -11,7 +11,7 @@ if(!source.includes('int cut = s.lastIndexOf(',', 300);')||!source.includes('s =
 for(const name of ['handleUpload','handlePackUpload','handlePanelUpload'])
  if(!fn(name).includes('uploadAuthed()'))throw Error(`${name} bypasses upload throttle`);
 { // toda POST do painel começa com guard(); exceções fechadas: handler com nome, chave própria ou upload
- const web=fn('setupWeb'),sem=['/api/statsimport','/api/apps/data','/api/faceinstall'],re=/server\.on\(F\("([^"]+)"\), HTTP_POST, \[\] \{[^\n]*\n\s*([^\n]*)/g;
+ const web=fn('setupWeb'),sem=['/api/statsimport','/api/apps/data','/api/apps/show','/api/faceinstall'],re=/server\.on\(F\("([^"]+)"\), HTTP_POST, \[\] \{[^\n]*\n\s*([^\n]*)/g;
  for(const m of web.matchAll(re))if(!sem.includes(m[1])&&m[2]!=='if (!guard()) return;')throw Error(`${m[1]}: POST must start with if (!guard()) return;`);
  for(const r of sem)if(!web.includes(`server.on(F("${r}"), HTTP_POST`))throw Error(`${r}: exception list is stale`);
  for(const r of ['/api/settings','/api/format','/api/otapass'])  // risco alto: registradas uma vez, só POST
@@ -23,15 +23,27 @@ for(const name of ['handleUpload','handlePackUpload','handlePanelUpload'])
  if(ota.split('\n').some(l=>l.includes('send')&&/otaPass|c_str\(\)/.test(l)))throw Error('/api/otapass must never send the password back');
  if(/otaPass|apPass/.test(blk('/api/settings')))throw Error('/api/settings must not touch the passwords');
 }
-{ // dados de fora: POST /api/apps/data só com a chave (nunca a senha do painel), Host e X-SmallTV, espera por IP na
- // chave errada, corpo limitado; desligado (403) sem /apps.key; a chave só sai num POST com guard() e fica fora do backup
- const i=source.indexOf('server.on(F("/api/apps/data"), HTTP_POST'),blk=source.slice(i,source.indexOf('\n  });',i));
- if(i<0)throw Error('/api/apps/data POST expected');
- if(!blk.includes('if (!panelOk()) { deny(); return; }'))throw Error('/api/apps/data must check Host and X-SmallTV');
- if(blk.includes('guard()')||blk.includes('authed()')||blk.includes('passOk'))throw Error('/api/apps/data must not accept the panel password');
- const bl=blk.indexOf('authThrottle.blocked('),ld=blk.indexOf('appsKeyLoad(key)'),ck=blk.indexOf('appsBearerOk('),fl=blk.indexOf('authThrottle.fail('),pt=blk.indexOf('appDataPut(');
- if(!(bl>=0&&bl<ld&&ld<ck&&ck<fl&&fl<pt))throw Error('/api/apps/data: throttle, key load, bearer check and fail before appDataPut');
- if(!blk.includes('send_P(403')||!blk.includes('APPDATA_BODY_MAX'))throw Error('/api/apps/data: 403 without key and body limit');
+{ // escritas de miniapps: chave dedicada (nunca a senha do painel), Host e X-SmallTV, espera por IP na chave errada
+ const handler=route=>{const i=source.indexOf(`server.on(F("${route}"), HTTP_POST`);if(i<0)throw Error(route+' POST expected');return source.slice(i,source.indexOf('\n  });',i));};
+ const data=handler('/api/apps/data'),show=handler('/api/apps/show');
+ const ai=source.indexOf('static bool appsWriteAuth() {'),auth=source.slice(ai,source.indexOf('\n}',ai)+2);
+ if(ai<0)throw Error('appsWriteAuth expected');
+ const po=auth.indexOf('panelOk()'),bl=auth.indexOf('authThrottle.blocked('),ld=auth.indexOf('appsKeyLoad(key)'),ck=auth.indexOf('appsBearerOk('),fl=auth.indexOf('authThrottle.fail(');
+ if(!(po>=0&&po<bl&&bl<ld&&ld<ck&&ck<fl))throw Error('appsWriteAuth: panelOk, throttle, key load, bearer check and fail in order');
+ if(!auth.includes('deny()')||!auth.includes('send_P(403')||auth.includes('guard()')||auth.includes('authed()')||auth.includes('passOk'))
+  throw Error('appsWriteAuth must deny a bad panel request, return 403 without key and never accept the panel password');
+ for(const [route,blk,work] of [['/api/apps/data',data,'appDataPut('],['/api/apps/show',show,'appShowParse(']]){
+  const au=blk.indexOf('appsWriteAuth()'),body=blk.indexOf('server.arg("plain")'),job=blk.indexOf(work);
+  if(!(au>=0&&au<body&&body<job))throw Error(route+': appsWriteAuth must run before reading/parsing the body');
+  if(blk.includes('guard()')||blk.includes('authed()')||blk.includes('passOk'))throw Error(route+' must not accept the panel password');
+ }
+ if(!data.includes('APPDATA_BODY_MAX')||data.indexOf('APPDATA_BODY_MAX')>data.indexOf('appDataPut('))throw Error('/api/apps/data: body limit before appDataPut');
+ if(!show.includes('APPSHOW_BODY_MAX')||show.indexOf('APPSHOW_BODY_MAX')>show.indexOf('appShowParse('))throw Error('/api/apps/show: body limit before parser');
+ const p=show.indexOf('appShowParse('),busy=show.indexOf('send_P(409'),missing=show.indexOf('send_P(404'),load=show.indexOf('loadPack('),nomem=show.indexOf('send_P(503');
+ if(!(p>=0&&p<busy&&busy<missing&&missing<load&&load<nomem))throw Error('/api/apps/show: parser, 409, 404, load and 503 in order');
+ if(!show.includes('telaLivre(true)')||!show.includes('showVisto && (uint32_t)(millis() - showFim) < 60000UL'))throw Error('/api/apps/show: free screen and unsigned 60 s window expected');
+ if(!show.includes('send_P(200')||!show.includes('PSTR("{\\"ok\\":true,\\"s\\":%u}")'))throw Error('/api/apps/show: PROGMEM JSON response expected');
+ if(show.includes('command(')||show.includes('wakeScreen('))throw Error('/api/apps/show must not call command or wakeScreen');
  const g=source.indexOf('server.on(F("/api/apps/data"), HTTP_GET'),gb=source.slice(g,source.indexOf('\n  });',g));
  if(g<0||!gb.includes('if (!readOk()) return;')||gb.includes('j += key'))throw Error('/api/apps/data GET must be authed and never print the key');
  const k=source.indexOf('server.on(F("/api/appskey"), HTTP_POST'),kb=source.slice(k,source.indexOf('\n  });',k));
@@ -126,6 +138,11 @@ if(albumLimits.includes('undefined'))throw Error('limites do album esperados em 
 if(alb.split(String.fromCharCode(10)).some(l=>l.trim().startsWith('nextFrameAt = 0;')))throw Error('album: nextFrameAt = 0 deixa o GIF parado depois de 24,8 dias ligado (use millis())');
 if(!alb.includes('packRetryWait')||alb.includes('if ((int32_t)(millis() - packRetryAt) < 0) return;'))throw Error('album: packRetryAt precisa de packRetryWait (0 inicial parece futuro)');
 if(/rotNext/.test(alb)||!alb.includes('rotArmed && (uint32_t)(millis() - rotAt)'))throw Error('album: o rodízio usa tempo decorrido (rotAt), não prazo em millis()');
+// 1.27: a espera do rodízio é calculada a cada volta (rotEspera), nunca guardada: mudar o 'Trocar de mostrador' vale na hora
+if(/rotWait/.test(alb)||!alb.includes('(uint32_t)(millis() - rotAt) < rotEspera()'))throw Error('album: a espera do rodízio não pode ficar guardada (rotEspera a cada volta)');
+// 1.27: Alexa durante uma prévia ou um 'mostrar agora' devolve o pacote salvo ao motor (o fim da prévia só limpa se previewUntil ainda for diferente de 0)
+const nsv=fs.readFileSync(path.join(__dirname,'../smalltv-pomodoro/modulos/net_services.cpp'),'utf8');
+if(!nsv.includes('if (previewUntil && previewTheme == THEME_PACK) restoreActivePack();')||!nsv.includes('restoreActivePack();'+String.fromCharCode(10)+'  previewUntil = 0;'))throw Error('net_services: o comando da Alexa zera a prévia sem restaurar o pacote salvo');
 // collectHeaders replaces the list: the normal server (setupWeb) and recovery (startRecovery) each set theirs once
 for(const [name,hs] of [['setupWeb',['Origin','X-Firmware-Sig','Authorization','X-SmallTV']],['startRecovery',['Authorization','X-SmallTV','Accept-Language']]]){
  const ch=[...fn(name).matchAll(/server\.collectHeaders\(([^)]*)\)/g)];

@@ -22,3 +22,6 @@ build/testes/
 # chaves de assinatura nunca vão ao Git (a privada fica em ~/.smalltv-pomodoro)
 *.key
 *private*.pem
+
+# GIFs pessoais do teste dourado (sim/test-gif-qualidade.sh): ficam só na máquina
+sim/gif-album/

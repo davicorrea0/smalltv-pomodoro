@@ -14,7 +14,9 @@ header b{font-size:18px}header span{color:var(--mut);font-variant-numeric:tabula
 #net.on{background:var(--short)}#net.off{background:var(--work)}
 h2{font-size:13px;color:var(--mut);text-transform:uppercase;letter-spacing:1.2px;margin:22px 4px 10px;font-weight:600}
 .card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px;margin-bottom:12px}
-.tab{display:none}.tab.on{display:block;animation:fade .2s}@keyframes fade{from{opacity:0;transform:translateY(4px)}}
+.tab{display:none}.tab.on{display:block;animation:fade .2s}
+/* Relógio no celular: a coluna da esquerda (.col1) some e a ordem fica prévia, mostradores, Aparência */
+#t0.on{display:flex;flex-direction:column}#t0 .col1{display:contents}#t0 #pvbar{order:0}#t0 .side{order:1}#t0 .body{order:2}#t0 .side2{order:3}@keyframes fade{from{opacity:0;transform:translateY(4px)}}
 button{font:inherit;border:0;cursor:pointer;color:var(--fg);background:none}
 button:active{transform:scale(.97)}
 .ic:active,#go:active,nav button:active{transform:none;opacity:.7}
@@ -71,7 +73,7 @@ input[type=color]{width:52px;height:36px;padding:2px}
 .spk div{padding:7px 0;border-top:1px solid var(--line);font-size:13px}.spk b{color:var(--mut);font-weight:500}.spk span{float:right}.spk canvas{display:block;width:100%;height:40px;margin-top:4px;color:var(--ac)}.rb{display:flex;height:10px;margin:6px 0 4px;border-radius:5px;overflow:hidden;background:var(--line)}.rb i{height:100%}.rb i:nth-child(1){background:var(--mut)}.rb i:nth-child(2){background:var(--long)}.rb i:nth-child(3){background:var(--short)}.spk .rb+span{float:none;display:block;color:var(--mut)}#dgt{width:100%;margin-top:8px;font:11px monospace;background:var(--card2);color:inherit;border:1px solid var(--line);border-radius:8px;padding:6px}
 .rb i:nth-child(4){background:var(--work)}
 .bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:6px}.bar i{display:block;height:100%;background:var(--ac)}
-.sessions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.sessions button{padding:13px;text-align:left;border:1px solid var(--line);border-radius:12px;background:var(--bg)}.sessions button.on{border-color:var(--ac);background:var(--card2)}.sessions b,.sessions span,.sessions small{display:block}.sessions span{color:var(--ac);margin:3px 0}.sessions small,#sessionnote,#cyclesum{color:var(--mut)}
+.sessions{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}.sessions button{min-width:0;padding:13px;overflow-wrap:anywhere;text-align:left;border:1px solid var(--line);border-radius:12px;background:var(--bg)}.sessions button.on{border-color:var(--ac);background:var(--card2)}.sessions b,.sessions span,.sessions small{display:block}.sessions span{color:var(--ac);margin:3px 0}.sessions small,#sessionnote,#cyclesum,#sesswarn{color:var(--mut)}#sesswarn{display:block;margin-top:8px}.sedit{max-height:58vh;overflow:auto;margin:10px 0}.srow{padding:10px 0;border-top:1px solid var(--line)}.srow:first-child{border-top:0}.srow>input{font-weight:600}.snums{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;margin-top:7px}.snums label{display:block;font-size:10px;line-height:1.2;color:var(--mut);margin:0;min-width:0}.snums input{display:block;width:100%;min-width:0;box-sizing:border-box;margin-top:3px;padding:8px 2px;text-align:center}.srow .row{align-items:center;margin-top:7px}.srow .row small{flex:1}.srow .row button{flex:none;padding:7px 10px;border-radius:8px;background:var(--card2);border:1px solid var(--line)}.serr{display:block;min-height:18px;color:#ff8b82}
 /* Silkscreen (SIL OFL 1.1), subset ASCII + acentos pt/es (pyftsubset --unicodes=U+0020-007E,U+00A1,U+00BF,... --flavor=woff2), só nos destaques: timer, títulos, contadores.
    Embutida (~2 KB): o painel funciona sem internet. Só liga (html.sk) depois de carregar; sem ela tudo fica na fonte do sistema.
    Tamanhos em múltiplos de 8 pixels físicos (a grade da fonte): vars --f* calculadas em fitPx(). */
@@ -128,9 +130,9 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
  nav button{flex:none;padding:12px 0;margin:0 10px;border-radius:14px;font-size:12px}
  nav button:hover{background:var(--card2);color:var(--fg)}nav button.on{background:var(--card2)}
  .tab.on{display:grid;column-gap:28px;align-items:start}
- #t0.on{grid-template-columns:320px minmax(0,1fr);grid-template-rows:auto 1fr}
+ #t0.on{display:grid;grid-template-columns:320px minmax(0,1fr);grid-template-rows:auto 1fr}
  #t0 #pvbar{grid-column:1/-1}
- #t0 .side{grid-column:1;margin-top:22px}#t0 .body{grid-column:2;grid-row:span 2}#t0 .side2{grid-column:1}
+ #t0 .col1{display:block;grid-column:1;grid-row:2;position:sticky;top:76px;align-self:start}#t0 .side{margin-top:22px}#t0 .body{grid-column:2;grid-row:2}
  #t0 .side2 select{width:150px}#t0 .side2 label{white-space:nowrap}
  .hero{flex-direction:column;align-items:stretch;text-align:center}.hero .scr{width:100%}
  .faces{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px}
@@ -155,8 +157,22 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
 <!-- ============ RELÓGIO ============ -->
 <section class="tab" id="t0">
  <div id="pvbar"></div>
+ <div class="col1">
  <div class="side">
  <div class="card hero"><div class="scr"><img id="curimg" alt=""></div><div><small>Mostrador atual</small><b id="curname">—</b><p id="curdesc"></p><label id="lcdgrow" style="display:none">Tom verde nos mostradores LCD<input data-k="lcdg" type="checkbox"></label></div></div>
+ </div>
+ <div class="side2">
+ <h2>Aparência</h2>
+ <div class="card">
+  <label>Cor dos números<input data-k="color" type="color"></label>
+  <label>Formato 12 h<input data-k="h12" type="checkbox"></label>
+  <label>O que mostrar<select data-k="mode"><option value="0">Só o relógio</option><option value="1">Álbum de fotos</option><option value="2">Alternar relógio e álbum</option></select></label>
+  <label>Segundos por item<input data-k="delay" type="number" min="3" max="255"></label>
+  <label>Trocar de mostrador<select data-k="rotmin"><option value="0">Nunca</option><option value="1">A cada 1 min</option><option value="5">A cada 5 min</option><option value="15">A cada 15 min</option><option value="30">A cada 30 min</option><option value="60">A cada 1 h</option></select></label>
+  <small id="rotinfo"></small>
+  <div class="row" style="margin-top:10px"><button class="btn" onclick="rotEdit()">Editar rodízio</button><button class="btn" id="rotclr" onclick="rotClear()">Tirar todos do rodízio</button></div>
+ </div>
+ </div>
  </div>
  <div class="body">
  <div class="chips" id="fchips"></div>
@@ -175,18 +191,6 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
   <small>Escolha o .json do mostrador (e, se tiver, a prévia .png). Ele fica guardado no relógio, sem atualizar o firmware. Mais mostradores e como criar o seu: <a href="https://davicorrea0.github.io/smalltv-pomodoro/" target="_blank" rel="noopener">site do projeto</a>.</small>
  </div>
  </div>
- <div class="side2">
- <h2>Aparência</h2>
- <div class="card">
-  <label>Cor dos números<input data-k="color" type="color"></label>
-  <label>Formato 12 h<input data-k="h12" type="checkbox"></label>
-  <label>O que mostrar<select data-k="mode"><option value="0">Só o relógio</option><option value="1">Álbum de fotos</option><option value="2">Alternar relógio e álbum</option></select></label>
-  <label>Segundos por item<input data-k="delay" type="number" min="3" max="255"></label>
-  <label>Trocar de mostrador<select data-k="rotmin"><option value="0">Nunca</option><option value="1">A cada 1 min</option><option value="5">A cada 5 min</option><option value="15">A cada 15 min</option><option value="30">A cada 30 min</option><option value="60">A cada 1 h</option></select></label>
-  <small id="rotinfo"></small>
-  <div class="row" style="margin-top:10px"><button class="btn" onclick="rotEdit()">Editar rodízio</button><button class="btn" id="rotclr" onclick="rotClear()">Tirar todos do rodízio</button></div>
- </div>
- </div>
 </section>
 
 <!-- ============ FOCO ============ -->
@@ -198,6 +202,8 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
    <div class="mid"><div id="phase">PRONTO</div><div id="time">--:--</div><div id="dots"></div><div id="sessprog"></div></div></div>
   <div class="ctl"><button class="ic" title="Zerar" onclick="cmd('reset')"><svg class="vi" aria-hidden="true"><use href="#v-zerar"/></svg></button><button id="go" title="Iniciar/pausar (espaço)" onclick="cmd('toggle')"><svg class="vi" aria-hidden="true"><use id="goh" href="#v-tocar"/></svg></button><button class="ic" title="Pular fase" onclick="cmd('skip')"><svg class="vi" aria-hidden="true"><use href="#v-pular"/></svg></button></div>
  </div>
+ <h2>Sessões</h2>
+ <div class="card"><div class="sessions" id="sessions"></div><small id="sessionnote">Troca seus tempos e liga o início automático.</small><small id="sesswarn"></small><p style="margin-bottom:0"><button class="btn" id="sessedit" type="button" disabled>Editar sessões</button></p></div>
  <div class="card"><label>O que vou fazer no foco<span class="asel"><svg class="pi on" aria-hidden="true"><use id="acth" href="#i-ler"/></svg><select data-k="act"><option value="0">Ler</option><option value="1">Estudar</option><option value="2">Programar</option><option value="3">Tarefas</option><option value="4">Desenhar</option></select></span></label></div>
  </div>
  <div class="body">
@@ -207,8 +213,6 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
  <div class="card"><div id="garden"></div><small id="gsum"></small><p style="margin-bottom:0"><button class="btn" onclick="shareDay()">Compartilhar meu dia</button></p></div>
  <h2>Conquistas</h2>
  <div class="card"><div id="ach"></div></div>
- <h2>Sessões</h2>
- <div class="card"><div class="sessions"><button id="deep" onclick="applySession(DEEP_FOCUS)"><b>Deep focus</b><span></span><small></small></button><button id="gentle" onclick="applySession(GENTLE_FOCUS)"><b>Gentle focus</b><span></span><small></small></button></div><small id="sessionnote">Troca seus tempos e liga o início automático.</small></div>
  <h2>Tempos</h2>
  <div class="card">
   <label>Foco (min)<input data-k="work" type="number" min="1" max="99"></label>
@@ -239,7 +243,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
  <div class="grp">
  <h2>Idioma</h2>
  <div class="card">
-  <label>Idioma do painel e do relógio<select data-k="lang"><option value="0">Português</option><option value="1">English</option><option value="2">Español</option></select></label>
+  <label>Idioma do painel e do relógio<select data-k="lang"><option value="0">Português</option><option value="1">English</option><option value="2">Español</option><option value="3">Deutsch (beta)</option><option value="4">Русский (beta)</option><option value="5">Français (beta)</option></select></label>
  </div>
  </div>
  <div class="grp">
@@ -366,7 +370,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
   <span class="alx" id="hast"></span>
   <label class="stk">Chave de escrita<input id="hakey" type="text" readonly spellcheck="false" placeholder="(sem chave)"></label>
   <div class="row" style="margin:6px 0 10px"><button class="btn" id="hanew" onclick="appsKey('new')">Criar chave</button><button class="btn" onclick="appsCopy()">Copiar</button><button class="btn" onclick="appsKey('off')">Desligar</button></div>
-  <small>Para o Home Assistant (ou um script) mandar valores aos mostradores, como a temperatura da sala ou o estado da lavadora. A chave só envia dados: não abre o painel nem muda ajustes. Ela não vai no backup; ao restaurar em outro relógio, crie outra. <a href="https://github.com/davicorrea0/smalltv-pomodoro/blob/main/docs/HOME-ASSISTANT.md" target="_blank" rel="noopener">Como configurar</a></small>
+  <small>Para o Home Assistant (ou um script) mandar valores aos mostradores, como a temperatura da sala ou o estado da lavadora. A chave envia dados e também pode trocar a tela por até 60 s (mostrar agora); ela não abre o painel nem muda ajustes. Ela não vai no backup; ao restaurar em outro relógio, crie outra. <a href="https://github.com/davicorrea0/smalltv-pomodoro/blob/main/docs/HOME-ASSISTANT.md" target="_blank" rel="noopener">Como configurar</a></small>
  </div>
  </div>
 </section>
@@ -407,15 +411,16 @@ try{document.fonts.load('16px Silk','ÁÇÃ0:').then(()=>document.documentElemen
 
 const $=id=>document.getElementById(id),C=339.3;
 const LBL={work:'FOCO',short:'PAUSA',long:'PAUSA LONGA',idle:'PRONTO'};
-const DEEP_FOCUS={work:50,short:10,long:25,every:3,cycles:3},GENTLE_FOCUS={work:25,short:5,long:20,every:2,cycles:2};
-function sessionMinutes(x){let n=x.cycles,total=n*x.work+x.long;for(let i=1;i<n;i++)total+=i%x.every?x.short:x.long;return total}
+const DEEP_FOCUS={name:'Deep focus',work:50,short:10,long:25,every:3,cycles:3},GENTLE_FOCUS={name:'Gentle focus',work:25,short:5,long:20,every:2,cycles:2},SESSION_KEYS=['work','short','long','every','cycles'];
+function sessionMinutes(x){let n=+x.cycles;if(!n)return 0;let total=n*x.work+x.long;for(let i=1;i<n;i++)total+=i%x.every?+x.short:+x.long;return total}
 function sessionDuration(m){return m>=60?(m/60|0)+'h'+(m%60?String(m%60).padStart(2,'0'):''):m+' min'}
-// ---------- idioma (pt/en/es; o relógio guarda em cfg.lang) ----------
-const LANGS=['pt','en','es'],I18N=Object.create(null);let BUILTIN=[];  // inglês/espanhol: web/i18n.json, carregado por loadI18n()
+// ---------- idioma (pt/en/es/de/ru; o relógio guarda em cfg.lang) ----------
+const LANGS=['pt','en','es','de','ru','fr'],I18N=Object.create(null),I18X=[null,null,null,Object.create(null),Object.create(null),Object.create(null)];
+let BUILTIN=[],BUILTINX=[null,null,null,[],[],[]];  // inglês/espanhol no arquivo base; alemão/russo em arquivos próprios
 let LG=0;try{LG=+localStorage.lang||0}catch(e){}
 // t('texto {0}',a,b): tradução do texto em português, com {0}, {1}... trocados
-const t=(s,...a)=>(LG&&I18N[s]?I18N[s][LG-1]:s).replace(/\{(\d)\}/g,(m,i)=>a[i]);
-const tName=e=>LG==1?e.name_en||e.name:LG==2?e.name_es||e.name:e.name,tDesc=e=>LG==1?e.desc_en||e.desc:LG==2?e.desc_es||e.desc:e.desc;
+const t=(s,...a)=>(LG==0?s:LG<3&&I18N[s]?I18N[s][LG-1]:LG>=3&&(I18X[LG][s]||(I18N[s]&&I18N[s][0]))||s).replace(/\{(\d)\}/g,(m,i)=>a[i]);
+const tName=e=>LG==1?e.name_en||e.name:LG==2?e.name_es||e.name:LG>=3?e.name_en||e.name:e.name,tDesc=e=>LG==1?e.desc_en||e.desc:LG==2?e.desc_es||e.desc:LG>=3?e.desc_en||e.desc:e.desc;
 // textos fixos da página: guarda o original (português) e troca pelo do idioma
 function i18n(){document.documentElement.lang=LANGS[LG];document.documentElement.style.setProperty('--inuse',JSON.stringify(' · '+t('em uso')));  // texto do CSS (::after)
  const tw=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);for(let n;n=tw.nextNode();){if(n._pt==null){const k=n.nodeValue.trim();if(!I18N[k])continue;n._pt=n.nodeValue}const k=n._pt.trim();n.nodeValue=n._pt.replace(k,t(k))}
@@ -424,11 +429,13 @@ function i18n(){document.documentElement.lang=LANGS[LG];document.documentElement
 // guardado no navegador na primeira vez; em português não precisa de nada. O build troca __I18V__ pelo
 // código do dicionário; sem ele (painel de teste), vem de /i18n.json.
 const I18V='__I18V__',I18I='__I18I__';  // I18I: impressão digital (SRI) do dicionário publicado
+const I18XV=[null,null,null,'__I18DEV__','__I18RUV__','__I18FRV__'],I18XI=[null,null,null,'__I18DEI__','__I18RUI__','__I18FRI__'];
 const TZV='__TZV__',TZI='__TZI__';  // tabela de fusos publicada (panel/tz-<código>.json), idem
-function loadI18n(){if(!LG||I18N._v==I18V)return;let c=null;try{c=JSON.parse(localStorage.i18n||'null')}catch(e){}
- const use=d=>{Object.assign(I18N,d.dict,{_v:I18V});BUILTIN=d.builtin;i18n();buildFaces();drawGame();if(st){$('curimg').dataset.k='';load(st)}};
- if(c&&c.v==I18V)return use(c);
- fetch(I18V[0]=='_'?'/i18n.json':SITE+'panel/i18n-'+I18V+'.json',I18V[0]=='_'?{}:{integrity:I18I}).then(r=>r.json()).then(d=>{use(d);try{localStorage.i18n=JSON.stringify({...d,v:I18V})}catch(e){}}).catch(()=>{})}
+let i18Fail=false;
+function loadI18n(){if(!LG)return;const warn=()=>{if(LG>=3&&!i18Fail){i18Fail=true;toast('Translation unavailable (needs internet)')}};const refresh=()=>{i18n();buildFaces();drawGame();if(st){$('curimg').dataset.k='';load(st)}};
+ const get=(key,V,SRI,url,use,fail)=>{let c=null;try{c=JSON.parse(localStorage[key]||'null')}catch(e){}if(c&&c.v==V)return use(c);fetch(V[0]=='_'?'/'+url:SITE+'panel/'+url.replace('.json','-'+V+'.json'),V[0]=='_'?{}:{integrity:SRI}).then(r=>r.json()).then(d=>{use(d);try{localStorage[key]=JSON.stringify({...d,v:V})}catch(e){}}).catch(fail||(()=>{}))};
+ if(I18N._v!=I18V)get('i18n',I18V,I18I,'i18n.json',d=>{Object.assign(I18N,d.dict,{_v:I18V});BUILTIN=d.builtin;refresh()},warn);
+ if(LG>=3){const l=LG,V=I18XV[l];if(I18X[l]._v!=V)get('i18n_'+LANGS[l],V,I18XI[l],'i18n-'+LANGS[l]+'.json',d=>{Object.assign(I18X[l],d.dict,{_v:V});BUILTINX[l]=d.builtin;refresh()},warn)}}
 // chamado por load() antes de desenhar o estado: não chama load de novo
 function setLang(l){if(l==LG)return;LG=l;try{localStorage.lang=l}catch(e){}loadI18n();i18n();buildFaces();drawGame();if($('upd').classList.contains('v')&&!updating)showUpdate();$('curimg').dataset.k='';if(curTab==2)files();if($('cat').children.length)catalog()}
 
@@ -444,10 +451,27 @@ const _fetch=window.fetch;window.fetch=(u,o={})=>_fetch(u,/^https?:/.test(u)?o:{
 const post=(u,b)=>fetch(u,{method:'POST',body:b});
 const kb=n=>n>1048576?(n/1048576).toFixed(1)+' MB':Math.round(n/1024)+' KB';
 function toast(t){const e=$('toast');e.textContent=t;e.classList.add('v');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('v'),2200)}
-function sessionRender(s){[[DEEP_FOCUS,$('deep')],[GENTLE_FOCUS,$('gentle')]].forEach(([x,b])=>{b.children[1].textContent=sessionDuration(sessionMinutes(x));b.children[2].textContent=t('{0} focos de {1} min, com a pausa final',x.cycles,x.work);b.classList.toggle('on',['work','short','long','every','cycles'].every(k=>s.cfg[k]==x[k]))});const c=s.cfg.cycles;$('cyclesum').textContent=c?t('{0} no total',sessionDuration(sessionMinutes(s.cfg))):t('0 = sem fim')}
-async function applySession(x){if(st&&st.phase!='idle'&&!confirm(t('Isso zera o foco em andamento. Continuar?')))return;try{for(const [u,b] of [['/api/settings',new URLSearchParams({...x,auto:1})],['/api/cmd',new URLSearchParams({c:'reset'})],['/api/cmd',new URLSearchParams({c:'start'})]]){const r=await post(u,b);if(!r.ok)throw Error(r.status);filled=false;load(await r.json())}toast(t('Sessão iniciada'))}catch(e){toast(t('Falha: ')+(e.message||e))}}
+let sessOk=false,sessSet=false,SESSIONS=[DEEP_FOCUS,GENTLE_FOCUS];
+const sessionCopy=x=>({name:x.name,...Object.fromEntries(SESSION_KEYS.map(k=>[k,+x[k]]))});
+function sessionSame(a,b){return a.length==b.length&&a.every((x,i)=>x.name===b[i].name&&SESSION_KEYS.every(k=>+x[k]===+b[i][k]))}
+function sessionCheck(lista,campos){
+ if(!Array.isArray(lista))throw Error(t('Lista de sessões inválida'));if(lista.length>8)throw Error(t('Limite de 8 sessões'));
+ const nomes=new Set(),lim={work:[1,99],short:[1,99],long:[1,99],every:[1,8],cycles:[0,99]},out=[],linhas=[];
+ const bad=(i,k,m)=>{const e=campos&&campos[i]&&campos[i][k];if(e)e.setCustomValidity(m);throw Object.assign(Error(m),{field:e})};
+ lista.forEach((x,i)=>{if(!x||typeof x.name!='string')bad(i,'name',t('Nome inválido'));const name=x.name,n=[...name].length;
+  if(n<1||n>24||name.trim()!=name||!name.trim()||/[\u0000-\u001f\u007f]/.test(name))bad(i,'name',t('Use de 1 a 24 caracteres, sem espaços nas pontas'));
+  if(nomes.has(name))bad(i,'name',t('Os nomes não podem se repetir'));nomes.add(name);const y={name};
+  SESSION_KEYS.forEach(k=>{const v=String(x[k]);if(!/^\d{1,2}$/.test(v)||+v<lim[k][0]||+v>lim[k][1])bad(i,k,t('Número fora da faixa'));y[k]=+v});
+  out.push(y);linhas.push([name,...SESSION_KEYS.map(k=>y[k])].join('\t')+'\n')});
+ const texto=linhas.join('');if(new TextEncoder().encode(texto).length>1024)throw Error(t('A lista passa de 1024 bytes'));return{lista:out,texto}
+}
+let sessKey='';
+function sessionRender(s){const box=$('sessions'),key=JSON.stringify(SESSIONS);if(key!==sessKey){sessKey=key;box.textContent='';SESSIONS.forEach(x=>{const b=el('button');b.type='button';b.append(el('b',null,x.name),el('span',null,x.cycles?sessionDuration(sessionMinutes(x)):t('sem fim')),el('small',null,x.cycles?t('{0} focos de {1} min, com a pausa final',x.cycles,x.work):t('Focos de {0} min, sem fim',x.work)));b.addEventListener('click',()=>applySession(x));box.appendChild(b)})}
+ [...box.children].forEach((b,i)=>b.classList.toggle('on',!!(s&&s.cfg&&SESSION_KEYS.every(k=>s.cfg[k]==SESSIONS[i][k]))));if(s&&s.cfg){const c=s.cfg.cycles;$('cyclesum').textContent=c?t('{0} no total',sessionDuration(sessionMinutes(s.cfg))):t('0 = sem fim')}}
+async function sessLoad(avisa=false){try{const r=await fetch('/api/sessoes');if(!r.ok)throw Error(r.status);const j=await r.json();if((j.set!==0&&j.set!==1)||!Array.isArray(j.l))throw Error('resposta');const l=j.set?sessionCheck(j.l).lista:[sessionCopy(DEEP_FOCUS),sessionCopy(GENTLE_FOCUS)];sessOk=true;sessSet=!!j.set;SESSIONS=l;$('sessedit').disabled=false;$('sesswarn').textContent='';sessionRender(st);return j}catch(e){sessOk=false;sessSet=false;SESSIONS=[sessionCopy(DEEP_FOCUS),sessionCopy(GENTLE_FOCUS)];$('sessedit').disabled=true;$('sesswarn').textContent=t('Não foi possível ler as sessões do relógio.');sessionRender(st);if(avisa)toast(t('Falha: ')+'/api/sessoes');return null}}
+async function applySession(x){if(st&&st.phase!='idle'&&!confirm(t('Isso zera o foco em andamento. Continuar?')))return;try{const cfg=Object.fromEntries(SESSION_KEYS.map(k=>[k,x[k]]));for(const [u,b] of [['/api/settings',new URLSearchParams({...cfg,auto:1})],['/api/cmd',new URLSearchParams({c:'reset'})],['/api/cmd',new URLSearchParams({c:'start'})]]){const r=await post(u,b);if(!r.ok)throw Error(r.status);filled=false;load(await r.json())}toast(t('Sessão iniciada'))}catch(e){toast(t('Falha: ')+(e.message||e))}}
 function tab(i){curTab=i;document.querySelectorAll('.tab').forEach((e,k)=>e.classList.toggle('on',k==i));document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t==i));
- try{localStorage.tab=i}catch(e){}if(i==2)files();if(i==3)hooksLoad();if(i==4)appsLoad();if(i==1&&!STATS)loadStats();window.scrollTo(0,0)}
+ try{localStorage.tab=i}catch(e){}if(i==2)files();if(i==3)hooksLoad();if(i==4)appsLoad();if(i==1){if(!STATS)loadStats();sessLoad()}window.scrollTo(0,0)}
 const fkey=f=>f.pkg?'p:'+f.pkg:'t:'+f.t;  // embutido "t:N" ou pacote "p:id"
 const curKey=s=>s.cfg.theme==200?'p:'+s.cfg.pkg:'t:'+s.cfg.theme;
 const faceSrc=f=>f.src||(f.pkg?'/face?pkg='+encodeURIComponent(f.pkg):SITE+'img/faces/face-'+f.t+'.png');  // embutidos: prévia no site (não ocupa a flash)
@@ -466,6 +490,18 @@ function img(f){const i=new Image();i.alt=f.n;const u=faceImgs(f);
 // mesmo id que o relógio calcula (facepack.cpp: safeId)
 const safeId=s=>{let o='';for(let c of String(s||'').toLowerCase()){if(/[a-z0-9_-]/.test(c))o+=c;else if(c==' '&&o&&!o.endsWith('-'))o+='-';if(o.length>=23)break}return o}
 function el(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
+async function sessEdit(){
+ if(!await sessLoad(true)||!sessOk)return;let lista=SESSIONS.map(sessionCopy),campos=[];const c=$('sheetc');c.textContent='';c.appendChild(el('h3',null,t('Editar sessões')));const ed=el('div','sedit'),erro=el('small','serr');c.append(ed,erro);
+ const rodape=el('div','row'),add=el('button','btn',t('Adicionar')),saveb=el('button','btn p',t('Salvar'));rodape.append(add,saveb);c.appendChild(rodape);
+ const render=()=>{ed.textContent='';campos=[];lista.forEach((x,i)=>{const row=el('div','srow'),nome=el('input');nome.type='text';nome.value=x.name;nome.setAttribute('aria-label',t('Nome'));row.appendChild(nome);const nums=el('div','snums'),fs={name:nome};
+   [['work','Foco'],['short','Pausa curta'],['long','Pausa longa'],['every','A cada'],['cycles','Focos']].forEach(([k,l])=>{const lab=el('label',null,t(l)),inp=el('input');inp.type='number';inp.min=k=='cycles'?0:1;inp.max=k=='every'?8:99;inp.value=x[k];inp.setAttribute('aria-label',t(l));lab.appendChild(inp);nums.appendChild(lab);fs[k]=inp});row.appendChild(nums);
+   const actions=el('div','row'),total=el('small'),del=el('button',null,t('Apagar')),sum=()=>total.textContent=/^\d{1,2}$/.test(fs.cycles.value)&&+fs.cycles.value?sessionDuration(sessionMinutes(Object.fromEntries(SESSION_KEYS.map(k=>[k,+fs[k].value])))):t('sem fim');
+   nome.oninput=()=>{x.name=nome.value;nome.setCustomValidity('')};SESSION_KEYS.forEach(k=>fs[k].oninput=()=>{x[k]=fs[k].value;fs[k].setCustomValidity('');sum()});del.onclick=()=>{lista.splice(i,1);render()};actions.append(total,del);row.appendChild(actions);sum();ed.appendChild(row);campos.push(fs)});add.disabled=lista.length>=8;erro.textContent=lista.length>=8?t('Limite de 8 sessões'):''};
+ add.onclick=()=>{if(lista.length>=8)return toast(t('Limite de 8 sessões'));let n=lista.length+1,name;do{name=t('Sessão {0}',n++)}while(lista.some(x=>x.name==name));lista.push({name,work:25,short:5,long:20,every:4,cycles:4});render()};
+ saveb.onclick=async()=>{campos.forEach(f=>Object.values(f).forEach(e=>e.setCustomValidity('')));let v;try{v=sessionCheck(lista,campos);erro.textContent=''}catch(e){erro.textContent=e.message;if(e.field)e.field.reportValidity();return}saveb.disabled=true;try{const r=await post('/api/sessoes',new URLSearchParams({t:v.texto})),txt=await r.text();if(!r.ok)throw Error(txt||r.status);const j=JSON.parse(txt),volta=j.set&&sessionCheck(j.l).lista;if(!volta||!sessionSame(v.lista,volta))throw Error(t('O relógio não guardou. Tente de novo.'));sessOk=sessSet=true;SESSIONS=volta;sessionRender(st);closeSheet();toast(t('Sessões salvas'))}catch(e){erro.textContent=e.message||e;toast(t('Falha: ')+(e.message||e))}finally{saveb.disabled=false}};
+ render();$('sheet').classList.add('v')
+}
+$('sessedit').onclick=sessEdit;
 // ---------- mostradores ----------
 function loadFaces(){return fetch('/api/faces').then(r=>r.json()).then(j=>{let t=0;FACES=j.map(f=>({n0:f.n,d0:f.d,n:f.n,d:f.d,a:f.a||'',pkg:f.pkg,x:f.x||'',t:f.pkg?null:t++}));buildFaces();$('curimg').dataset.k='';if(st)load(st);
  // estilos e animação dos pacotes instalados vêm do catálogo do site (uma vez por visita; sem internet vale o último guardado)
@@ -494,30 +530,35 @@ function fchips(){const k=fcur(),c=$('fchips');c.innerHTML='';
 // miniapp: pacote que lê dados de fora (o relógio devolve os campos em "x"); fica na página Miniapps, não em Relógio
 const isApp=f=>!!f.x;
 const faceImgs=f=>f.src||!f.pkg?[faceSrc(f),null]:[faceSrc(f),...(isApp(f)?[SITE+'miniapps/'+encodeURIComponent(f.pkg)+'.png']:[]),CATALOG+encodeURIComponent(f.pkg)+'.png',null];
-function buildFaces(){FACES.forEach(f=>{const b=f.pkg==null&&LG&&BUILTIN[f.t];f.n=b?b[LG-1][0]:f.n0;f.d=b?b[LG-1][1]:f.d0});const g=$('faces'),d=$('dl'),a=$('apps');g.innerHTML='';d.innerHTML='';a.innerHTML='';FACES.forEach(f=>{const b=el('button','face'),s=el('div','scr');b.dataset.k=fkey(f);b.dataset.f=ftok(f);s.appendChild(img(f));
+function buildFaces(){FACES.forEach(f=>{const b=f.pkg==null&&LG&&(LG>=3?(BUILTINX[LG][f.t]||BUILTIN[f.t]&&BUILTIN[f.t][0]):BUILTIN[f.t]&&BUILTIN[f.t][LG-1]);f.n=b?b[0]:f.n0;f.d=b?b[1]:f.d0});const g=$('faces'),d=$('dl'),a=$('apps');g.innerHTML='';d.innerHTML='';a.innerHTML='';FACES.forEach(f=>{const b=el('button','face'),s=el('div','scr');b.dataset.k=fkey(f);b.dataset.f=ftok(f);s.appendChild(img(f));
  if(isApp(f)){b.classList.add('app');const m=el('div','appmain'),i=el('div','appi'),e=el('small','ast'),w=el('div','states'),si=new Image();e.dataset.x=f.x;i.append(el('span',null,f.n),el('small','reads',t('Lê')+': '+f.x.split(',').join(' · ')),e);m.append(s,i);si.loading='lazy';si.decoding='async';si.alt='';si.onerror=()=>w.remove();si.src=SITE+'miniapps/'+encodeURIComponent(f.pkg)+'-estados.png';w.appendChild(si);b.append(m,w)}else b.append(s,el('span',null,f.n));b.onclick=()=>faceSheet(f);
  (isApp(f)?a:f.pkg?d:g).appendChild(b)});
  $('appsnone').hidden=a.children.length>0;appsState();fchips()}
 const rotKeys=()=>st&&st.cfg.rot?st.cfg.rot.split(',').filter(Boolean):[];
+const rotTimes=()=>{const m={};(st&&st.cfg.rott||'').split(',').forEach(x=>{const p=x.lastIndexOf('=');if(p>0)m[x.slice(0,p)]=+x.slice(p+1)});return m};
 const ROTMAX=300;  // teto do rotSet (album.cpp): acima disso o relógio cortaria a lista em silêncio
 // rodízio novo: os que já estavam e seguem marcados ficam no lugar (chave sem cartão, como um pacote que não carregou, fica);
 // os recém-marcados entram no fim, na ordem do toque
 const rotMerge=(cur,known,sel)=>cur.filter(k=>sel.includes(k)||!known.includes(k)).concat(sel.filter(k=>!cur.includes(k)));
 const rotOver=l=>l.join(',').length>ROTMAX&&(toast(t('Não cabe mais no relógio')),true);  // passou do teto: avisa e não grava
+const rotTimeStr=(m,l)=>l.filter(k=>m[k]).map(k=>k+'='+m[k]).join(',');
+const rotTimeOver=s=>s.length>ROTMAX&&(toast(t('Não cabe mais no relógio')),true);
 // uma gravação por ação; confere o que o relógio guardou
-function rotPost(l,m){return save({rot:l}).then(s=>{closeSheet();toast(t(s.cfg.rot!=l?'O relógio não guardou. Tente de novo.':l&&!s.cfg.rotmin?'Rodízio salvo. Escolha o intervalo em "Trocar de mostrador".':m))})}
+function rotPost(l,tt,m){return save({rot:l,rott:tt}).then(s=>{closeSheet();toast(t(s.cfg.rot!=l||s.cfg.rott!=tt?'O relógio não guardou. Tente de novo.':l&&!s.cfg.rotmin?'Rodízio salvo. Escolha o intervalo em "Trocar de mostrador".':m))})}
 // lista vazia: o relógio para de trocar e fica no mostrador que está na tela
-function rotClear(){const n=rotKeys().length;if(n&&confirm(t('Tirar os {0} mostradores do rodízio? O relógio fica no atual.',n)))return rotPost('','Rodízio vazio')}
+function rotClear(){const n=rotKeys().length;if(n&&confirm(t('Tirar os {0} mostradores do rodízio? O relógio fica no atual.',n)))return rotPost('','','Rodízio vazio')}
 // vários de uma vez: os mostradores instalados com caixa de marcar; a lista é montada do estado na hora de salvar
-function rotEdit(){const c=$('sheetc'),known=FACES.map(fkey);let sel=rotKeys();c.innerHTML='';
+function rotEdit(){const c=$('sheetc'),known=FACES.map(fkey),old=st&&st.cfg.rott||'';let sel=rotKeys(),tm=rotTimes();c.innerHTML='';
  c.append(el('h3',null,t('Editar rodízio')),el('p',null,t('Os novos entram no fim, na ordem do toque.')));
- const g=el('div','stg');FACES.forEach(f=>{const k=fkey(f),r=el('label','it'),x=el('input');x.type='checkbox';x.checked=sel.includes(k);
-  x.onchange=()=>{if(!x.checked)sel=sel.filter(y=>y!=k);else if(rotOver(rotMerge(rotKeys(),known,sel.concat(k))))x.checked=false;else sel.push(k)};
-  r.append(img(f),el('span',null,f.n),...isApp(f)?[el('em','sel',t('miniapp'))]:[],x);g.appendChild(r)});
+ if(st&&!st.cfg.rotmin)c.append(el('small',null,t('Escolha o intervalo em "Trocar de mostrador": sem ele o rodízio fica parado e os tempos não valem.')));
+ const g=el('div','stg');FACES.forEach(f=>{const k=fkey(f),r=el('label','it'),x=el('input'),q=el('select'),v=tm[k]||0;x.type='checkbox';x.checked=sel.includes(k);
+  [[0,'Padrão'],[30,'30 s'],[60,'1 min'],[300,'5 min'],[900,'15 min']].concat(v&&![30,60,300,900].includes(v)?[[v,t('{0} s',v)]]:[]).forEach(o=>{const z=el('option',null,t(o[1]));z.value=o[0];q.appendChild(z)});q.value=v;q.hidden=!x.checked;q.onchange=()=>{if(q.value==0)delete tm[k];else tm[k]=+q.value};
+  x.onchange=()=>{if(!x.checked){sel=sel.filter(y=>y!=k);delete tm[k]}else if(rotOver(rotMerge(rotKeys(),known,sel.concat(k))))x.checked=false;else sel.push(k);q.hidden=!x.checked};
+  r.append(img(f),el('span',null,f.n),...isApp(f)?[el('em','sel',t('miniapp'))]:[],q,x);g.appendChild(r)});
  const r=el('div','row'),a=el('button','btn',t('Cancelar')),b=el('button','btn p',t('Salvar'));r.style.marginTop='12px';a.onclick=closeSheet;
- b.onclick=()=>{const l=rotMerge(rotKeys(),known,sel);if(l.join(',')==rotKeys().join(','))closeSheet();else if(!rotOver(l))rotPost(l.join(','),'Rodízio salvo')};
+ b.onclick=()=>{const l=rotMerge(rotKeys(),known,sel),ls=l.join(','),tt=rotTimeStr(tm,l);if(ls==rotKeys().join(',')&&tt==old)closeSheet();else if(!rotOver(l)&&!rotTimeOver(tt))rotPost(ls,tt,'Rodízio salvo')};
  r.append(a,b);c.append(g,r);$('sheet').classList.add('v')}
-function rotToggle(f){const k=fkey(f),l=rotKeys(),on=l.includes(k);if(!on&&rotOver(l.concat(k)))return;save({rot:(on?l.filter(x=>x!=k):l.concat(k)).join(',')}).then(()=>{closeSheet();toast(t(on?'Fora do rodízio':'Incluído no rodízio'))})}
+function rotToggle(f){const k=fkey(f),l=rotKeys(),on=l.includes(k),n=on?l.filter(x=>x!=k):l.concat(k);if(!on&&rotOver(n))return;save(on?{rot:n.join(','),rott:rotTimeStr(rotTimes(),n)}:{rot:n.join(',')}).then(()=>{closeSheet();toast(t(on?'Fora do rodízio':'Incluído no rodízio'))})}
 function faceSheet(f){const c=$('sheetc');c.innerHTML='';const s=el('div','scr');s.appendChild(img(f));c.appendChild(s);
  c.append(el('h3',null,f.n),el('p',null,f.d+(f.a?' · '+t('por')+' '+f.a:'')+(f.pkg?' · '+t('instalado'):'')));
  if(st&&st.phase!='idle')c.appendChild(el('p',null,t('Durante o Pomodoro o relógio mostra o timer; a prévia aparece quando ele parar.')));
@@ -555,7 +596,7 @@ const EDV='__EDV__',EDI='__EDI__';
 let edJs=null;
 async function editor(){if(!window.faceEditor){toast(t('Abrindo o editor...'));edJs=edJs||new Promise((ok,no)=>{const s=document.createElement('script');if(EDV[0]=='_')s.src='/editor.js';else{s.src=SITE+'panel/editor-'+EDV+'.js';s.integrity=EDI;s.crossOrigin='anonymous'}s.onload=ok;s.onerror=no;document.head.appendChild(s)});
  try{await edJs}catch(e){edJs=null;return toast(t('Sem internet no navegador'))}}
- faceEditor({t,el,toast,install,safeId,c:$('sheetc'),lang:LANGS[LG],accent:st?st.cfg.color:'#ff5a47'});$('sheet').classList.add('v')}
+ faceEditor({t,el,toast,install,safeId,c:$('sheetc'),lang:LG<3?LANGS[LG]:'en',accent:st?st.cfg.color:'#ff5a47'});$('sheet').classList.add('v')}
 function closeSheet(){$('sheet').classList.remove('v')}
 const SPR={"t_feliz":{"p":"Re8402f ra8261e hff9178 G60c454 g2e8034 k280e0c pffa0a0 wffffff m7a1010","r":["......gGGg......","....gGGGGGGg....","...rRRgGGgRRr...","..rRRRRggRRRRr..",".rRhhRRRRRRRRRr.",".rRhRRRRRRRRRRr.","rRRRRRRRRRRRRRRr","rRRRRRRRRRRRRRRr","rRRRRkRRRRkRRRRr","rRRRRkRRRRkRRRRr","rRRpRRRRRRRRpRRr",".rRRRRkRRkRRRRr.",".rRRRRRkkRRRRRr.","..rrRRRRRRRRrr..","....rrrrrrrr....","................"]},"t_comemorando":{"p":"Re8402f ra8261e hff9178 G60c454 g2e8034 k280e0c pffa0a0 wffffff m7a1010 Yffc428 B4f8dff","r":[".Y....gGGg....B.","....gGGGGGGg....","r..rRRgGGgRRr..r",".rrRRRRggRRRRrr.",".rRhhRRRRRRRRRr.","BrRhRRRRRRRRRRrY","rRRRRRRRRRRRRRRr","rRRRRRRRRRRRRRRr","rRRRRkRRRRkRRRRr","rRRRkRkRRkRkRRRr","rRRpRRRRRRRRpRRr",".rRRRRkkkkRRRRr.",".rRRRRkmmkRRRRr.","..rrRRRkkRRRrr..","....rrrrrrrr....","................"]},"chama":{"p":"oa8261e Rff5a2a Yffc83a wfff4c0","r":["...o....","...oo...","..oRo...","..oRRo.o",".oRRRooR",".oRYRRRo","oRRYYRRo","oRYYwYRo","oRYwwYRo",".oRYYRo.","..oooo.."]},"p_broto":{"p":"o3d2414 S7a4a2e sf0d58c g2e8034 G60c454 yffd23f cff8c1a v8fd16a V4f9a3a Re8402f ra8261e Dffcc33 dc48a12 wffffff","r":["................","................","................","................","................","................",".....gGg.gGg....","....gGGGgGGGg...",".....gggGggg....",".......gG.......",".......gG.......",".......gG.......","......oooo......",".....oSSSSo.....","....oSSSSSSo....","...oSSSSSSSSo..."]}};
 // ---------- sequência, horta, conquistas e cartão de compartilhar ----------
@@ -596,7 +637,7 @@ let shareJs=null;
 async function shareDay(){if(!st)return;if(!STATS)await loadStats();
  if(!window.shareCard){toast(t('Preparando o cartão...'));shareJs=shareJs||new Promise((ok,no)=>{const s=document.createElement('script');if(SHV[0]=='_')s.src='/share.js';else{s.src=SITE+'panel/share-'+SHV+'.js';s.integrity=SHI;s.crossOrigin='anonymous'}s.onload=ok;s.onerror=no;document.head.appendChild(s)});
   try{await shareJs}catch(e){shareJs=null;return toast(t('Sem internet no navegador'))}}
- const now=new Date(),big=shareCard({spr,SPR,t,LG,today:st.today,goal:st.cfg.goal,streak:st.streak||0,days:STATS?STATS.days:[]});
+ const now=new Date(),big=shareCard({spr,SPR,t,LG:LG<3?LG:1,today:st.today,goal:st.cfg.goal,streak:st.streak||0,days:STATS?STATS.days:[]});
  const blob=await new Promise(r=>big.toBlob(r,'image/png')),file=new File([blob],'pomodoro-'+now.toISOString().slice(0,10)+'.png',{type:'image/png'});
  if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:'SmallTV Pomodoro'})}catch(e){}return}
  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=file.name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000);toast(t('Imagem salva'))}
@@ -610,7 +651,7 @@ function checkUpdate(){const get=f=>fetch(SITE+'firmware/'+f,{cache:'no-store'})
  Promise.all([get('latest.json'),st&&st.cfg.beta?get('beta.json'):null]).then(([a,b])=>{const l2=!!(st&&st.fs&&st.fs.l2);a=updL2(a,l2);b=updL2(b,l2);let u=a;if(b&&(!u||vnum(b.version)>vnum(u.version)))u=Object.assign({beta:1},b);
   if(!u||!st||vnum(u.version)<=vnum(st.ver))return;UPD=u;let skip='';try{skip=localStorage.updSkip||''}catch(e){}if(skip==u.version)return;showUpdate()})}
 function showUpdate(){const u=UPD;if(!u)return;$('updt').textContent=t(u.beta?'Versão de teste {0} disponível':'Nova versão {0} disponível',u.version);const n=$('updn');n.innerHTML='';
- ((u.notes||{})[LANGS[LG]]||(u.notes||{}).pt||[]).forEach(x=>n.appendChild(el('li',null,x)));$('upd').classList.add('v')}
+ ((u.notes||{})[LANGS[LG]]||(LG>=3&&(u.notes||{}).en)||(u.notes||{}).pt||[]).forEach(x=>n.appendChild(el('li',null,x)));$('upd').classList.add('v')}
 function skipUpdate(){try{localStorage.updSkip=UPD.version}catch(e){}$('upd').classList.remove('v')}
 // u.layout "4m2m": a versão reorganiza a memória de arquivos (o programa ganha espaço, o LittleFS muda de lugar e é formatado no primeiro início).
 // Relógios que ainda não informam fs.l2 estão no layout antigo: salva o backup completo ANTES e só então atualiza.
@@ -637,9 +678,9 @@ const b64=buf=>{const u=new Uint8Array(buf);let o='';for(let i=0;i<u.length;i+=0
 const unb64=d=>{const o=atob(d),u=new Uint8Array(o.length);for(let i=0;i<o.length;i++)u[i]=o.charCodeAt(i);return u};
 // Inclui também as fotos e GIFs (base64) e os links dos avisos: é o que a migração de layout da memória apaga. Devolve true se salvou.
 async function backup(){try{const s=await (await fetch('/api/state')).json(),h=await (await fetch('/api/stats')).json(),c={...s.cfg};delete c.lock;
- const hk=await fetch('/api/hooks').then(r=>r.ok?r.json():null).catch(()=>null),fl=(await (await fetch('/api/files')).json()).files,media=[];
+ const sj=await fetch('/api/sessoes').then(async r=>{if(!r.ok)return null;const j=await r.json();return j.set===1?{set:1,l:sessionCheck(j.l).lista}:{set:0}}).catch(()=>null),hk=await fetch('/api/hooks').then(r=>r.ok?r.json():null).catch(()=>null),fl=(await (await fetch('/api/files')).json()).files,media=[];
  for(let i=0;i<fl.length;i++){toast(t('Salvando {0} de {1}...',i+1,fl.length));const r=await fetch('/fs?f='+encodeURIComponent(fl[i].n));if(!r.ok)throw fl[i].n;media.push({n:fl[i].n,d:b64(await r.arrayBuffer())})}
- const b={app:'smalltv-pomodoro',format:2,ver:s.ver,date:new Date().toISOString().slice(0,10),cfg:c,stats:h,faces:FACES.filter(f=>f.pkg).map(f=>f.pkg),hooks:hk,media};
+ const b={app:'smalltv-pomodoro',format:2,ver:s.ver,date:new Date().toISOString().slice(0,10),cfg:c,stats:h,faces:FACES.filter(f=>f.pkg).map(f=>f.pkg),hooks:hk,media};if(sj&&sj.set)b.sessoes=sj.l;
  const blob=new Blob([JSON.stringify(b)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='smalltv-backup-'+b.date+'.json';a.click();
  setTimeout(()=>URL.revokeObjectURL(a.href),60000);toast(t('Backup salvo: ajustes, histórico, mostradores, avisos, fotos e GIFs'));return true}
  catch(x){toast(t('Falha no backup: ')+t(String(x)));return false}}
@@ -665,6 +706,7 @@ $('rbk').onchange=async e=>{const file=e.target.files[0];e.target.value='';if(!f
    await save(c)}],
   ['Histórico',async()=>{if(!(b.stats&&b.stats.days))return;
    await need(await post('/api/statsimport',new URLSearchParams({day:b.stats.day,best:b.stats.best,total:b.stats.total,days:b.stats.days.join(',')})));await loadStats()}],
+  ...(Object.prototype.hasOwnProperty.call(b,'sessoes')?[['Sessões',async()=>{const v=sessionCheck(b.sessoes),r=await post('/api/sessoes',new URLSearchParams({t:v.texto})),txt=await r.text();if(!r.ok)throw txt||r.status;const j=JSON.parse(txt),volta=j.set&&sessionCheck(j.l).lista;if(!volta||!sessionSame(v.lista,volta))throw t('O relógio não guardou. Tente de novo.');sessOk=sessSet=true;SESSIONS=volta;sessionRender(st)}]]:[]),
   ['Avisos',async()=>{if(b.hooks&&(b.hooks.w||b.hooks.b))await need(await post('/api/hooks',new URLSearchParams({w:b.hooks.w||'',b:b.hooks.b||''})))}],
   ['Fotos e GIFs',async()=>{if(!(b.media&&b.media.length))return;let nf=0;
    const have=new Set((await (await fetch('/api/files')).json()).files.map(x=>x.n.split('/').pop()));
@@ -672,7 +714,7 @@ $('rbk').onchange=async e=>{const file=e.target.files[0];e.target.value='';if(!f
     try{const fd=new FormData();fd.append('f',new Blob([unb64(m.d)]),nm);if(!(await fetch('/api/upload',{method:'POST',body:fd})).ok)nf++}catch(x){nf++}}
    if(nf)throw t('{0} foto(s)/GIF(s) não couberam e ficaram de fora',nf)}]]);
  if(!R.bad.some(x=>x[0]=='Fotos e GIFs')&&st&&st.fs&&st.fs.mig)migDone();   // o aviso de migração só some se as fotos voltaram
- try{await loadFaces();files();filled=false}catch(x){}
+ try{await loadFaces();await sessLoad();files();filled=false}catch(x){}
  if(!R.bad.length)return toast(t('Backup restaurado'));
  alert(t('Backup restaurado com falhas.')+'\n\n'+t('Entrou: {0}',R.ok.map(n=>t(n)).join(', ')||'—')+'\n'+t('Falhou:')+'\n'+R.bad.map(([n,m])=>'• '+t(n)+': '+t(m)).join('\n'))};
 // ---------- avisos de fim de fase (endereços chamados pelo relógio) ----------
@@ -854,7 +896,7 @@ let qt;$('q').oninput=()=>{clearTimeout(qt);const q=$('q').value.trim();if(q.len
 // ---------- armazenamento: tudo o que ocupa a memória de arquivos (/api/storage) ----------
 // Agrupa por tipo; "Outros" é o que o Pomodoro não usa (em relógios vindos do firmware original, os arquivos dele).
 // O relógio marca com k o que precisa para funcionar (sem botão de apagar).
-const STG=[['Fotos e GIFs',p=>p.startsWith('/image/')||p.startsWith('/gif/')],['Mostradores baixados',p=>p.startsWith('/faces/')],['Painel',p=>p.startsWith('/www/')],['Histórico e ajustes',p=>['/stats.bin','/hooks.txt','/rotation.txt','/apps.key'].includes(p)]];
+const STG=[['Fotos e GIFs',p=>p.startsWith('/image/')||p.startsWith('/gif/')],['Mostradores baixados',p=>p.startsWith('/faces/')],['Painel',p=>p.startsWith('/www/')],['Histórico e ajustes',p=>['/stats.bin','/hooks.txt','/rotation.txt','/rotime.txt','/apps.key','/sessoes.txt'].includes(p)]];
 function storage(){fetch('/api/storage').then(r=>r.json()).then(j=>{const c=$('sheetc');c.innerHTML='';c.appendChild(el('h3',null,t('Memória de arquivos')));
  const fl=j.files.filter(x=>!x.d),sum=fl.reduce((a,x)=>a+x.s,0);c.appendChild(el('p',null,t('{0} usados de {1}',kb(j.used),kb(j.total))));
  const box=el('div','stg'),known=new Set(),mine=['/image','/gif','/faces','/www'];
@@ -901,5 +943,10 @@ $('up').onchange=async e=>{const fs=[...e.target.files];e.target.value='';let ok
 $('op').onsubmit=e=>{e.preventDefault();const o=e.target;post('/api/otapass',new URLSearchParams(new FormData(o))).then(r=>r.text()).then(x=>{toast(t(x));o.reset()})};
 document.onkeydown=e=>{if(e.code=='Space'&&curTab==1&&!/INPUT|BUTTON|SELECT/.test(e.target.tagName)){e.preventDefault();cmd('toggle')}};
 function poll(){if(updating)return setTimeout(poll,1000);fetch(st&&st.cfg?'/api/state?cfg=0':'/api/state').then(r=>r.json()).then(load).catch(()=>$('net').className='off').finally(()=>setTimeout(poll,1000))}
-i18n();loadI18n();loadFaces();let t0=0;try{t0=+localStorage.tab||0}catch(e){}tab(t0);poll();
-</script></body></html>
+i18n();loadI18n();loadFaces();sessLoad();let t0=0;try{t0=+localStorage.tab||0}catch(e){}tab(t0);poll();
+</script><script>
+// Relógio no computador: a coluna da esquerda acompanha a rolagem da página. Se for mais alta que a tela, ela desce
+// junto até o fim aparecer e para ali (top negativo), sem rolagem própria.
+(()=>{const c=document.querySelector('#t0 .col1');if(!c)return;const f=()=>{c.style.top=matchMedia('(min-width:900px)').matches?Math.min(76,innerHeight-c.offsetHeight-16)+'px':''};addEventListener('resize',f);if(window.ResizeObserver)new ResizeObserver(f).observe(c);f()})();
+</script>
+</body></html>

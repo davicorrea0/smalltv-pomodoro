@@ -196,7 +196,9 @@ static void hueCommand(int i, const String &body) {
     alexaLast = bri ? 8 : i == 1 ? 5 : 6;
   }
   alexaMin = min;
-  previewUntil = 0;  // a tela vai direto para o timer
+  // a tela vai direto para o timer; se a prévia (ou o "mostrar agora") tinha carregado um pacote, o salvo volta para o motor
+  if (previewUntil && previewTheme == THEME_PACK) restoreActivePack();
+  previewUntil = 0;
 }
 
 void alexaApi() {

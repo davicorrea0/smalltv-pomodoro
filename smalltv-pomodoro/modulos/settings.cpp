@@ -89,7 +89,7 @@ void loadSettings() {
   if (cfg.theme >= THEME_COUNT && !(cfg.theme == THEME_PACK && cfg.facePkg[0])) cfg.theme = THEME_MATRIX;
   if (!cfg.dailyGoal) cfg.dailyGoal = 8;
   if (cfg.activity >= ACT_COUNT) cfg.activity = ACT_READ;
-  if (cfg.lang > 2) cfg.lang = 0;
+  if (cfg.lang > 5) cfg.lang = 0;
   if (cfg.nightSun > 1) cfg.nightSun = 0;
   if (cfg.nightBri > 100) cfg.nightBri = 15;
   if (cfg.rotMin > 240) cfg.rotMin = 0;

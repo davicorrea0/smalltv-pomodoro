@@ -61,11 +61,63 @@ void tftBitmap(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h) {
   tft.endWrite();
 }
 
+// Versão para pixels já em Big-Endian (ST7789 nativo): evita os dois swapBytes() da Adafruit_SPITFT em fotos/GIFs.
+void tftPixelsBE(uint16_t *px, int n) {
+  if (!((uintptr_t)px & 3)) {
+    tft.writePixels(px, n, true, true);
+    return;
+  }
+  while (n > 0) {
+    int k = n < 240 ? n : 240;
+    memmove(uiRowBuf(), px, k * 2);
+    tft.writePixels(uiRowBuf(), k, true, true);
+    px += k;
+    n -= k;
+  }
+}
+
+void tftBitmapBE(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h) {
+  int x0 = max<int>(x, 0), y0 = max<int>(y, 0), x1 = min<int>(x + w, tft.width()), y1 = min<int>(y + h, tft.height());
+  if (x1 <= x0 || y1 <= y0) return;
+  tft.startWrite();
+  tft.setAddrWindow(x0, y0, x1 - x0, y1 - y0);
+  for (int r = y0; r < y1; r++) tftPixelsBE(px + (r - y) * w + (x0 - x), x1 - x0);
+  tft.endWrite();
+}
+
 // ---------- tela (desenho em ui.cpp) ----------
 // Ajuste anti-fantasma: a tensão comum (VCOM) ideal muda de painel para painel. Fora do ponto, sobra
 // corrente contínua no cristal líquido e uma imagem parada por horas fica marcada ("fantasma"). O painel
 // mostra uma estampa que tremula quando o VCOM está errado; a pessoa ajusta até ela parar e salva.
 void applyVcom(uint8_t v) { tft.sendCommand(0xBB, &v, 1); }
+
+// Calibração analógica padrão ST7789V 240x240 IPS (gama + contraste de fotos/GIFs).
+// A Adafruit_ST7789 não envia estes comandos, deixando os meios-tons lavados; VCOM (0xBB) segue em applyVcom().
+static const uint8_t PANEL_GAMMA_INIT[] PROGMEM = {
+  0xB2, 5, 0x0C, 0x0C, 0x00, 0x33, 0x33,                                                    // PORCTRL
+  0xB7, 1, 0x35,                                                                            // GCTRL (VGH/VGL)
+  0xC0, 1, 0x2C,                                                                            // LCMCTRL
+  0xC2, 2, 0x01, 0xFF,                                                                      // VDVVRHEN (habilita VRHS/VDVSET)
+  0xC3, 1, 0x12,                                                                            // VRHS (4,45 V: contraste)
+  0xC4, 1, 0x20,                                                                            // VDVSET (0 V)
+  0xC6, 1, 0x0F,                                                                            // FRCTRL2 (60 Hz)
+  0xD0, 2, 0xA4, 0xA1,                                                                      // PWCTRL1
+  0xE0, 14, 0xD0, 0x04, 0x0D, 0x11, 0x13, 0x2B, 0x3F, 0x54, 0x4C, 0x18, 0x0D, 0x0B, 0x1F, 0x23,  // PVGAMCTRL
+  0xE1, 14, 0xD0, 0x04, 0x0C, 0x11, 0x13, 0x2C, 0x3F, 0x44, 0x51, 0x2F, 0x1F, 0x1F, 0x20, 0x23,  // NVGAMCTRL
+  0
+};
+
+static void applyPanelGamma() {
+  uint8_t buf[14];
+  for (const uint8_t *p = PANEL_GAMMA_INIT;;) {
+    uint8_t cmd = pgm_read_byte(p++);
+    if (!cmd) break;
+    uint8_t n = pgm_read_byte(p++);
+    memcpy_P(buf, p, n);
+    p += n;
+    tft.sendCommand(cmd, buf, n);
+  }
+}
 
 uint32_t vcomTestUntil = 0;  // teste na tela até este millis()
 
@@ -283,12 +335,12 @@ void bootAnim(uint8_t done) {
   uiBootProgress(now, done);
 }
 
-static uint32_t colorTestUntil = 0;
+uint32_t colorTestUntil = 0;
 
 // ---------- setup / loop ----------
 // Depois de conectar, a tela de início fica uns segundos com o endereço do painel; o loop segue normal (painel,
 // SNTP, clima) em vez de travar num delay. Ela sai antes se alguém usar o relógio.
-static uint32_t bootHoldUntil = 0;
+uint32_t bootHoldUntil = 0;
 
 static bool bootTitleTime = false;  // o título já diz "Conectado" (a hora chegou)
 
@@ -317,6 +369,7 @@ void setup() {
 
   tft.init(240, 240, SPI_MODE3);
   tft.setSPISpeed(40000000);  // 80 MHz passa do limite do ST7789: a imagem vira lixo
+  applyPanelGamma();
   applyVcom(cfg.vcom);
   uiBegin(&tft);
   uiSetLang(cfg.lang);
@@ -343,6 +396,7 @@ void setup() {
       rotList = rf.readString();
       rf.close();
     }
+    rotTimesLoad();
   }
   hooksLoad();
   if (recoveryMode) {  // sem pacotes, álbum nem clima: só o necessário para consertar

@@ -3,12 +3,15 @@
 #include "../src/JPEGDEC/JPEGDEC.h"
 #include "../src/AnimatedGIF/AnimatedGIF.h"
 #include "../gifcheck.h"
+#include "../album_gif_renderer.h"
+#include "../rodizio.h"
 
 // ---------- álbum: fotos (JPG) e GIFs no LittleFS; rodízio de mostradores ----------
 // Lista "t:1,p:bento,..." (embutido pelo número, pacote pelo id) em /rotation.txt; a cada cfg.rotMin
 // minutos, com o relógio parado (sem Pomodoro nem prévia), passa para o próximo. A troca não grava na
 // EEPROM (seria uma gravação a cada troca): vale o que estiver salvo ao reiniciar.
 String rotList;
+String rotTimes;
 
 // Troca do rodízio: a espera é o tempo DECORRIDO desde a última troca (não um prazo em millis(), que parece "no futuro"
 // depois de 24,8 dias sem trocar, por exemplo se o rodízio for ligado só depois disso). Sem troca ainda, a primeira vale já.
@@ -34,9 +37,11 @@ AnimatedGIF *gif = nullptr;
 
 static File mediaFile;
 
-static int gifOffX = 0, gifOffY = 0;
+static int gifOffX = 0, gifOffY = 0, gifScale = 1;
 
 static uint32_t nextFrameAt = 0;
+static uint8_t gifNoMemTries = 0;
+static AlbumGifRenderState gifRender;
 
 static bool endsWithIgnoreCase(const String &s, const char *suffix) {
   size_t n = s.length(), m = strlen(suffix);
@@ -107,7 +112,7 @@ static int32_t jpgSeek(JPEGFILE *f, int32_t pos) {
 static int jpgDraw(JPEGDRAW *p) {
   if (p->y >= 240) return 0;
   if (!uiClip.on) {
-    tftBitmap(p->x, p->y, p->pPixels, p->iWidth, p->iHeight);
+    tftBitmapBE(p->x, p->y, p->pPixels, p->iWidth, p->iHeight);
     return 1;
   }
   blit(p->x, p->y, p->pPixels, p->iWidth, p->iHeight);  // recorta para a área suja; fora da tela, cai na faixa
@@ -125,7 +130,7 @@ static int jpgCheckDraw(JPEGDRAW *) {
   return 1;
 }
 
-// O decodificador (~18 KB) precisa de um bloco contíguo; sem ele, nullptr (e o arquivo não é culpado).
+// O decodificador (~7,7 KB) + 2 tabelas AC (4 KB cada) cabem sem tabelas de faixa: sem bloco contiguo para JPEGDEC, nullptr (e o arquivo não é culpado).
 static JPEGDEC *jpgAlloc() {
   if (ESP.getMaxFreeBlockSize() < sizeof(JPEGDEC) + 1024) return nullptr;
   return new (std::nothrow) JPEGDEC();
@@ -158,7 +163,7 @@ bool drawJpgAt(const char *file, int x, int y) {
   if (!jpg) return false;
   bool ok = false;
   if (jpg->open(path.c_str(), mediaOpen, mediaClose, jpgRead, jpgSeek, jpgDraw) && jpgDimensionsOk(jpg)) {
-    jpg->setPixelType(RGB565_LITTLE_ENDIAN);
+    jpg->setPixelType(uiClip.on ? RGB565_LITTLE_ENDIAN : RGB565_BIG_ENDIAN);
     ok = jpg->decode(x, y, 0);
   }
   jpg->close();
@@ -167,14 +172,14 @@ bool drawJpgAt(const char *file, int x, int y) {
 }
 
 static JpgResult drawJpg(const String &f) {
-  JPEGDEC *jpg = jpgAlloc();  // ~18 KB: só existe durante a decodificação
+  JPEGDEC *jpg = jpgAlloc();  // ~7,7 KB + 2x4 KB: só existem durante a decodificação
   if (!jpg) return JPG_NOMEM;
   bool ok = false;
   if (jpg->open(f.c_str(), mediaOpen, mediaClose, jpgRead, jpgSeek, jpgDraw) && jpgDimensionsOk(jpg)) {
     int w = jpg->getWidth(), h = jpg->getHeight(), sc = 1;
     while (sc < 8 && (w / sc > 240 || h / sc > 240)) sc *= 2;
     int opt = sc == 2 ? JPEG_SCALE_HALF : sc == 4 ? JPEG_SCALE_QUARTER : sc == 8 ? JPEG_SCALE_EIGHTH : 0;
-    jpg->setPixelType(RGB565_LITTLE_ENDIAN);
+    jpg->setPixelType(RGB565_BIG_ENDIAN);
     ok = jpg->decode(max(0, (240 - w / sc) / 2), max(0, (240 - h / sc) / 2), opt);
   }
   bool noMem = !ok && jpg->getLastError() == JPEG_ERROR_MEMORY;
@@ -214,56 +219,41 @@ bool validGif(const String &path) {
   return error == nullptr;
 }
 
+struct AlbumGifDisplay {
+  void startWrite() { tft.startWrite(); }
+  void endWrite() { tft.endWrite(); }
+  void setAddrWindow(int x, int y, int w, int h) { tft.setAddrWindow(x, y, w, h); }
+  void writePixelsBE(uint16_t *p, int n) { tftPixelsBE(p, n); }
+  void fillRect(int x, int y, int w, int h, uint16_t c) { tft.fillRect(x, y, w, h, c); }
+};
+
 static void gifDraw(GIFDRAW *p) {
-  uint16_t *buf = uiRowBuf();  // alinhado: tftPixels não copia
-  int y = p->iY + p->y + gifOffY;
-  if (y < 0 || y >= 240) return;
-  int x0 = p->iX + gifOffX;
-  int w = p->iWidth;
-  if (x0 + w > 240) w = 240 - x0;
-  if (w <= 0) return;
-  uint8_t *s = p->pPixels;
-  uint16_t *pal = p->pPalette;
-  if (p->ucDisposalMethod == 2) {  // restaurar fundo
-    for (int i = 0; i < w; i++)
-      if (s[i] == p->ucTransparent) s[i] = p->ucBackground;
-    p->ucHasTransparency = 0;
-  }
-  tft.startWrite();
-  if (p->ucHasTransparency) {
-    uint8_t tr = p->ucTransparent;
-    int x = 0;
-    while (x < w) {
-      while (x < w && s[x] == tr) x++;
-      int start = x, n = 0;
-      while (x < w && s[x] != tr) buf[n++] = pal[s[x++]];
-      if (n) {
-        tft.setAddrWindow(x0 + start, y, n, 1);
-        tftPixels(buf, n);
-      }
-    }
-  } else {
-    for (int i = 0; i < w; i++) buf[i] = pal[s[i]];
-    tft.setAddrWindow(x0, y, w, 1);
-    tftPixels(buf, w);
-  }
-  tft.endWrite();
+  AlbumGifDisplay out;
+  albumGifDraw(gifRender, out, uiRowBuf(), gifOffX, gifOffY, gifScale, p);
 }
 
-void stopAlbum() {
+static void releaseGif() {
   if (gif) {
     gif->close();
     delete gif;
     gif = nullptr;
   }
+  gifNoMemTries = 0;
+  albumGifRenderFree(gifRender);  // tabela de cores do filtro (768 B no heap)
+  gifRender = AlbumGifRenderState();
+}
+
+void stopAlbum() {
+  releaseGif();
   inAlbum = false;
   curFile = "";
   uiInvalidate();  // o relógio redesenha tudo ao voltar
 }
 
-// O pacote de mostrador ativo (até ~6,6 KB) disputa o heap com o GIF (~24 KB contíguos) e o JPEG (~19 KB + as
-// tabelas). Só sai da RAM quando falta bloco contíguo para o item; volta sozinho em packEnsureLoaded(), quando o
-// relógio é desenhado de novo. Sem pressão ele fica, para o modo "alternado" não reler o pacote a cada item.
+// O pacote de mostrador ativo (até ~6,6 KB) disputa o heap com o GIF (668 B residentes + ~18,9 KB temporários
+// por quadro em blocos de até 8 KB) e o JPEG (~7,7 KB + 2x4 KB). Só sai da RAM quando falta bloco para o
+// item; volta sozinho em packEnsureLoaded(), quando o relógio é desenhado de novo. Sem pressão ele fica,
+// para o modo "alternado" não reler o pacote a cada item.
 static void albumMakeRoom(uint32_t need) {
   if (facePackLoaded() && ESP.getMaxFreeBlockSize() < need) facePackUnload();
 }
@@ -282,27 +272,33 @@ bool showAlbumItem(const String &f) {
       return false;
     }
     diagBlkSample();  // minblk: o maior bloco antes do GIF (e antes de albumMakeRoom soltar o pacote)
-    albumMakeRoom(sizeof(AnimatedGIF) + 1024);
-    gif = new (std::nothrow) AnimatedGIF();  // ~24 KB contíguos de RAM
+    albumMakeRoom(sizeof(AnimatedGIF) + 1024 + 19456 + 768);
+    gif = new (std::nothrow) AnimatedGIF();  // ~668 B residentes (~18,9 KB temporários só durante playFrame())
+    // tabela de cores do filtro (768 B) junto com o GIF, antes dos temporários de cada quadro: alocada no meio de um
+    // quadro, ficaria presa entre eles e picotaria o heap. Sem memória, o GIF toca sem o filtro.
+    if (gif && !gifRender.rgb) gifRender.rgb = (uint8_t *)malloc(256 * 3);
     if (!gif) {
       diagNoMem(1);
       uiError(tr("Sem memoria p/ GIF", "No memory for GIF", "Sin memoria p/ GIF"));
       return true;  // mantém a tela de aviso até o próximo item
     }
-    gif->begin(GIF_PALETTE_RGB565_LE);
+    gif->begin(GIF_PALETTE_RGB565_BE);
     if (!gif->open(f.c_str(), mediaOpen, mediaClose, gifRead, gifSeek, gifDraw)) {
       gif->close();
       delete gif;
       gif = nullptr;
+      albumGifRenderFree(gifRender);
       uiError(tr("GIF invalido", "Invalid GIF", "GIF invalido"));
       return false;
     }
-    gifOffX = max(0, (240 - gif->getCanvasWidth()) / 2);
-    gifOffY = max(0, (240 - gif->getCanvasHeight()) / 2);
+    gifScale = min(240 / gif->getCanvasWidth(), 240 / gif->getCanvasHeight());
+    if (gifScale < 2) gifScale = 1;
+    gifOffX = max(0, (240 - gif->getCanvasWidth() * gifScale) / 2);
+    gifOffY = max(0, (240 - gif->getCanvasHeight() * gifScale) / 2);
     nextFrameAt = millis();  // não 0: com mais de 24,8 dias ligado, (int32_t)(millis() - 0) é negativo e o GIF nunca tocava
   } else {
     diagBlkSample();  // minblk: o maior bloco antes da foto (e antes de albumMakeRoom soltar o pacote)
-    albumMakeRoom(sizeof(JPEGDEC) + 1024 + 8192);  // o decodificador e, depois, as tabelas de ~7,7 KB
+    albumMakeRoom(sizeof(JPEGDEC) + 1024 + 8192);  // o decodificador (~7,7 KB) + as 2 tabelas AC (2x4 KB)
     JpgResult r = drawJpg(f);
     if (r == JPG_NOMEM) {
       diagNoMem(0);
@@ -312,16 +308,54 @@ bool showAlbumItem(const String &f) {
   return true;
 }
 
+#ifdef GIF_CRONO
+uint32_t gifCronoN = 0, gifCronoSum = 0, gifCronoMax = 0;
+uint32_t gifCronoDelay = 0, gifCronoGap = 0, gifCronoLast = 0;  // atraso pedido (ms) e intervalo real entre quadros (ms), somados
+#endif
+
 void albumLoop() {
   if (!gif || (int32_t)(millis() - nextFrameAt) < 0) return;
+  albumMakeRoom(19456 + 1024);
   int delayMs = 0;
+#ifdef GIF_CRONO  // build de medição: tempo de cada quadro (decodificar + mandar à tela), lido no diag
+  uint32_t cronoT0 = micros();
+#endif
   int r = gif->playFrame(false, &delayMs);
-  if (r < 0) {  // erro: desiste deste GIF
+#ifdef GIF_CRONO
+  uint32_t cronoDt = micros() - cronoT0;
+  if (r >= 0) {
+    gifCronoN++;
+    gifCronoSum += cronoDt;
+    if (cronoDt > gifCronoMax) gifCronoMax = cronoDt;
+    gifCronoDelay += delayMs;
+    uint32_t agora = cronoT0 / 1000;
+    if (gifCronoLast) gifCronoGap += agora - gifCronoLast;
+    gifCronoLast = agora;
+  }
+#endif
+  if (r < 0) {
+    if (gif->getLastError() == GIF_ERROR_MEMORY) {
+      if (++gifNoMemTries < 5) {
+        nextFrameAt = millis() + 200;  // pico passageiro: tenta de novo sem perder a posição no arquivo
+        return;
+      }
+      diagNoMem(1);
+      releaseGif();
+      curFile = "";
+      uiError(tr("Sem memoria p/ GIF", "No memory for GIF", "Sin memoria p/ GIF"));  // mantém inAlbum=true até o próximo item
+      return;
+    }
     stopAlbum();
     return;
   }
+  gifNoMemTries = 0;
   if (r == 0) gif->reset();  // último quadro: recomeça
-  nextFrameAt = millis() + max(delayMs, 20);
+  // O próximo quadro conta a partir da hora prevista deste, não do fim do desenho: antes, um quadro que levava 35 ms
+  // para desenhar com 40 ms de atraso saía a cada 75 ms (GIF a ~53% da velocidade). Atrasado, não recupera em rajada:
+  // segue com 5 ms de folga para o painel e o Wi-Fi entre um quadro e outro.
+  uint32_t alvo = nextFrameAt + (uint32_t)max(delayMs, 20);
+  uint32_t minimo = millis() + 5;
+  nextFrameAt = (int32_t)(alvo - minimo) < 0 ? minimo : alvo;
 }
 
 // Decide o que mostrar quando não há Pomodoro: relógio ou um item do álbum.
@@ -454,6 +488,60 @@ void handlePackUpload() {
   }
 }
 
+bool telaLivre(bool comAlbum) {
+  uint32_t now = millis();
+  return phase == IDLE && !previewActive() && (comAlbum || !inAlbum) && !vcomTestUntil && !colorTestRequested && !colorTestUntil &&
+         !(bootHoldUntil && (int32_t)(now - bootHoldUntil) < 0) && !(alertUntil && (int32_t)(now - alertUntil) < 0) &&
+         !recoveryMode && !portalMode && !screenDark();
+}
+
+static uint32_t rotDadosAgora;
+
+static bool rotTemCampo(const char *campo) { return appDataGet(campo, rotDadosAgora) != nullptr; }
+
+static bool rotPularPacote(const char *id) {
+  char path[40];
+  snprintf(path, sizeof path, "/faces/%s.txt", id);
+  File f = LittleFS.open(path, "r");
+  if (!f) return false;
+  f.setTimeout(0);
+  char linha[104];
+  for (int i = 0; i < 3; i++) {
+    if (!f.available()) { f.close(); return false; }
+    size_t n = f.readBytesUntil('\n', linha, sizeof linha - 1);
+    if (n == sizeof linha - 1) { f.close(); return false; }
+  }
+  if (!f.available()) { f.close(); return false; }
+  size_t n = f.readBytesUntil('\n', linha, sizeof linha - 1);
+  f.close();
+  if (n && linha[n - 1] == '\r') n--;
+  linha[n] = 0;
+  rotDadosAgora = millis();
+  return rodPularMiniapp(linha, rotTemCampo);
+}
+
+// chave do mostrador que está na tela, no formato da lista: "t:N" ou "p:id"
+static void rotChave(char *out, size_t n) {
+  if (cfg.theme == THEME_PACK) snprintf(out, n, "p:%s", cfg.facePkg);
+  else snprintf(out, n, "t:%u", (unsigned)cfg.theme);
+}
+
+// Quanto o mostrador que está na tela fica (ms): o tempo dele em /rotime.txt (só vale para item que está na lista) ou o
+// "Trocar de mostrador". Calculado a cada volta, sem guardar: mudar o intervalo, a lista ou os tempos vale na hora, e
+// o tempo é o do item que ESTÁ na tela, não o do próximo.
+static uint32_t rotEspera() {
+  char cur[32];
+  rotChave(cur, sizeof cur);
+  uint16_t padrao = (uint16_t)cfg.rotMin * 60;
+  return (uint32_t)(rodNaLista(rotList.c_str(), cur) ? rodSegundos(rotTimes.c_str(), cur, padrao) : padrao) * 1000UL;
+}
+
+// recomeça a contagem agora (a espera vem de rotEspera())
+static void rotRecomecar() {
+  rotAt = millis();
+  rotArmed = true;
+}
+
 void rotSet(const String &v) {
   String s;
   s.reserve(min((size_t)300, v.length()) + 1);
@@ -464,8 +552,7 @@ void rotSet(const String &v) {
     s = cut > 0 ? s.substring(0, cut) : String();
   }
   rotList = s;
-  rotAt = millis();
-  rotArmed = true;
+  rotRecomecar();
   if (!fsOk) return;
   if (!s.length()) LittleFS.remove("/rotation.txt");
   else {
@@ -478,28 +565,75 @@ void rotSet(const String &v) {
 }
 
 void rotLoop() {
-  if (!cfg.rotMin || !rotList.length() || phase != IDLE || previewActive() || inAlbum) return;
-  if (rotArmed && (uint32_t)(millis() - rotAt) < cfg.rotMin * 60000UL) return;
-  rotAt = millis();
-  rotArmed = true;
-  // o item depois do mostrador atual (ou o primeiro, se o atual não está na lista)
-  String cur = cfg.theme == THEME_PACK ? String("p:") + cfg.facePkg : String("t:") + cfg.theme, l = rotList + ",";
-  int at = ("," + l).indexOf("," + cur + ","), start = at >= 0 ? at + cur.length() + 1 : 0;
-  for (int tries = 0; tries < 32; tries++) {  // pula itens inválidos (pacote removido)
-    if (start >= (int)l.length()) start = 0;
-    int e = l.indexOf(',', start);
-    String it = l.substring(start, e);
-    start = e + 1;
+  if (!cfg.rotMin || !rotList.length() || !telaLivre()) return;
+  if (rotArmed && (uint32_t)(millis() - rotAt) < rotEspera()) return;
+  String cur = cfg.theme == THEME_PACK ? String("p:") + cfg.facePkg : String("t:") + cfg.theme;
+  static String rotParou;
+  String anterior = rotParou.length() ? rotParou : cur, primeiro;
+  int cargas = 0;
+  for (int tries = 0; tries < 32; tries++) {
+    char item[32];
+    if (!rodProximo(rotList.c_str(), anterior.c_str(), item, sizeof item)) break;
+    String it(item);
+    if (!primeiro.length()) primeiro = it;
+    else if (it == primeiro) break;
+    anterior = it;
+    if (it == cur) {
+      rotParou = "";
+      rotRecomecar();
+      return;
+    }
     if (it.startsWith("t:")) {
       int t = it.substring(2).toInt();
       if (t < 0 || t >= THEME_COUNT) continue;
       cfg.theme = t;
       facePackUnload();
-    } else if (it.startsWith("p:") && loadPack(it.substring(2))) {
+    } else if (it.startsWith("p:")) {
+      String id = it.substring(2);
+      if (rotPularPacote(id.c_str())) continue;
+      cargas++;
+      if (!loadPack(id)) {
+        rotParou = it;
+        if (cargas >= 2) { rotAt = millis() - (rotEspera() - 2000); rotArmed = true; return; }  // tenta de novo em ~2 s
+        continue;
+      }
       cfg.theme = THEME_PACK;
-      strlcpy(cfg.facePkg, it.substring(2).c_str(), sizeof cfg.facePkg);
+      strlcpy(cfg.facePkg, id.c_str(), sizeof cfg.facePkg);
     } else continue;
-    uiInvalidateSlide();  // mostrador novo entra rolando (ui.cpp)
+    rotParou = "";
+    rotRecomecar();
+    uiInvalidateSlide();
     return;
   }
+  rotParou = "";
+  rotRecomecar();
+}
+
+void rotTimesSet(const String &v) {
+  char limpo[301];
+  rodLimparTempos(v.c_str(), limpo, sizeof limpo);
+  rotTimes = limpo;
+  rotRecomecar();
+  if (!fsOk) return;
+  if (!rotTimes.length()) LittleFS.remove("/rotime.txt");
+  else {
+    File f = LittleFS.open("/rotime.txt", "w");
+    if (f) {
+      f.print(rotTimes);
+      f.close();
+    }
+  }
+}
+
+// Só no início: lê o /rotime.txt sem regravá-lo (o rotTimesSet grava) e sem rearmar a contagem.
+void rotTimesLoad() {
+  File f = fsOk ? LittleFS.open("/rotime.txt", "r") : File();
+  if (!f) return;
+  f.setTimeout(0);
+  char buf[301], limpo[301];
+  size_t n = f.readBytes(buf, sizeof buf - 1);
+  f.close();
+  buf[n] = 0;
+  rodLimparTempos(buf, limpo, sizeof limpo);
+  rotTimes = limpo;
 }

@@ -21,6 +21,7 @@ using String = std::string;
 #define tr(pt, en, es) (pt)
 static bool g_alloc = true, g_open = true, g_decode = true; static int g_err = 0; static uint32_t g_maxBlock = 100000;
 static int g_decodes = 0, g_unloads = 0, g_loads = 0; static bool g_packLoaded = false, g_packAtAlloc = false, g_loadOk = true, g_isGif = false, g_preview = false;
+static int g_gifPlayR = 1, g_gifErr = 0, g_gifResets = 0, g_gifDelay = 50;
 static uint32_t g_now = 0;
 uint32_t millis() { return g_now; }
 bool previewActive() { return g_preview; }
@@ -34,30 +35,40 @@ void facePackUnload() { if (g_packLoaded) { g_packLoaded = false; g_unloads++; g
 bool loadPack(const String &) { g_loads++; g_packLoaded = g_loadOk; return g_loadOk; }
 struct { uint32_t getMaxFreeBlockSize() { return g_maxBlock; } } ESP;
 enum { JPEG_ERROR_MEMORY = 5, JPEG_DECODE_ERROR = 2 };
-enum { RGB565_LITTLE_ENDIAN = 1, JPEG_SCALE_HALF = 2, JPEG_SCALE_QUARTER = 4, JPEG_SCALE_EIGHTH = 8 };
+enum { RGB565_LITTLE_ENDIAN = 1, RGB565_BIG_ENDIAN = 2, JPEG_SCALE_HALF = 2, JPEG_SCALE_QUARTER = 4, JPEG_SCALE_EIGHTH = 8 };
 struct JPEGDEC {
-  uint8_t pad[18000];
+  uint8_t pad[7652];
   static void *operator new(size_t n, const std::nothrow_t &) noexcept { g_packAtAlloc = g_packLoaded; return g_alloc ? malloc(n) : nullptr; }
   static void operator delete(void *p) { free(p); }
   template <class... A> bool open(A...) { return g_open; }
   int getWidth() { return 100; } int getHeight() { return 100; }
   void setPixelType(int) {}
   bool decode(int, int, int) { g_decodes++; return g_decode; }
-  int getLastError() { return g_decode ? 0 : g_err; }
+  int getLastError() { return (g_open && g_decode) ? 0 : g_err; }
   void close() {}
 };
 struct JPEGDRAW; int mediaOpen, mediaClose, jpgRead, jpgSeek, jpgDraw;
-enum { GIF_PALETTE_RGB565_LE = 1 };
+enum { GIF_PALETTE_RGB565_LE = 1, GIF_PALETTE_RGB565_BE = 2, GIF_SUCCESS = 0, GIF_DECODE_ERROR = 1, GIF_ERROR_MEMORY = 9 };
 struct AnimatedGIF {
-  uint8_t pad[24000];
-  void *operator new(size_t n, const std::nothrow_t &) noexcept { g_packAtAlloc = g_packLoaded; return g_alloc && g_maxBlock >= n ? malloc(n) : nullptr; }
+  uint8_t pad[668];
+  static void *operator new(size_t n, const std::nothrow_t &) noexcept { g_packAtAlloc = g_packLoaded; return g_alloc && g_maxBlock >= n ? malloc(n) : nullptr; }
+  static void operator delete(void *p) { free(p); }
   void begin(int) {} template <class... A> bool open(A...) { return true; } void close() {}
   int getCanvasWidth() { return 1; } int getCanvasHeight() { return 1; }
+  int playFrame(bool, int *d) { if (d) *d = g_gifDelay; return g_gifPlayR; }
+  int getLastError() { return g_gifErr; }
+  void reset() { g_gifResets++; }
 };
-AnimatedGIF *gif = nullptr; static int gifOffX, gifOffY; static uint32_t nextFrameAt; int gifRead, gifSeek, gifDraw;
+struct AlbumGifRenderState { uint8_t *rgb = nullptr; };  // tabela de cores do filtro (album_gif_renderer.h)
+static AlbumGifRenderState gifRender;
+static void albumGifRenderFree(AlbumGifRenderState &st) { free(st.rgb); st.rgb = nullptr; }
+using std::min;
+AnimatedGIF *gif = nullptr; static int gifOffX, gifOffY, gifScale = 1; static uint32_t nextFrameAt; static uint8_t gifNoMemTries = 0, gifPrevDisp = 0; int gifRead, gifSeek, gifDraw;
 static std::string lastErr; static bool inAlbum = false; static String curFile;
 void uiError(const char *m) { lastErr = m; }
-void uiInvalidate() {} void stopAlbum() {} void setLcdView(bool) {}
+void uiInvalidate() {} void setLcdView(bool) {}
+${fn('static void releaseGif(')}
+${fn('void stopAlbum(')}
 struct { void fillScreen(int) {} } tft;
 struct { bool exists(const String &) { return true; } } LittleFS;
 bool isGif(const String &) { return g_isGif; }
@@ -72,9 +83,10 @@ static uint32_t packRetryAt;
 static bool packRetryWait;
 ${fn('JpgResult drawJpg(')}
 ${fn('bool showAlbumItem(')}
+${fn('void albumLoop(')}
 ${fn('void packEnsureLoaded(')}
 #define CHECK(c) do { if (!(c)) { printf("FALHA linha %d: %s (msg='%s')\\n", __LINE__, #c, lastErr.c_str()); return 1; } } while (0)
-static void reset() { g_err = 0; g_unloads = g_loads = 0; g_packLoaded = g_packAtAlloc = g_isGif = g_preview = false; g_loadOk = true; g_now = 100000; packRetryAt = 0; packRetryWait = false; cfg.theme = THEME_MATRIX; g_alloc = g_open = g_decode = true; g_maxBlock = 100000; lastErr.clear(); g_decodes = 0; }
+static void reset() { releaseGif(); g_err = 0; g_unloads = g_loads = 0; g_packLoaded = g_packAtAlloc = g_isGif = g_preview = false; g_loadOk = true; g_now = 100000; packRetryAt = 0; packRetryWait = false; cfg.theme = THEME_MATRIX; g_alloc = g_open = g_decode = true; g_maxBlock = 100000; lastErr.clear(); g_decodes = 0; g_nomem[0] = g_nomem[1] = 0; g_samples = 0; g_gifPlayR = 1; g_gifErr = 0; g_gifResets = 0; g_gifDelay = 50; inAlbum = false; curFile.clear(); }
 int main() {
   reset(); CHECK(showAlbumItem("/a.jpg") && lastErr.empty() && g_decodes == 1);                    // arquivo bom: sem aviso
   reset(); g_alloc = false; CHECK(drawJpg("/a.jpg") == JPG_NOMEM);                                // new nothrow nulo
@@ -86,9 +98,11 @@ int main() {
   reset(); g_open = false; CHECK(drawJpg("/b.jpg") == JPG_BAD);                                   // arquivo recusado ao abrir
   reset(); g_open = false; CHECK(showAlbumItem("/b.jpg") && lastErr == "JPG invalido");
   reset(); g_decode = false; CHECK(showAlbumItem("/b.jpg") && lastErr == "JPG invalido");         // recusado ao decodificar
-  // tabelas do decodificador sem memória (DecodeJPEG devolve JPEG_ERROR_MEMORY): é falta de RAM, não arquivo ruim
+  // tabelas do decodificador sem memória (open ou DecodeJPEG devolve JPEG_ERROR_MEMORY): é falta de RAM, não arquivo ruim
   reset(); g_decode = false; g_err = JPEG_ERROR_MEMORY; CHECK(drawJpg("/a.jpg") == JPG_NOMEM && validJpg("/a.jpg") == JPG_NOMEM);
   reset(); g_decode = false; g_err = JPEG_ERROR_MEMORY; CHECK(showAlbumItem("/a.jpg") && lastErr == "Sem memoria p/ foto");
+  reset(); g_open = false; g_err = JPEG_ERROR_MEMORY; CHECK(drawJpg("/a.jpg") == JPG_NOMEM && validJpg("/a.jpg") == JPG_NOMEM);
+  reset(); g_open = false; g_err = JPEG_ERROR_MEMORY; CHECK(showAlbumItem("/a.jpg") && lastErr == "Sem memoria p/ foto");
   reset(); g_decode = false; g_err = JPEG_DECODE_ERROR; CHECK(drawJpg("/b.jpg") == JPG_BAD && validJpg("/b.jpg") == JPG_BAD);  // estragado continua BAD
   reset(); CHECK(validJpg("/a.jpg") == JPG_OK);
   reset(); g_open = false; CHECK(validJpg("/b.jpg") == JPG_BAD);
@@ -97,14 +111,14 @@ int main() {
   reset(); g_alloc = false; showAlbumItem("/a.jpg"); lastErr.clear(); g_alloc = true;
   CHECK(showAlbumItem("/a.jpg") && lastErr.empty() && g_decodes == 1);
   // ---- pacote de mostrador × álbum: só sai da RAM sob pressão, e a ordem importa (liberar ANTES de alocar) ----
-  const uint32_t JPG_NEED = sizeof(JPEGDEC) + 1024 + 8192, GIF_NEED = sizeof(AnimatedGIF) + 1024;
+  const uint32_t JPG_NEED = sizeof(JPEGDEC) + 1024 + 8192, GIF_NEED = sizeof(AnimatedGIF) + 1024 + 19456 + 768;  // + tabela de cores do filtro (album.cpp)
   reset(); g_packLoaded = true; g_maxBlock = JPG_NEED; CHECK(showAlbumItem("/a.jpg") && g_unloads == 0 && g_packLoaded && lastErr.empty());  // folga: o pacote fica
   reset(); g_packLoaded = true; g_maxBlock = JPG_NEED - 1; CHECK(showAlbumItem("/a.jpg") && g_unloads == 1 && !g_packLoaded && !g_packAtAlloc && lastErr.empty()); // aperto: libera antes do decodificador
   reset(); g_packLoaded = true; g_maxBlock = sizeof(JPEGDEC) + 1024; CHECK(showAlbumItem("/a.jpg") && !g_packLoaded && lastErr.empty());  // só cabia o decodificador: com o pacote fora, a foto aparece
   reset(); g_maxBlock = JPG_NEED - 1; CHECK(showAlbumItem("/a.jpg") && g_unloads == 0);                       // sem pacote carregado, nada a liberar
   reset(); g_isGif = true; g_packLoaded = true; g_maxBlock = GIF_NEED; CHECK(showAlbumItem("/a.gif") && g_unloads == 0 && g_packLoaded);
   reset(); g_isGif = true; g_packLoaded = true; g_maxBlock = GIF_NEED - 1; CHECK(showAlbumItem("/a.gif") && g_unloads == 1 && !g_packAtAlloc && lastErr.empty() && gif != nullptr);
-  reset(); g_isGif = true; g_packLoaded = true; g_maxBlock = 100; CHECK(showAlbumItem("/a.gif") && lastErr == "Sem memoria p/ GIF");  // nem sem o pacote: aviso, sem travar
+  reset(); g_isGif = true; g_packLoaded = true; g_maxBlock = 100; g_alloc = false; CHECK(showAlbumItem("/a.gif") && g_unloads == 1 && lastErr == "Sem memoria p/ GIF");  // nem sem o pacote: aviso, sem travar
   // ---- volta ao relógio: recarrega sem mexer no tema, com nova tentativa em 2 s ----
   reset(); cfg.theme = THEME_MATRIX; packEnsureLoaded(); CHECK(g_loads == 0);                                  // mostrador embutido: nada a recarregar
   reset(); cfg.theme = THEME_PACK; g_packLoaded = true; packEnsureLoaded(); CHECK(g_loads == 0);               // já carregado
@@ -122,6 +136,19 @@ int main() {
   reset(); g_samples = g_nomem[0] = g_nomem[1] = 0; showAlbumItem("/a.jpg"); CHECK(g_samples == 1 && g_nomem[0] == 0 && g_nomem[1] == 0);  // com memória: nada contado
   reset(); g_samples = g_nomem[0] = g_nomem[1] = 0; g_open = false; showAlbumItem("/b.jpg"); CHECK(g_nomem[0] == 0);  // arquivo ruim não é falta de memória
   reset(); g_samples = 0; validJpg("/a.jpg"); CHECK(g_samples == 1);
+  // ---- OOM transitório por quadro em albumLoop(): tenta 4 vezes e só desiste na 5a ----
+  reset(); g_isGif = true; CHECK(showAlbumItem("/a.gif") && gif != nullptr && inAlbum);
+  g_gifPlayR = -1; g_gifErr = GIF_ERROR_MEMORY;
+  for (int i = 0; i < 4; i++) {
+    albumLoop();
+    CHECK(gif != nullptr && inAlbum && g_nomem[1] == 0 && lastErr.empty() && nextFrameAt == g_now + 200);
+    g_now += 200;
+  }
+  albumLoop();
+  CHECK(gif == nullptr && inAlbum && g_nomem[1] == 1 && lastErr == "Sem memoria p/ GIF");
+  reset(); g_isGif = true; CHECK(showAlbumItem("/a.gif") && gif != nullptr && inAlbum);
+  g_gifPlayR = -1; g_gifErr = GIF_DECODE_ERROR; albumLoop();
+  CHECK(gif == nullptr && !inAlbum && g_nomem[1] == 0 && lastErr.empty());
   puts("jpg_nomem: ok"); return 0;
 }
 `);

@@ -35,7 +35,7 @@ extern "C" uint32_t _FS_start;
 void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);  // ui.cpp: recorta para a área suja; fora da tela, cai na faixa
 
 
-#define FW_VERSION "1.26.1"
+#define FW_VERSION "1.26.3"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 #define PIN_DC  0
@@ -69,7 +69,7 @@ struct Settings {
   uint8_t dailyGoal;    // meta de focos por dia
   uint8_t activity;     // atividade do foco (UiActivity); campo novo no fim: unidades antigas leem lixo e caem no padrão
   char facePkg[24];     // pacote de mostrador ativo (/faces/<id>.json) quando theme == THEME_PACK; idem: lixo vira ""
-  uint8_t lang;         // idioma da tela e do painel: 0 português, 1 inglês, 2 espanhol; padrão de fábrica 1 (inglês); lixo vira 0 (quem já usa não muda)
+  uint8_t lang;         // idioma da tela e do painel: 0 pt, 1 en, 2 es, 3 de, 4 ru; padrão de fábrica 1 (inglês); lixo vira 0 (quem já usa não muda)
   uint8_t nightSun;     // brilho noturno do pôr ao nascer do sol (Open-Meteo) em vez de nightStart/nightEnd
   uint8_t rotMin;       // rodízio de mostradores: minutos entre trocas (0 = desligado); lista em /rotation.txt
   uint8_t alexa;        // 1 = aparece para a Alexa como a lâmpada "Pomodoro"
@@ -226,6 +226,7 @@ extern StatsHead stats;
 extern uint16_t statsStreak, statsBest;
 extern uint32_t fsInfoAt;
 extern String rotList;
+extern String rotTimes;
 extern std::vector<String> album;
 extern bool inAlbum;
 extern uint32_t viewUntil;
@@ -244,6 +245,7 @@ extern DNSServer dns;
 extern bool portalMode;
 extern Adafruit_ST7789 tft;
 extern uint32_t vcomTestUntil;
+extern uint32_t colorTestUntil, bootHoldUntil;
 extern uint8_t vcomTest;
 extern int8_t vcomDraw;
 extern uint16_t fullDrawMs;
@@ -319,6 +321,10 @@ void packEnsureLoaded();
 void handlePackUpload();
 void rotSet(const String &v);
 void rotLoop();
+void rotTimesSet(const String &v);
+void rotTimesLoad();
+bool telaLivre(bool comAlbum = false);
+bool screenDark();
 void setupUpdate();
 void setupQrScreen(bool recovery);
 void startRecovery();
@@ -349,6 +355,8 @@ void wifiHintSave();
 void startPortal();
 void tftPixels(uint16_t *px, int n);
 void tftBitmap(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);
+void tftPixelsBE(uint16_t *px, int n);
+void tftBitmapBE(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);
 void applyVcom(uint8_t v);
 void applyPanel();
 String hhmm(const struct tm &t);

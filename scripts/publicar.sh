@@ -46,7 +46,7 @@ say "segredos no que mudou desde o último release estável"
 LAST=$(gh release list -R "$REPO" -L 20 --exclude-pre-releases --json tagName -q '.[0].tagName')
 [ -n "$LAST" ] || die "último release estável não encontrado em $REPO para conferir segredos no diff"
 if git diff --unified=0 "$LAST" HEAD -- . ':!*.bin' ':!*.gz' | grep '^+' | grep -v '^+++' | grep -inE 'password\s*[:=]|api[_-]?key\s*[:=]|secret\s*[:=]|token\s*[:=]|BEGIN [A-Z ]*PRIVATE KEY|Bearer [A-Za-z0-9_-]{20,}' |
-  grep -vE 'password=(true|false)|allowed=password|formToken = token|\.token\b|\*\*Optional panel password:\*\*'; then
+  grep -vE 'password=(true|false)|allowed=password|formToken = token|\.token\b|\*\*Optional panel password:\*\*|: !secret [a-z_]+$'; then  # !secret: referência ao secrets.yaml do HA, sem valor
   die "possível segredo no diff (linhas acima): confira antes de publicar"
 fi
 echo "nada encontrado (desde $LAST)"
@@ -68,6 +68,8 @@ else  # Windows: gera os .cpp com o node daqui e roda no WSL
   node sim/portal_test.cjs build/testes/portal.cpp
   node sim/idioma_test.cjs build/testes/idioma.cpp
   node sim/telemetria_test.cjs build/testes/telemetria.cpp
+  node sim/state_cfg_test.cjs build/testes/state_cfg.cpp
+  node sim/wifi_ip_test.cjs build/testes/wifi_ip.cpp
   node sim/painel_etag_test.cjs build/testes/painel_etag.cpp
   node sim/brilho_loop_test.cjs build/testes/brilho_loop.cpp
   L="/mnt/$(pwd -W | cut -c1 | tr 'A-Z' 'a-z')$(pwd -W | cut -c3-)"

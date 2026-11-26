@@ -2,6 +2,8 @@
 # Gera assets.h, compila e roda o simulador; gera out/*.png, out/folha.png e out/assets.png.
 # Requer: zig (https://ziglang.org), node e a biblioteca Adafruit GFX instalada pelo arduino-cli.
 cd "$(dirname "$0")"
+mkdir -p out
+node ../scripts/idiomas-gerar.cjs --check --sim-inc out/lang_test.inc || { echo "ERRO: tabela de idiomas ausente, inválida ou desatualizada"; exit 1; }
 # módulos: todo modulos/*.cpp precisa de #include "modulos/x.cpp" no main.cpp (compila como um arquivo só) e vice-versa
 FW=../smalltv-pomodoro
 for f in "$FW"/modulos/*.cpp; do
@@ -37,7 +39,6 @@ if grep -lE '#include "(\.\./)?app\.h"' ../smalltv-pomodoro/*.cpp ../smalltv-pom
   echo "só o main.cpp (que inclui os modulos/) pode incluir o app.h: outra unidade instanciaria o servidor sem o ws_parse.h"; exit 1
 fi
 GFX="${GFX:-$HOME/Documents/Arduino/libraries/Adafruit_GFX_Library}"
-mkdir -p out
 node tint_test.cjs out/tint_test.inc || exit 1
 node editor_modelos.cjs out/editor-modelos.txt || exit 1  # modelos do editor do painel, conferidos pelo simulador
 # Windows: executável Windows de 32 bits; Linux (também o build automático do GitHub): Linux de 32 bits, estático
@@ -45,8 +46,8 @@ if [ -n "$LOCALAPPDATA" ]; then TARGET=x86-windows-gnu; BIN=sim.exe; else TARGET
 # sem zig (Linux): o g++ de 32 bits (pacote g++-multilib), o mesmo dos testes de GIF e JPEG; com
 # _FILE_OFFSET_BITS=64, senão o readdir de 32 bits falha em pastas com inode grande (WSL) e os pacotes ficam de fora
 if [ -n "$ZIG" ]; then CXX="$ZIG c++ -target $TARGET"; else CXX="g++ -m32 -D_FILE_OFFSET_BITS=64"; fi
-$CXX -O1 -std=c++17 -DARDUINO=100 -DARDUINOJSON_ENABLE_ARDUINO_STRING=0 -DARDUINOJSON_ENABLE_ARDUINO_STREAM=0 -DARDUINOJSON_ENABLE_ARDUINO_PRINT=0 -DARDUINOJSON_ENABLE_PROGMEM=0 -Ishim -I"$GFX" -I"${JSON:-$HOME/Documents/Arduino/libraries/ArduinoJson/src}" sim.cpp ../smalltv-pomodoro/ui.cpp ../smalltv-pomodoro/face_*.cpp ../smalltv-pomodoro/facepack.cpp ../smalltv-pomodoro/appdata.cpp ../smalltv-pomodoro/fonts.cpp ../smalltv-pomodoro/trig.cpp ../smalltv-pomodoro/src/qrcodegen/qrcodegen.cpp "$GFX/Adafruit_GFX.cpp" -o "$BIN" || exit 1
-$CXX -O1 -std=c++17 -DARDUINO=100 -DARDUINOJSON_ENABLE_ARDUINO_STRING=0 -DARDUINOJSON_ENABLE_ARDUINO_STREAM=0 -DARDUINOJSON_ENABLE_ARDUINO_PRINT=0 -DARDUINOJSON_ENABLE_PROGMEM=0 -Ishim -I"$GFX" -I"${JSON:-$HOME/Documents/Arduino/libraries/ArduinoJson/src}" previa_miniapp.cpp ../smalltv-pomodoro/ui.cpp ../smalltv-pomodoro/face_*.cpp ../smalltv-pomodoro/facepack.cpp ../smalltv-pomodoro/appdata.cpp ../smalltv-pomodoro/fonts.cpp ../smalltv-pomodoro/trig.cpp ../smalltv-pomodoro/src/qrcodegen/qrcodegen.cpp "$GFX/Adafruit_GFX.cpp" -o "out/previa_miniapp${BIN#sim}" || exit 1
+$CXX -O1 -std=c++17 -DARDUINO=100 -DARDUINOJSON_USE_DOUBLE=0 -DARDUINOJSON_ENABLE_ARDUINO_STRING=0 -DARDUINOJSON_ENABLE_ARDUINO_STREAM=0 -DARDUINOJSON_ENABLE_ARDUINO_PRINT=0 -DARDUINOJSON_ENABLE_PROGMEM=0 -Ishim -I"$GFX" -I"${JSON:-$HOME/Documents/Arduino/libraries/ArduinoJson/src}" sim.cpp ../smalltv-pomodoro/ui.cpp ../smalltv-pomodoro/face_*.cpp ../smalltv-pomodoro/facepack.cpp ../smalltv-pomodoro/appdata.cpp ../smalltv-pomodoro/fonts.cpp ../smalltv-pomodoro/trig.cpp ../smalltv-pomodoro/src/qrcodegen/qrcodegen.cpp "$GFX/Adafruit_GFX.cpp" -o "$BIN" || exit 1
+$CXX -O1 -std=c++17 -DARDUINO=100 -DARDUINOJSON_USE_DOUBLE=0 -DARDUINOJSON_ENABLE_ARDUINO_STRING=0 -DARDUINOJSON_ENABLE_ARDUINO_STREAM=0 -DARDUINOJSON_ENABLE_ARDUINO_PRINT=0 -DARDUINOJSON_ENABLE_PROGMEM=0 -Ishim -I"$GFX" -I"${JSON:-$HOME/Documents/Arduino/libraries/ArduinoJson/src}" previa_miniapp.cpp ../smalltv-pomodoro/ui.cpp ../smalltv-pomodoro/face_*.cpp ../smalltv-pomodoro/facepack.cpp ../smalltv-pomodoro/appdata.cpp ../smalltv-pomodoro/fonts.cpp ../smalltv-pomodoro/trig.cpp ../smalltv-pomodoro/src/qrcodegen/qrcodegen.cpp "$GFX/Adafruit_GFX.cpp" -o "out/previa_miniapp${BIN#sim}" || exit 1
 ./"$BIN"; r=$?
 node png.js > /dev/null
 node transicao_lcd.js
@@ -56,6 +57,7 @@ node previas_miniapps.js --conferir || exit 1
 $CXX -O1 -std=c++17 -w -Ishim brilho_test.cpp -o "out/brilho_$BIN" && "./out/brilho_$BIN" || exit 1
 node brilho_loop_test.cjs out/brilho_loop.cpp && $CXX -O1 -std=c++17 -w out/brilho_loop.cpp -o "out/brilho_loop_$BIN" && "./out/brilho_loop_$BIN" || exit 1
 node sessoes_test.cjs out/sessoes.cpp && $CXX -O1 -std=c++17 -w out/sessoes.cpp -o "out/sessoes_$BIN" && "./out/sessoes_$BIN" || exit 1
+node sessoes_lista_painel.cjs || exit 1
 node painel_test.cjs
 node state_cfg_test.cjs out/state_cfg.cpp && $CXX -O1 -std=c++17 -w out/state_cfg.cpp -o "out/state_cfg_$BIN" && "./out/state_cfg_$BIN" || exit 1
 node ponte_test.cjs || exit 1

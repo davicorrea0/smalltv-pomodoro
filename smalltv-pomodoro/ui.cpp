@@ -8,10 +8,12 @@
 //  - redesenho incremental: cada área guarda o que mostrou e só repinta se mudou.
 
 #include "ui.h"
+#include "lang_tr.h"
 #include "assets.h"
 #include "ui_kit.h"
 #include "facepack.h"
 #include "setup_qr.h"
+#include "utf8_pixel.h"
 
 Adafruit_GFX *G = nullptr;
 #include <math.h>
@@ -20,28 +22,60 @@ Adafruit_GFX *G = nullptr;
 
 
 // ---------- idioma ----------
-static const char WD_L[3][7][4] PROGMEM = {{"DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SAB"},
+static const char WD_L[6][7][5] PROGMEM = {{"DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SAB"},
                                            {"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"},
-                                           {"DOM", "LUN", "MAR", "MIE", "JUE", "VIE", "SAB"}};
-static const char MO_L[3][12][4] PROGMEM = {{"JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"},
+                                           {"DOM", "LUN", "MAR", "MIE", "JUE", "VIE", "SAB"},
+                                           {"SO", "MO", "DI", "MI", "DO", "FR", "SA"},
+                                           {"ВС", "ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ"},
+                                           {"DIM", "LUN", "MAR", "MER", "JEU", "VEN", "SAM"}};
+static const char MO_L[6][12][7] PROGMEM = {{"JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"},
                                             {"JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"},
-                                            {"ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"}};
+                                            {"ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"},
+                                            {"JAN", "FEB", "MRZ", "APR", "MAI", "JUN", "JUL", "AUG", "SEP", "OKT", "NOV", "DEZ"},
+                                            {"ЯНВ", "ФЕВ", "МАР", "АПР", "МАЙ", "ИЮН", "ИЮЛ", "АВГ", "СЕН", "ОКТ", "НОЯ", "ДЕК"},
+                                            {"JAN", "FEV", "MAR", "AVR", "MAI", "JUN", "JUL", "AOU", "SEP", "OCT", "NOV", "DEC"}};
 static uint16_t rowBuf[240] __attribute__((aligned(4)));
 uint16_t *uiRowBuf() { return rowBuf; }
 uint8_t uiLang = 0;
-char WD[7][4] = {"DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SAB"};  // português até o uiSetLang
-char MO[12][4] = {"JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"};
+char WD[7][5] = {"DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SAB"};  // português até o uiSetLang
+char MO[12][7] = {"JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"};
 void uiSetLang(uint8_t lang) {
-  uiLang = lang < 3 ? lang : 0;
+  uiLang = lang <= 5 ? lang : 0;
   memcpy_P(WD, WD_L[uiLang], sizeof WD);
   memcpy_P(MO, MO_L[uiLang], sizeof MO);
   uiInvalidate();
 }
 const char *trP(PGM_P pt, PGM_P en, PGM_P es) {
-  static char buf[6][48];
+  static char buf[4][48];
   static uint8_t k = 0;
-  char *b = buf[k++ % 6];
-  strncpy_P(b, uiLang == 1 ? en : uiLang == 2 ? es : pt, sizeof buf[0] - 1);
+  char *b = buf[k++ & 3];
+  PGM_P texto = uiLang == 1 ? en : uiLang == 2 ? es : pt;
+  if (uiLang >= 3) {
+    uint32_t hash = 2166136261u;
+    for (PGM_P p = pt;; p++) {
+      const uint8_t c = pgm_read_byte(p);
+      if (!c) break;
+      hash ^= c;
+      hash *= 16777619u;
+    }
+    const uint32_t *hashes = uiLang == 3 ? LANG_DE_H : uiLang == 4 ? LANG_RU_H : LANG_FR_H;
+    const uint16_t *offsets = uiLang == 3 ? LANG_DE_O : uiLang == 4 ? LANG_RU_O : LANG_FR_O;
+    PGM_P strings = uiLang == 3 ? LANG_DE_S : uiLang == 4 ? LANG_RU_S : LANG_FR_S;
+    int16_t inicio = 0;
+    int16_t fim = (uiLang == 3 ? LANG_DE_N : uiLang == 4 ? LANG_RU_N : LANG_FR_N) - 1;
+    texto = en;  // tr() novo ou alterado sem tradução: mantém a queda para inglês.
+    while (inicio <= fim) {
+      const int16_t meio = inicio + (fim - inicio) / 2;
+      const uint32_t atual = pgm_read_dword(hashes + meio);
+      if (atual < hash) inicio = meio + 1;
+      else if (atual > hash) fim = meio - 1;
+      else {
+        texto = strings + pgm_read_word(offsets + meio);
+        break;
+      }
+    }
+  }
+  strncpy_P(b, texto, sizeof buf[0] - 1);
   b[sizeof buf[0] - 1] = 0;
   return b;
 }
@@ -52,10 +86,31 @@ static const char *phaseLabel(uint8_t p) {
 
 // ---------- texto (fonte 6x8 embutida) ----------
 int textW(const char *s, uint8_t sz) {
-  int n = strlen(s);
+  bool ascii = true;
+  for (const unsigned char *p = (const unsigned char *)s; *p; p++)
+    if (*p >= 0x80) { ascii = false; break; }
+  int n = 0;
+  if (ascii) n = strlen(s);
+  else
+    for (const unsigned char *p = (const unsigned char *)s; *p;)
+      if (utf8ToCp437(p)) n++;
   return n ? n * 6 * sz - sz : 0;
 }
 void text(int x, int y, uint8_t sz, uint16_t c, const char *s) {
+  bool ascii = true;
+  for (const unsigned char *p = (const unsigned char *)s; *p; p++)
+    if (*p >= 0x80) { ascii = false; break; }
+  if (!ascii) {
+    G->cp437(true);
+    for (const unsigned char *p = (const unsigned char *)s; *p;) {
+      uint16_t ch = utf8ToCp437(p);
+      if (!ch) continue;
+      if (ch >= 0x100) uiDrawCyr(x, y, ch - 0x100, c, sz);
+      else G->drawChar(x, y, ch, c, c, sz);
+      x += 6 * sz;
+    }
+    return;
+  }
   G->setTextSize(sz);
   G->setTextColor(c);
   G->setCursor(x, y);
@@ -63,6 +118,92 @@ void text(int x, int y, uint8_t sz, uint16_t c, const char *s) {
 }
 void textC(int cx, int y, uint8_t sz, uint16_t c, const char *s) { text(cx - textW(s, sz) / 2, y, sz, c, s); }
 void textR(int rx, int y, uint8_t sz, uint16_t c, const char *s) { text(rx - textW(s, sz), y, sz, c, s); }
+
+// Cirílico 5x7: cinco colunas, bit 0 no alto. As caudas usam a oitava linha da célula 6x8.
+// Letras iguais às latinas repetem aqui os bytes de glcdfont.c; a tabela inteira fica na flash.
+static const uint8_t CYR[66][5] PROGMEM = {
+  {0x7C,0x12,0x11,0x12,0x7C}, // А
+  {0x7F,0x49,0x49,0x49,0x31}, // Б
+  {0x7F,0x49,0x49,0x49,0x36}, // В
+  {0x7F,0x01,0x01,0x01,0x01}, // Г
+  {0x60,0x3E,0x21,0x3E,0x60}, // Д
+  {0x7F,0x49,0x49,0x49,0x41}, // Е
+  {0x63,0x14,0x7F,0x14,0x63}, // Ж
+  {0x00,0x41,0x49,0x49,0x36}, // З
+  {0x7F,0x20,0x10,0x08,0x7F}, // И
+  {0x7E,0x21,0x12,0x09,0x7E}, // Й: И nas linhas 1..6 com a breve em "v" nas linhas 0-1
+  {0x7F,0x08,0x14,0x22,0x41}, // К
+  {0x40,0x3F,0x01,0x01,0x7F}, // Л
+  {0x7F,0x02,0x1C,0x02,0x7F}, // М
+  {0x7F,0x08,0x08,0x08,0x7F}, // Н
+  {0x3E,0x41,0x41,0x41,0x3E}, // О
+  {0x7F,0x01,0x01,0x01,0x7F}, // П
+  {0x7F,0x09,0x09,0x09,0x06}, // Р
+  {0x3E,0x41,0x41,0x41,0x22}, // С
+  {0x03,0x01,0x7F,0x01,0x03}, // Т
+  {0x03,0x04,0x78,0x04,0x03}, // У (igual ao Y latino)
+  {0x1C,0x22,0x7F,0x22,0x1C}, // Ф
+  {0x63,0x14,0x08,0x14,0x63}, // Х
+  {0x7F,0x40,0x40,0x7F,0x40}, // Ц
+  {0x07,0x08,0x08,0x08,0x7F}, // Ч
+  {0x7F,0x40,0x7F,0x40,0x7F}, // Ш
+  {0x3F,0x20,0x3F,0x20,0x7F}, // Щ
+  {0x01,0x7F,0x48,0x48,0x30}, // Ъ
+  {0x7F,0x48,0x30,0x00,0x7F}, // Ы
+  {0x7F,0x48,0x48,0x48,0x30}, // Ь
+  {0x22,0x49,0x49,0x49,0x3E}, // Э
+  {0x7F,0x08,0x3E,0x41,0x3E}, // Ю
+  {0x46,0x29,0x19,0x09,0x7F}, // Я
+  {0x7C,0x55,0x54,0x55,0x44}, // Ё: pontos na linha 0, Е compactado nas linhas 2..6
+  {0x20,0x54,0x54,0x78,0x40}, // а
+  {0x7E,0x4A,0x4A,0x4A,0x30}, // б: haste a partir da linha 1 e barra no alto, para não ficar igual ao в
+  {0x7C,0x54,0x54,0x54,0x28}, // в
+  {0x7C,0x04,0x04,0x04,0x04}, // г
+  {0xC0,0x78,0x44,0x78,0xC0}, // д
+  {0x38,0x54,0x54,0x54,0x18}, // е
+  {0x44,0x28,0x7C,0x28,0x44}, // ж
+  {0x00,0x44,0x54,0x54,0x28}, // з
+  {0x7C,0x40,0x20,0x10,0x7C}, // и
+  {0x7C,0x41,0x21,0x11,0x7C}, // й
+  {0x7C,0x10,0x28,0x44,0x00}, // к
+  {0x40,0x38,0x04,0x04,0x7C}, // л
+  {0x7C,0x08,0x30,0x08,0x7C}, // м
+  {0x7C,0x10,0x10,0x10,0x7C}, // н
+  {0x38,0x44,0x44,0x44,0x38}, // о
+  {0x7C,0x04,0x04,0x04,0x7C}, // п
+  {0xFC,0x18,0x24,0x24,0x18}, // р
+  {0x38,0x44,0x44,0x44,0x28}, // с
+  {0x04,0x04,0x7C,0x04,0x04}, // т
+  {0x4C,0x90,0x90,0x90,0x7C}, // у
+  {0x38,0x44,0x7C,0x44,0x38}, // ф
+  {0x44,0x28,0x10,0x28,0x44}, // х
+  {0x7C,0x40,0x40,0x7C,0xC0}, // ц
+  {0x1C,0x20,0x20,0x20,0x7C}, // ч
+  {0x7C,0x40,0x7C,0x40,0x7C}, // ш
+  {0x7C,0x40,0x7C,0x40,0xFC}, // щ
+  {0x04,0x7C,0x50,0x50,0x20}, // ъ
+  {0x7C,0x50,0x20,0x00,0x7C}, // ы
+  {0x7C,0x50,0x50,0x50,0x20}, // ь
+  {0x28,0x54,0x54,0x54,0x38}, // э
+  {0x7C,0x10,0x38,0x44,0x38}, // ю
+  {0x48,0x34,0x14,0x14,0x7C}, // я
+  {0x38,0x55,0x54,0x55,0x18}, // ё: pontos na linha 0, е nas linhas 2..6
+};
+
+static_assert(sizeof(CYR) == 66 * 5, "a tabela cirílica tem 66 glifos de 5 colunas");
+
+void uiDrawCyr(int x, int y, int i, uint16_t fg, int sz) {
+  if (i < 0 || i >= 66) return;
+  for (int c = 0; c < 5; c++) {
+    uint8_t bits = pgm_read_byte(&CYR[i][c]);
+    for (int r = 0; r < 8;) {
+      while (r < 8 && !(bits & (1u << r))) r++;
+      int r0 = r;
+      while (r < 8 && (bits & (1u << r))) r++;
+      if (r > r0) G->fillRect(x + c * sz, y + r0 * sz, sz, (r - r0) * sz, fg);
+    }
+  }
+}
 
 void degree(int x, int y, uint8_t sz, uint16_t c) {
   int r = sz + 1;
@@ -807,8 +948,8 @@ void uiRenderPomodoro(const UiState &s) {
   notifyLcdView(false);
   bool full = enter(SCR_POMO);
   uint16_t col = phaseColor(s.phase);
-  // anel: trilho apagado + progresso na cor da fase, desenhado só no trecho novo
-  int target = s.totalMs ? (int)((uint64_t)(s.totalMs - s.remainingMs) * 360 / s.totalMs) : 0;
+  // anel: trilho apagado + progresso na cor da fase, desenhado só no trecho novo (totalMs <= 99 min cabe em 32 bits x 360)
+  int target = (s.totalMs && s.remainingMs < s.totalMs) ? (int)((uint32_t)(s.totalMs - s.remainingMs) * 360u / s.totalMs) : 0;
   if (full || target < lastRing) {
     for (int d = 0; d < 360; d += 1) ringDot(d, DIM);
     lastRing = 0;
