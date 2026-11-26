@@ -32,6 +32,11 @@ static File mediaFile;
 static int gifOffX = 0, gifOffY = 0;
 
 static uint32_t nextFrameAt = 0;
+static uint8_t gifNoMemTries = 0;
+static uint8_t gifPrevDisp = 0;
+static bool gifClearTrans = false;
+static int16_t gifPrevX = 0, gifPrevY = 0, gifPrevW = 0, gifPrevH = 0;
+static int16_t gifOldX0 = 0, gifOldY0 = 0, gifOldX1 = 0, gifOldY1 = 0;
 
 static bool endsWithIgnoreCase(const String &s, const char *suffix) {
   size_t n = s.length(), m = strlen(suffix);
@@ -99,7 +104,7 @@ static int32_t jpgSeek(JPEGFILE *f, int32_t pos) {
 static int jpgDraw(JPEGDRAW *p) {
   if (p->y >= 240) return 0;
   if (!uiClip.on) {
-    tftBitmap(p->x, p->y, p->pPixels, p->iWidth, p->iHeight);
+    tftBitmapBE(p->x, p->y, p->pPixels, p->iWidth, p->iHeight);
     return 1;
   }
   blit(p->x, p->y, p->pPixels, p->iWidth, p->iHeight);  // recorta para a área suja; fora da tela, cai na faixa
@@ -117,7 +122,7 @@ static int jpgCheckDraw(JPEGDRAW *) {
   return 1;
 }
 
-// O decodificador (~18 KB) precisa de um bloco contíguo; sem ele, nullptr (e o arquivo não é culpado).
+// O decodificador (~7,7 KB) + 2 tabelas AC (4 KB cada) cabem sem tabelas de faixa: sem bloco contiguo para JPEGDEC, nullptr (e o arquivo não é culpado).
 static JPEGDEC *jpgAlloc() {
   if (ESP.getMaxFreeBlockSize() < sizeof(JPEGDEC) + 1024) return nullptr;
   return new (std::nothrow) JPEGDEC();
@@ -150,7 +155,7 @@ bool drawJpgAt(const char *file, int x, int y) {
   if (!jpg) return false;
   bool ok = false;
   if (jpg->open(path.c_str(), mediaOpen, mediaClose, jpgRead, jpgSeek, jpgDraw) && jpgDimensionsOk(jpg)) {
-    jpg->setPixelType(RGB565_LITTLE_ENDIAN);
+    jpg->setPixelType(uiClip.on ? RGB565_LITTLE_ENDIAN : RGB565_BIG_ENDIAN);
     ok = jpg->decode(x, y, 0);
   }
   jpg->close();
@@ -159,14 +164,14 @@ bool drawJpgAt(const char *file, int x, int y) {
 }
 
 static JpgResult drawJpg(const String &f) {
-  JPEGDEC *jpg = jpgAlloc();  // ~18 KB: só existe durante a decodificação
+  JPEGDEC *jpg = jpgAlloc();  // ~7,7 KB + 2x4 KB: só existem durante a decodificação
   if (!jpg) return JPG_NOMEM;
   bool ok = false;
   if (jpg->open(f.c_str(), mediaOpen, mediaClose, jpgRead, jpgSeek, jpgDraw) && jpgDimensionsOk(jpg)) {
     int w = jpg->getWidth(), h = jpg->getHeight(), sc = 1;
     while (sc < 8 && (w / sc > 240 || h / sc > 240)) sc *= 2;
     int opt = sc == 2 ? JPEG_SCALE_HALF : sc == 4 ? JPEG_SCALE_QUARTER : sc == 8 ? JPEG_SCALE_EIGHTH : 0;
-    jpg->setPixelType(RGB565_LITTLE_ENDIAN);
+    jpg->setPixelType(RGB565_BIG_ENDIAN);
     ok = jpg->decode(max(0, (240 - w / sc) / 2), max(0, (240 - h / sc) / 2), opt);
   }
   bool noMem = !ok && jpg->getLastError() == JPEG_ERROR_MEMORY;
@@ -206,56 +211,93 @@ bool validGif(const String &path) {
   return error == nullptr;
 }
 
+static inline int clip240(int v) { return v < 0 ? 0 : v > 240 ? 240 : v; }
+
 static void gifDraw(GIFDRAW *p) {
-  uint16_t *buf = uiRowBuf();  // alinhado: tftPixels não copia
-  int y = p->iY + p->y + gifOffY;
-  if (y < 0 || y >= 240) return;
-  int x0 = p->iX + gifOffX;
-  int w = p->iWidth;
-  if (x0 + w > 240) w = 240 - x0;
-  if (w <= 0) return;
-  uint8_t *s = p->pPixels;
-  uint16_t *pal = p->pPalette;
-  if (p->ucDisposalMethod == 2) {  // restaurar fundo
-    for (int i = 0; i < w; i++)
-      if (s[i] == p->ucTransparent) s[i] = p->ucBackground;
-    p->ucHasTransparency = 0;
-  }
-  tft.startWrite();
-  if (p->ucHasTransparency) {
-    uint8_t tr = p->ucTransparent;
-    int x = 0;
-    while (x < w) {
-      while (x < w && s[x] == tr) x++;
-      int start = x, n = 0;
-      while (x < w && s[x] != tr) buf[n++] = pal[s[x++]];
-      if (n) {
-        tft.setAddrWindow(x0 + start, y, n, 1);
-        tftPixels(buf, n);
+  uint16_t *buf = uiRowBuf();  // alinhado: tftPixelsBE não copia
+  if (p->y == 0) {
+    int fx0 = clip240(p->iX + gifOffX), fy0 = clip240(p->iY + gifOffY);
+    int fx1 = clip240(p->iX + gifOffX + p->iWidth), fy1 = clip240(p->iY + gifOffY + p->iHeight);
+    gifClearTrans = (gifPrevDisp == 2 && gifPrevW > 0 && gifPrevH > 0);
+    if (gifClearTrans) {
+      gifOldX0 = gifPrevX; gifOldY0 = gifPrevY;
+      gifOldX1 = gifPrevX + gifPrevW; gifOldY1 = gifPrevY + gifPrevH;
+      if (gifOldX1 <= fx0 || fx1 <= gifOldX0 || gifOldY1 <= fy0 || fy1 <= gifOldY0) {
+        tft.fillRect(gifOldX0, gifOldY0, gifOldX1 - gifOldX0, gifOldY1 - gifOldY0, 0);
+      } else {
+        int cy0 = max<int>(gifOldY0, fy0), cy1 = min<int>(gifOldY1, fy1);
+        if (gifOldY0 < cy0) tft.fillRect(gifOldX0, gifOldY0, gifOldX1 - gifOldX0, cy0 - gifOldY0, 0);
+        if (cy1 < gifOldY1) tft.fillRect(gifOldX0, cy1, gifOldX1 - gifOldX0, gifOldY1 - cy1, 0);
+        if (cy0 < cy1 && gifOldX0 < fx0) tft.fillRect(gifOldX0, cy0, fx0 - gifOldX0, cy1 - cy0, 0);
+        if (cy0 < cy1 && fx1 < gifOldX1) tft.fillRect(fx1, cy0, gifOldX1 - fx1, cy1 - cy0, 0);
       }
     }
-  } else {
-    for (int i = 0; i < w; i++) buf[i] = pal[s[i]];
+    gifPrevDisp = p->ucDisposalMethod;
+    gifPrevX = (int16_t)fx0;
+    gifPrevY = (int16_t)fy0;
+    gifPrevW = (int16_t)(fx1 > fx0 ? fx1 - fx0 : 0);
+    gifPrevH = (int16_t)(fy1 > fy0 ? fy1 - fy0 : 0);
+  }
+  int y = p->iY + p->y + gifOffY;
+  if (y < 0 || y >= 240) return;
+  uint8_t *s = p->pPixels;
+  int x0 = p->iX + gifOffX, w = p->iWidth;
+  if (x0 < 0) { s -= x0; w += x0; x0 = 0; }
+  if (x0 + w > 240) w = 240 - x0;
+  if (w <= 0) return;
+  uint16_t *pal = p->pPalette;
+  bool rowRestore = gifClearTrans && y >= gifOldY0 && y < gifOldY1;
+  uint8_t tr = p->ucTransparent;
+  if (!p->ucHasTransparency || (rowRestore && x0 >= gifOldX0 && x0 + w <= gifOldX1)) {
+    for (int i = 0; i < w; i++) {
+      uint8_t px = s[i];
+      buf[i] = (p->ucHasTransparency && px == tr) ? 0 : pal[px];
+    }
+    tft.startWrite();
     tft.setAddrWindow(x0, y, w, 1);
-    tftPixels(buf, w);
+    tftPixelsBE(buf, w);
+    tft.endWrite();
+    return;
+  }
+  auto drawPx = [&](int x) { return s[x] != tr || (rowRestore && x0 + x >= gifOldX0 && x0 + x < gifOldX1); };
+  int x = 0;
+  while (x < w && !drawPx(x)) x++;
+  if (x >= w) return;
+  tft.startWrite();
+  while (x < w) {
+    int start = x, n = 0;
+    while (x < w && drawPx(x)) {
+      uint8_t px = s[x++];
+      buf[n++] = (px == tr) ? 0 : pal[px];
+    }
+    tft.setAddrWindow(x0 + start, y, n, 1);
+    tftPixelsBE(buf, n);
+    while (x < w && !drawPx(x)) x++;
   }
   tft.endWrite();
 }
 
-void stopAlbum() {
+static void releaseGif() {
   if (gif) {
     gif->close();
     delete gif;
     gif = nullptr;
   }
+  gifNoMemTries = 0;
+  gifPrevDisp = 0;
+}
+
+void stopAlbum() {
+  releaseGif();
   inAlbum = false;
   curFile = "";
   uiInvalidate();  // o relógio redesenha tudo ao voltar
 }
 
-// O pacote de mostrador ativo (até ~6,6 KB) disputa o heap com o GIF (~24 KB contíguos) e o JPEG (~19 KB + as
-// tabelas). Só sai da RAM quando falta bloco contíguo para o item; volta sozinho em packEnsureLoaded(), quando o
-// relógio é desenhado de novo. Sem pressão ele fica, para o modo "alternado" não reler o pacote a cada item.
+// O pacote de mostrador ativo (até ~6,6 KB) disputa o heap com o GIF (668 B residentes + ~18,9 KB temporários
+// por quadro em blocos de até 8 KB) e o JPEG (~7,7 KB + 2x4 KB). Só sai da RAM quando falta bloco para o
+// item; volta sozinho em packEnsureLoaded(), quando o relógio é desenhado de novo. Sem pressão ele fica,
+// para o modo "alternado" não reler o pacote a cada item.
 static void albumMakeRoom(uint32_t need) {
   if (facePackLoaded() && ESP.getMaxFreeBlockSize() < need) facePackUnload();
 }
@@ -274,14 +316,14 @@ bool showAlbumItem(const String &f) {
       return false;
     }
     diagBlkSample();  // minblk: o maior bloco antes do GIF (e antes de albumMakeRoom soltar o pacote)
-    albumMakeRoom(sizeof(AnimatedGIF) + 1024);
-    gif = new (std::nothrow) AnimatedGIF();  // ~24 KB contíguos de RAM
+    albumMakeRoom(sizeof(AnimatedGIF) + 1024 + 19456);
+    gif = new (std::nothrow) AnimatedGIF();  // ~668 B residentes (~18,9 KB temporários só durante playFrame())
     if (!gif) {
       diagNoMem(1);
       uiError(tr("Sem memoria p/ GIF", "No memory for GIF", "Sin memoria p/ GIF"));
       return true;  // mantém a tela de aviso até o próximo item
     }
-    gif->begin(GIF_PALETTE_RGB565_LE);
+    gif->begin(GIF_PALETTE_RGB565_BE);
     if (!gif->open(f.c_str(), mediaOpen, mediaClose, gifRead, gifSeek, gifDraw)) {
       gif->close();
       delete gif;
@@ -294,7 +336,7 @@ bool showAlbumItem(const String &f) {
     nextFrameAt = millis();  // não 0: com mais de 24,8 dias ligado, (int32_t)(millis() - 0) é negativo e o GIF nunca tocava
   } else {
     diagBlkSample();  // minblk: o maior bloco antes da foto (e antes de albumMakeRoom soltar o pacote)
-    albumMakeRoom(sizeof(JPEGDEC) + 1024 + 8192);  // o decodificador e, depois, as tabelas de ~7,7 KB
+    albumMakeRoom(sizeof(JPEGDEC) + 1024 + 8192);  // o decodificador (~7,7 KB) + as 2 tabelas AC (2x4 KB)
     JpgResult r = drawJpg(f);
     if (r == JPG_NOMEM) {
       diagNoMem(0);
@@ -306,12 +348,25 @@ bool showAlbumItem(const String &f) {
 
 void albumLoop() {
   if (!gif || (int32_t)(millis() - nextFrameAt) < 0) return;
+  albumMakeRoom(19456 + 1024);
   int delayMs = 0;
   int r = gif->playFrame(false, &delayMs);
-  if (r < 0) {  // erro: desiste deste GIF
+  if (r < 0) {
+    if (gif->getLastError() == GIF_ERROR_MEMORY) {
+      if (++gifNoMemTries < 5) {
+        nextFrameAt = millis() + 200;  // pico passageiro: tenta de novo sem perder a posição no arquivo
+        return;
+      }
+      diagNoMem(1);
+      releaseGif();
+      curFile = "";
+      uiError(tr("Sem memoria p/ GIF", "No memory for GIF", "Sin memoria p/ GIF"));  // mantém inAlbum=true até o próximo item
+      return;
+    }
     stopAlbum();
     return;
   }
+  gifNoMemTries = 0;
   if (r == 0) gif->reset();  // último quadro: recomeça
   nextFrameAt = millis() + max(delayMs, 20);
 }

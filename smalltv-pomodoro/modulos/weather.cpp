@@ -74,6 +74,9 @@ int httpGet(WiFiClient &c, const String &url, uint16_t readMs) {
   uint32_t ip = 0;
   int d = dnsResolve(host.c_str(), ip);
   if (d <= 0) return d ? HTTP_DNS : HTTP_WAIT;
+  IPAddress addr(ip);
+  if (addr[0] == 0 || addr[0] == 127 || addr[0] >= 224 || (addr[0] == 169 && addr[1] == 254) || addr == WiFi.localIP() || ip == 0xFFFFFFFFu)
+    return -1;
   c.setTimeout(HTTP_CONNECT_MS);
   if (!c.connect(IPAddress(ip), port)) return -1;
   c.setTimeout(readMs);

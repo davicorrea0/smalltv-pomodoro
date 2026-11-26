@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
+#include "ws_parse.h"  // analisador de requisições do core com limites (C1–C4 da auditoria), antes de qualquer uso do server
 #include <base64.h>
 #include <DNSServer.h>
 #include <EEPROM.h>
@@ -34,7 +35,7 @@ extern "C" uint32_t _FS_start;
 void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);  // ui.cpp: recorta para a área suja; fora da tela, cai na faixa
 
 
-#define FW_VERSION "1.26.1"
+#define FW_VERSION "1.26.2"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 #define PIN_DC  0
@@ -80,6 +81,7 @@ struct Settings {
   uint8_t spi80;        // reservado: era a opção de 80 MHz de um teste (o ST7789 não aguenta e a imagem vira lixo); sempre 0
   uint8_t warm;         // cor quente à noite: 0 = desligada, 1..100 = quanto do azul sai (gama digital do ST7789V); lixo vira 0
   uint8_t lcdGreen;     // 1 = tom verde de LCD antigo nos mostradores LCD retrô, Previsão LCD, Mundo e Mundo relógio (warm.h); lixo vira 1
+  uint8_t cycles;       // focos por sessão; 0 = sem fim; lixo vira 0
 };
 const uint32_t SETTINGS_MAGIC = 0x504F4D34;     // "POM4"
 const uint32_t SETTINGS_MAGIC_V3 = 0x504F4D33;  // "POM3": mesmos campos, sem os do v4
@@ -202,6 +204,8 @@ extern Phase phase;
 extern bool running;
 extern uint32_t totalMs, remainingMs, lastTick;
 extern uint8_t cycleDone;
+extern uint8_t sessionFoci;
+extern bool sessionDone;
 extern uint32_t alertUntil;
 extern uint16_t phaseSeq, shownSeq;
 extern String hookWork, hookBreak;
@@ -331,6 +335,7 @@ void diagNoMem(uint8_t what);  // conta uma falta de memória: 0 foto, 1 GIF (di
 bool hostOk();
 bool panelOk();
 bool deny();
+void secHeaders();
 void askLogin();
 bool authed();
 bool uploadAuthed();
@@ -344,6 +349,8 @@ void wifiHintSave();
 void startPortal();
 void tftPixels(uint16_t *px, int n);
 void tftBitmap(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);
+void tftPixelsBE(uint16_t *px, int n);
+void tftBitmapBE(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);
 void applyVcom(uint8_t v);
 void applyPanel();
 String hhmm(const struct tm &t);

@@ -57,7 +57,7 @@ const L = {
     serie: (s, a, b) => `${s} (teste) — ${a} a ${b}`, each: 'Ver cada versão',
     files: 'Arquivos', gh: 'Ver no GitHub', sig: 'assinatura', sums: 'SHA256SUMS',
     help: 'Pelo <code>/update</code>, envie o <code>.bin.gz</code> sem descompactar; a partir da 1.20.1 envie junto o <code>.bin.gz.sig</code> (a assinatura). O <code>.bin</code> sem compressão serve para gravar pelo cabo USB-TTL. <code>SHA256SUMS.txt</code> confere os arquivos.',
-    count: n => `${n} versões`, nav: ['Início', 'Galeria', 'Docs', 'Versões', 'Jogo'], navHref: ['./', 'galeria.html', 'docs.html', 'versoes.html', 'jogo.html'],
+    count: n => `${n} versões`, nav: ['Início', 'Recursos', 'Docs', 'Versões', 'Novidades', 'Jogo'], navHref: ['./', 'galeria.html', 'docs.html', 'versoes.html', 'novidades.html', 'jogo.html'],
     other: 'en/releases.html', otherLang: 'EN',
     date: { locale: 'pt-BR', opt: { day: 'numeric', month: 'short', year: 'numeric' } },
   },
@@ -70,7 +70,7 @@ const L = {
     serie: (s, a, b) => `${s} (test) — ${a} to ${b}`, each: 'See each version',
     files: 'Files', gh: 'View on GitHub', sig: 'signature', sums: 'SHA256SUMS',
     help: 'Through <code>/update</code>, send the <code>.bin.gz</code> without unpacking it; from 1.20.1 on, send the <code>.bin.gz.sig</code> (the signature) with it. The uncompressed <code>.bin</code> is for flashing over a USB-TTL cable. <code>SHA256SUMS.txt</code> checks the files.',
-    count: n => `${n} releases`, nav: ['Home', 'Gallery', 'Docs', 'Releases', 'Game'], navHref: ['./', 'gallery.html', 'docs.html', 'releases.html', 'game.html'],
+    count: n => `${n} releases`, nav: ['Home', 'Add-ons', 'Docs', 'Releases', 'News', 'Game'], navHref: ['./', 'gallery.html', 'docs.html', 'releases.html', 'news.html', 'game.html'],
     other: 'versoes.html', otherLang: 'PT',
     date: { locale: 'en-US', opt: { day: 'numeric', month: 'short', year: 'numeric' } },
   },
@@ -172,7 +172,7 @@ function page(t, code) {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Silkscreen&display=swap">
-<link rel="stylesheet" href="${t.root}style.css?v=19">
+<link rel="stylesheet" href="${t.root}style.css?v=21">
 </head>
 <body>
 <!-- gerado por scripts/releases-page.cjs (repositório principal); não edite à mão -->
@@ -180,9 +180,10 @@ function page(t, code) {
 <header class="top">
   <div class="wrap">
     <a class="brand" href="./"><img class="px" src="${t.root}img/tomate.svg" alt=""><span>SmallTV Pomodoro</span></a>
+    <input type="checkbox" id="menu-t" class="menu-t" aria-label="Menu"><label for="menu-t" class="menu-b" title="Menu"><span></span></label>
     <nav class="nav">
       ${nav}
-      <a class="opt" href="https://github.com/${REPO}"><span class="gh" aria-hidden="true"></span>GitHub</a>
+      <a class="opt" href="https://github.com/${REPO}" aria-label="GitHub"><span class="gh" aria-hidden="true"></span><span class="gt">Git<span class="hub">Hub</span></span></a>
     </nav>
     <a class="lang" href="${code === 'en' ? '../' : ''}${t.other}" hreflang="${code === 'en' ? 'pt-BR' : 'en'}"><img class="px" src="${t.root}img/icons/globo.svg" alt="">${t.otherLang}</a>
   </div>

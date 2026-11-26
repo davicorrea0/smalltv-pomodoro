@@ -67,6 +67,7 @@ else  # Windows: gera os .cpp com o node daqui e roda no WSL
   node sim/portal_test.cjs build/testes/portal.cpp
   node sim/idioma_test.cjs build/testes/idioma.cpp
   node sim/telemetria_test.cjs build/testes/telemetria.cpp
+  node sim/wifi_ip_test.cjs build/testes/wifi_ip.cpp
   node sim/painel_etag_test.cjs build/testes/painel_etag.cpp
   node sim/brilho_loop_test.cjs build/testes/brilho_loop.cpp
   L="/mnt/$(pwd -W | cut -c1 | tr 'A-Z' 'a-z')$(pwd -W | cut -c3-)"
@@ -140,6 +141,7 @@ console.log(json+":",s(out),out.ponte?"(ponte)":"");if(out.l2)console.log("  l2 
   die "a ponte não permite publicar esta versão (veja acima)"
 PONTE=$(node -p 'require(process.argv[1]).version' "$W/$JSON")
 # versão, contagens, galeria estática, SEO do <head> e sitemap.xml: tudo derivado dos JSON acima, do catalog/ e de faces_list.h
+node scripts/noticias-page.cjs "$W" > /dev/null || die "não consegui gerar a página de novidades"  # antes do SEO: ele confere novidades.html
 node scripts/site-seo.cjs "$W"
 git -C "$W" add -A
 git -C "$W" status --short

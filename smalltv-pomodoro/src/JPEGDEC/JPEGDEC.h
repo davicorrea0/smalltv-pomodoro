@@ -64,7 +64,7 @@
 #define DCTSIZE 64
 #define MAX_MCU_COUNT 6
 #define MAX_COMPS_IN_SCAN 4
-#define MAX_BUFFERED_PIXELS 2048
+#define MAX_BUFFERED_PIXELS 1024
 #define MCU_SKIP -8
 
 // Decoder options
@@ -238,7 +238,7 @@ typedef struct jpeg_image_tag
     int16_t sQuantTable[DCTSIZE*4]; // quantization tables
     uint8_t ucFileBuf[JPEG_FILE_BUF_SIZE]; // holds temp data and pixel stack
     uint8_t ucHuffDC[DC_TABLE_SIZE * 2]; // up to 2 'short' tables
-    uint16_t usHuffAC[HUFF11SIZE * 2];
+    uint16_t *usHuffAC[2]; // 2 tabelas de 4 KB alocadas em blocos separados em JPEGInit()
 } JPEGIMAGE;
 
 #ifdef __cplusplus
@@ -252,6 +252,10 @@ typedef struct jpeg_image_tag
 class JPEGDEC
 {
   public:
+    JPEGDEC() { memset(&_jpeg, 0, sizeof(JPEGIMAGE)); }
+    ~JPEGDEC() { close(); }
+    JPEGDEC(const JPEGDEC &) = delete;
+    JPEGDEC &operator=(const JPEGDEC &) = delete;
     int openRAM(uint8_t *pData, int iDataSize, JPEG_DRAW_CALLBACK *pfnDraw);
     int openFLASH(const uint8_t *pData, int iDataSize, JPEG_DRAW_CALLBACK *pfnDraw);
     int open(const char *szFilename, JPEG_OPEN_CALLBACK *pfnOpen, JPEG_CLOSE_CALLBACK *pfnClose, JPEG_READ_CALLBACK *pfnRead, JPEG_SEEK_CALLBACK *pfnSeek, JPEG_DRAW_CALLBACK *pfnDraw);

@@ -64,6 +64,15 @@ const I = {
     for (let y = 6; y <= 12; y++) for (let x = 1; x <= 14; x++) { const a = Math.abs(x - 5) <= (y - 6) * .8 && y >= 7, b = y >= 9 && Math.abs(x - 11) <= (y - 8) * .8; if (a || b) g.put('d', [[x, y]]) }
     return g;
   },
+  // miniapps: quatro telinhas em grade 2x2
+  apps: () => {
+    const g = new G();
+    for (const [a, b] of [[1, 1], [9, 1], [1, 9], [9, 9]])
+      g.add(box(a, b, a + 5, b + 5)).del((x, y, X, Y) => (X == a || X == a + 5) && (Y == b || Y == b + 5));
+    g.put('h', [[2, 3], [3, 2], [2, 4]]);
+    g.put('x', [[11, 11], [12, 11], [11, 12], [12, 12]]);
+    return g;
+  },
   // controles deslizantes (três trilhos de 2 px; o botão é um miolo 2x2 que, com o contorno, fecha 4x4)
   ajustes: () => {
     const g = new G(), kn = [[9, 3], [3, 7], [7, 11]];

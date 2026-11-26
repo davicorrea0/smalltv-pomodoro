@@ -12,8 +12,8 @@ const dict = JSON.parse(fs.readFileSync(path.join(__dirname, '../web/i18n.json')
 const cut = (sig, from = 0) => { const a = source.indexOf(sig, from); if (a < 0) throw Error('não achei ' + sig); const b = source.indexOf('\n}', a); if (b < 0) throw Error('sem fim: ' + sig); return source.slice(a, b + 2); };
 
 // ---------- 1. campos aditivos ----------
-const OLD = ('phase running remaining total cycle today streak best clock showing wx ok t min max h rin tzn off loff rise set desc fs l2 mig used cfg work short long every bri auto h12 tz lock theme mode delay color non nstart nend nbri won fahr rain beta lat lon city bgr inv flip vcom wdown tok tund pkg goal act lang nsun warm lcdg alexa rotmin rot ago ip last pv name heap blk pdraw pseq pshown ver diag rst exc epc rssi minheap frag up draw stall stallAt boot scr wifi wf time src ntp crash n r x va').split(' ');
-const NEW = ['minblk', 'stack', 'ramfix', 'lps', 'pack', 'nomem', 'jpg', 'gif', 'strip', 'tw', 'twmax', 'fail'];
+const OLD = ('phase running remaining total cycle sess sdone today streak best clock showing wx ok t min max h rin tzn off loff rise set desc fs l2 mig used cfg work short long every cycles bri auto h12 tz lock theme mode delay color non nstart nend nbri won fahr rain beta lat lon city bgr inv flip vcom wdown tok tund pkg goal act lang nsun warm lcdg alexa rotmin rot ago ip last pv name heap blk pdraw pseq pshown ver diag rst exc epc rssi minheap frag up draw stall stallAt boot scr wifi wf time src ntp crash n r x va').split(' ');
+const NEW = ['minblk', 'stack', 'ramfix', 'sk', 'fr', 'fl', 'lps', 'pack', 'nomem', 'jpg', 'gif', 'strip', 'tw', 'twmax', 'fail'];
 const sendState = cut('static void sendState() {'), diagJson = cut('static void diagJson('), crashJson = cut('static void crashJson(');
 const keys = new Set([...(sendState + diagJson + crashJson).matchAll(/\\"(\w+)\\":/g)].map(m => m[1]));
 for (const k of OLD) assert(keys.has(k), 'chave antiga sumiu do /api/state: ' + k + ' (painéis antigos leem esse JSON)');
@@ -51,7 +51,7 @@ assert(!/EEPROM|LittleFS|saveSettings/.test(diagJson + heapFn + cut('void diagBl
 const sp = html.slice(html.indexOf('// minigráficos:'), html.indexOf('// data-neg:'));
 assert(sp.includes('HN=600'), 'anel de ~600 amostras');
 assert(!/localStorage|sessionStorage|indexedDB|post\(|fetch\(|sendBeacon/.test(sp.replace(/\/\/[^\n]*/g, '').replace(/navigator\.clipboard/g, '')), 'o histórico fica só na memória da página: nada de storage nem rede nos gráficos');
-assert(html.includes('if(s.diag){diagShow(s);spkPush(s)}'), 'os gráficos são alimentados pelo load() do poll existente');
+assert(html.includes('if(s.diag){diagShow(s);spkPush(s);memShow(s)}'), 'os gráficos e a memória são alimentados pelo load() do poll existente');
 const a = html.indexOf('const DKEY='), b = html.indexOf('function diagCopy');
 const diagText = new Function(html.slice(a, b) + '\nreturn diagText')();
 const SEN = ['SEGREDO-CIDADE', 'SEGREDO-NOME', '192.168.77.5', '-23.5478', 'SEGREDO-FUSO', 'SEGREDO-ARQUIVO', 'SEGREDO-SENHA', 'SEGREDO-ROT', 'SEGREDO-PKG'];
@@ -75,7 +75,7 @@ assert.strictEqual(diagText({ ...state, diag: { ...state.diag, outro: 'x' } }, {
 assert(/^diag( \w+=[\w.-]*)+$/.test(diagText({ ...state, diag: { ...state.diag, epc: 'Rua das Flores, 12 (casa)' } }, {}).split('\n')[2]), 'q() deve tirar espaços e pontuação de qualquer valor');
 assert.doesNotThrow(() => diagText({ ver: '1.25.0' }, {}), 'firmware antigo (sem diag.minblk/nomem/boot) não pode quebrar o texto');
 // barra de RAM: fixa + em uso + livre fecha a DRAM de 80 KB (81920 B)
-assert(html.includes('const T=81920,u=T-f-s.heap;') && html.includes('[f,u,s.heap]') && /0x3FFE8000u/.test(source) && /heap total = 81920 - ramfix/.test(source), 'conta da barra de RAM: fixa + (81920 - fixa - livre) + livre');
+assert(html.includes('const rf=d.ramfix,T=81920,h=s.heap;') && html.includes('[rf,u,h]') && /0x3FFE8000u/.test(source) && /heap total = 81920 - ramfix/.test(source), 'conta da barra de RAM: fixa + (81920 - fixa - livre) + livre');
 // lps (voltas do laço por segundo): só em diag e no texto copiado; nada na tela, sem % nem gráfico
 assert(!/lps/.test(html.replace(/const DKEY=[^\n]*/, '')), 'lps não pode aparecer na tela do painel (só no texto copiado)');
 // tw/twmax (lista TIME_WAIT esvaziada pelo tcpTwPurge): idem, só no texto copiado
@@ -134,7 +134,7 @@ static CrashRec crashRec;
 static uint32_t g_now = 100000, g_hFree, g_hMax; static uint8_t g_hFrag; static int g_stats = 0, g_max = 0, g_free = 0, g_rssi = -61;
 static rst_info g_rst = {4, 0, 0};
 static struct { void getHeapStats(uint32_t *f, uint32_t *m, uint8_t *fr) { g_stats++; if (f) *f = g_hFree; if (m) *m = g_hMax; if (fr) *fr = g_hFrag; }
-  uint32_t getMaxFreeBlockSize() { g_max++; return g_hMax; } uint32_t getFreeHeap() { g_free++; return g_hFree; } uint32_t getFreeContStack() { return 3180; }
+  uint32_t getMaxFreeBlockSize() { g_max++; return g_hMax; } uint32_t getFreeHeap() { g_free++; return g_hFree; } uint32_t getFreeContStack() { return 3180; } uint32_t getSketchSize() { return 700000; } uint32_t getFreeSketchSpace() { return 1000000; } uint32_t getFlashChipSize() { return 4194304; }
   const rst_info *getResetInfoPtr() { return &g_rst; } } ESP;
 static struct { bool isConnected() { return true; } int RSSI() { return g_rssi; } } WiFi;
 uint32_t millis() { return g_now; }

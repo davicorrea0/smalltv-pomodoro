@@ -4,6 +4,7 @@
 #include <lwip/tcp.h>  // tcp_abort (tcpTwPurge)
 #include "../web.h"
 #include "../appdata.h"
+#include "../sessoes.h"
 
 // respostas curtas repetidas nas rotas: um só corpo no binário em vez de três String temporárias em cada uso
 static void sendOk() { server.send_P(200, PSTR("text/plain"), PSTR("ok")); }
@@ -62,6 +63,100 @@ void jsonEscapeAppend(String &o, const char *s) {
 }
 
 static bool safeText(const String &s) { return s.indexOf('"') < 0 && s.indexOf('\\') < 0; }
+
+struct SessoesJson {
+  String *json;
+  bool primeira;
+};
+
+static void sessoesJsonLinha(const SessaoLinha *s, void *contexto) {
+  SessoesJson &c = *(SessoesJson *)contexto;
+  String nome;
+  nome.concat(s->nome, s->nome_len);
+  *c.json += c.primeira ? F("{\"name\":\"") : F(",{\"name\":\"");
+  c.primeira = false;
+  jsonEscapeAppend(*c.json, nome.c_str());
+  *c.json += F("\",\"work\":");
+  *c.json += s->work;
+  *c.json += F(",\"short\":");
+  *c.json += s->short_break;
+  *c.json += F(",\"long\":");
+  *c.json += s->long_break;
+  *c.json += F(",\"every\":");
+  *c.json += s->every;
+  *c.json += F(",\"cycles\":");
+  *c.json += s->cycles;
+  *c.json += '}';
+}
+
+// Devolve também o arquivo vazio como set:1. Só a ausência real vira set:0; uma falha de
+// montagem/leitura nunca se disfarça de lista ainda não configurada.
+static bool sendSessoes() {
+  server.sendHeader("Cache-Control", F("no-store"));
+  if (!fsOk) {
+    server.send_P(500, PSTR("text/plain"), PSTR("memoria indisponivel"));
+    return false;
+  }
+  if (!LittleFS.exists(F("/sessoes.txt"))) {
+    server.send_P(200, PSTR("application/json"), PSTR("{\"set\":0,\"l\":[]}"));
+    return true;
+  }
+  File f = LittleFS.open(F("/sessoes.txt"), "r");
+  if (!f) {
+    server.send_P(500, PSTR("text/plain"), PSTR("falha de leitura"));
+    return false;
+  }
+  f.setTimeout(0);
+  size_t esperado = f.size();
+  if (esperado > SESSOES_TEXTO_MAX) {  // arquivo normal tem no máximo 1024: maior que isso está corrompido
+    f.close();
+    server.send_P(500, PSTR("text/plain"), PSTR("falha de leitura"));
+    return false;
+  }
+  String texto;
+  bool ok = texto.reserve(esperado + 1);
+  char bloco[96];
+  while (ok && texto.length() < esperado) {
+    size_t falta = esperado - texto.length(), pedir = falta < sizeof bloco ? falta : sizeof bloco;
+    size_t n = f.read((uint8_t *)bloco, pedir);
+    if (!n) { ok = false; break; }
+    texto.concat(bloco, n);
+  }
+  f.close();
+  if (!ok || texto.length() != esperado) {
+    server.send_P(500, PSTR("text/plain"), PSTR("falha de leitura"));
+    return false;
+  }
+  String j;
+  if (!j.reserve(160 + texto.length() * 2)) {
+    server.send_P(500, PSTR("text/plain"), PSTR("memoria insuficiente"));
+    return false;
+  }
+  j = F("{\"set\":1,\"l\":[");
+  SessoesJson contexto = {&j, true};
+  sessoesLer(texto.c_str(), texto.length(), sessoesJsonLinha, &contexto);
+  j += F("]}");
+  server.send(200, PSTR("application/json"), j);
+  return true;
+}
+
+struct SessoesGrava {
+  File *arquivo;
+  bool ok;
+  size_t bytes;  // o que foi pedido ao arquivo: o tamanho final tem de bater (flush/close do LittleFS não devolvem erro)
+};
+
+static void sessoesGravaLinha(const SessaoLinha *s, void *contexto) {
+  SessoesGrava &c = *(SessoesGrava *)contexto;
+  if (!c.ok) return;
+  c.ok = c.arquivo->write((const uint8_t *)s->nome, s->nome_len) == s->nome_len;
+  c.bytes += s->nome_len;
+  char numeros[24];
+  int n = snprintf_P(numeros, sizeof numeros, PSTR("\t%u\t%u\t%u\t%u\t%u\n"), s->work, s->short_break,
+                     s->long_break, s->every, s->cycles);
+  if (c.ok) c.ok = n > 0 && c.arquivo->write((const uint8_t *)numeros, n) == (size_t)n;
+  if (c.ok) c.bytes += n;
+}
 
 // ---------- diagnóstico (painel: Ajustes -> Sistema) ----------
 // Motivo do último reinício (e, se foi travamento, a causa e o endereço), sinal do Wi-Fi, menor memória livre
@@ -127,6 +222,16 @@ static void diagHeap(uint32_t &heapFree, uint32_t &blk, uint8_t &frag) {
 // calcula o resto da DRAM de 80 KB (81920 B): heap total = 81920 - ramfix. A pilha do laço fica fora (pilha do sistema).
 static uint32_t ramFixed() { return (uint32_t)(uintptr_t)_heap_start - 0x3FFE8000u; }
 
+// A geometria da flash não muda enquanto o relógio está ligado. Lê uma vez no setup, depois do LittleFS montar,
+// para o /api/state apenas serializar os valores (sem consultar a flash a cada pedido).
+static uint32_t diagSketchSize, diagFreeSketch, diagFlashSize;
+
+static void diagFlashBoot() {
+  diagSketchSize = ESP.getSketchSize();
+  diagFreeSketch = ESP.getFreeSketchSpace();
+  diagFlashSize = ESP.getFlashChipSize();
+}
+
 static void diagJson(String &j, uint8_t frag) {
   const rst_info *r = ESP.getResetInfoPtr();
   char epc[12];
@@ -157,6 +262,12 @@ static void diagJson(String &j, uint8_t frag) {
   j += ESP.getFreeContStack();
   j += F(",\"ramfix\":");  // RAM fixa do build em bytes (o painel desenha a barra fixa / em uso / livre)
   j += ramFixed();
+  j += F(",\"sk\":");  // programa, folga para OTA e flash real (medidos uma vez no boot)
+  j += diagSketchSize;
+  j += F(",\"fr\":");
+  j += diagFreeSketch;
+  j += F(",\"fl\":");
+  j += diagFlashSize;
   j += F(",\"lps\":");  // voltas do laço por segundo (só no texto copiado do painel)
   j += diagLps;
   j += F(",\"pack\":");  // ms da última carga de pacote de mostrador (0 = nenhuma)
@@ -210,7 +321,7 @@ static void sendState() {
     fsInfoAt = millis() | 1;
   }
   String j;
-  j.reserve(704);
+  j.reserve(736);
   server.sendHeader("Cache-Control", F("no-store"));  // cidade, rede e ajustes: o navegador não guarda
   jsonBegin();
   j += F("{\"phase\":\"");
@@ -223,6 +334,10 @@ static void sendState() {
   j += totalMs;
   j += F(",\"cycle\":");
   j += cycleDone;
+  j += F(",\"sess\":");
+  j += sessionFoci;
+  j += F(",\"sdone\":");
+  j += sessionDone ? 1 : 0;
   j += F(",\"today\":");
   j += cfg.todayCount;
   j += F(",\"streak\":");
@@ -279,6 +394,8 @@ static void sendState() {
   j += cfg.longBreak;
   j += F(",\"every\":");
   j += cfg.longEvery;
+  j += F(",\"cycles\":");
+  j += cfg.cycles;
   j += F(",\"bri\":");
   j += cfg.brightness;
   j += F(",\"auto\":");
@@ -555,12 +672,21 @@ bool deny() {
   return false;
 }
 
+void secHeaders() {
+  server.sendHeader(F("X-Content-Type-Options"), F("nosniff"));
+  server.sendHeader(F("X-Frame-Options"), F("DENY"));
+  server.sendHeader(F("Referrer-Policy"), F("no-referrer"));
+}
+
 // Senha do painel (a mesma do /update, usuário admin): com ela definida, todo o painel e a API pedem
 // login HTTP (o navegador pergunta uma vez e lembra). Erros usam espera progressiva por IP sem bloquear
 // o loop do relógio. A API da Alexa e o modo de recuperação não pedem senha.
 // O login Basic é conferido aqui: o authenticate() do servidor traz junto o modo Digest e o MD5 (~2,5 KB).
 static bool passOk() {
-  return !cfg.otaPass[0] || server.header("Authorization") == "Basic " + base64::encode(String("admin:") + cfg.otaPass, false);
+  if (!cfg.otaPass[0]) return true;
+  const String &h = server.header("Authorization");
+  String want = "Basic " + base64::encode(String("admin:") + cfg.otaPass, false);
+  return constTimeEq(h.c_str(), h.length(), want.c_str(), want.length());
 }
 
 void askLogin() {
@@ -680,6 +806,7 @@ static void handlePanelUpload() {
 // novo. O 304 só sai depois do login (readOk) e só com /www/<hash>.gz presente: o carregador não leva ETag.
 static void sendPanel() {
   if (!readOk()) return;  // com senha, o navegador pede o login já ao abrir o painel
+  secHeaders();
   server.sendHeader("Cache-Control", "no-cache");  // depois de atualizar o firmware, o navegador busca o painel novo
   File f = fsOk ? LittleFS.open("/www/" PANEL_HASH ".gz", "r") : File();
   if (f) {
@@ -755,6 +882,50 @@ void setupWeb() {
     }
     server.send_P(saved ? 200 : 500, PSTR("text/plain"), saved ? PSTR("ok") : PSTR("falhou"));
   });
+  // Sessões criadas no painel: o arquivo é a fonte compartilhada por todos os navegadores.
+  server.on(F("/api/sessoes"), HTTP_GET, [] {
+    if (!readOk()) return;
+    sendSessoes();
+  });
+  server.on(F("/api/sessoes"), HTTP_POST, [] {
+    if (!guard()) return;
+    if (!fsOk) {
+      server.send_P(500, PSTR("text/plain"), PSTR("memoria indisponivel"));
+      return;
+    }
+    if (!server.hasArg("t")) {
+      server.send_P(400, PSTR("text/plain"), PSTR("lista ausente"));
+      return;
+    }
+    const String &texto = server.arg("t");
+    SessoesErro erro = sessoesValidar(texto.c_str(), texto.length());
+    if (erro != SESSOES_OK) {
+      server.send_P(400, PSTR("text/plain"), sessoesErroTexto(erro));
+      return;
+    }
+    LittleFS.remove(F("/sessoes.tmp"));
+    File f = LittleFS.open(F("/sessoes.tmp"), "w");
+    SessoesGrava contexto = {&f, (bool)f, 0};
+    if (contexto.ok) sessoesLer(texto.c_str(), texto.length(), sessoesGravaLinha, &contexto);
+    if (f) {
+      f.flush();
+      f.close();
+    }
+    // flush e close não informam falha (flash cheia): só troca o arquivo bom se o tmp releu com o tamanho certo
+    if (contexto.ok) {
+      File v = LittleFS.open(F("/sessoes.tmp"), "r");
+      contexto.ok = v && v.size() == contexto.bytes;
+      if (v) v.close();
+    }
+    bool salva = contexto.ok && LittleFS.rename(F("/sessoes.tmp"), F("/sessoes.txt"));
+    if (!salva) {
+      LittleFS.remove(F("/sessoes.tmp"));
+      server.send_P(500, PSTR("text/plain"), PSTR("nao foi possivel salvar"));
+      return;
+    }
+    fsInfoAt = 0;
+    sendSessoes();
+  });
   server.on(F("/api/statsimport"), HTTP_POST, handleStatsImport);
   // lista dos mostradores para a galeria do painel (vem de faces_list.h)
   server.on(F("/api/faces"), HTTP_GET, [] {
@@ -816,6 +987,7 @@ void setupWeb() {
         return;
       }
       server.sendHeader("Cache-Control", F("max-age=300"));
+      secHeaders();
       server.streamFile(f, F("image/png"));
       f.close();
       return;
@@ -958,6 +1130,9 @@ void setupWeb() {
     cfg.shortBreak = argRange("short", cfg.shortBreak, 1, 99);
     cfg.longBreak = argRange("long", cfg.longBreak, 1, 99);
     cfg.longEvery = argRange("every", cfg.longEvery, 1, 8);
+    uint8_t cycles = argRange("cycles", cfg.cycles, 0, 99);
+    if (cycles != cfg.cycles) sessionFoci = 0;
+    cfg.cycles = cycles;
     cfg.brightness = argRange("bri", cfg.brightness, 5, 100);  // mínimo 5: com 0 a tela apagaria
     cfg.autoStart = argRange("auto", cfg.autoStart, 0, 1);
     cfg.hour12 = argRange("h12", cfg.hour12, 0, 1);
@@ -1039,7 +1214,7 @@ void setupWeb() {
     if (panelChanged) applyPanel();
     // Brilho, horário noturno e opções que não aparecem na tela: sem apagar e redesenhar tudo, que piscaria
     // a cada movimento do controle (junto com a rampa do brilho)
-    static const char *const QUIET[] = {"bri", "non", "nstart", "nend", "nbri", "nsun", "warm", "lcdg", "beta", "alexa", "rotmin"};
+    static const char *const QUIET[] = {"bri", "non", "nstart", "nend", "nbri", "nsun", "warm", "lcdg", "beta", "alexa", "rotmin", "cycles"};
     bool quiet = true;
     for (int i = 0; quiet && i < server.args(); i++) {
       bool q = false;
@@ -1199,13 +1374,16 @@ void setupWeb() {
       return;
     }
     server.sendHeader("Cache-Control", F("max-age=86400"));
+    secHeaders();
     server.streamFile(file, isGif(f) ? F("image/gif") : F("image/jpeg"));
     file.close();
   });
   // Troca a senha do /update. Se já houver senha, exige a atual.
   server.on(F("/api/otapass"), HTTP_POST, [] {
     if (!guard()) return;
-    if (cfg.otaPass[0] && server.arg("old") != cfg.otaPass) {
+    const String &old = server.arg("old");
+    if (cfg.otaPass[0] && !constTimeEq(old.c_str(), old.length(), cfg.otaPass, strlen(cfg.otaPass))) {
+      authThrottle.fail(requestIp(), millis());
       server.send_P(403, PSTR("text/plain"), PSTR("Senha atual incorreta"));
       return;
     }
@@ -1448,6 +1626,7 @@ void startPortal() {
                              [](int i) { return (int)WiFi.RSSI(i); }, pick, PORTAL_LIST_MAX)
                   : 0;
     server.sendHeader(F("Cache-Control"), F("no-store"));
+    secHeaders();
     server.setContentLength(CONTENT_LENGTH_UNKNOWN);  // HTTP em partes: a página não é montada inteira no heap
     server.send(200, "text/html", "");
     String c;

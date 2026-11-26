@@ -492,10 +492,8 @@ static void vecTextImpl(const VecFont &f, int x, int y, int h, const char *s, ui
   int W = vecWidth(f, s, h);
   if (W > 240) W = 240;
   if (W <= 0 || h <= 0) return;
-  // buffers só durante o desenho (RAM fixa é escassa: o GIF do álbum precisa de ~24 KB contíguos)
-  uint8_t *cov = (uint8_t *)malloc(W * 3 + 2);  // cobertura (W) + linha RGB565 alinhada (2W)
-  if (!cov) return;
-  uint16_t *row = (uint16_t *)(cov + ((W + 1) & ~1));
+  uint8_t cov[240];
+  uint16_t *row = uiRowBuf();  // 240 uint16_t alinhados em 4 B, sem malloc/free por desenho
   uint16_t pal[17];
   for (int i = 0; i <= 16; i++) pal[i] = mix16(bg, fg, i);
   int r0 = 0, r1 = h;
@@ -511,17 +509,21 @@ static void vecTextImpl(const VecFont &f, int x, int y, int h, const char *s, ui
       if (g < 0) continue;
       int c0 = pgm_read_byte(&f.glyph[g]), c1 = pgm_read_byte(&f.glyph[g + 1]);
       for (int j = 0; j < 4; j++) {
-        int sy = (int)((r + (j + 0.5f) / 4) * 720 / h);
+        int sy = ((r * 8 + j * 2 + 1) * 720) / (h * 8);
         int xs[32], n = 0;  // x em 1/16 de unidade, *2 + sentido (1 = descendo)
         for (int c = c0; c < c1; c++) {
           int s0 = c ? pgm_read_word(&f.cend[c - 1]) : 0, e = pgm_read_word(&f.cend[c]);
+          if (e <= s0) continue;
+          int prevI = e - 1;
+          int prevY = (int16_t)pgm_read_word(&f.pt[prevI][1]);
           for (int i = s0; i < e; i++) {
-            int k = i + 1 < e ? i + 1 : s0;
-            int ay = (int16_t)pgm_read_word(&f.pt[i][1]), by = (int16_t)pgm_read_word(&f.pt[k][1]);
-            if ((ay <= sy && sy < by) || (by <= sy && sy < ay)) {
-              int ax = (int16_t)pgm_read_word(&f.pt[i][0]), bx = (int16_t)pgm_read_word(&f.pt[k][0]);
-              if (n < 32) xs[n++] = (ax * 16 + (sy - ay) * (bx - ax) * 16 / (by - ay)) * 2 + (ay < by);
+            int curY = (int16_t)pgm_read_word(&f.pt[i][1]);
+            if ((prevY <= sy && sy < curY) || (curY <= sy && sy < prevY)) {
+              int ax = (int16_t)pgm_read_word(&f.pt[prevI][0]), bx = (int16_t)pgm_read_word(&f.pt[i][0]);
+              if (n < 32) xs[n++] = (ax * 16 + (sy - prevY) * (bx - ax) * 16 / (curY - prevY)) * 2 + (prevY < curY);
             }
+            prevI = i;
+            prevY = curY;
           }
         }
         for (int i = 1; i < n; i++)
@@ -540,7 +542,6 @@ static void vecTextImpl(const VecFont &f, int x, int y, int h, const char *s, ui
     if (overlay) uiBlendCoverage(x, y + r, cov, W, fg);
     else { for (int i = 0; i < W; i++) row[i] = pal[(cov[i] > 64 ? 64 : cov[i]) / 4]; blit(x, y + r, row, W, 1); }
   }
-  free(cov);
 }
 void vecText(const VecFont &f, int x, int y, int h, const char *s, uint16_t fg, uint16_t bg) { vecTextImpl(f, x, y, h, s, fg, bg, false); }
 void vecTextOver(const VecFont &f, int x, int y, int h, const char *s, uint16_t fg) { vecTextImpl(f, x, y, h, s, fg, 0, true); }
