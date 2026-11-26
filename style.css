@@ -63,15 +63,25 @@ p { margin: 0 0 1em; }
 .brand span { font-family: var(--pixel); font-weight: 400; font-size: 15px; }
 .nav { margin-left: auto; display: flex; gap: 4px; }
 .nav a {
-  color: var(--muted); text-decoration: none; font-size: 15px;
+  color: var(--muted); text-decoration: none; font-size: 15px; white-space: nowrap;
   padding: 8px 10px; border-radius: 6px;
 }
 .nav a:hover { color: var(--text); background: var(--card); }
 .nav a[aria-current="page"] { color: var(--text); background: var(--card-2); }
-@media (max-width: 520px) {
+/* menu com 6 itens: abaixo de 860 px o nome ao lado do logo sai do topo (fica no rodapé) e o GitHub vira "Git" com
+   o gato; abaixo de 620 px os itens ficam mais justos e o GitHub fica só o gato; abaixo de 560 px o Jogo sai do topo
+   (fica no rodapé). A página nunca passa da tela. */
+@media (max-width: 860px) {
   .brand span { display: none; }
+  .nav .opt .hub { display: none; }
+}
+@media (max-width: 620px) {
   .nav a { padding: 8px 7px; font-size: 14px; }
-  .nav .opt { display: none; }
+  .nav .opt .gt { display: none; }
+  .nav .opt .gh { margin-right: 0; }
+}
+@media (max-width: 559px) {
+  .nav a[href$="jogo.html"], .nav a[href$="game.html"] { display: none; }
 }
 
 /* ---------- Botões ---------- */
@@ -465,11 +475,17 @@ section[data-kind].first { border-top: 0; padding-top: 16px; }
 .doc details.note p { color: var(--muted); }
 .doc .faq details.note { background: var(--card); border-color: var(--line); }
 .doc .faq details.note[open] { border-color: rgba(255, 90, 71, 0.35); }
-@media (max-width: 400px) {
-  .top .wrap { gap: 8px; }
+@media (max-width: 460px) {
+  .top .wrap { gap: 4px; }
   .nav { gap: 0; }
   .nav a { padding: 8px 5px; font-size: 13px; }
-  .lang { padding-left: 8px; padding-right: 8px; }
+  .nav a.opt { padding-left: 4px; padding-right: 4px; }
+  .lang { padding-left: 6px; padding-right: 6px; }
+}
+/* celular bem estreito (iPhone SE e afins): o gato do GitHub sai do topo (fica no rodapé) */
+@media (max-width: 359px) {
+  .nav .opt { display: none; }
+  .nav a { padding: 8px 4px; font-size: 12px; }
 }
 .doc .topic { margin-bottom: 40px; }
 

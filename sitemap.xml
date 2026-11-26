@@ -41,6 +41,16 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://davicorrea0.github.io/smalltv-pomodoro/en/releases.html"/>
   </url>
   <url>
+    <loc>https://davicorrea0.github.io/smalltv-pomodoro/novidades.html</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://davicorrea0.github.io/smalltv-pomodoro/novidades.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://davicorrea0.github.io/smalltv-pomodoro/en/news.html"/>
+  </url>
+  <url>
+    <loc>https://davicorrea0.github.io/smalltv-pomodoro/en/news.html</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://davicorrea0.github.io/smalltv-pomodoro/novidades.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://davicorrea0.github.io/smalltv-pomodoro/en/news.html"/>
+  </url>
+  <url>
     <loc>https://davicorrea0.github.io/smalltv-pomodoro/jogo.html</loc>
     <xhtml:link rel="alternate" hreflang="pt-BR" href="https://davicorrea0.github.io/smalltv-pomodoro/jogo.html"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://davicorrea0.github.io/smalltv-pomodoro/en/game.html"/>
