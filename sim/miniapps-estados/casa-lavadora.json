@@ -1,10 +1,13 @@
 {
- "capa": 1,
+ "capa": 2,
  "estados": [
   {"n":"Sem dados","en":"No data","es":"Sin datos","envios":[]},
-  {"n":"Lavando, enxágue, 70%","en":"Washing, rinse, 70%","es":"Lavando, enjuague, 70%","envios":[{"ttl":60,"values":{"lv_est":"LAVANDO","lv_txt":"ENXAGUE","lv_pct":70,"lv_min":18}}]},
-  {"n":"Pronta","en":"Done","es":"Lista","envios":[{"ttl":60,"values":{"lv_est":"PRONTA","lv_txt":"AS 14:52","lv_pct":100,"lv_min":0}}]},
+  {"n":"Lavagem 25%","en":"Wash 25%","es":"Lavado 25%","envios":[{"ttl":60,"values":{"lv_est":"LAVANDO","lv_txt":"LAVAGEM","lv_pct":25,"lv_min":52}}]},
+  {"n":"Enxague 70%","en":"Rinse 70%","es":"Enjuague 70%","envios":[{"ttl":60,"values":{"lv_est":"LAVANDO","lv_txt":"ENXAGUE","lv_pct":70,"lv_min":18}}]},
+  {"n":"Centrifuga 92%","en":"Spin 92%","es":"Centrifugado 92%","envios":[{"ttl":60,"values":{"lv_est":"LAVANDO","lv_txt":"CENTRIFUGA","lv_pct":92,"lv_min":4}}]},
+  {"n":"Pronta as 14:52","en":"Done at 14:52","es":"Lista a las 14:52","envios":[{"ttl":60,"values":{"lv_est":"PRONTA","lv_txt":"AS 14:52","lv_pct":100,"lv_min":0}}]},
+  {"n":"Erro E21","en":"Error E21","es":"Error E21","envios":[{"ttl":60,"values":{"lv_est":"ERRO","lv_txt":"E21","lv_pct":40,"lv_min":0}}]},
   {"n":"Desligada","en":"Off","es":"Apagada","envios":[{"ttl":60,"values":{"lv_est":"DESLIGADA","lv_txt":"","lv_pct":0,"lv_min":0}}]},
-  {"n":"Erro E21","en":"Error E21","es":"Error E21","envios":[{"ttl":60,"values":{"lv_est":"ERRO","lv_txt":"E21","lv_pct":40,"lv_min":0}}]}
+  {"n":"Pior caso: 188 min","en":"Worst case: 188 min","es":"Peor caso: 188 min","envios":[{"ttl":60,"values":{"lv_est":"LAVANDO","lv_txt":"CENTRIFUGA","lv_pct":100,"lv_min":188}}]}
  ]
 }

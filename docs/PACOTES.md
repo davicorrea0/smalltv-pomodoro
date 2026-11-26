@@ -52,6 +52,8 @@ Vale para qualquer mostrador, em qualquer formato. Os números de limite (camada
 | Direitos | Sem logos, marcas ou personagens que não sejam seus (jogos, filmes, marcas, animes…). Desenhado do zero e "inspirado em" pode; cópia não. |
 | Remix | Diga quem fez o original em `author`/`desc` e na postagem. |
 
+Para miniapps (telas com dados de fora, `{x.campo}`), veja também a [diretriz de design dos miniapps](DESIGN-MINIAPPS.md): cor em bloco, um ponto focal, "sem dados", falha e a hora sempre visível.
+
 ### Testar
 
 1. **Prévia no PC:** coloque o `.json` em [`faces/`](../faces) e rode `sh sim/build.sh` (veja [TECHNICAL.md](TECHNICAL.md#building)). Sai `faces/<id>.png` e a linha `pack-<id>  ok`, que confirma que o redesenho não deixa sobras.

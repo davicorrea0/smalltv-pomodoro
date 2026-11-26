@@ -8,6 +8,7 @@ function between(a, b, from = 0) {
   return source.slice(i, j);
 }
 const helpers = between('static void htmlEscapeAppend(', '\n}\n') + '\n}\n' + between('static void addTr(', 'void startPortal() {');   // htmlEscapeAppend, addTr, ADD_TR, PORTAL_HEAD
+const secBody = between('void secHeaders() {', '\n}') + '\n}';
 const pageLangStruct = between('struct PageLang {', '\n};') + '\n};';
 const startPortal = source.indexOf('void startPortal() {');
 const indexBody = between('server.on("/", HTTP_GET, [] {\n', '\n  });\n  server.on("/scan"', startPortal).replace(/^server\.on\("\/", HTTP_GET, \[\] \{\n/, '');
@@ -63,6 +64,7 @@ void delay(int) {}
 void safeRestart() { calls.push_back("restart"); }
 ${pageLangStruct}
 ${helpers}
+${secBody}
 void index() {
 ${indexBody}
 }
@@ -77,6 +79,7 @@ int main() {
   uiLang = 0; browserLang = l; WiFi.state = WIFI_SCAN_RUNNING; WiFi.nets.clear(); get();
   std::string p = page();
   assert(uiLang == 0 && status == 200 && headers["Cache-Control"] == "no-store");
+  assert(headers["X-Content-Type-Options"] == "nosniff" && headers["X-Frame-Options"] == "DENY" && headers["Referrer-Policy"] == "no-referrer");
   assert(calls.size() == 2 && calls[0] == "len" && calls[1] == "send:" && chunks.back().empty() && chunks[chunks.size() - 2].size() > 0 && has(p, "<form method=post action=/save>"));
   assert(has(p, l == 0 ? "Procurando redes" : l == 2 ? "Buscando redes" : "Looking for networks"));
   assert(has(p, "setTimeout") && !has(p, "type=radio") && has(p, "name=h") && has(p, "name=csrf") && has(p, "href=/scan"));
