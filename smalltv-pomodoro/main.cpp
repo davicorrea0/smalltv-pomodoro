@@ -402,6 +402,7 @@ void setup() {
     startRecovery();
     return;
   }
+  diagFlashBoot();  // boot normal: uma leitura só, fora da recuperação, do loop e do caminho de atualização
   uiDrawImage = drawJpgAt;
   if (cfg.theme == THEME_PACK) restoreActivePack();  // pacote ausente/inválido: volta ao Matriz
   rebuildAlbum();
