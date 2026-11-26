@@ -132,7 +132,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
  .tab.on{display:grid;column-gap:28px;align-items:start}
  #t0.on{display:grid;grid-template-columns:320px minmax(0,1fr);grid-template-rows:auto 1fr}
  #t0 #pvbar{grid-column:1/-1}
- #t0 .col1{display:block;grid-column:1;grid-row:2;position:sticky;top:76px;align-self:start;max-height:calc(100vh - 92px);overflow-y:auto;scrollbar-width:none}#t0 .col1::-webkit-scrollbar{display:none}#t0 .side{margin-top:22px}#t0 .body{grid-column:2;grid-row:2}
+ #t0 .col1{display:block;grid-column:1;grid-row:2;position:sticky;top:76px;align-self:start}#t0 .side{margin-top:22px}#t0 .body{grid-column:2;grid-row:2}
  #t0 .side2 select{width:150px}#t0 .side2 label{white-space:nowrap}
  .hero{flex-direction:column;align-items:stretch;text-align:center}.hero .scr{width:100%}
  .faces{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px}
@@ -936,4 +936,9 @@ $('op').onsubmit=e=>{e.preventDefault();const o=e.target;post('/api/otapass',new
 document.onkeydown=e=>{if(e.code=='Space'&&curTab==1&&!/INPUT|BUTTON|SELECT/.test(e.target.tagName)){e.preventDefault();cmd('toggle')}};
 function poll(){if(updating)return setTimeout(poll,1000);fetch(st&&st.cfg?'/api/state?cfg=0':'/api/state').then(r=>r.json()).then(load).catch(()=>$('net').className='off').finally(()=>setTimeout(poll,1000))}
 i18n();loadI18n();loadFaces();sessLoad();let t0=0;try{t0=+localStorage.tab||0}catch(e){}tab(t0);poll();
-</script></body></html>
+</script><script>
+// Relógio no computador: a coluna da esquerda acompanha a rolagem da página. Se for mais alta que a tela, ela desce
+// junto até o fim aparecer e para ali (top negativo), sem rolagem própria.
+(()=>{const c=document.querySelector('#t0 .col1');if(!c)return;const f=()=>{c.style.top=matchMedia('(min-width:900px)').matches?Math.min(76,innerHeight-c.offsetHeight-16)+'px':''};addEventListener('resize',f);if(window.ResizeObserver)new ResizeObserver(f).observe(c);f()})();
+</script>
+</body></html>
