@@ -172,7 +172,7 @@ function page(t, code) {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Silkscreen&display=swap">
-<link rel="stylesheet" href="${t.root}style.css?v=19">
+<link rel="stylesheet" href="${t.root}style.css?v=21">
 </head>
 <body>
 <!-- gerado por scripts/releases-page.cjs (repositório principal); não edite à mão -->

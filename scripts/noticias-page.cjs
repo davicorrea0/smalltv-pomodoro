@@ -8,7 +8,7 @@
 //                          {"pt": [{"data": "AAAA-MM-DD", "titulo", "texto", "link": {"href", "texto"}}], "en": [...]}
 //                          "link" é opcional; href relativo ao site (ex.: "versoes.html") ou endereço completo.
 //  - notas/proximas.json   a seção "O que vem por aí" (opcional), por idioma:
-//                          {"pt": {"titulo", "lead", "itens": [{"t", "d"}], "link": {"href", "texto"}}, "en": {...}}
+//                          {"pt": {"titulo", "lead", "itens": [{"t", "d", "i"}], "link": {"href", "texto"}}, "en": {...}}; "i" (opcional) = ícone de img/icons/ sem .svg
 const fs = require('fs'), path = require('path'), { execFileSync } = require('child_process');
 const REPO = 'davicorrea0/smalltv-pomodoro', ROOT = path.join(__dirname, '..');
 const { rodape } = require('./site-rodape.cjs');  // o mesmo rodapé das outras páginas
@@ -51,11 +51,17 @@ function noticia(n, t) {
   </article>`;
 }
 
-function proximas(code) {
+// ícone de img/icons/ pelo nome (só letras minúsculas, números e hífen; outro valor fica sem ícone)
+const icone = (nome, root) => /^[a-z0-9-]+$/.test(nome || '') ? `<img class="px" src="${root}img/icons/${nome}.svg" alt="">` : '';
+function proximas(code, root) {
   const p = PROX && PROX[code];
   if (!p || !Array.isArray(p.itens) || !p.itens.length) return '';
-  const cards = p.itens.map(i => `        <div class="card feature"><h3>${esc(i.t)}</h3><p>${esc(i.d)}</p></div>`).join('\n');
-  const link = p.link ? `\n      <a class="btn primary" href="${esc(p.link.href)}">${esc(p.link.texto)}</a>` : '';
+  const cards = p.itens.map(i => {
+    const ico = icone(i.i, root);
+    return `        <div class="card feature"><h3>${ico ? `<span class="ico">${ico}</span>` : ''}${esc(i.t)}</h3><p>${esc(i.d)}</p></div>`;
+  }).join('\n');
+  const gh = p.link && p.link.href.startsWith('https://github.com/') ? icone('github', root) : '';
+  const link = p.link ? `\n      <a class="btn primary" href="${esc(p.link.href)}">${gh}${esc(p.link.texto)}</a>` : '';
   return `  <section id="${code === 'en' ? 'coming' : 'em-breve'}">
     <div class="wrap">
       <h2>${esc(p.titulo)}</h2>
@@ -89,7 +95,7 @@ function page(t, code) {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Silkscreen&display=swap">
-<link rel="stylesheet" href="${t.root}style.css?v=19">
+<link rel="stylesheet" href="${t.root}style.css?v=21">
 </head>
 <body>
 <!-- gerado por scripts/noticias-page.cjs (repositório principal); não edite à mão -->
@@ -120,7 +126,7 @@ ${corpo}
     </div>
   </section>
 
-${proximas(code)}</main>
+${proximas(code, t.root)}</main>
 
 ${rodape(code, (code === 'en' ? '../' : '') + t.other)}
 

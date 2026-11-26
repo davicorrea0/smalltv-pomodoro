@@ -3,12 +3,12 @@
     "titulo": "O que vem por aí",
     "lead": "Pronto ou quase pronto, entra nas próximas versões de teste. Quer outra coisa primeiro? Diga na conversa aberta no GitHub.",
     "itens": [
-      { "t": "Miniapps", "d": "Mostradores com dados da casa que o Home Assistant manda: lavadora, luzes, tomadas. Página própria no painel, com miniatura e os estados de cada um." },
-      { "t": "Rodízio com tempo por item", "d": "Cada mostrador ou miniapp fica o tempo que você escolher. Miniapp sem dados perde a vez, e o Home Assistant pode mostrar um deles na hora." },
-      { "t": "Sessões de foco", "d": "Sessões que terminam sozinhas depois de N focos, como Deep focus (3h15) e Gentle focus (1h15), e seus próprios modelos de sessão." },
-      { "t": "Uso de IA", "d": "Os limites do Claude e do Codex no relógio, enviados por um programinha no PC que manda só os números." },
-      { "t": "Mais idiomas", "d": "Letras alemãs e russas nos mostradores. Painel e relógio em alemão, russo e francês como idiomas extras, baixados só por quem escolher." },
-      { "t": "Memória em Ajustes", "d": "Quanto o firmware, os arquivos e a RAM ocupam e quanto ainda cabe, explicado para quem não é técnico." }
+      { "t": "Miniapps", "d": "Mostradores com dados da casa que o Home Assistant manda: lavadora, luzes, tomadas. Página própria no painel, com miniatura e os estados de cada um.", "i": "grade" },
+      { "t": "Rodízio com tempo por item", "d": "Cada mostrador ou miniapp fica o tempo que você escolher. Miniapp sem dados perde a vez, e o Home Assistant pode mostrar um deles na hora.", "i": "relogio" },
+      { "t": "Sessões de foco", "d": "Sessões que terminam sozinhas depois de N focos, como Deep focus (3h15) e Gentle focus (1h15), e seus próprios modelos de sessão.", "i": "focado" },
+      { "t": "Uso de IA", "d": "Os limites do Claude e do Codex no relógio, enviados por um programinha no PC que manda só os números.", "i": "notebook" },
+      { "t": "Mais idiomas", "d": "Letras alemãs e russas nos mostradores. Painel e relógio em alemão, russo e francês como idiomas extras, baixados só por quem escolher.", "i": "globo" },
+      { "t": "Memória em Ajustes", "d": "Quanto o firmware, os arquivos e a RAM ocupam e quanto ainda cabe, explicado para quem não é técnico.", "i": "prancheta" }
     ],
     "link": { "href": "https://github.com/davicorrea0/smalltv-pomodoro/issues/152", "texto": "Debater as próximas novidades" }
   },
@@ -16,12 +16,12 @@
     "titulo": "What's coming",
     "lead": "Built or nearly built, coming in the next test versions. Want something else first? Tell us in the open discussion on GitHub.",
     "itens": [
-      { "t": "Miniapps", "d": "Faces with live data that Home Assistant sends: washer, lights, plugs. Their own page in the panel, with a thumbnail and the states each one can show." },
-      { "t": "Rotation per item", "d": "Each face or miniapp stays on screen for the time you pick. A miniapp with no data skips its turn, and Home Assistant can show one right away." },
-      { "t": "Focus sessions", "d": "Sessions that end by themselves after N focuses, like Deep focus (3h15) and Gentle focus (1h15), plus your own session templates." },
-      { "t": "AI usage", "d": "Claude and Codex limits on the clock, sent by a small PC companion that only sends the numbers." },
-      { "t": "More languages", "d": "German and Russian letters in faces. Panel and clock in German, Russian and French as extra languages, downloaded only by those who pick them." },
-      { "t": "Memory in Settings", "d": "How much the firmware, files and RAM use and how much is left, explained for non-technical people." }
+      { "t": "Miniapps", "d": "Faces with live data that Home Assistant sends: washer, lights, plugs. Their own page in the panel, with a thumbnail and the states each one can show.", "i": "grade" },
+      { "t": "Rotation per item", "d": "Each face or miniapp stays on screen for the time you pick. A miniapp with no data skips its turn, and Home Assistant can show one right away.", "i": "relogio" },
+      { "t": "Focus sessions", "d": "Sessions that end by themselves after N focuses, like Deep focus (3h15) and Gentle focus (1h15), plus your own session templates.", "i": "focado" },
+      { "t": "AI usage", "d": "Claude and Codex limits on the clock, sent by a small PC companion that only sends the numbers.", "i": "notebook" },
+      { "t": "More languages", "d": "German and Russian letters in faces. Panel and clock in German, Russian and French as extra languages, downloaded only by those who pick them.", "i": "globo" },
+      { "t": "Memory in Settings", "d": "How much the firmware, files and RAM use and how much is left, explained for non-technical people.", "i": "prancheta" }
     ],
     "link": { "href": "https://github.com/davicorrea0/smalltv-pomodoro/issues/152", "texto": "Discuss what comes next" }
   }
