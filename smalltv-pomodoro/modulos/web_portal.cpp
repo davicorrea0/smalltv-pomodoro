@@ -163,13 +163,17 @@ static void diagJson(String &j, uint8_t frag) {
   j += diagStallAt;
 #ifdef GIF_CRONO
   {
-    extern uint32_t gifCronoN, gifCronoSum, gifCronoMax;
+    extern uint32_t gifCronoN, gifCronoSum, gifCronoMax, gifCronoDelay, gifCronoGap;
     j += F(",\"gifus\":[");  // quadros, média e pior em microssegundos (só no build de medição)
     j += gifCronoN;
     j += ',';
     j += gifCronoN ? gifCronoSum / gifCronoN : 0;
     j += ',';
     j += gifCronoMax;
+    j += ',';
+    j += gifCronoN ? gifCronoDelay / gifCronoN : 0;  // atraso médio pedido pelo GIF (ms)
+    j += ',';
+    j += gifCronoN > 1 ? gifCronoGap / (gifCronoN - 1) : 0;  // intervalo médio real entre quadros (ms)
     j += ']';
   }
 #endif

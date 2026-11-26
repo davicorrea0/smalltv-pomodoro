@@ -163,7 +163,7 @@ int main(int argc, char **argv) {
   int errors=0;
   for (const auto &path:files) {
     auto data=readFile(path); input={data.data(),(int)data.size(),0};
-    std::memset(&screen,0,sizeof(screen)); renderState={};
+    std::memset(&screen,0,sizeof(screen)); albumGifRenderFree(renderState); renderState={}; renderState.rgb=(uint8_t*)malloc(256*3);  // como o album.cpp: tabela alocada ao abrir
     oldPrevDisp=0; oldClearTrans=false; oldPrevX=oldPrevY=oldPrevW=oldPrevH=oldX0=oldY0=oldX1=oldY1=0;
     AnimatedGIF gif; gif.begin(GIF_PALETTE_RGB565_BE);
     if (!gif.open("album.gif",mediaOpen,mediaClose,gifRead,gifSeek,gifDraw)) { std::fprintf(stderr,"open: %s erro=%d\n",path.string().c_str(),gif.getLastError()); errors++; continue; }

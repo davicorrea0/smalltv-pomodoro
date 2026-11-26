@@ -237,6 +237,7 @@ static void releaseGif() {
     gif = nullptr;
   }
   gifNoMemTries = 0;
+  albumGifRenderFree(gifRender);  // tabela de cores do filtro (768 B no heap)
   gifRender = AlbumGifRenderState();
 }
 
@@ -269,8 +270,11 @@ bool showAlbumItem(const String &f) {
       return false;
     }
     diagBlkSample();  // minblk: o maior bloco antes do GIF (e antes de albumMakeRoom soltar o pacote)
-    albumMakeRoom(sizeof(AnimatedGIF) + 1024 + 19456);
+    albumMakeRoom(sizeof(AnimatedGIF) + 1024 + 19456 + 768);
     gif = new (std::nothrow) AnimatedGIF();  // ~668 B residentes (~18,9 KB temporários só durante playFrame())
+    // tabela de cores do filtro (768 B) junto com o GIF, antes dos temporários de cada quadro: alocada no meio de um
+    // quadro, ficaria presa entre eles e picotaria o heap. Sem memória, o GIF toca sem o filtro.
+    if (gif && !gifRender.rgb) gifRender.rgb = (uint8_t *)malloc(256 * 3);
     if (!gif) {
       diagNoMem(1);
       uiError(tr("Sem memoria p/ GIF", "No memory for GIF", "Sin memoria p/ GIF"));
@@ -281,6 +285,7 @@ bool showAlbumItem(const String &f) {
       gif->close();
       delete gif;
       gif = nullptr;
+      albumGifRenderFree(gifRender);
       uiError(tr("GIF invalido", "Invalid GIF", "GIF invalido"));
       return false;
     }
@@ -303,6 +308,7 @@ bool showAlbumItem(const String &f) {
 
 #ifdef GIF_CRONO
 uint32_t gifCronoN = 0, gifCronoSum = 0, gifCronoMax = 0;
+uint32_t gifCronoDelay = 0, gifCronoGap = 0, gifCronoLast = 0;  // atraso pedido (ms) e intervalo real entre quadros (ms), somados
 #endif
 
 void albumLoop() {
@@ -319,6 +325,10 @@ void albumLoop() {
     gifCronoN++;
     gifCronoSum += cronoDt;
     if (cronoDt > gifCronoMax) gifCronoMax = cronoDt;
+    gifCronoDelay += delayMs;
+    uint32_t agora = cronoT0 / 1000;
+    if (gifCronoLast) gifCronoGap += agora - gifCronoLast;
+    gifCronoLast = agora;
   }
 #endif
   if (r < 0) {
@@ -338,7 +348,12 @@ void albumLoop() {
   }
   gifNoMemTries = 0;
   if (r == 0) gif->reset();  // último quadro: recomeça
-  nextFrameAt = millis() + max(delayMs, 20);
+  // O próximo quadro conta a partir da hora prevista deste, não do fim do desenho: antes, um quadro que levava 35 ms
+  // para desenhar com 40 ms de atraso saía a cada 75 ms (GIF a ~53% da velocidade). Atrasado, não recupera em rajada:
+  // segue com 5 ms de folga para o painel e o Wi-Fi entre um quadro e outro.
+  uint32_t alvo = nextFrameAt + (uint32_t)max(delayMs, 20);
+  uint32_t minimo = millis() + 5;
+  nextFrameAt = (int32_t)(alvo - minimo) < 0 ? minimo : alvo;
 }
 
 // Decide o que mostrar quando não há Pomodoro: relógio ou um item do álbum.
