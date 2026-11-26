@@ -52,10 +52,13 @@ ${fn('void setLcdView(bool lcd)')}
 
 using String = std::string;
 using std::max;
+using std::min;
 static struct { bool exists(const String &) { return true; } } LittleFS;
 static bool inAlbum = false;
 static String curFile;
-static int gifOffX, gifOffY;
+static int gifOffX, gifOffY, gifScale = 1;
+static struct { uint8_t *rgb = nullptr; } gifRender;  // tabela de cores do filtro (album_gif_renderer.h)
+template <class T> static void albumGifRenderFree(T &st) { free(st.rgb); st.rgb = nullptr; }
 static uint32_t nextFrameAt;
 static uint32_t millis() { return 1000; }
 static const int GIF_PALETTE_RGB565_LE = 0, GIF_PALETTE_RGB565_BE = 1;

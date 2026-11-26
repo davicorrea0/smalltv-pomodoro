@@ -283,7 +283,11 @@ const i = html.indexOf('async function runSteps('), runSteps = new Function('ret
   assert.deepStrictEqual(await gifDim(new Blob([Buffer.from('GIF89')])), [0, 0]);   // arquivo curto: sem aviso, o relógio decide
   // a recusa e o aviso usam as mesmas medidas do firmware
   const gifc = fs.readFileSync(path.join(__dirname, '../smalltv-pomodoro/modulos/album.cpp'), 'utf8'), h = fs.readFileSync(path.join(__dirname, '../smalltv-pomodoro/gifcheck.h'), 'utf8');
-  assert(/gifCheck\(gifCheckRead, &file, 480, 480\)/.test(gifc) && /int y = p->iY \+ p->y \+ gifOffY;\s+if \(y < 0 \|\| y >= 240\) return;/.test(gifc), 'o corte de GIF no relógio mudou: rever os avisos do painel');
+  // o desenho mora em album_gif_renderer.h: maior que 240 é cortado (centrado no topo, linhas fora da tela saem),
+  // menor que 120 cresce em escala inteira
+  const rend = fs.readFileSync(path.join(__dirname, '../smalltv-pomodoro/album_gif_renderer.h'), 'utf8');
+  assert(/gifCheck\(gifCheckRead, &file, 480, 480\)/.test(gifc) && /gifOffY = max\(0, \(240 - gif->getCanvasHeight\(\) \* gifScale\) \/ 2\);/.test(gifc) &&
+         /if \(y < 0 \|\| y >= 240\) continue;/.test(rend), 'o corte de GIF no relógio mudou: rever os avisos do painel');
   assert(h.includes('static const char *gifCheck('));
   const up = html.slice(html.indexOf("$('up').onchange="), html.indexOf("$('op').onsubmit="));
   assert(up.includes('gw>480||gh>480') && up.includes('gw>240||gh>240') && up.includes('room'), 'envio sem os avisos de GIF e de espaço');
