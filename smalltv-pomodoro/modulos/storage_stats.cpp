@@ -149,7 +149,10 @@ static void statsWrite(uint16_t day, uint8_t count) {
 
 // histórico (o mais antigo primeiro) para o jardim, as conquistas, o cartão de compartilhar e o backup
 void sendStats() {
-  if (!readOk()) return;
+  // na recuperação dispensa a senha (como /update), mas mantém a conferência de Host do readOk()
+  if (recoveryMode) {
+    if (!hostOk()) { deny(); return; }
+  } else if (!readOk()) return;
   uint8_t d[STATS_DAYS];
   bool ok = stats.magic == STATS_MAGIC && statsRead(d);
   String j;
@@ -269,7 +272,7 @@ uint32_t fsInfoAt = 0;  // quando o espaço livre foi medido para o painel (0 = 
 // (sem montar a lista inteira na RAM); /api/fsdelete apaga um arquivo ou uma pasta inteira, menos o que
 // o relógio precisa para funcionar (fsKeep).
 bool fsKeep(const String &p) {
-  if (p == "/stats.bin" || p == "/hooks.txt" || p == "/rotation.txt" || p == "/sessoes.txt" ||
+  if (p == "/stats.bin" || p == "/hooks.txt" || p == "/rotation.txt" || p == "/apps.key" || p == "/sessoes.txt" ||
       p == "/sessoes.tmp" || p == "/www" || p.startsWith("/www/")) return true;
   if (p == "/image" || p == "/gif" || p == "/faces") return true;  // as pastas ficam; o que está dentro pode sair
   return cfg.theme == THEME_PACK && p.startsWith(String("/faces/") + cfg.facePkg + ".");  // mostrador em uso

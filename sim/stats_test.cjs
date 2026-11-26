@@ -68,6 +68,9 @@ struct { bool hasArg(const char *n) { return args.count(n); } const String &arg(
   void send_P(int c, const char *, const char *b) { sentCode = c; sentBody = b; } } server;
 bool guard() { return true; }
 bool readOk() { return true; }
+bool recoveryMode = false;  // sendStats dispensa a senha na recuperação (conferido no security_test)
+bool hostOk() { return true; }
+bool deny() { return false; }
 ${fn('void jsonBegin() {')}
 ${fn('void jsonFlush(')}
 ${fn('void jsonEnd(')}

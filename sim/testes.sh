@@ -67,7 +67,7 @@ WSF="-std=c++17 -fsanitize=address,undefined -fno-sanitize=null -g -w -Ishim_ws 
 g++ $WSF -I../smalltv-pomodoro ws_parse_test.cpp -o "$T/ws_parse"
 "$T/ws_parse" todos
 g++ $WSF -DWS_UNPATCHED ws_parse_test.cpp -o "$T/ws_core"
-for c in c1 c2_fechado c2_mudo c2_lixo c2_valor_enorme c4_mudo c3 c5; do
+for c in c1 c2_fechado c2_mudo c2_lixo c2_valor_enorme c4_mudo c3 c5 c6_host_stale c7_hdr_enorme c8_multipart_sem_upload; do
   if "$T/ws_core" "$c" > "$T/ws_core.log" 2>&1; then echo "testes: o core SEM o remendo passou em $c: o teste não enxerga o defeito"; exit 1; fi
 done
 [ -n "${GEN:-}" ] || node pacote_ram_test.cjs  # pacote de mostrador × álbum e OTA: ligação entre as peças
