@@ -30,11 +30,19 @@ compile() {
   return 1
 }
 
-rm -rf "$OUT/firmware" "$OUT/firmware-antes" "$OUT/referencia" "$OUT/comparacoes" "$OUT/comparacoes-antes"
+rm -rf "$OUT/firmware" "$OUT/firmware-sem-limpeza" "$OUT/firmware-sem-filtro" "$OUT/firmware-antes" \
+  "$OUT/referencia" "$OUT/comparacoes" "$OUT/original" "$OUT/comparacoes-antes"
 compile "$TMP/gif-golden"
+compile "$TMP/gif-golden-sem-limpeza" -DGIF_LIMPEZA_PALETA=0 -DGIF_FILTRO_HORIZONTAL=0
+compile "$TMP/gif-golden-sem-filtro" -DGIF_FILTRO_HORIZONTAL=0
 "$TMP/gif-golden" --out "$OUT/firmware" sim/gif-album/*.gif
+"$TMP/gif-golden-sem-limpeza" --out "$OUT/firmware-sem-limpeza" sim/gif-album/*.gif
+"$TMP/gif-golden-sem-filtro" --out "$OUT/firmware-sem-filtro" sim/gif-album/*.gif
 "$TMP/gif-golden" --legacy --out "$OUT/firmware-antes" sim/gif-album/*.gif
 "${PY[@]}" sim/gif_referencia.py --out "$OUT" --firmware "$OUT/firmware"
-"${PY[@]}" sim/gif_referencia.py --out "$OUT/antes" --firmware "$OUT/firmware-antes"
+"${PY[@]}" sim/gif_referencia.py --out "$OUT/original" --limiar -1 --sem-filtro-horizontal \
+  --firmware "$OUT/firmware-sem-limpeza"
+"${PY[@]}" sim/gif_ruido.py --original "$OUT/original/referencia" \
+  --sem-limpeza "$OUT/firmware-sem-limpeza" --so-paleta "$OUT/firmware-sem-filtro" \
+  --com-limpeza "$OUT/firmware" --out "$OUT"
 echo "gif-qualidade: ok"
-

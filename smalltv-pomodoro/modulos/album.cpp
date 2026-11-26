@@ -35,7 +35,7 @@ AnimatedGIF *gif = nullptr;
 
 static File mediaFile;
 
-static int gifOffX = 0, gifOffY = 0;
+static int gifOffX = 0, gifOffY = 0, gifScale = 1;
 
 static uint32_t nextFrameAt = 0;
 static uint8_t gifNoMemTries = 0;
@@ -227,7 +227,7 @@ struct AlbumGifDisplay {
 
 static void gifDraw(GIFDRAW *p) {
   AlbumGifDisplay out;
-  albumGifDraw(gifRender, out, uiRowBuf(), gifOffX, gifOffY, p);
+  albumGifDraw(gifRender, out, uiRowBuf(), gifOffX, gifOffY, gifScale, p);
 }
 
 static void releaseGif() {
@@ -284,8 +284,10 @@ bool showAlbumItem(const String &f) {
       uiError(tr("GIF invalido", "Invalid GIF", "GIF invalido"));
       return false;
     }
-    gifOffX = max(0, (240 - gif->getCanvasWidth()) / 2);
-    gifOffY = max(0, (240 - gif->getCanvasHeight()) / 2);
+    gifScale = min(240 / gif->getCanvasWidth(), 240 / gif->getCanvasHeight());
+    if (gifScale < 2) gifScale = 1;
+    gifOffX = max(0, (240 - gif->getCanvasWidth() * gifScale) / 2);
+    gifOffY = max(0, (240 - gif->getCanvasHeight() * gifScale) / 2);
     nextFrameAt = millis();  // não 0: com mais de 24,8 dias ligado, (int32_t)(millis() - 0) é negativo e o GIF nunca tocava
   } else {
     diagBlkSample();  // minblk: o maior bloco antes da foto (e antes de albumMakeRoom soltar o pacote)

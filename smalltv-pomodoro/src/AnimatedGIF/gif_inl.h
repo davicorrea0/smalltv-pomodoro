@@ -1139,9 +1139,8 @@ init_codetable:
             pImage->ucDisposalMethod = gd.ucDisposalMethod = (pImage->ucGIFBits & 0x1c)>>2;
             gd.ucTransparent = pImage->ucTransparent;
             gd.ucHasTransparency = pImage->ucGIFBits & 1;
-        gd.ucBackground = pImage->ucBackground;
-        gd.usBackground = pImage->pPalette[pImage->ucBackground];
-        gd.ucIsInterlaced = (pImage->ucMap & 0x40) != 0;
+            gd.ucBackground = pImage->ucBackground;
+            gd.ucIsInterlaced = (pImage->ucMap & 0x40) != 0;
             gd.iCanvasWidth = pImage->iCanvasWidth;
             if (pImage->pfnDraw) {
                 DrawCooked(pImage, &gd, &buf[pImage->iCanvasHeight * pImage->iCanvasWidth]); // dest = one line past end of canvas
@@ -1250,7 +1249,6 @@ static void GIFMakePels(GIFIMAGE *pPage, unsigned int code, unsigned int cc, uns
             gd.ucTransparent = pPage->ucTransparent;
             gd.ucHasTransparency = pPage->ucGIFBits & 1;
             gd.ucBackground = pPage->ucBackground;
-            gd.usBackground = pPage->pPalette[pPage->ucBackground];
             gd.ucIsInterlaced = (pPage->ucMap & 0x40) != 0;
             gd.iCanvasWidth = pPage->iCanvasWidth;
             gd.pUser = pPage->pUser;

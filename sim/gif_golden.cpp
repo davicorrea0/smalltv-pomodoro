@@ -72,7 +72,7 @@ struct FakeTft {
 static FakeTft screen;
 static AlbumGifRenderState renderState;
 static uint16_t rowBuf[240];
-static int offX, offY;
+static int offX, offY, scale;
 static bool legacy;
 static double drawUs;
 static uint8_t oldPrevDisp;
@@ -132,7 +132,7 @@ static void legacyDraw(GIFDRAW *p) {
 static void gifDraw(GIFDRAW *p) {
   auto t0 = Clock::now();
   if (legacy) legacyDraw(p);
-  else albumGifDraw(renderState, screen, rowBuf, offX, offY, p);
+  else albumGifDraw(renderState, screen, rowBuf, offX, offY, scale, p);
   drawUs += std::chrono::duration<double, std::micro>(Clock::now() - t0).count();
 }
 
@@ -167,7 +167,9 @@ int main(int argc, char **argv) {
     oldPrevDisp=0; oldClearTrans=false; oldPrevX=oldPrevY=oldPrevW=oldPrevH=oldX0=oldY0=oldX1=oldY1=0;
     AnimatedGIF gif; gif.begin(GIF_PALETTE_RGB565_BE);
     if (!gif.open("album.gif",mediaOpen,mediaClose,gifRead,gifSeek,gifDraw)) { std::fprintf(stderr,"open: %s erro=%d\n",path.string().c_str(),gif.getLastError()); errors++; continue; }
-    offX=std::max(0,(240-gif.getCanvasWidth())/2); offY=std::max(0,(240-gif.getCanvasHeight())/2);
+    scale=std::min(240/gif.getCanvasWidth(),240/gif.getCanvasHeight());
+    if (scale<2) scale=1;
+    offX=std::max(0,(240-gif.getCanvasWidth()*scale)/2); offY=std::max(0,(240-gif.getCanvasHeight()*scale)/2);
     fs::path dir=out/path.stem(); fs::create_directories(dir);
     for (int frame=0;frame<10000;frame++) {
       screen.resetMetrics(); drawUs=0;
@@ -183,4 +185,3 @@ int main(int argc, char **argv) {
   }
   return errors ? 1 : 0;
 }
-

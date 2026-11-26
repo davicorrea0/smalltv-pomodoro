@@ -159,7 +159,6 @@ typedef struct gif_draw_tag
     uint8_t ucHasTransparency; // flag indicating the transparent color is in use
     uint8_t ucDisposalMethod; // frame disposal method
     uint8_t ucBackground; // background color
-    uint16_t usBackground; // cor global de fundo na ordem da paleta
     uint8_t ucIsInterlaced; // linhas chegam fora de ordem
     uint8_t ucPaletteType; // type of palette entries
     uint8_t ucIsGlobalPalette; // Flag to indicate that a global palette, rather than a local palette is being used

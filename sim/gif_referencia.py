@@ -138,7 +138,21 @@ def write_raw(path, pixels):
         out.write(struct.pack("<%dH" % len(pixels), *pixels))
 
 
-def compose(path, out_root):
+def clean_palette(pal, threshold):
+    if threshold < 0:
+        return pal
+    cleaned = []
+    for color in pal:
+        cleaned.append(0 if color and max(to_rgb(color)) <= threshold else color)
+    return cleaned
+
+
+def color_delta(a, b):
+    aa, bb = to_rgb(a), to_rgb(b)
+    return max(abs(aa[i] - bb[i]) for i in range(3))
+
+
+def compose(path, out_root, threshold=12, horizontal_filter=True):
     width, height, global_pal, bg_index, frames = parse_gif(path)
     # A tela é limpa para preto antes de abrir o GIF.
     canvas = [0] * (width * height)
@@ -158,17 +172,32 @@ def compose(path, out_root):
             elif previous["disposal"] == 3 and restore is not None:
                 canvas = restore
         restore = list(canvas) if frame["disposal"] == 3 else None
-        pal, tr = frame["palette"], frame["transparent"]
+        pal, tr = clean_palette(frame["palette"], threshold), frame["transparent"]
         for yy in range(frame["h"]):
             for xx in range(frame["w"]):
                 index = frame["pixels"][yy * frame["w"] + xx]
                 if tr is None or index != tr:
-                    canvas[(frame["y"] + yy) * width + frame["x"] + xx] = pal[index]
+                    color = pal[index]
+                    if horizontal_filter and tr is None and 0 < xx < frame["w"] - 1:
+                        left = pal[frame["pixels"][yy * frame["w"] + xx - 1]]
+                        right = pal[frame["pixels"][yy * frame["w"] + xx + 1]]
+                        if color_delta(color, left) >= 64 and color_delta(color, right) >= 64 and color_delta(left, right) <= 16:
+                            color = left
+                    canvas[(frame["y"] + yy) * width + frame["x"] + xx] = color
         screen = [0] * (W * H)
-        off_x, off_y = max(0, (W - width) // 2), max(0, (H - height) // 2)
-        copy_w, copy_h = min(width, W - off_x), min(height, H - off_y)
+        scale = min(W // width, H // height)
+        if scale < 2:
+            scale = 1
+        off_x = max(0, (W - width * scale) // 2)
+        off_y = max(0, (H - height * scale) // 2)
+        copy_w, copy_h = min(width, (W - off_x) // scale), min(height, (H - off_y) // scale)
         for yy in range(copy_h):
-            screen[(off_y + yy) * W + off_x:(off_y + yy) * W + off_x + copy_w] = canvas[yy * width:yy * width + copy_w]
+            row = []
+            for pixel in canvas[yy * width:yy * width + copy_w]:
+                row.extend([pixel] * scale)
+            for repeat_y in range(scale):
+                dst = (off_y + yy * scale + repeat_y) * W + off_x
+                screen[dst:dst + len(row)] = row
         write_raw(os.path.join(out_dir, "quadro-%04d.raw" % number), screen)
         result.append(screen)
         previous = frame
@@ -247,6 +276,8 @@ def main():
     parser.add_argument("--gifs", default="sim/gif-album/*.gif")
     parser.add_argument("--out", default="pesquisas/gif-qualidade")
     parser.add_argument("--firmware", default="pesquisas/gif-qualidade/firmware")
+    parser.add_argument("--limiar", type=int, default=12)
+    parser.add_argument("--sem-filtro-horizontal", action="store_true")
     parser.add_argument("--reference-only", action="store_true")
     args = parser.parse_args()
     files = sorted(glob.glob(args.gifs))
@@ -254,7 +285,7 @@ def main():
         raise SystemExit("nenhum GIF encontrado")
     reference_root = os.path.join(args.out, "referencia")
     for path in files:
-        compose(path, reference_root)
+        compose(path, reference_root, args.limiar, not args.sem_filtro_horizontal)
     if args.reference_only:
         return
     differences, rows = compare(files, reference_root, args.firmware, os.path.join(args.out, "comparacoes"))
