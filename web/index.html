@@ -239,7 +239,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
  <div class="grp">
  <h2>Idioma</h2>
  <div class="card">
-  <label>Idioma do painel e do relógio<select data-k="lang"><option value="0">Português</option><option value="1">English</option><option value="2">Español</option></select></label>
+  <label>Idioma do painel e do relógio<select data-k="lang"><option value="0">Português</option><option value="1">English</option><option value="2">Español</option><option value="3">Deutsch (beta)</option><option value="4">Русский (beta)</option><option value="5">Français (beta)</option></select></label>
  </div>
  </div>
  <div class="grp">
@@ -410,12 +410,13 @@ const LBL={work:'FOCO',short:'PAUSA',long:'PAUSA LONGA',idle:'PRONTO'};
 const DEEP_FOCUS={work:50,short:10,long:25,every:3,cycles:3},GENTLE_FOCUS={work:25,short:5,long:20,every:2,cycles:2};
 function sessionMinutes(x){let n=x.cycles,total=n*x.work+x.long;for(let i=1;i<n;i++)total+=i%x.every?x.short:x.long;return total}
 function sessionDuration(m){return m>=60?(m/60|0)+'h'+(m%60?String(m%60).padStart(2,'0'):''):m+' min'}
-// ---------- idioma (pt/en/es; o relógio guarda em cfg.lang) ----------
-const LANGS=['pt','en','es'],I18N=Object.create(null);let BUILTIN=[];  // inglês/espanhol: web/i18n.json, carregado por loadI18n()
+// ---------- idioma (pt/en/es/de/ru; o relógio guarda em cfg.lang) ----------
+const LANGS=['pt','en','es','de','ru','fr'],I18N=Object.create(null),I18X=[null,null,null,Object.create(null),Object.create(null),Object.create(null)];
+let BUILTIN=[],BUILTINX=[null,null,null,[],[],[]];  // inglês/espanhol no arquivo base; alemão/russo em arquivos próprios
 let LG=0;try{LG=+localStorage.lang||0}catch(e){}
 // t('texto {0}',a,b): tradução do texto em português, com {0}, {1}... trocados
-const t=(s,...a)=>(LG&&I18N[s]?I18N[s][LG-1]:s).replace(/\{(\d)\}/g,(m,i)=>a[i]);
-const tName=e=>LG==1?e.name_en||e.name:LG==2?e.name_es||e.name:e.name,tDesc=e=>LG==1?e.desc_en||e.desc:LG==2?e.desc_es||e.desc:e.desc;
+const t=(s,...a)=>(LG==0?s:LG<3&&I18N[s]?I18N[s][LG-1]:LG>=3&&(I18X[LG][s]||(I18N[s]&&I18N[s][0]))||s).replace(/\{(\d)\}/g,(m,i)=>a[i]);
+const tName=e=>LG==1?e.name_en||e.name:LG==2?e.name_es||e.name:LG>=3?e.name_en||e.name:e.name,tDesc=e=>LG==1?e.desc_en||e.desc:LG==2?e.desc_es||e.desc:LG>=3?e.desc_en||e.desc:e.desc;
 // textos fixos da página: guarda o original (português) e troca pelo do idioma
 function i18n(){document.documentElement.lang=LANGS[LG];document.documentElement.style.setProperty('--inuse',JSON.stringify(' · '+t('em uso')));  // texto do CSS (::after)
  const tw=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);for(let n;n=tw.nextNode();){if(n._pt==null){const k=n.nodeValue.trim();if(!I18N[k])continue;n._pt=n.nodeValue}const k=n._pt.trim();n.nodeValue=n._pt.replace(k,t(k))}
@@ -424,11 +425,13 @@ function i18n(){document.documentElement.lang=LANGS[LG];document.documentElement
 // guardado no navegador na primeira vez; em português não precisa de nada. O build troca __I18V__ pelo
 // código do dicionário; sem ele (painel de teste), vem de /i18n.json.
 const I18V='__I18V__',I18I='__I18I__';  // I18I: impressão digital (SRI) do dicionário publicado
+const I18XV=[null,null,null,'__I18DEV__','__I18RUV__','__I18FRV__'],I18XI=[null,null,null,'__I18DEI__','__I18RUI__','__I18FRI__'];
 const TZV='__TZV__',TZI='__TZI__';  // tabela de fusos publicada (panel/tz-<código>.json), idem
-function loadI18n(){if(!LG||I18N._v==I18V)return;let c=null;try{c=JSON.parse(localStorage.i18n||'null')}catch(e){}
- const use=d=>{Object.assign(I18N,d.dict,{_v:I18V});BUILTIN=d.builtin;i18n();buildFaces();drawGame();if(st){$('curimg').dataset.k='';load(st)}};
- if(c&&c.v==I18V)return use(c);
- fetch(I18V[0]=='_'?'/i18n.json':SITE+'panel/i18n-'+I18V+'.json',I18V[0]=='_'?{}:{integrity:I18I}).then(r=>r.json()).then(d=>{use(d);try{localStorage.i18n=JSON.stringify({...d,v:I18V})}catch(e){}}).catch(()=>{})}
+let i18Fail=false;
+function loadI18n(){if(!LG)return;const warn=()=>{if(LG>=3&&!i18Fail){i18Fail=true;toast('Translation unavailable (needs internet)')}};const refresh=()=>{i18n();buildFaces();drawGame();if(st){$('curimg').dataset.k='';load(st)}};
+ const get=(key,V,SRI,url,use,fail)=>{let c=null;try{c=JSON.parse(localStorage[key]||'null')}catch(e){}if(c&&c.v==V)return use(c);fetch(V[0]=='_'?'/'+url:SITE+'panel/'+url.replace('.json','-'+V+'.json'),V[0]=='_'?{}:{integrity:SRI}).then(r=>r.json()).then(d=>{use(d);try{localStorage[key]=JSON.stringify({...d,v:V})}catch(e){}}).catch(fail||(()=>{}))};
+ if(I18N._v!=I18V)get('i18n',I18V,I18I,'i18n.json',d=>{Object.assign(I18N,d.dict,{_v:I18V});BUILTIN=d.builtin;refresh()},warn);
+ if(LG>=3){const l=LG,V=I18XV[l];if(I18X[l]._v!=V)get('i18n_'+LANGS[l],V,I18XI[l],'i18n-'+LANGS[l]+'.json',d=>{Object.assign(I18X[l],d.dict,{_v:V});BUILTINX[l]=d.builtin;refresh()},warn)}}
 // chamado por load() antes de desenhar o estado: não chama load de novo
 function setLang(l){if(l==LG)return;LG=l;try{localStorage.lang=l}catch(e){}loadI18n();i18n();buildFaces();drawGame();if($('upd').classList.contains('v')&&!updating)showUpdate();$('curimg').dataset.k='';if(curTab==2)files();if($('cat').children.length)catalog()}
 
@@ -494,7 +497,7 @@ function fchips(){const k=fcur(),c=$('fchips');c.innerHTML='';
 // miniapp: pacote que lê dados de fora (o relógio devolve os campos em "x"); fica na página Miniapps, não em Relógio
 const isApp=f=>!!f.x;
 const faceImgs=f=>f.src||!f.pkg?[faceSrc(f),null]:[faceSrc(f),...(isApp(f)?[SITE+'miniapps/'+encodeURIComponent(f.pkg)+'.png']:[]),CATALOG+encodeURIComponent(f.pkg)+'.png',null];
-function buildFaces(){FACES.forEach(f=>{const b=f.pkg==null&&LG&&BUILTIN[f.t];f.n=b?b[LG-1][0]:f.n0;f.d=b?b[LG-1][1]:f.d0});const g=$('faces'),d=$('dl'),a=$('apps');g.innerHTML='';d.innerHTML='';a.innerHTML='';FACES.forEach(f=>{const b=el('button','face'),s=el('div','scr');b.dataset.k=fkey(f);b.dataset.f=ftok(f);s.appendChild(img(f));
+function buildFaces(){FACES.forEach(f=>{const b=f.pkg==null&&LG&&(LG>=3?(BUILTINX[LG][f.t]||BUILTIN[f.t]&&BUILTIN[f.t][0]):BUILTIN[f.t]&&BUILTIN[f.t][LG-1]);f.n=b?b[0]:f.n0;f.d=b?b[1]:f.d0});const g=$('faces'),d=$('dl'),a=$('apps');g.innerHTML='';d.innerHTML='';a.innerHTML='';FACES.forEach(f=>{const b=el('button','face'),s=el('div','scr');b.dataset.k=fkey(f);b.dataset.f=ftok(f);s.appendChild(img(f));
  if(isApp(f)){b.classList.add('app');const m=el('div','appmain'),i=el('div','appi'),e=el('small','ast'),w=el('div','states'),si=new Image();e.dataset.x=f.x;i.append(el('span',null,f.n),el('small','reads',t('Lê')+': '+f.x.split(',').join(' · ')),e);m.append(s,i);si.loading='lazy';si.decoding='async';si.alt='';si.onerror=()=>w.remove();si.src=SITE+'miniapps/'+encodeURIComponent(f.pkg)+'-estados.png';w.appendChild(si);b.append(m,w)}else b.append(s,el('span',null,f.n));b.onclick=()=>faceSheet(f);
  (isApp(f)?a:f.pkg?d:g).appendChild(b)});
  $('appsnone').hidden=a.children.length>0;appsState();fchips()}
@@ -555,7 +558,7 @@ const EDV='__EDV__',EDI='__EDI__';
 let edJs=null;
 async function editor(){if(!window.faceEditor){toast(t('Abrindo o editor...'));edJs=edJs||new Promise((ok,no)=>{const s=document.createElement('script');if(EDV[0]=='_')s.src='/editor.js';else{s.src=SITE+'panel/editor-'+EDV+'.js';s.integrity=EDI;s.crossOrigin='anonymous'}s.onload=ok;s.onerror=no;document.head.appendChild(s)});
  try{await edJs}catch(e){edJs=null;return toast(t('Sem internet no navegador'))}}
- faceEditor({t,el,toast,install,safeId,c:$('sheetc'),lang:LANGS[LG],accent:st?st.cfg.color:'#ff5a47'});$('sheet').classList.add('v')}
+ faceEditor({t,el,toast,install,safeId,c:$('sheetc'),lang:LG<3?LANGS[LG]:'en',accent:st?st.cfg.color:'#ff5a47'});$('sheet').classList.add('v')}
 function closeSheet(){$('sheet').classList.remove('v')}
 const SPR={"t_feliz":{"p":"Re8402f ra8261e hff9178 G60c454 g2e8034 k280e0c pffa0a0 wffffff m7a1010","r":["......gGGg......","....gGGGGGGg....","...rRRgGGgRRr...","..rRRRRggRRRRr..",".rRhhRRRRRRRRRr.",".rRhRRRRRRRRRRr.","rRRRRRRRRRRRRRRr","rRRRRRRRRRRRRRRr","rRRRRkRRRRkRRRRr","rRRRRkRRRRkRRRRr","rRRpRRRRRRRRpRRr",".rRRRRkRRkRRRRr.",".rRRRRRkkRRRRRr.","..rrRRRRRRRRrr..","....rrrrrrrr....","................"]},"t_comemorando":{"p":"Re8402f ra8261e hff9178 G60c454 g2e8034 k280e0c pffa0a0 wffffff m7a1010 Yffc428 B4f8dff","r":[".Y....gGGg....B.","....gGGGGGGg....","r..rRRgGGgRRr..r",".rrRRRRggRRRRrr.",".rRhhRRRRRRRRRr.","BrRhRRRRRRRRRRrY","rRRRRRRRRRRRRRRr","rRRRRRRRRRRRRRRr","rRRRRkRRRRkRRRRr","rRRRkRkRRkRkRRRr","rRRpRRRRRRRRpRRr",".rRRRRkkkkRRRRr.",".rRRRRkmmkRRRRr.","..rrRRRkkRRRrr..","....rrrrrrrr....","................"]},"chama":{"p":"oa8261e Rff5a2a Yffc83a wfff4c0","r":["...o....","...oo...","..oRo...","..oRRo.o",".oRRRooR",".oRYRRRo","oRRYYRRo","oRYYwYRo","oRYwwYRo",".oRYYRo.","..oooo.."]},"p_broto":{"p":"o3d2414 S7a4a2e sf0d58c g2e8034 G60c454 yffd23f cff8c1a v8fd16a V4f9a3a Re8402f ra8261e Dffcc33 dc48a12 wffffff","r":["................","................","................","................","................","................",".....gGg.gGg....","....gGGGgGGGg...",".....gggGggg....",".......gG.......",".......gG.......",".......gG.......","......oooo......",".....oSSSSo.....","....oSSSSSSo....","...oSSSSSSSSo..."]}};
 // ---------- sequência, horta, conquistas e cartão de compartilhar ----------
@@ -596,7 +599,7 @@ let shareJs=null;
 async function shareDay(){if(!st)return;if(!STATS)await loadStats();
  if(!window.shareCard){toast(t('Preparando o cartão...'));shareJs=shareJs||new Promise((ok,no)=>{const s=document.createElement('script');if(SHV[0]=='_')s.src='/share.js';else{s.src=SITE+'panel/share-'+SHV+'.js';s.integrity=SHI;s.crossOrigin='anonymous'}s.onload=ok;s.onerror=no;document.head.appendChild(s)});
   try{await shareJs}catch(e){shareJs=null;return toast(t('Sem internet no navegador'))}}
- const now=new Date(),big=shareCard({spr,SPR,t,LG,today:st.today,goal:st.cfg.goal,streak:st.streak||0,days:STATS?STATS.days:[]});
+ const now=new Date(),big=shareCard({spr,SPR,t,LG:LG<3?LG:1,today:st.today,goal:st.cfg.goal,streak:st.streak||0,days:STATS?STATS.days:[]});
  const blob=await new Promise(r=>big.toBlob(r,'image/png')),file=new File([blob],'pomodoro-'+now.toISOString().slice(0,10)+'.png',{type:'image/png'});
  if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:'SmallTV Pomodoro'})}catch(e){}return}
  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=file.name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000);toast(t('Imagem salva'))}
@@ -610,7 +613,7 @@ function checkUpdate(){const get=f=>fetch(SITE+'firmware/'+f,{cache:'no-store'})
  Promise.all([get('latest.json'),st&&st.cfg.beta?get('beta.json'):null]).then(([a,b])=>{const l2=!!(st&&st.fs&&st.fs.l2);a=updL2(a,l2);b=updL2(b,l2);let u=a;if(b&&(!u||vnum(b.version)>vnum(u.version)))u=Object.assign({beta:1},b);
   if(!u||!st||vnum(u.version)<=vnum(st.ver))return;UPD=u;let skip='';try{skip=localStorage.updSkip||''}catch(e){}if(skip==u.version)return;showUpdate()})}
 function showUpdate(){const u=UPD;if(!u)return;$('updt').textContent=t(u.beta?'Versão de teste {0} disponível':'Nova versão {0} disponível',u.version);const n=$('updn');n.innerHTML='';
- ((u.notes||{})[LANGS[LG]]||(u.notes||{}).pt||[]).forEach(x=>n.appendChild(el('li',null,x)));$('upd').classList.add('v')}
+ ((u.notes||{})[LANGS[LG]]||(LG>=3&&(u.notes||{}).en)||(u.notes||{}).pt||[]).forEach(x=>n.appendChild(el('li',null,x)));$('upd').classList.add('v')}
 function skipUpdate(){try{localStorage.updSkip=UPD.version}catch(e){}$('upd').classList.remove('v')}
 // u.layout "4m2m": a versão reorganiza a memória de arquivos (o programa ganha espaço, o LittleFS muda de lugar e é formatado no primeiro início).
 // Relógios que ainda não informam fs.l2 estão no layout antigo: salva o backup completo ANTES e só então atualiza.

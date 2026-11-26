@@ -1,11 +1,17 @@
 #pragma once
 #include <stdint.h>
 
-// Letra sem acento de U+00C0..U+00FF (segundo byte d de "C3 d"): a redução usada nas fontes sem acento.
+// Letra sem acento de U+00C0..U+00FF (segundo byte d de "C3 d", 0x80..0xBF): a redução usada nas fontes sem acento.
+// Conferida contra o FOLD de face_mundo.cpp em sim/utf8_test.cpp. Sem tabela: o grupo de 32 (k) dá a letra e d >= 0xA0 a caixa baixa.
+// Æ Ð Þ ß viram A D P s; × e ÷ viram x e /; Ø vira O; ÿ vira y.
 static inline unsigned char latin1Base(unsigned char d) {
-  return d <= 0x85 ? 'A' : d == 0x87 ? 'C' : d <= 0x8B ? 'E' : d <= 0x8F ? 'I'
-       : d <= 0x96 ? 'O' : d <= 0x9C ? 'U' : d <= 0xA5 ? 'a' : d == 0xA7 ? 'c'
-       : d <= 0xAB ? 'e' : d <= 0xAF ? 'i' : d <= 0xB6 ? 'o' : 'u';
+  const unsigned char k = d & 0x1F;
+  const bool baixa = d >= 0xA0;
+  if (k == 23) return baixa ? '/' : 'x';
+  if (k == 31) return baixa ? 'y' : 's';
+  const unsigned char c = k <= 6 ? 'A' : k == 7 ? 'C' : k <= 11 ? 'E' : k <= 15 ? 'I' : k == 16 ? 'D' : k == 17 ? 'N'
+                        : k <= 22 ? 'O' : k == 24 ? 'O' : k <= 28 ? 'U' : k == 29 ? 'Y' : 'P';
+  return baixa ? c + 32 : c;
 }
 
 // Retorna 1..255 para CP437 e 0x100+i para cirílico. A ordem cirílica é:

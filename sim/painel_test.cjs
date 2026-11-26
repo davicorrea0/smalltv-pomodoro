@@ -3,6 +3,47 @@
 const fs = require('fs'), path = require('path'), assert = require('assert');
 const html = fs.readFileSync(path.join(__dirname, '../web/index.html'), 'utf8');
 
+// Dicionários extras: cobrem exatamente o painel base, preservam os parâmetros e os mostradores nativos.
+{
+  const base = JSON.parse(fs.readFileSync(path.join(__dirname, '../web/i18n.json'), 'utf8'));
+  const de = JSON.parse(fs.readFileSync(path.join(__dirname, '../web/i18n-de.json'), 'utf8'));
+  const ru = JSON.parse(fs.readFileSync(path.join(__dirname, '../web/i18n-ru.json'), 'utf8'));
+  const fr = JSON.parse(fs.readFileSync(path.join(__dirname, '../web/i18n-fr.json'), 'utf8'));
+  const keys = Object.keys(base.dict).sort(), params = s => (String(s).match(/\{\d+\}/g) || []).sort();
+  for (const [lang, d] of [['de', de], ['ru', ru], ['fr', fr]]) {
+    // chave órfã reprova; chave que falta só avisa (o painel cai em inglês), para não travar PRs que acrescentam textos
+    const orfas = Object.keys(d.dict).filter(k => !(k in base.dict));
+    assert.deepStrictEqual(orfas, [], lang + ': chaves que não existem no dicionário base');
+    const faltam = keys.filter(k => !(k in d.dict));
+    if (faltam.length) console.log('AVISO ' + lang + ': ' + faltam.length + ' texto(s) sem tradução (cai em inglês): ' + faltam.slice(0, 3).join(' | '));
+    for (const k of Object.keys(d.dict)) {
+      assert.strictEqual(typeof d.dict[k], 'string', lang + ': valor não textual em ' + k);
+      assert(d.dict[k].trim(), lang + ': valor vazio em ' + k);
+      assert.deepStrictEqual(params(d.dict[k]), params(k), lang + ': parâmetros diferentes em ' + k);
+    }
+    assert.strictEqual(d.builtin.length, base.builtin.length, lang + ': quantidade de mostradores nativos');
+    d.builtin.forEach((b, i) => assert(Array.isArray(b) && b.length == 2 && b.every(x => typeof x == 'string' && x.trim()), lang + ': mostrador nativo ' + i + ' precisa ser [nome, descrição]'));
+  }
+  assert(!/[«»“”„‟‘’‚‛ёЁ]/.test(JSON.stringify(ru)), 'russo usa aspas curvas, guillemets ou ё');
+  const alemão = JSON.stringify(de);
+  assert(alemão.includes('ß') && alemão.includes('ü'), 'alemão precisa conter ß e ü');
+  const francês = JSON.stringify(fr);
+  assert(francês.includes('é') && francês.includes('è'), 'francês precisa conter é e è');
+  assert(!/[<>`]|javascript:|\$\{/i.test(francês.replace(/<-0[34]>[34]/g, '')), 'francês sem HTML nem script');
+  // t() com os idiomas extras: o do idioma, senão inglês, senão o português; {n} trocado
+  const ti = html.indexOf('const t=(s,...a)=>'), tl = html.slice(ti, html.indexOf('\n', ti));
+  const mk = (LG, I18N, I18X) => new Function('LG', 'I18N', 'I18X', tl + '; return t')(LG, I18N, I18X);
+  const B = { 'Olá {0}': ['Hello {0}', 'Hola {0}'], Só: ['Only', 'Solo'] };
+  assert.strictEqual(mk(3, B, [0, 0, 0, { 'Olá {0}': 'Hallo {0}' }, {}])('Olá {0}', 'Ana'), 'Hallo Ana');
+  assert.strictEqual(mk(3, B, [0, 0, 0, { 'Olá {0}': 'Hallo {0}' }, {}])('Só'), 'Only');          // sem alemão: inglês
+  assert.strictEqual(mk(4, B, [0, 0, 0, {}, {}])('Olá {0}', 'Ana'), 'Hello Ana');                    // sem dicionário russo: inglês
+  assert.strictEqual(mk(4, {}, [0, 0, 0, {}, {}])('Olá {0}', 'Ana'), 'Olá Ana');                    // sem nenhum dicionário: português
+  assert.strictEqual(mk(2, B, [0, 0, 0, {}, {}])('Só'), 'Solo');
+  // share e editor só têm pt/en/es: o painel limita o idioma que passa para eles
+  assert(html.includes('shareCard({spr,SPR,t,LG:LG<3?LG:1,') && html.includes("lang:LG<3?LANGS[LG]:'en'"), 'share/editor precisam de LG limitado a pt/en/es');
+  console.log('painel: dicionários alemão, russo e francês completos, com parâmetros e mostradores válidos; t() cai em inglês');
+}
+
 // Cidade do clima: translitera nomes para o formato ASCII do firmware e nunca grava nome vazio.
 {
   const i = html.indexOf('function cityAscii('), cityAscii = new Function('return ' + html.slice(i, html.indexOf('\n', i)))();

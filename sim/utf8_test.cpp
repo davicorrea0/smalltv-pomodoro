@@ -61,12 +61,23 @@ int main() {
 
   const uint8_t latin[] = {0xA1,0xA9,0xAD,0xB3,0xBA,0xA3,0xB5,0xA7,0xB1,
                            0x81,0x89,0x8D,0x93,0x9A,0x83,0x95,0x87,0x91};
-  // Mantém exatamente a redução anterior do runText, inclusive ñ/Ñ no intervalo de o/O.
-  const char base[] = "aeiouaocoAEIOUAOCO";
+  // pt/es: a letra sem acento (ñ/Ñ viram n/N; antes caíam em o/O, bug herdado do runText)
+  const char base[] = "aeiouaocnAEIOUAOCN";
   int bi = 0;
   for (uint8_t d : latin) {
     const unsigned char s[] = {0xC3, d, 0};
     confere(s, (uint8_t)base[bi++], 2);
+  }
+
+  // latin1Base inteira (U+00C0..U+00FF) contra o FOLD de face_mundo.cpp (maiúsculas; '.' = sem letra)
+  {
+    const char FOLD[65] = "AAAAAAACEEEEIIIIDNOOOOO.OUUUUY..AAAAAAACEEEEIIIIDNOOOOO.OUUUUY.Y";
+    for (int d = 0x80; d <= 0xBF; d++) {
+      const unsigned char b = latin1Base((unsigned char)d);
+      assert(b >= 0x20 && b < 0x7F);
+      if (FOLD[d - 0x80] != '.') assert((b >= 'a' && b <= 'z' ? b - 32 : b) == (unsigned char)FOLD[d - 0x80]);
+      if (d != 0x97 && d != 0x9F) assert((d >= 0xA0) == (b >= 'a' && b <= 'z') || b == '/');   // caixa acompanha a do original (× e ß são exceções)
+    }
   }
 
   for (uint8_t d = 0x90; d <= 0xAF; d++) {

@@ -2,6 +2,8 @@
 # Gera assets.h, compila e roda o simulador; gera out/*.png, out/folha.png e out/assets.png.
 # Requer: zig (https://ziglang.org), node e a biblioteca Adafruit GFX instalada pelo arduino-cli.
 cd "$(dirname "$0")"
+mkdir -p out
+node ../scripts/idiomas-gerar.cjs --check --sim-inc out/lang_test.inc || { echo "ERRO: tabela de idiomas ausente, inválida ou desatualizada"; exit 1; }
 # módulos: todo modulos/*.cpp precisa de #include "modulos/x.cpp" no main.cpp (compila como um arquivo só) e vice-versa
 FW=../smalltv-pomodoro
 for f in "$FW"/modulos/*.cpp; do
@@ -37,7 +39,6 @@ if grep -lE '#include "(\.\./)?app\.h"' ../smalltv-pomodoro/*.cpp ../smalltv-pom
   echo "só o main.cpp (que inclui os modulos/) pode incluir o app.h: outra unidade instanciaria o servidor sem o ws_parse.h"; exit 1
 fi
 GFX="${GFX:-$HOME/Documents/Arduino/libraries/Adafruit_GFX_Library}"
-mkdir -p out
 node tint_test.cjs out/tint_test.inc || exit 1
 node editor_modelos.cjs out/editor-modelos.txt || exit 1  # modelos do editor do painel, conferidos pelo simulador
 # Windows: executável Windows de 32 bits; Linux (também o build automático do GitHub): Linux de 32 bits, estático

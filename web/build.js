@@ -1,11 +1,11 @@
 // Gera o painel comprimido (gzip) a partir de web/index.html em web/out/panel-<hash>.html.gz (vai para o
 // site e daí para a memória de arquivos do relógio) e smalltv-pomodoro/web.h com o carregador e o hash.
 // O navegador descompacta sozinho (Content-Encoding: gzip). ~70 KB viram ~19 KB.
-// Edite web/index.html (textos em inglês e espanhol: web/i18n.json) e rode este script
+// Edite web/index.html (inglês/espanhol: web/i18n.json; alemão/russo/francês: web/i18n-de.json, web/i18n-ru.json e web/i18n-fr.json) e rode este script
 // (sim/build.sh já roda). Com o terser instalado (npm install em web/), o JavaScript sai minificado.
 //
-// O dicionário inglês/espanhol não vai na flash: o painel busca no site panel/i18n-<código>.json
-// (o código é um hash do web/i18n.json, trocado no lugar de __I18V__) e guarda no navegador.
+// Os dicionários não vão na flash: o painel busca no site panel/i18n-<código>.json; alemão e russo
+// ficam em arquivos próprios, baixados só quando escolhidos. Os códigos são hashes trocados no HTML.
 // O cartão de compartilhar (web/share.js) idem, como panel/share-<código>.js, baixado só na hora de compartilhar,
 // e o editor de mostrador (web/editor.js), como panel/editor-<código>.js, baixado só ao abrir o editor.
 // A cada versão, publique os arquivos de web/out/ na pasta panel/ do site (gh-pages).
@@ -20,6 +20,16 @@ const out = path.join(__dirname, '..', 'smalltv-pomodoro', 'web.h');
   html = html.replace(/__I18V__/g, ver).replace(/__I18I__/g, 'sha384-' + crypto.createHash('sha384').update(dict).digest('base64'));
   fs.mkdirSync(path.join(__dirname, 'out'), { recursive: true });
   fs.writeFileSync(path.join(__dirname, 'out', `i18n-${ver}.json`), dict);
+  const extraI18n = [];
+  for (const l of ['de', 'ru', 'fr']) {
+    const d = fs.readFileSync(path.join(__dirname, `i18n-${l}.json`));
+    const v = crypto.createHash('sha1').update(d).digest('hex').slice(0, 10);
+    const sri = 'sha384-' + crypto.createHash('sha384').update(d).digest('base64');
+    html = html.replace(new RegExp(`__I18${l.toUpperCase()}V__`, 'g'), v).replace(new RegExp(`__I18${l.toUpperCase()}I__`, 'g'), sri);
+    const file = `i18n-${l}-${v}.json`;
+    fs.writeFileSync(path.join(__dirname, 'out', file), d);
+    extraI18n.push(file);
+  }
   // fusos (web/tz.json, gerado por web/tzgen.sh da tzdata): idem, panel/tz-<código>.json com SRI, baixado só
   // quando a pessoa escolhe a cidade (o relógio recebe a regra POSIX pronta)
   const tz = fs.readFileSync(path.join(__dirname, 'tz.json'));
@@ -80,6 +90,6 @@ const out = path.join(__dirname, '..', 'smalltv-pomodoro', 'web.h');
   fs.writeFileSync(out, h);
   // para o latest.json e o scripts/publicar.sh ("site": os arquivos que vão para panel/ no site)
   fs.writeFileSync(path.join(__dirname, 'out', 'panel.json'), JSON.stringify({ panel: file, psri: sri, psize: gz.length,
-    site: [file, `i18n-${ver}.json`, `tz-${tzv}.json`, `share-${shv}.js`, `editor-${edv}.js`] }) + '\n');
+    site: [file, `i18n-${ver}.json`, ...extraI18n, `tz-${tzv}.json`, `share-${shv}.js`, `editor-${edv}.js`] }) + '\n');
   console.log(`painel: ${(fs.statSync(src).size / 1024).toFixed(1)} KB -> ${(gz.length / 1024).toFixed(1)} KB (gzip) em ${file}; carregador na flash: ${loader.length} bytes; dicionário i18n-${ver}.json, fusos tz-${tzv}.json, cartão share-${shv}.js, editor editor-${edv}.js (${edit.length} bytes)`);
 })();

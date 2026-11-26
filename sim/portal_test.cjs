@@ -13,6 +13,8 @@ const pageLangStruct = between('struct PageLang {', '\n};') + '\n};';
 const startPortal = source.indexOf('void startPortal() {');
 const indexBody = between('server.on("/", HTTP_GET, [] {\n', '\n  });\n  server.on("/scan"', startPortal).replace(/^server\.on\("\/", HTTP_GET, \[\] \{\n/, '');
 const saveBody = between('server.on("/save", HTTP_POST, [] {\n', '\n  });\n  // qualquer outro', startPortal).replace(/^server\.on\("\/save", HTTP_POST, \[\] \{\n/, '');
+// o pageLang real devolve inglês (1) para alemão e russo: a página do portal e da recuperação ainda não tem esses textos
+if (!source.includes('uint8_t pageLang() {\n  if (cfg.lang >= 3) return 1;')) throw Error('pageLang precisa devolver inglês para lang 3, 4 e 5');
 const out = process.argv[2];
 if (!out) throw Error('output.cpp required');
 const header = path.relative(path.dirname(path.resolve(out)), path.resolve(__dirname, '../smalltv-pomodoro/security.h')).replaceAll('\\', '/');
@@ -73,17 +75,17 @@ static std::string page() { std::string s; for (auto &c : chunks) s += c; return
 static bool has(const std::string &s, const char *p) { return s.find(p) != std::string::npos; }
 static void get() { chunks.clear(); calls.clear(); headers.clear(); status = 0; index(); }
 int main() {
- for (uint8_t l = 0; l < 3; l++) {  // idioma da página: o do navegador; o da tela volta ao fim
+ for (uint8_t l = 0; l < 5; l++) {  // idioma da página: o do navegador (3 alemão e 4 russo usam inglês); o da tela volta ao fim
   uiLang = 0; browserLang = l; WiFi.state = WIFI_SCAN_RUNNING; WiFi.nets.clear(); get();
   std::string p = page();
   assert(uiLang == 0 && status == 200 && headers["Cache-Control"] == "no-store");
   assert(headers["X-Content-Type-Options"] == "nosniff" && headers["X-Frame-Options"] == "DENY" && headers["Referrer-Policy"] == "no-referrer");
   assert(calls.size() == 2 && calls[0] == "len" && calls[1] == "send:" && chunks.back().empty() && chunks[chunks.size() - 2].size() > 0 && has(p, "<form method=post action=/save>"));
-  assert(has(p, l == 0 ? "Procurando redes" : l == 1 ? "Looking for networks" : "Buscando redes"));
+  assert(has(p, l == 0 ? "Procurando redes" : l == 2 ? "Buscando redes" : "Looking for networks"));
   assert(has(p, "setTimeout") && !has(p, "type=radio") && has(p, "name=h") && has(p, "name=csrf") && has(p, "href=/scan"));
   WiFi.state = WIFI_SCAN_FAILED; get(); p = page();  // varredura que falhou, ou nenhuma rede: avisa e lembra os 2,4 GHz
   assert(has(p, "2,4 GHz") || has(p, "2.4 GHz")); assert(!has(p, "setTimeout") && !has(p, "type=radio") && has(p, "href=/scan"));
-  assert(has(p, l == 0 ? "Atualizar lista" : l == 1 ? "Refresh list" : "Actualizar lista") && has(p, l == 0 ? "Senha" : l == 1 ? "Password" : "Contrase&ntilde;a"));
+  assert(has(p, l == 0 ? "Atualizar lista" : l == 2 ? "Actualizar lista" : "Refresh list") && has(p, l == 0 ? "Senha" : l == 2 ? "Contrase&ntilde;a" : "Password"));
   WiFi.state = 0; get(); assert(has(page(), "2,4 GHz") || has(page(), "2.4 GHz"));
  }
  browserLang = 0;
@@ -107,7 +109,7 @@ int main() {
  post("", "", "x"); assert(status == 400 && calls.size() == 1 && has(calls[0], "send:") && !has(calls[0], "begin"));
  post("", std::string(33, 'a').c_str(), "x"); assert(status == 400 && calls.size() == 1);
  post(std::string(32, 'a').c_str(), "", "x"); assert(status == 200 && calls[3].rfind("begin:", 0) == 0);
- for (uint8_t l = 0; l < 3; l++) { browserLang = l; uiLang = 0; post("", "", ""); assert(uiLang == 0 && has(calls[0], l == 0 ? "Escolha uma rede" : l == 1 ? "Pick a network" : "Elige una red")); }
+ for (uint8_t l = 0; l < 5; l++) { browserLang = l; uiLang = 0; post("", "", ""); assert(uiLang == 0 && has(calls[0], l == 0 ? "Escolha uma rede" : l == 2 ? "Elige una red" : "Pick a network")); }
  puts("portal: lista visível, varredura assíncrona, escapes, idiomas e gravação da rede ok");
 }
 `);
