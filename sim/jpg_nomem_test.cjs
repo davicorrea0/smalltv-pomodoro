@@ -59,7 +59,11 @@ struct AnimatedGIF {
   int getLastError() { return g_gifErr; }
   void reset() { g_gifResets++; }
 };
-AnimatedGIF *gif = nullptr; static int gifOffX, gifOffY; static uint32_t nextFrameAt; static uint8_t gifNoMemTries = 0, gifPrevDisp = 0; int gifRead, gifSeek, gifDraw;
+struct AlbumGifRenderState { uint8_t *rgb = nullptr; };  // tabela de cores do filtro (album_gif_renderer.h)
+static AlbumGifRenderState gifRender;
+static void albumGifRenderFree(AlbumGifRenderState &st) { free(st.rgb); st.rgb = nullptr; }
+using std::min;
+AnimatedGIF *gif = nullptr; static int gifOffX, gifOffY, gifScale = 1; static uint32_t nextFrameAt; static uint8_t gifNoMemTries = 0, gifPrevDisp = 0; int gifRead, gifSeek, gifDraw;
 static std::string lastErr; static bool inAlbum = false; static String curFile;
 void uiError(const char *m) { lastErr = m; }
 void uiInvalidate() {} void setLcdView(bool) {}
@@ -107,7 +111,7 @@ int main() {
   reset(); g_alloc = false; showAlbumItem("/a.jpg"); lastErr.clear(); g_alloc = true;
   CHECK(showAlbumItem("/a.jpg") && lastErr.empty() && g_decodes == 1);
   // ---- pacote de mostrador × álbum: só sai da RAM sob pressão, e a ordem importa (liberar ANTES de alocar) ----
-  const uint32_t JPG_NEED = sizeof(JPEGDEC) + 1024 + 8192, GIF_NEED = sizeof(AnimatedGIF) + 1024 + 19456;
+  const uint32_t JPG_NEED = sizeof(JPEGDEC) + 1024 + 8192, GIF_NEED = sizeof(AnimatedGIF) + 1024 + 19456 + 768;  // + tabela de cores do filtro (album.cpp)
   reset(); g_packLoaded = true; g_maxBlock = JPG_NEED; CHECK(showAlbumItem("/a.jpg") && g_unloads == 0 && g_packLoaded && lastErr.empty());  // folga: o pacote fica
   reset(); g_packLoaded = true; g_maxBlock = JPG_NEED - 1; CHECK(showAlbumItem("/a.jpg") && g_unloads == 1 && !g_packLoaded && !g_packAtAlloc && lastErr.empty()); // aperto: libera antes do decodificador
   reset(); g_packLoaded = true; g_maxBlock = sizeof(JPEGDEC) + 1024; CHECK(showAlbumItem("/a.jpg") && !g_packLoaded && lastErr.empty());  // só cabia o decodificador: com o pacote fora, a foto aparece
