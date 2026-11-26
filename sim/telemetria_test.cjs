@@ -15,7 +15,9 @@ const cut = (sig, from = 0) => { const a = source.indexOf(sig, from); if (a < 0)
 const OLD = ('phase running remaining total cycle sess sdone today streak best clock showing wx ok t min max h rin tzn off loff rise set desc fs l2 mig used cfg work short long every cycles bri auto h12 tz lock theme mode delay color non nstart nend nbri won fahr rain beta lat lon city bgr inv flip vcom wdown tok tund pkg goal act lang nsun warm lcdg alexa rotmin rot ago ip last pv name heap blk pdraw pseq pshown ver diag rst exc epc rssi minheap frag up draw stall stallAt boot scr wifi wf time src ntp crash n r x va').split(' ');
 const NEW = ['minblk', 'stack', 'ramfix', 'sk', 'fr', 'fl', 'lps', 'pack', 'nomem', 'jpg', 'gif', 'strip', 'tw', 'twmax', 'fail', 'cv'];
 const sendState = cut('static void sendState() {'), diagJson = cut('static void diagJson('), crashJson = cut('static void crashJson(');
-const keys = new Set([...(sendState + diagJson + crashJson).matchAll(/\\"(\w+)\\":/g)].map(m => m[1]));
+// GIF_CRONO só existe em build de medição (nunca publicada): o gifus dela não conta como campo do /api/state
+const semCrono = t => t.replace(/#ifdef GIF_CRONO[\s\S]*?#endif/g, '');
+const keys = new Set([...semCrono(sendState + diagJson + crashJson).matchAll(/\\"(\w+)\\":/g)].map(m => m[1]));
 for (const k of OLD) assert(keys.has(k), 'chave antiga sumiu do /api/state: ' + k + ' (painéis antigos leem esse JSON)');
 assert.deepStrictEqual([...keys].filter(k => !OLD.includes(k)).sort(), [...NEW].sort(), 'o /api/state só pode ganhar minblk, stack, ramfix, lps, pack, nomem{jpg,gif,strip}, tw, twmax, wx.fail e cv');
 // os campos novos ficam dentro de diag
