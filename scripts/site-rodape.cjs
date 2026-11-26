@@ -8,13 +8,13 @@ const REPO = 'https://github.com/davicorrea0/smalltv-pomodoro';
 const T = {
   pt: {
     root: '', about: 'Firmware de código aberto para o GeekMagic SmallTV Ultra. Feito por Davi Mattos.',
-    site: 'Site', nav: [['./', 'Início'], ['galeria.html', 'Galeria'], ['docs.html', 'Docs'], ['versoes.html', 'Versões'], ['novidades.html', 'Novidades'], ['jogo.html', 'Jogo']],
+    site: 'Site', nav: [['./', 'Início'], ['galeria.html', 'Recursos'], ['docs.html', 'Docs'], ['versoes.html', 'Versões'], ['novidades.html', 'Novidades'], ['jogo.html', 'Jogo']],
     proj: 'Projeto', code: 'Código no GitHub', issue: 'Relatar um problema', lic: 'Licença GPL v3', other: 'English', otherLang: 'en',
     fine: 'GeekMagic e SmallTV são marcas dos seus donos. Este é um projeto independente, sem ligação com a GeekMagic. Gravar outro firmware é por sua conta e risco.',
   },
   en: {
     root: '../', about: 'Open-source firmware for the GeekMagic SmallTV Ultra. Made by Davi Mattos.',
-    site: 'Site', nav: [['./', 'Home'], ['gallery.html', 'Gallery'], ['docs.html', 'Docs'], ['releases.html', 'Releases'], ['news.html', 'News'], ['game.html', 'Game']],
+    site: 'Site', nav: [['./', 'Home'], ['gallery.html', 'Add-ons'], ['docs.html', 'Docs'], ['releases.html', 'Releases'], ['news.html', 'News'], ['game.html', 'Game']],
     proj: 'Project', code: 'Code on GitHub', issue: 'Report a problem', lic: 'GPL v3 license', other: 'Português', otherLang: 'pt-BR',
     fine: 'GeekMagic and SmallTV are trademarks of their owners. This is an independent project, not affiliated with GeekMagic. Flashing other firmware is at your own risk.',
   },
