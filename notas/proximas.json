@@ -7,7 +7,7 @@
       { "t": "Rodízio com tempo por item", "d": "Cada mostrador ou miniapp fica o tempo que você escolher. Miniapp sem dados perde a vez, e o Home Assistant pode mostrar um deles na hora." },
       { "t": "Sessões de foco", "d": "Sessões que terminam sozinhas depois de N focos, como Deep focus (3h15) e Gentle focus (1h15), e seus próprios modelos de sessão." },
       { "t": "Uso de IA", "d": "Os limites do Claude e do Codex no relógio, enviados por um programinha no PC que manda só os números." },
-      { "t": "Mais idiomas", "d": "Letras alemãs e russas nos mostradores. Painel e relógio em alemão e russo como idiomas extras, baixados só por quem escolher." },
+      { "t": "Mais idiomas", "d": "Letras alemãs e russas nos mostradores. Painel e relógio em alemão, russo e francês como idiomas extras, baixados só por quem escolher." },
       { "t": "Memória em Ajustes", "d": "Quanto o firmware, os arquivos e a RAM ocupam e quanto ainda cabe, explicado para quem não é técnico." }
     ],
     "link": { "href": "https://github.com/davicorrea0/smalltv-pomodoro/issues/152", "texto": "Debater as próximas novidades" }
@@ -20,7 +20,7 @@
       { "t": "Rotation per item", "d": "Each face or miniapp stays on screen for the time you pick. A miniapp with no data skips its turn, and Home Assistant can show one right away." },
       { "t": "Focus sessions", "d": "Sessions that end by themselves after N focuses, like Deep focus (3h15) and Gentle focus (1h15), plus your own session templates." },
       { "t": "AI usage", "d": "Claude and Codex limits on the clock, sent by a small PC companion that only sends the numbers." },
-      { "t": "More languages", "d": "German and Russian letters in faces. Panel and clock in German and Russian as extra languages, downloaded only by those who pick them." },
+      { "t": "More languages", "d": "German and Russian letters in faces. Panel and clock in German, Russian and French as extra languages, downloaded only by those who pick them." },
       { "t": "Memory in Settings", "d": "How much the firmware, files and RAM use and how much is left, explained for non-technical people." }
     ],
     "link": { "href": "https://github.com/davicorrea0/smalltv-pomodoro/issues/152", "texto": "Discuss what comes next" }
