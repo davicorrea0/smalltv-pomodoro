@@ -1,6 +1,7 @@
 {
   "pt": [
     "Versão 1.26.2: correções da 1.26.1 e melhorias de memória, cor e segurança",
+    "Esta é a versão ponte para a 1.26.3: relógios no layout antigo de memória passam primeiro por ela, que faz a troca. Depois, a 1.26.3 (francês, alemão e russo e GIFs melhores) aparece para atualizar",
     "Painel: não fica mais em branco até religar o relógio depois de recarregar a página (um defeito do núcleo do ESP8266 fazia o relógio responder com a página antiga vazia)",
     "Wi-Fi: depois de tirar o relógio da tomada, ele não volta mais para o QR de configuração quando a rede já está funcionando",
     "Clima: o painel avisa quando o serviço do clima não responde da sua rede, em vez de só ficar sem previsão",
@@ -17,6 +18,7 @@
   ],
   "en": [
     "Version 1.26.2: fixes for 1.26.1 plus memory, colour and security improvements",
+    "This is the bridge version to 1.26.3: clocks on the old memory layout go through it first, and it does the switch. After that, 1.26.3 (French, German and Russian, and better GIFs) shows up as an update",
     "Panel: no longer stays blank until you power-cycle the clock after reloading the page (an ESP8266 core bug made the clock answer with the old, empty page)",
     "Wi-Fi: after unplugging the clock, it no longer goes back to the setup QR when the network is actually working",
     "Weather: the panel tells you when the weather service can't be reached from your network, instead of just showing no forecast",
@@ -33,6 +35,7 @@
   ],
   "es": [
     "Versión 1.26.2: correcciones de la 1.26.1 y mejoras de memoria, color y seguridad",
+    "Esta es la versión puente hacia la 1.26.3: los relojes con la distribución de memoria antigua pasan primero por ella, que hace el cambio. Después, la 1.26.3 (francés, alemán y ruso, y GIF mejores) aparece como actualización",
     "Panel: ya no queda en blanco hasta desenchufar el reloj después de recargar la página (un fallo del núcleo del ESP8266 hacía que el reloj respondiera con la página vieja vacía)",
     "Wi-Fi: después de desenchufar el reloj, ya no vuelve al QR de configuración cuando la red ya funciona",
     "Clima: el panel avisa cuando el servicio del clima no responde desde tu red, en vez de solo quedarse sin pronóstico",
