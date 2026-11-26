@@ -1,4 +1,24 @@
 {
-  "pt": [],
-  "en": []
+  "pt": [
+    {
+      "data": "2026-11-26",
+      "titulo": "Versão 1.26.2 em teste",
+      "texto": "A 1.26.2 está disponível como versão de teste, com melhorias de memória, cor da tela e segurança e as sessões de foco criadas por você. Ela é a ponte para a 1.26.3: relógios no layout antigo de memória passam por ela primeiro. Por ser de teste, só aparece para quem ligar \"Receber versões de teste\" nos Ajustes; faça o backup antes de atualizar.",
+      "link": {
+        "href": "versoes.html",
+        "texto": "Ver as versões"
+      }
+    }
+  ],
+  "en": [
+    {
+      "data": "2026-11-26",
+      "titulo": "Version 1.26.2 in testing",
+      "texto": "1.26.2 is available as a test version, with memory, screen color and security improvements and focus sessions you create yourself. It is the bridge to 1.26.3: clocks on the old memory layout go through it first. Since it is a test version, it only shows up for those who turn on \"Get test versions\" in Settings; back up before updating.",
+      "link": {
+        "href": "releases.html",
+        "texto": "See the releases"
+      }
+    }
+  ]
 }
