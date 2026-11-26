@@ -30,17 +30,23 @@ compile() {
   return 1
 }
 
+# GIFs do teste: sim/gif-album/ (fora do git, só na máquina de quem tem os GIFs) ou, sem ela (CI), GIFs do próprio
+# projeto: tela cheia, pequeno ampliado 4x e uma animação de 16 quadros.
+GIFS=(sim/gif-album/*.gif)
+[ -e "${GIFS[0]}" ] || GIFS=(sim/gif-seeds/ff_240.gif sim/gif-seeds/ff_small.gif docs/transicao-lcd-ida.gif)
+echo "gif-qualidade: ${#GIFS[@]} GIFs (${GIFS[*]})"
+
 rm -rf "$OUT/firmware" "$OUT/firmware-sem-limpeza" "$OUT/firmware-sem-filtro" "$OUT/firmware-antes" \
   "$OUT/referencia" "$OUT/comparacoes" "$OUT/original" "$OUT/comparacoes-antes"
 compile "$TMP/gif-golden"
 compile "$TMP/gif-golden-sem-limpeza" -DGIF_LIMPEZA_PALETA=0 -DGIF_FILTRO_HORIZONTAL=0
 compile "$TMP/gif-golden-sem-filtro" -DGIF_FILTRO_HORIZONTAL=0
-"$TMP/gif-golden" --out "$OUT/firmware" sim/gif-album/*.gif
-"$TMP/gif-golden-sem-limpeza" --out "$OUT/firmware-sem-limpeza" sim/gif-album/*.gif
-"$TMP/gif-golden-sem-filtro" --out "$OUT/firmware-sem-filtro" sim/gif-album/*.gif
-"$TMP/gif-golden" --legacy --out "$OUT/firmware-antes" sim/gif-album/*.gif
-"${PY[@]}" sim/gif_referencia.py --out "$OUT" --firmware "$OUT/firmware"
-"${PY[@]}" sim/gif_referencia.py --out "$OUT/original" --limiar -1 --sem-filtro-horizontal \
+"$TMP/gif-golden" --out "$OUT/firmware" "${GIFS[@]}"
+"$TMP/gif-golden-sem-limpeza" --out "$OUT/firmware-sem-limpeza" "${GIFS[@]}"
+"$TMP/gif-golden-sem-filtro" --out "$OUT/firmware-sem-filtro" "${GIFS[@]}"
+"$TMP/gif-golden" --legacy --out "$OUT/firmware-antes" "${GIFS[@]}"
+"${PY[@]}" sim/gif_referencia.py --gifs "${GIFS[@]}" --out "$OUT" --firmware "$OUT/firmware"
+"${PY[@]}" sim/gif_referencia.py --gifs "${GIFS[@]}" --out "$OUT/original" --limiar -1 --sem-filtro-horizontal \
   --firmware "$OUT/firmware-sem-limpeza"
 "${PY[@]}" sim/gif_ruido.py --original "$OUT/original/referencia" \
   --sem-limpeza "$OUT/firmware-sem-limpeza" --so-paleta "$OUT/firmware-sem-filtro" \

@@ -20,7 +20,7 @@ struct AlbumGifRenderState {
   bool writing = false;
   bool blockWindow = false;
   int rowsSeen = 0;
-  int paletteChanges = 0;
+  int paletteChanges = 0;  // quase pretos na paleta do quadro: liga o filtro de ponto isolado
   // R, G e B de 8 bits de cada cor da paleta (768 B), montado uma vez por quadro: o filtro compara pela tabela em vez
   // de converter três cores RGB565 por pixel. Mora no heap só enquanto o GIF toca (albumGifRenderFree solta);
   // sem memória, o quadro sai sem o filtro.
@@ -38,25 +38,25 @@ static inline uint16_t albumGifSwap16(uint16_t v) { return (uint16_t)((v << 8) |
 static inline uint8_t albumGifExpand5(uint16_t v) { return (uint8_t)((v << 3) | (v >> 2)); }
 static inline uint8_t albumGifExpand6(uint16_t v) { return (uint8_t)((v << 2) | (v >> 4)); }
 
-// Uma passada pela paleta por quadro: zera os quase pretos (ruído da compressão) e, com a tabela alocada, guarda o
-// R, G, B de 8 bits de cada cor já limpa para o filtro.
+// Uma passada pela paleta por quadro: conta e zera os quase pretos (ruído da compressão com perda) e, com a tabela
+// alocada, guarda o R, G, B de 8 bits de cada cor já limpa para o filtro. Devolve quantos quase pretos havia.
 static int albumGifPreparePalette(uint16_t *palette, uint8_t *rgb) {
-  int changed = 0;
+  int nearBlack = 0;
   for (int i = 0; i < 256; i++) {
     uint16_t v = albumGifSwap16(palette[i]);
     uint8_t r = albumGifExpand5((v >> 11) & 31);
     uint8_t g = albumGifExpand6((v >> 5) & 63);
     uint8_t b = albumGifExpand5(v & 31);
-#if GIF_LIMPEZA_PALETA
     if (palette[i] && r <= GIF_LIMIAR_PRETO && g <= GIF_LIMIAR_PRETO && b <= GIF_LIMIAR_PRETO) {
+      nearBlack++;
+#if GIF_LIMPEZA_PALETA
       palette[i] = 0;
       r = g = b = 0;
-      changed++;
-    }
 #endif
+    }
     if (rgb) { rgb[3 * i] = r; rgb[3 * i + 1] = g; rgb[3 * i + 2] = b; }
   }
-  return changed;
+  return nearBlack;
 }
 
 static inline int albumGifAbs(int value) { return value < 0 ? -value : value; }
@@ -158,7 +158,9 @@ static void albumGifDraw(AlbumGifRenderState &st, Display &out, uint16_t *buf,
     // sem transparência: a linha (com filtro e ampliação) é calculada uma vez e enviada `scale` vezes; o envio
     // big-endian não altera o buffer
     if (w <= 0) return albumGifRowDone(st, out, p);
-    albumGifRowFiltered(buf, p->pPalette, st.rgb, p->pPixels, p->iWidth, src0, src1, scale);
+    // o filtro só liga quando a paleta tem quase pretos, a marca da compressão com perda: GIF limpo (pixel art,
+    // pontos de 1 px de propósito) sai como veio
+    albumGifRowFiltered(buf, p->pPalette, st.paletteChanges ? st.rgb : nullptr, p->pPixels, p->iWidth, src0, src1, scale);
     for (int repeatY = 0; repeatY < scale; repeatY++) {
       int y = y0 + repeatY;
       if (y < 0 || y >= 240) continue;

@@ -173,12 +173,14 @@ def compose(path, out_root, threshold=12, horizontal_filter=True):
                 canvas = restore
         restore = list(canvas) if frame["disposal"] == 3 else None
         pal, tr = clean_palette(frame["palette"], threshold), frame["transparent"]
+        # como o firmware: o filtro só liga com quase pretos (<= 12) na paleta, a marca da compressão com perda
+        lossy = any(color and max(to_rgb(color)) <= 12 for color in frame["palette"])
         for yy in range(frame["h"]):
             for xx in range(frame["w"]):
                 index = frame["pixels"][yy * frame["w"] + xx]
                 if tr is None or index != tr:
                     color = pal[index]
-                    if horizontal_filter and tr is None and 0 < xx < frame["w"] - 1:
+                    if horizontal_filter and lossy and tr is None and 0 < xx < frame["w"] - 1:
                         left = pal[frame["pixels"][yy * frame["w"] + xx - 1]]
                         right = pal[frame["pixels"][yy * frame["w"] + xx + 1]]
                         if color_delta(color, left) >= 64 and color_delta(color, right) >= 64 and color_delta(left, right) <= 16:
@@ -273,14 +275,14 @@ def compare(files, reference_root, firmware_root, out_root):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--gifs", default="sim/gif-album/*.gif")
+    parser.add_argument("--gifs", nargs="+", default=["sim/gif-album/*.gif"])
     parser.add_argument("--out", default="pesquisas/gif-qualidade")
     parser.add_argument("--firmware", default="pesquisas/gif-qualidade/firmware")
     parser.add_argument("--limiar", type=int, default=12)
     parser.add_argument("--sem-filtro-horizontal", action="store_true")
     parser.add_argument("--reference-only", action="store_true")
     args = parser.parse_args()
-    files = sorted(glob.glob(args.gifs))
+    files = sorted(f for padrao in args.gifs for f in glob.glob(padrao))
     if not files:
         raise SystemExit("nenhum GIF encontrado")
     reference_root = os.path.join(args.out, "referencia")
