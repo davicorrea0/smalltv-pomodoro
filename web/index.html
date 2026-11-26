@@ -239,7 +239,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
  <div class="grp">
  <h2>Idioma</h2>
  <div class="card">
-  <label>Idioma do painel e do relógio<select data-k="lang"><option value="0">Português</option><option value="1">English</option><option value="2">Español</option><option value="3">Deutsch (beta)</option><option value="4">Русский (beta)</option></select></label>
+  <label>Idioma do painel e do relógio<select data-k="lang"><option value="0">Português</option><option value="1">English</option><option value="2">Español</option><option value="3">Deutsch (beta)</option><option value="4">Русский (beta)</option><option value="5">Français (beta)</option></select></label>
  </div>
  </div>
  <div class="grp">
@@ -411,8 +411,8 @@ const DEEP_FOCUS={work:50,short:10,long:25,every:3,cycles:3},GENTLE_FOCUS={work:
 function sessionMinutes(x){let n=x.cycles,total=n*x.work+x.long;for(let i=1;i<n;i++)total+=i%x.every?x.short:x.long;return total}
 function sessionDuration(m){return m>=60?(m/60|0)+'h'+(m%60?String(m%60).padStart(2,'0'):''):m+' min'}
 // ---------- idioma (pt/en/es/de/ru; o relógio guarda em cfg.lang) ----------
-const LANGS=['pt','en','es','de','ru'],I18N=Object.create(null),I18X=[null,null,null,Object.create(null),Object.create(null)];
-let BUILTIN=[],BUILTINX=[null,null,null,[],[]];  // inglês/espanhol no arquivo base; alemão/russo em arquivos próprios
+const LANGS=['pt','en','es','de','ru','fr'],I18N=Object.create(null),I18X=[null,null,null,Object.create(null),Object.create(null),Object.create(null)];
+let BUILTIN=[],BUILTINX=[null,null,null,[],[],[]];  // inglês/espanhol no arquivo base; alemão/russo em arquivos próprios
 let LG=0;try{LG=+localStorage.lang||0}catch(e){}
 // t('texto {0}',a,b): tradução do texto em português, com {0}, {1}... trocados
 const t=(s,...a)=>(LG==0?s:LG<3&&I18N[s]?I18N[s][LG-1]:LG>=3&&(I18X[LG][s]||(I18N[s]&&I18N[s][0]))||s).replace(/\{(\d)\}/g,(m,i)=>a[i]);
@@ -425,7 +425,7 @@ function i18n(){document.documentElement.lang=LANGS[LG];document.documentElement
 // guardado no navegador na primeira vez; em português não precisa de nada. O build troca __I18V__ pelo
 // código do dicionário; sem ele (painel de teste), vem de /i18n.json.
 const I18V='__I18V__',I18I='__I18I__';  // I18I: impressão digital (SRI) do dicionário publicado
-const I18XV=[null,null,null,'__I18DEV__','__I18RUV__'],I18XI=[null,null,null,'__I18DEI__','__I18RUI__'];
+const I18XV=[null,null,null,'__I18DEV__','__I18RUV__','__I18FRV__'],I18XI=[null,null,null,'__I18DEI__','__I18RUI__','__I18FRI__'];
 const TZV='__TZV__',TZI='__TZI__';  // tabela de fusos publicada (panel/tz-<código>.json), idem
 let i18Fail=false;
 function loadI18n(){if(!LG)return;const warn=()=>{if(LG>=3&&!i18Fail){i18Fail=true;toast('Translation unavailable (needs internet)')}};const refresh=()=>{i18n();buildFaces();drawGame();if(st){$('curimg').dataset.k='';load(st)}};

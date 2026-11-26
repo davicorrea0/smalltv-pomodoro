@@ -8,8 +8,9 @@ const html = fs.readFileSync(path.join(__dirname, '../web/index.html'), 'utf8');
   const base = JSON.parse(fs.readFileSync(path.join(__dirname, '../web/i18n.json'), 'utf8'));
   const de = JSON.parse(fs.readFileSync(path.join(__dirname, '../web/i18n-de.json'), 'utf8'));
   const ru = JSON.parse(fs.readFileSync(path.join(__dirname, '../web/i18n-ru.json'), 'utf8'));
+  const fr = JSON.parse(fs.readFileSync(path.join(__dirname, '../web/i18n-fr.json'), 'utf8'));
   const keys = Object.keys(base.dict).sort(), params = s => (String(s).match(/\{\d+\}/g) || []).sort();
-  for (const [lang, d] of [['de', de], ['ru', ru]]) {
+  for (const [lang, d] of [['de', de], ['ru', ru], ['fr', fr]]) {
     // chave órfã reprova; chave que falta só avisa (o painel cai em inglês), para não travar PRs que acrescentam textos
     const orfas = Object.keys(d.dict).filter(k => !(k in base.dict));
     assert.deepStrictEqual(orfas, [], lang + ': chaves que não existem no dicionário base');
@@ -26,6 +27,9 @@ const html = fs.readFileSync(path.join(__dirname, '../web/index.html'), 'utf8');
   assert(!/[«»“”„‟‘’‚‛ёЁ]/.test(JSON.stringify(ru)), 'russo usa aspas curvas, guillemets ou ё');
   const alemão = JSON.stringify(de);
   assert(alemão.includes('ß') && alemão.includes('ü'), 'alemão precisa conter ß e ü');
+  const francês = JSON.stringify(fr);
+  assert(francês.includes('é') && francês.includes('è'), 'francês precisa conter é e è');
+  assert(!/[<>`]|javascript:|\$\{/i.test(francês.replace(/<-0[34]>[34]/g, '')), 'francês sem HTML nem script');
   // t() com os idiomas extras: o do idioma, senão inglês, senão o português; {n} trocado
   const ti = html.indexOf('const t=(s,...a)=>'), tl = html.slice(ti, html.indexOf('\n', ti));
   const mk = (LG, I18N, I18X) => new Function('LG', 'I18N', 'I18X', tl + '; return t')(LG, I18N, I18X);
@@ -37,7 +41,7 @@ const html = fs.readFileSync(path.join(__dirname, '../web/index.html'), 'utf8');
   assert.strictEqual(mk(2, B, [0, 0, 0, {}, {}])('Só'), 'Solo');
   // share e editor só têm pt/en/es: o painel limita o idioma que passa para eles
   assert(html.includes('shareCard({spr,SPR,t,LG:LG<3?LG:1,') && html.includes("lang:LG<3?LANGS[LG]:'en'"), 'share/editor precisam de LG limitado a pt/en/es');
-  console.log('painel: dicionários alemão e russo completos, com parâmetros e mostradores válidos; t() cai em inglês');
+  console.log('painel: dicionários alemão, russo e francês completos, com parâmetros e mostradores válidos; t() cai em inglês');
 }
 
 // Cidade do clima: translitera nomes para o formato ASCII do firmware e nunca grava nome vazio.

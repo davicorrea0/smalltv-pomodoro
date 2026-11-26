@@ -13,7 +13,7 @@ const startPortal = source.indexOf('void startPortal() {');
 const indexBody = between('server.on("/", HTTP_GET, [] {\n', '\n  });\n  server.on("/scan"', startPortal).replace(/^server\.on\("\/", HTTP_GET, \[\] \{\n/, '');
 const saveBody = between('server.on("/save", HTTP_POST, [] {\n', '\n  });\n  // qualquer outro', startPortal).replace(/^server\.on\("\/save", HTTP_POST, \[\] \{\n/, '');
 // o pageLang real devolve inglês (1) para alemão e russo: a página do portal e da recuperação ainda não tem esses textos
-if (!source.includes('uint8_t pageLang() {\n  if (cfg.lang >= 3) return 1;')) throw Error('pageLang precisa devolver inglês para lang 3/4');
+if (!source.includes('uint8_t pageLang() {\n  if (cfg.lang >= 3) return 1;')) throw Error('pageLang precisa devolver inglês para lang 3, 4 e 5');
 const out = process.argv[2];
 if (!out) throw Error('output.cpp required');
 const header = path.relative(path.dirname(path.resolve(out)), path.resolve(__dirname, '../smalltv-pomodoro/security.h')).replaceAll('\\', '/');

@@ -1,7 +1,7 @@
 // Gera o painel comprimido (gzip) a partir de web/index.html em web/out/panel-<hash>.html.gz (vai para o
 // site e daí para a memória de arquivos do relógio) e smalltv-pomodoro/web.h com o carregador e o hash.
 // O navegador descompacta sozinho (Content-Encoding: gzip). ~70 KB viram ~19 KB.
-// Edite web/index.html (inglês/espanhol: web/i18n.json; alemão/russo: web/i18n-de.json e web/i18n-ru.json) e rode este script
+// Edite web/index.html (inglês/espanhol: web/i18n.json; alemão/russo/francês: web/i18n-de.json, web/i18n-ru.json e web/i18n-fr.json) e rode este script
 // (sim/build.sh já roda). Com o terser instalado (npm install em web/), o JavaScript sai minificado.
 //
 // Os dicionários não vão na flash: o painel busca no site panel/i18n-<código>.json; alemão e russo
@@ -21,7 +21,7 @@ const out = path.join(__dirname, '..', 'smalltv-pomodoro', 'web.h');
   fs.mkdirSync(path.join(__dirname, 'out'), { recursive: true });
   fs.writeFileSync(path.join(__dirname, 'out', `i18n-${ver}.json`), dict);
   const extraI18n = [];
-  for (const l of ['de', 'ru']) {
+  for (const l of ['de', 'ru', 'fr']) {
     const d = fs.readFileSync(path.join(__dirname, `i18n-${l}.json`));
     const v = crypto.createHash('sha1').update(d).digest('hex').slice(0, 10);
     const sri = 'sha384-' + crypto.createHash('sha384').update(d).digest('base64');

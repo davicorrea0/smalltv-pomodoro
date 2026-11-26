@@ -1082,7 +1082,7 @@ void setupWeb() {
       statsCompute();
     }
     cfg.activity = argRange("act", cfg.activity, 0, ACT_COUNT - 1);
-    uint8_t lang = argRange("lang", cfg.lang, 0, 4);
+    uint8_t lang = argRange("lang", cfg.lang, 0, 5);
     if (lang != cfg.lang) uiSetLang(cfg.lang = lang);
     uint8_t bgr = argRange("bgr", cfg.bgr, 0, 1), inv = argRange("inv", cfg.invert, 0, 1),
             flip = argRange("flip", cfg.flip, 0, 1);

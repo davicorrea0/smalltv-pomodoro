@@ -629,3 +629,317 @@ static const char LANG_RU_S[] PROGMEM =
   "\320\234\320\260\320\273\320\276\320\276\320\261\320\273\320\260\321\207\320\275\320\276\000"
 ;
 #define LANG_RU_N 102
+
+static const uint32_t LANG_FR_H[102] PROGMEM = {
+  0x02cbb15bu,
+  0x04add740u,
+  0x06abe341u,
+  0x09fa5f7du,
+  0x0e45f4b7u,
+  0x0e82665bu,
+  0x0feb86b7u,
+  0x107ee030u,
+  0x13263493u,
+  0x19078fafu,
+  0x1aec7cb7u,
+  0x1c57fda5u,
+  0x1c599279u,
+  0x1e3d607fu,
+  0x1f08905cu,
+  0x21175c5cu,
+  0x2876d4b7u,
+  0x292624abu,
+  0x2a5d3f7bu,
+  0x324e8c0au,
+  0x335bcba1u,
+  0x3af13705u,
+  0x3b0e7df5u,
+  0x3d1af561u,
+  0x3f85c9d4u,
+  0x40f9b8e1u,
+  0x4167978bu,
+  0x42326694u,
+  0x4302a4a0u,
+  0x4362b021u,
+  0x468033a8u,
+  0x49ea0730u,
+  0x4b665d85u,
+  0x4e893a04u,
+  0x4f376ef5u,
+  0x53c02228u,
+  0x53d7347cu,
+  0x562ca3fcu,
+  0x577b06e8u,
+  0x58144de4u,
+  0x5a216c13u,
+  0x5cdb0a6fu,
+  0x5efd3a99u,
+  0x650c3495u,
+  0x6b65d4dbu,
+  0x6c9c1f9cu,
+  0x729c110bu,
+  0x734d8a53u,
+  0x745b2c93u,
+  0x748cb46du,
+  0x75522360u,
+  0x769f7329u,
+  0x771bddcfu,
+  0x7ec4239cu,
+  0x81a27a8fu,
+  0x827bfd10u,
+  0x85600769u,
+  0x85cfa7c2u,
+  0x875937e2u,
+  0x88841ef0u,
+  0x8d10be42u,
+  0x90a5ae8bu,
+  0x99e0a1dfu,
+  0x9bd8f919u,
+  0x9e2b488bu,
+  0xa01b6eecu,
+  0xa0b15c39u,
+  0xa97d745cu,
+  0xa9e4f229u,
+  0xaa65c663u,
+  0xabdb2457u,
+  0xb059b56au,
+  0xb0e31ba4u,
+  0xb3af15a4u,
+  0xbb53ff10u,
+  0xbe8124feu,
+  0xcbcfc5ffu,
+  0xcc19b4cbu,
+  0xcfd72cceu,
+  0xd07d96b8u,
+  0xd8ca5645u,
+  0xd95a3f3du,
+  0xdb9533bcu,
+  0xe0eb2617u,
+  0xe1fee7ceu,
+  0xe2c48377u,
+  0xe57bc6f8u,
+  0xe5f12032u,
+  0xe85557f4u,
+  0xea1b0e04u,
+  0xead91657u,
+  0xed573f2cu,
+  0xf1d6dbf6u,
+  0xf1f205a1u,
+  0xf21ee19fu,
+  0xf3eeabe1u,
+  0xf7246073u,
+  0xf7f41008u,
+  0xf9bad269u,
+  0xfadb6bc0u,
+  0xfec75ebcu,
+  0xff934ba3u
+};
+static const uint16_t LANG_FR_O[102] PROGMEM = {
+  0,
+  19,
+  25,
+  55,
+  64,
+  68,
+  73,
+  94,
+  129,
+  175,
+  186,
+  198,
+  204,
+  208,
+  226,
+  232,
+  238,
+  255,
+  261,
+  279,
+  293,
+  326,
+  345,
+  350,
+  373,
+  379,
+  385,
+  399,
+  405,
+  413,
+  419,
+  427,
+  446,
+  460,
+  473,
+  489,
+  503,
+  516,
+  529,
+  540,
+  553,
+  560,
+  570,
+  580,
+  588,
+  614,
+  620,
+  650,
+  667,
+  674,
+  700,
+  717,
+  729,
+  739,
+  756,
+  768,
+  774,
+  793,
+  824,
+  833,
+  841,
+  856,
+  899,
+  913,
+  919,
+  947,
+  960,
+  968,
+  979,
+  986,
+  1009,
+  1019,
+  1033,
+  1060,
+  1080,
+  1089,
+  1098,
+  1133,
+  1147,
+  1154,
+  1199,
+  1209,
+  1216,
+  1227,
+  1240,
+  1254,
+  1275,
+  1308,
+  1321,
+  1329,
+  1340,
+  1346,
+  1359,
+  1373,
+  1379,
+  1393,
+  1409,
+  1424,
+  1439,
+  1456,
+  1473,
+  1492
+};
+static const char LANG_FR_S[] PROGMEM =
+  "TELEPHONE CONNECTE\000"
+  "BLANC\000"
+  "TOMATE   PREVISIONS   4 JOURS\000"
+  "Connecte\000"
+  "MIN\000"
+  "BLEU\000"
+  "MODE DE RECUPERATION\000"
+  "la 1re barre doit etre rouge et le\000"
+  "Effacer photos, historique, reglages, Wi-Fi ?\000"
+  "le panneau\000"
+  "pour ouvrir\000"
+  "focus\000"
+  "MAX\000"
+  "%u %s ce jour  %s\000"
+  "Pluie\000"
+  "PLUIE\000"
+  "GIF non conforme\000"
+  "Orage\000"
+  "TEST DES COULEURS\000"
+  "Scannez le QR\000"
+  "Telecharger historique des focus\000"
+  "arrete de trembler\000"
+  "VERT\000"
+  "Reorganisation memoire\000"
+  "FOCUS\000"
+  "Pause\000"
+  "pluie bientot\000"
+  "focus\000"
+  "Envoyer\000"
+  "PAUSE\000"
+  "Nuageux\000"
+  "Mot de passe Wi-Fi\000"
+  "ANTI-GHOSTING\000"
+  "PAUSE LONGUE\000"
+  "Connexion Wi-Fi\000"
+  "Cadran absent\000"
+  "JPG invalide\000"
+  "Scannez pour\000"
+  "CHARGEMENT\000"
+  "Pause longue\000"
+  "Ouvrir\000"
+  "Demarrage\000"
+  "desactive\000"
+  "LECTURE\000"
+  "Mettre a jour le firmware\000"
+  "ETAPE\000"
+  "choisissez la ville (panneau)\000"
+  "Oublier le Wi-Fi\000"
+  "TACHES\000"
+  "GIF: memoire insuffisante\000"
+  "JPG non conforme\000"
+  "objectif %d\000"
+  "fond noir\000"
+  "Chargement meteo\000"
+  "Ciel degage\000"
+  "ETUDE\000"
+  "Utilisez les infos\000"
+  "bougez: le motif doit se figer\000"
+  "Pomodoro\000"
+  "SYNCHRO\000"
+  "vous connecter\000"
+  "Album plein (max 100 photos): supprimez-en\000"
+  "fin %02d:%02d\000"
+  "ROUGE\000"
+  "Photo: memoire insuffisante\000"
+  "PAS DE METEO\000"
+  "CE JOUR\000"
+  "PREVISIONS\000"
+  "CODAGE\000"
+  "Redemarrer normalement\000"
+  "encore %d\000"
+  "scannez le QR\000"
+  "Choisissez le Wi-Fi maison\000"
+  "CONFIGUREZ LE WI-FI\000"
+  "EN PAUSE\000"
+  "HUMIDITE\000"
+  "Envoyez le firmware via le panneau\000"
+  "FOCUS DU JOUR\000"
+  "DESSIN\000"
+  "Photo ok, memoire insuffisante pour verifier\000"
+  "ci-contre\000"
+  "Bruine\000"
+  "Previsions\000"
+  "GIF invalide\000"
+  "chargement...\000"
+  "Mode de recuperation\000"
+  "Effacer toutes les donnees perso\000"
+  "pluie %u min\000"
+  "panneau\000"
+  "Brouillard\000"
+  "METEO\000"
+  "pas de meteo\000"
+  "Si le portail\000"
+  "Neige\000"
+  "%u %s ce jour\000"
+  "Reglage horaire\000"
+  "ne marche pas,\000"
+  "Reglages usine\000"
+  "Meteo desactivee\000"
+  "Signature (.sig)\000"
+  "objectif atteint !\000"
+  "Peu de nuages\000"
+;
+#define LANG_FR_N 102

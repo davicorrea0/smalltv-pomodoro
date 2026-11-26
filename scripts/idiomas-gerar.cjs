@@ -8,7 +8,7 @@ const path = require('path');
 const RAIZ = path.resolve(__dirname, '..');
 const FW = path.join(RAIZ, 'smalltv-pomodoro');
 const SAIDA = path.join(FW, 'lang_tr.h');
-const IDIOMAS = ['de', 'ru'];
+const IDIOMAS = ['de', 'ru', 'fr'];
 
 function fnv1a(texto) {
   let h = 2166136261;

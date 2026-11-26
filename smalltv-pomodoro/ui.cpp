@@ -22,23 +22,25 @@ Adafruit_GFX *G = nullptr;
 
 
 // ---------- idioma ----------
-static const char WD_L[5][7][5] PROGMEM = {{"DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SAB"},
+static const char WD_L[6][7][5] PROGMEM = {{"DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SAB"},
                                            {"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"},
                                            {"DOM", "LUN", "MAR", "MIE", "JUE", "VIE", "SAB"},
                                            {"SO", "MO", "DI", "MI", "DO", "FR", "SA"},
-                                           {"ВС", "ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ"}};
-static const char MO_L[5][12][7] PROGMEM = {{"JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"},
+                                           {"ВС", "ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ"},
+                                           {"DIM", "LUN", "MAR", "MER", "JEU", "VEN", "SAM"}};
+static const char MO_L[6][12][7] PROGMEM = {{"JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"},
                                             {"JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"},
                                             {"ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"},
                                             {"JAN", "FEB", "MRZ", "APR", "MAI", "JUN", "JUL", "AUG", "SEP", "OKT", "NOV", "DEZ"},
-                                            {"ЯНВ", "ФЕВ", "МАР", "АПР", "МАЙ", "ИЮН", "ИЮЛ", "АВГ", "СЕН", "ОКТ", "НОЯ", "ДЕК"}};
+                                            {"ЯНВ", "ФЕВ", "МАР", "АПР", "МАЙ", "ИЮН", "ИЮЛ", "АВГ", "СЕН", "ОКТ", "НОЯ", "ДЕК"},
+                                            {"JAN", "FEV", "MAR", "AVR", "MAI", "JUN", "JUL", "AOU", "SEP", "OCT", "NOV", "DEC"}};
 static uint16_t rowBuf[240] __attribute__((aligned(4)));
 uint16_t *uiRowBuf() { return rowBuf; }
 uint8_t uiLang = 0;
 char WD[7][5] = {"DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SAB"};  // português até o uiSetLang
 char MO[12][7] = {"JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"};
 void uiSetLang(uint8_t lang) {
-  uiLang = lang <= 4 ? lang : 0;
+  uiLang = lang <= 5 ? lang : 0;
   memcpy_P(WD, WD_L[uiLang], sizeof WD);
   memcpy_P(MO, MO_L[uiLang], sizeof MO);
   uiInvalidate();
@@ -56,11 +58,11 @@ const char *trP(PGM_P pt, PGM_P en, PGM_P es) {
       hash ^= c;
       hash *= 16777619u;
     }
-    const uint32_t *hashes = uiLang == 3 ? LANG_DE_H : LANG_RU_H;
-    const uint16_t *offsets = uiLang == 3 ? LANG_DE_O : LANG_RU_O;
-    PGM_P strings = uiLang == 3 ? LANG_DE_S : LANG_RU_S;
+    const uint32_t *hashes = uiLang == 3 ? LANG_DE_H : uiLang == 4 ? LANG_RU_H : LANG_FR_H;
+    const uint16_t *offsets = uiLang == 3 ? LANG_DE_O : uiLang == 4 ? LANG_RU_O : LANG_FR_O;
+    PGM_P strings = uiLang == 3 ? LANG_DE_S : uiLang == 4 ? LANG_RU_S : LANG_FR_S;
     int16_t inicio = 0;
-    int16_t fim = (uiLang == 3 ? LANG_DE_N : LANG_RU_N) - 1;
+    int16_t fim = (uiLang == 3 ? LANG_DE_N : uiLang == 4 ? LANG_RU_N : LANG_FR_N) - 1;
     texto = en;  // tr() novo ou alterado sem tradução: mantém a queda para inglês.
     while (inicio <= fim) {
       const int16_t meio = inicio + (fim - inicio) / 2;

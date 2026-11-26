@@ -44,11 +44,11 @@ int main() {
   memset(mem, 0xFF, sizeof mem);  // EEPROM de outro firmware (ex.: o original): lixo sem a magia dos ajustes
   for (int i = 0; i < EE_SIZE; i++) mem[i] = (uint8_t)(i * 37 + 11);
   assert(langAfterBoot() == 1);
-  for (int lang : {0, 1, 2, 3, 4}) {  // quem já usa e atualiza: o idioma gravado continua (3 = alemão e 4 = russo)
+  for (int lang : {0, 1, 2, 3, 4, 5}) {  // quem já usa e atualiza: o idioma gravado continua (3 = alemão, 4 = russo e 5 = francês)
     defaultSettings(); cfg.lang = (uint8_t)lang; EEPROM.put(0, cfg);
     assert(langAfterBoot() == lang);
   }
-  for (int lixo : {5, 6, 100, 255}) {  // campo lido de uma versão antiga (nunca gravado) ou fora de 0..4: português, como sempre
+  for (int lixo : {6, 7, 100, 255}) {  // campo lido de uma versão antiga (nunca gravado) ou fora de 0..5: português, como sempre
     defaultSettings(); cfg.lang = (uint8_t)lixo; EEPROM.put(0, cfg);
     assert(langAfterBoot() == 0);
   }
@@ -56,6 +56,6 @@ int main() {
     defaultSettings(); cfg.magic = SETTINGS_MAGIC_V3; cfg.lang = 0xFF; cfg.work = 30; EEPROM.put(0, cfg);
     assert(langAfterBoot() == 0 && cfg.work == 30 && cfg.magic == SETTINGS_MAGIC);
   }
-  puts("idioma: ajustes do zero em inglês; relógios com idioma gravado (pt, en, es, de, ru) não mudam e lixo vira português");
+  puts("idioma: ajustes do zero em inglês; relógios com idioma gravado (pt, en, es, de, ru, fr) não mudam e lixo vira português");
 }
 `);

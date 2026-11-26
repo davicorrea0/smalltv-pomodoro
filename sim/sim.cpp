@@ -1545,6 +1545,8 @@ static int testIdiomaTela() {
     fails += strcmp(WD[1], dias[l]) || strcmp(MO[2], meses[l]);
   }
   uiSetLang(5);
+  fails += uiLang != 5 || strcmp(WD[1], "LUN") || strcmp(MO[1], "FEV") || strcmp(MO[7], "AOU") || strcmp(trP(PSTR("PT"), PSTR("EN"), PSTR("ES")), "EN");
+  uiSetLang(6);
   fails += uiLang != 0 || strcmp(WD[1], "SEG") || strcmp(MO[3], "ABR") || strcmp(trP(PSTR("PT"), PSTR("EN"), PSTR("ES")), "PT");
 
   {  // sequências cortadas e bytes soltos: o sanitizer acusa qualquer leitura fora da string
@@ -1557,13 +1559,13 @@ static int testIdiomaTela() {
     for (int i = 0; i < 4; i++) text(2, i * 18, 2, uiRgb(255, 255, 255), ruins[i]);
   }
 
-  for (int l = 3; l <= 4; l++) {
+  for (int l = 3; l <= 5; l++) {
     uiSetLang(l);
     for (size_t i = 0; i < sizeof TEMAS_IDIOMA / sizeof TEMAS_IDIOMA[0]; i++) {
       UiState st = base(14, 37, 25);
       st.now.tm_mon = 2; st.now.tm_mday = 16; st.now.tm_wday = 1; st.theme = TEMAS_IDIOMA[i];
       char nome[64];
-      snprintf(nome, sizeof nome, "idioma-%s-%s", l == 3 ? "de" : "ru", NOMES_IDIOMA[i]);
+      snprintf(nome, sizeof nome, "idioma-%s-%s", l == 3 ? "de" : l == 4 ? "ru" : "fr", NOMES_IDIOMA[i]);
       shot(nome, st, false);
     }
   }
@@ -1600,13 +1602,13 @@ static int testTraducoes() {
     return strnlen(atual, 48) < 48 && strcmp(atual, esperado) == 0;
   };
 
-  const char *const *esperadas[] = {LANG_TEST_DE, LANG_TEST_RU};
-  for (int idioma = 0; idioma < 2; idioma++) {
+  const char *const *esperadas[] = {LANG_TEST_DE, LANG_TEST_RU, LANG_TEST_FR};
+  for (int idioma = 0; idioma < 3; idioma++) {
     uiSetLang(3 + idioma);
     for (int i = 0; i < LANG_TEST_N; i++) {
       retorno = trP(PSTR(LANG_TEST_PT[i]), PSTR("EN"), PSTR("ES"));
       if (strcmp(retorno, esperadas[idioma][i]) || strnlen(retorno, 48) >= 48 || !utf8Valido(retorno) || retorno[47] != 0) {
-        printf("tradução %s de %s FALHOU\n", idioma ? "ru" : "de", LANG_TEST_PT[i]);
+        printf("tradução %s de %s FALHOU\n", idioma == 2 ? "fr" : idioma ? "ru" : "de", LANG_TEST_PT[i]);
         fails++;
       }
     }
@@ -1637,13 +1639,13 @@ static int testTraducoes() {
     fails += !igual(retorno, esperado[l]);
   }
 
-  for (int l = 3; l <= 4; l++) {
+  for (int l = 3; l <= 5; l++) {
     uiSetLang(l);
     for (size_t i = 0; i < sizeof TEMAS_IDIOMA / sizeof TEMAS_IDIOMA[0]; i++) {
       UiState st = base(14, 37, 25);
       st.now.tm_mon = 2; st.now.tm_mday = 16; st.now.tm_wday = 1; st.theme = TEMAS_IDIOMA[i];
       char nome[64];
-      snprintf(nome, sizeof nome, "idioma-%s-msg-%s", l == 3 ? "de" : "ru", NOMES_IDIOMA[i]);
+      snprintf(nome, sizeof nome, "idioma-%s-msg-%s", l == 3 ? "de" : l == 4 ? "ru" : "fr", NOMES_IDIOMA[i]);
       shot(nome, st, false);
     }
     Frame *f = new Frame();
@@ -1659,7 +1661,7 @@ static int testTraducoes() {
   }
 
   uiSetLang(lang);
-  printf("traducoes: %s (de/ru, fallback inglês, pt/en/es, NUL e telas por idioma)\n", fails ? "FALHOU" : "ok");
+  printf("traducoes: %s (de/ru/fr, fallback inglês, pt/en/es, NUL e telas por idioma)\n", fails ? "FALHOU" : "ok");
   return fails;
 }
 #include "out/tint_test.inc"
@@ -1789,13 +1791,13 @@ int main() {
   }
   {  // nomes de dia/mês mudam de largura: de/ru também precisam apagar todos os pixels antigos
     const uint8_t idiomaInicial = uiLang;
-    for (int l = 3; l <= 4; l++) {
+    for (int l = 3; l <= 5; l++) {
       uiSetLang(l);
       for (int t = 0; t < THEME_COUNT; t++) {
         UiState st = base(14, 58, 50);
         st.theme = t;
         char nome[32];
-        snprintf(nome, sizeof nome, "%s_%02d", l == 3 ? "de" : "ru", t);
+        snprintf(nome, sizeof nome, "%s_%02d", l == 3 ? "de" : l == 4 ? "ru" : "fr", t);
         fails += checkIncremental(nome, st, false) != 0;
       }
     }
