@@ -105,7 +105,7 @@ function page(t, code) {
     <a class="brand" href="./"><img class="px" src="${t.root}img/tomate.svg" alt=""><span>SmallTV Pomodoro</span></a>
     <nav class="nav">
       ${nav}
-      <a class="opt" href="https://github.com/${REPO}"><span class="gh" aria-hidden="true"></span>GitHub</a>
+      <a class="opt" href="https://github.com/${REPO}" aria-label="GitHub"><span class="gh" aria-hidden="true"></span><span class="gt">Git<span class="hub">Hub</span></span></a>
     </nav>
     <a class="lang" href="${code === 'en' ? '../' : ''}${t.other}" hreflang="${code === 'en' ? 'pt-BR' : 'en'}"><img class="px" src="${t.root}img/icons/globo.svg" alt="">${t.otherLang}</a>
   </div>
