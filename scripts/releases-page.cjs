@@ -180,6 +180,7 @@ function page(t, code) {
 <header class="top">
   <div class="wrap">
     <a class="brand" href="./"><img class="px" src="${t.root}img/tomate.svg" alt=""><span>SmallTV Pomodoro</span></a>
+    <input type="checkbox" id="menu-t" class="menu-t" aria-label="Menu"><label for="menu-t" class="menu-b" title="Menu"><span></span></label>
     <nav class="nav">
       ${nav}
       <a class="opt" href="https://github.com/${REPO}" aria-label="GitHub"><span class="gh" aria-hidden="true"></span><span class="gt">Git<span class="hub">Hub</span></span></a>
