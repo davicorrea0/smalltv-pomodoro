@@ -21,11 +21,14 @@ fi
 compile() {
   local target="$1"
   shift
+  # zig no Windows (o antivírus às vezes trava o primeiro .exe: 3 tentativas); g++ no CI e no Linux
+  local cxx=(g++)
+  command -v zig >/dev/null 2>&1 && cxx=(zig c++)
   for tentativa in 1 2 3; do
-    if zig c++ -std=c++17 -O2 -D__LINUX__ -Wno-unused-function "$@" sim/gif_golden.cpp -o "$target"; then
+    if "${cxx[@]}" -std=c++17 -O2 -D__LINUX__ -Wno-unused-function "$@" sim/gif_golden.cpp -o "$target"; then
       return
     fi
-    echo "gif-qualidade: zig falhou na tentativa $tentativa" >&2
+    echo "gif-qualidade: ${cxx[*]} falhou na tentativa $tentativa" >&2
   done
   return 1
 }
