@@ -4,8 +4,8 @@
 // e azul antes de chegarem ao vidro, sem redesenhar um pixel. Cada tabela tem 64 bytes (nível de entrada de
 // 6 bits -> nível de saída de 8 bits, 0..255: identidade = i*255/63, não i); o verde não tem tabela. À noite o azul é reduzido e o vermelho fica como
 // está; de dia o DGMEN fica desligado (valor de reset do chip, 0x00) e as tabelas nem são usadas.
-// O gama ANALÓGICO (0xE0/0xE1) não é tocado: a Adafruit_ST7789 também não o envia, mas o datasheet não deixa
-// o valor de reset legível com segurança, então não há como devolvê-lo ao que era.
+// O gama ANALÓGICO (0xE0/0xE1) é ajustado uma vez na partida por applyPanelGamma() (main.cpp) e o modo noite
+// não mexe nele: a "noite quente" só usa o gama digital acima.
 // Sem Arduino aqui: o teste do simulador (sim/warm_test.cpp) inclui este arquivo e registra os comandos.
 static const uint8_t WARM_DGMEN = 0xBA, WARM_LUT_R = 0xE2, WARM_LUT_B = 0xE3;
 static const uint8_t WARM_BLUE_CUT = 45;  // a 100 %, o azul cai 45 % (de ~6500 K para ~3000 K, a olho)
