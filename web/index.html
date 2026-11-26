@@ -14,7 +14,9 @@ header b{font-size:18px}header span{color:var(--mut);font-variant-numeric:tabula
 #net.on{background:var(--short)}#net.off{background:var(--work)}
 h2{font-size:13px;color:var(--mut);text-transform:uppercase;letter-spacing:1.2px;margin:22px 4px 10px;font-weight:600}
 .card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px;margin-bottom:12px}
-.tab{display:none}.tab.on{display:block;animation:fade .2s}@keyframes fade{from{opacity:0;transform:translateY(4px)}}
+.tab{display:none}.tab.on{display:block;animation:fade .2s}
+/* Relógio no celular: a coluna da esquerda (.col1) some e a ordem fica prévia, mostradores, Aparência */
+#t0.on{display:flex;flex-direction:column}#t0 .col1{display:contents}#t0 #pvbar{order:0}#t0 .side{order:1}#t0 .body{order:2}#t0 .side2{order:3}@keyframes fade{from{opacity:0;transform:translateY(4px)}}
 button{font:inherit;border:0;cursor:pointer;color:var(--fg);background:none}
 button:active{transform:scale(.97)}
 .ic:active,#go:active,nav button:active{transform:none;opacity:.7}
@@ -128,9 +130,9 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
  nav button{flex:none;padding:12px 0;margin:0 10px;border-radius:14px;font-size:12px}
  nav button:hover{background:var(--card2);color:var(--fg)}nav button.on{background:var(--card2)}
  .tab.on{display:grid;column-gap:28px;align-items:start}
- #t0.on{grid-template-columns:320px minmax(0,1fr);grid-template-rows:auto 1fr}
+ #t0.on{display:grid;grid-template-columns:320px minmax(0,1fr);grid-template-rows:auto 1fr}
  #t0 #pvbar{grid-column:1/-1}
- #t0 .side{grid-column:1;margin-top:22px}#t0 .body{grid-column:2;grid-row:span 2}#t0 .side2{grid-column:1}
+ #t0 .col1{display:block;grid-column:1;grid-row:2;position:sticky;top:76px;align-self:start;max-height:calc(100vh - 92px);overflow-y:auto;scrollbar-width:none}#t0 .col1::-webkit-scrollbar{display:none}#t0 .side{margin-top:22px}#t0 .body{grid-column:2;grid-row:2}
  #t0 .side2 select{width:150px}#t0 .side2 label{white-space:nowrap}
  .hero{flex-direction:column;align-items:stretch;text-align:center}.hero .scr{width:100%}
  .faces{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px}
@@ -155,8 +157,22 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
 <!-- ============ RELÓGIO ============ -->
 <section class="tab" id="t0">
  <div id="pvbar"></div>
+ <div class="col1">
  <div class="side">
  <div class="card hero"><div class="scr"><img id="curimg" alt=""></div><div><small>Mostrador atual</small><b id="curname">—</b><p id="curdesc"></p><label id="lcdgrow" style="display:none">Tom verde nos mostradores LCD<input data-k="lcdg" type="checkbox"></label></div></div>
+ </div>
+ <div class="side2">
+ <h2>Aparência</h2>
+ <div class="card">
+  <label>Cor dos números<input data-k="color" type="color"></label>
+  <label>Formato 12 h<input data-k="h12" type="checkbox"></label>
+  <label>O que mostrar<select data-k="mode"><option value="0">Só o relógio</option><option value="1">Álbum de fotos</option><option value="2">Alternar relógio e álbum</option></select></label>
+  <label>Segundos por item<input data-k="delay" type="number" min="3" max="255"></label>
+  <label>Trocar de mostrador<select data-k="rotmin"><option value="0">Nunca</option><option value="1">A cada 1 min</option><option value="5">A cada 5 min</option><option value="15">A cada 15 min</option><option value="30">A cada 30 min</option><option value="60">A cada 1 h</option></select></label>
+  <small id="rotinfo"></small>
+  <div class="row" style="margin-top:10px"><button class="btn" onclick="rotEdit()">Editar rodízio</button><button class="btn" id="rotclr" onclick="rotClear()">Tirar todos do rodízio</button></div>
+ </div>
+ </div>
  </div>
  <div class="body">
  <div class="chips" id="fchips"></div>
@@ -175,18 +191,6 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
   <small>Escolha o .json do mostrador (e, se tiver, a prévia .png). Ele fica guardado no relógio, sem atualizar o firmware. Mais mostradores e como criar o seu: <a href="https://davicorrea0.github.io/smalltv-pomodoro/" target="_blank" rel="noopener">site do projeto</a>.</small>
  </div>
  </div>
- <div class="side2">
- <h2>Aparência</h2>
- <div class="card">
-  <label>Cor dos números<input data-k="color" type="color"></label>
-  <label>Formato 12 h<input data-k="h12" type="checkbox"></label>
-  <label>O que mostrar<select data-k="mode"><option value="0">Só o relógio</option><option value="1">Álbum de fotos</option><option value="2">Alternar relógio e álbum</option></select></label>
-  <label>Segundos por item<input data-k="delay" type="number" min="3" max="255"></label>
-  <label>Trocar de mostrador<select data-k="rotmin"><option value="0">Nunca</option><option value="1">A cada 1 min</option><option value="5">A cada 5 min</option><option value="15">A cada 15 min</option><option value="30">A cada 30 min</option><option value="60">A cada 1 h</option></select></label>
-  <small id="rotinfo"></small>
-  <div class="row" style="margin-top:10px"><button class="btn" onclick="rotEdit()">Editar rodízio</button><button class="btn" id="rotclr" onclick="rotClear()">Tirar todos do rodízio</button></div>
- </div>
- </div>
 </section>
 
 <!-- ============ FOCO ============ -->
@@ -198,6 +202,8 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
    <div class="mid"><div id="phase">PRONTO</div><div id="time">--:--</div><div id="dots"></div><div id="sessprog"></div></div></div>
   <div class="ctl"><button class="ic" title="Zerar" onclick="cmd('reset')"><svg class="vi" aria-hidden="true"><use href="#v-zerar"/></svg></button><button id="go" title="Iniciar/pausar (espaço)" onclick="cmd('toggle')"><svg class="vi" aria-hidden="true"><use id="goh" href="#v-tocar"/></svg></button><button class="ic" title="Pular fase" onclick="cmd('skip')"><svg class="vi" aria-hidden="true"><use href="#v-pular"/></svg></button></div>
  </div>
+ <h2>Sessões</h2>
+ <div class="card"><div class="sessions" id="sessions"></div><small id="sessionnote">Troca seus tempos e liga o início automático.</small><small id="sesswarn"></small><p style="margin-bottom:0"><button class="btn" id="sessedit" type="button" disabled>Editar sessões</button></p></div>
  <div class="card"><label>O que vou fazer no foco<span class="asel"><svg class="pi on" aria-hidden="true"><use id="acth" href="#i-ler"/></svg><select data-k="act"><option value="0">Ler</option><option value="1">Estudar</option><option value="2">Programar</option><option value="3">Tarefas</option><option value="4">Desenhar</option></select></span></label></div>
  </div>
  <div class="body">
@@ -207,8 +213,6 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
  <div class="card"><div id="garden"></div><small id="gsum"></small><p style="margin-bottom:0"><button class="btn" onclick="shareDay()">Compartilhar meu dia</button></p></div>
  <h2>Conquistas</h2>
  <div class="card"><div id="ach"></div></div>
- <h2>Sessões</h2>
- <div class="card"><div class="sessions" id="sessions"></div><small id="sessionnote">Troca seus tempos e liga o início automático.</small><small id="sesswarn"></small><p style="margin-bottom:0"><button class="btn" id="sessedit" type="button" disabled>Editar sessões</button></p></div>
  <h2>Tempos</h2>
  <div class="card">
   <label>Foco (min)<input data-k="work" type="number" min="1" max="99"></label>
