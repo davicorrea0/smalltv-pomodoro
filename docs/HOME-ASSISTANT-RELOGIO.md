@@ -159,6 +159,71 @@ No estado, `cfg.cycles` é o número de focos da sessão (`0` = sem fim), `sess`
 terminaram e `sdone` vale `1` quando a sessão acabou. Ao fim da sessão o relógio dispara o aviso de fim de pausa (`/hooks.txt`), como em qualquer pausa que acaba. A Alexa não chama sessões: as três lâmpadas que ela encontra continuam
 fixas em Pomodoro, Pausa e Pausa longa.
 
+## Sessões criadas por você (aplicar pelo nome)
+
+As sessões que você cria em Pomodoro, "Editar sessões", ficam guardadas no relógio (`/sessoes.txt`, até 8, nome de até 24
+caracteres, sem repetir nome). `GET /api/sessoes` devolve a lista:
+
+```json
+{"set":1,"l":[{"name":"Deep focus","work":50,"short":10,"long":25,"every":3,"cycles":3}]}
+```
+
+`set` vale `0` enquanto você nunca salvou a lista (o painel mostra então os dois exemplos, Deep e Gentle, sem gravar nada):
+abra o painel e toque em "Editar sessões" e "Salvar" uma vez para o Home Assistant enxergá-los. Os campos têm os mesmos
+nomes de `POST /api/settings`, então o item vira o pedido sem conversão. **Não existe aplicar por posição**, só pelo nome: a
+posição muda quando você apaga ou edita. Se a leitura falhar o relógio responde erro (`500`), nunca uma lista vazia.
+
+```yaml
+rest:
+  - resource: "http://192.168.1.50/api/sessoes"
+    scan_interval: 300
+    headers: { X-SmallTV: "1" }
+    authentication: basic
+    username: admin
+    password: !secret smalltv_senha
+    sensor:
+      - name: "SmallTV sessões"
+        unique_id: smalltv_sessoes
+        value_template: "{{ value_json.l | length }}"
+        json_attributes: [l]
+
+rest_command:
+  smalltv_aplicar_sessao:
+    url: "http://192.168.1.50/api/settings"
+    method: POST
+    content_type: "application/x-www-form-urlencoded"
+    payload: "work={{ work }}&short={{ short }}&long={{ long }}&every={{ every }}&cycles={{ cycles }}&auto=1"
+    headers: { X-SmallTV: "1" }
+    username: admin
+    password: !secret smalltv_senha
+
+script:
+  smalltv_sessao:
+    fields:
+      nome: { description: "Nome exato da sessão", example: "Deep focus" }
+    sequence:
+      - variables:
+          achadas: "{{ state_attr('sensor.smalltv_sessoes', 'l') | default([], true) | selectattr('name', 'eq', nome) | list }}"
+      - condition: template
+        value_template: "{{ achadas | count == 1 }}"
+      - action: rest_command.smalltv_aplicar_sessao
+        data:
+          work: "{{ achadas[0].work }}"
+          short: "{{ achadas[0].short }}"
+          long: "{{ achadas[0].long }}"
+          every: "{{ achadas[0].every }}"
+          cycles: "{{ achadas[0].cycles }}"
+      - action: rest_command.smalltv_comando
+        data: { c: reset }
+      - action: rest_command.smalltv_comando
+        data: { c: start }
+```
+
+O script usa a lista lida até 5 minutos antes (`scan_interval`); depois de editar no painel, atualize o sensor
+(`homeassistant.update_entity`) antes de chamar. Chame com `nome: "Deep focus"`; se o nome não existir, nada é enviado. O
+relógio não valida o nome: quem decide é o script. Não rodei este YAML num Home Assistant real nem renderizei o template; a
+estrutura segue a das seções acima.
+
 ## Atualizar na hora (fim de foco e de pausa)
 
 No painel do relógio, em **Ajustes → Alexa**, cole o endereço abaixo nos dois campos (**Avisar quando o foco terminar** e
@@ -194,12 +259,14 @@ Estes nomes passam a ser públicos: mudar um deles exige aviso nas notas da vers
 |---|---|
 | `GET /api/state` | `phase` (`idle`, `work`, `short` ou `long`), `running` (verdadeiro/falso), `remaining` e `total` em **milissegundos**, `today` (pomodoros de hoje), `streak` (sequência de dias), `cfg.cycles`, `sess` e `sdone` |
 | `POST /api/settings` | Tempos e sessão como formulário; os templates usam `work`, `short`, `long`, `every`, `cycles` e `auto` |
+| `GET /api/sessoes` | `set` (`0` = lista nunca salva, `1` = salva) e `l`: até 8 itens com `name`, `work`, `short`, `long`, `every`, `cycles`; erro de leitura = `500`, nunca lista vazia |
 | `POST /api/cmd`, campo `c` | `start`, `pause`, `toggle`, `skip`, `reset`; a resposta é o mesmo estado do `GET /api/state` |
 
 | Item | Regra |
 |---|---|
 | Host | O IP do relógio ou o `.local` dele (outro nome: 403) |
 | `GET /api/state` | Sem senha, qualquer pedido do Host certo; com senha, `Authorization: Basic` com `admin` e a senha do painel |
+| `GET /api/sessoes` | O mesmo de `GET /api/state`; só leitura (o endereço de gravação não faz parte do contrato) |
 | `POST /api/cmd` | O mesmo, mais o cabeçalho `X-SmallTV: 1` e o corpo `application/x-www-form-urlencoded` |
 | Erros de senha | Depois de errar, o mesmo IP espera 1, 2, 4... até 32 s (`429`) |
 
@@ -231,3 +298,13 @@ every 2, 2 focuses total. Both send `auto=1`, use `application/x-www-form-urlenc
 authentication as the command example. In state, `cfg.cycles` is the plan limit (`0` means unlimited), `sess` is the
 number of completed focuses in the current plan, and `sdone` is `1` after the plan ends. When a plan ends, the clock fires the end-of-break hook (`/hooks.txt`), like any break that finishes. Alexa cannot start these
 plans: its three exposed lights remain the fixed Pomodoro, Short break, and Long break controls.
+
+### Your own focus plans
+
+Plans you create under Pomodoro, "Edit focus plans" (panel: "Editar sessões" in Portuguese) are stored on the clock
+(`/sessoes.txt`, up to 8, names up to 24 characters, no duplicate names). `GET /api/sessoes` returns
+`{"set":1,"l":[{"name","work","short","long","every","cycles"}]}`; `set` is `0` until the list has been saved once (the panel then
+shows the two examples without writing anything), and a read failure is a `500`, never an empty list. The field names match
+`POST /api/settings`. There is no apply-by-position, only by name. The YAML in “Sessões criadas por você” reads the list with a
+`rest` sensor and a script picks the item by name, then sends `POST /api/settings`, `c=reset` and `c=start`. It was not run on a
+real Home Assistant and the template was not rendered.

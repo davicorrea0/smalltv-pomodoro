@@ -4,6 +4,7 @@
 #include <lwip/tcp.h>  // tcp_abort (tcpTwPurge)
 #include "../web.h"
 #include "../appdata.h"
+#include "../sessoes.h"
 
 // respostas curtas repetidas nas rotas: um só corpo no binário em vez de três String temporárias em cada uso
 static void sendOk() { server.send_P(200, PSTR("text/plain"), PSTR("ok")); }
@@ -62,6 +63,100 @@ void jsonEscapeAppend(String &o, const char *s) {
 }
 
 static bool safeText(const String &s) { return s.indexOf('"') < 0 && s.indexOf('\\') < 0; }
+
+struct SessoesJson {
+  String *json;
+  bool primeira;
+};
+
+static void sessoesJsonLinha(const SessaoLinha *s, void *contexto) {
+  SessoesJson &c = *(SessoesJson *)contexto;
+  String nome;
+  nome.concat(s->nome, s->nome_len);
+  *c.json += c.primeira ? F("{\"name\":\"") : F(",{\"name\":\"");
+  c.primeira = false;
+  jsonEscapeAppend(*c.json, nome.c_str());
+  *c.json += F("\",\"work\":");
+  *c.json += s->work;
+  *c.json += F(",\"short\":");
+  *c.json += s->short_break;
+  *c.json += F(",\"long\":");
+  *c.json += s->long_break;
+  *c.json += F(",\"every\":");
+  *c.json += s->every;
+  *c.json += F(",\"cycles\":");
+  *c.json += s->cycles;
+  *c.json += '}';
+}
+
+// Devolve também o arquivo vazio como set:1. Só a ausência real vira set:0; uma falha de
+// montagem/leitura nunca se disfarça de lista ainda não configurada.
+static bool sendSessoes() {
+  server.sendHeader("Cache-Control", F("no-store"));
+  if (!fsOk) {
+    server.send_P(500, PSTR("text/plain"), PSTR("memoria indisponivel"));
+    return false;
+  }
+  if (!LittleFS.exists(F("/sessoes.txt"))) {
+    server.send_P(200, PSTR("application/json"), PSTR("{\"set\":0,\"l\":[]}"));
+    return true;
+  }
+  File f = LittleFS.open(F("/sessoes.txt"), "r");
+  if (!f) {
+    server.send_P(500, PSTR("text/plain"), PSTR("falha de leitura"));
+    return false;
+  }
+  f.setTimeout(0);
+  size_t esperado = f.size();
+  if (esperado > SESSOES_TEXTO_MAX) {  // arquivo normal tem no máximo 1024: maior que isso está corrompido
+    f.close();
+    server.send_P(500, PSTR("text/plain"), PSTR("falha de leitura"));
+    return false;
+  }
+  String texto;
+  bool ok = texto.reserve(esperado + 1);
+  char bloco[96];
+  while (ok && texto.length() < esperado) {
+    size_t falta = esperado - texto.length(), pedir = falta < sizeof bloco ? falta : sizeof bloco;
+    size_t n = f.read((uint8_t *)bloco, pedir);
+    if (!n) { ok = false; break; }
+    texto.concat(bloco, n);
+  }
+  f.close();
+  if (!ok || texto.length() != esperado) {
+    server.send_P(500, PSTR("text/plain"), PSTR("falha de leitura"));
+    return false;
+  }
+  String j;
+  if (!j.reserve(160 + texto.length() * 2)) {
+    server.send_P(500, PSTR("text/plain"), PSTR("memoria insuficiente"));
+    return false;
+  }
+  j = F("{\"set\":1,\"l\":[");
+  SessoesJson contexto = {&j, true};
+  sessoesLer(texto.c_str(), texto.length(), sessoesJsonLinha, &contexto);
+  j += F("]}");
+  server.send(200, PSTR("application/json"), j);
+  return true;
+}
+
+struct SessoesGrava {
+  File *arquivo;
+  bool ok;
+  size_t bytes;  // o que foi pedido ao arquivo: o tamanho final tem de bater (flush/close do LittleFS não devolvem erro)
+};
+
+static void sessoesGravaLinha(const SessaoLinha *s, void *contexto) {
+  SessoesGrava &c = *(SessoesGrava *)contexto;
+  if (!c.ok) return;
+  c.ok = c.arquivo->write((const uint8_t *)s->nome, s->nome_len) == s->nome_len;
+  c.bytes += s->nome_len;
+  char numeros[24];
+  int n = snprintf_P(numeros, sizeof numeros, PSTR("\t%u\t%u\t%u\t%u\t%u\n"), s->work, s->short_break,
+                     s->long_break, s->every, s->cycles);
+  if (c.ok) c.ok = n > 0 && c.arquivo->write((const uint8_t *)numeros, n) == (size_t)n;
+  if (c.ok) c.bytes += n;
+}
 
 // ---------- diagnóstico (painel: Ajustes -> Sistema) ----------
 // Motivo do último reinício (e, se foi travamento, a causa e o endereço), sinal do Wi-Fi, menor memória livre
@@ -869,6 +964,50 @@ void setupWeb() {
       f.close();
     }
     server.send_P(saved ? 200 : 500, PSTR("text/plain"), saved ? PSTR("ok") : PSTR("falhou"));
+  });
+  // Sessões criadas no painel: o arquivo é a fonte compartilhada por todos os navegadores.
+  server.on(F("/api/sessoes"), HTTP_GET, [] {
+    if (!readOk()) return;
+    sendSessoes();
+  });
+  server.on(F("/api/sessoes"), HTTP_POST, [] {
+    if (!guard()) return;
+    if (!fsOk) {
+      server.send_P(500, PSTR("text/plain"), PSTR("memoria indisponivel"));
+      return;
+    }
+    if (!server.hasArg("t")) {
+      server.send_P(400, PSTR("text/plain"), PSTR("lista ausente"));
+      return;
+    }
+    const String &texto = server.arg("t");
+    SessoesErro erro = sessoesValidar(texto.c_str(), texto.length());
+    if (erro != SESSOES_OK) {
+      server.send_P(400, PSTR("text/plain"), sessoesErroTexto(erro));
+      return;
+    }
+    LittleFS.remove(F("/sessoes.tmp"));
+    File f = LittleFS.open(F("/sessoes.tmp"), "w");
+    SessoesGrava contexto = {&f, (bool)f, 0};
+    if (contexto.ok) sessoesLer(texto.c_str(), texto.length(), sessoesGravaLinha, &contexto);
+    if (f) {
+      f.flush();
+      f.close();
+    }
+    // flush e close não informam falha (flash cheia): só troca o arquivo bom se o tmp releu com o tamanho certo
+    if (contexto.ok) {
+      File v = LittleFS.open(F("/sessoes.tmp"), "r");
+      contexto.ok = v && v.size() == contexto.bytes;
+      if (v) v.close();
+    }
+    bool salva = contexto.ok && LittleFS.rename(F("/sessoes.tmp"), F("/sessoes.txt"));
+    if (!salva) {
+      LittleFS.remove(F("/sessoes.tmp"));
+      server.send_P(500, PSTR("text/plain"), PSTR("nao foi possivel salvar"));
+      return;
+    }
+    fsInfoAt = 0;
+    sendSessoes();
   });
   server.on(F("/api/statsimport"), HTTP_POST, handleStatsImport);
   // lista dos mostradores para a galeria do painel (vem de faces_list.h)
