@@ -1,30 +1,4 @@
 {
-  "pt": [
-    {
-      "data": "2026-11-26",
-      "titulo": "Versão 1.26.2 em teste",
-      "texto": "A 1.26.2 está disponível como versão de teste, com melhorias no uso de memória, na cor da tela e na segurança. Por ser de teste, só aparece para quem ligar \"Receber versões de teste\" nos Ajustes; faça o backup antes de atualizar.",
-      "link": { "href": "versoes.html", "texto": "Ver as versões" }
-    },
-    {
-      "data": "2026-11-26",
-      "titulo": "Mais idiomas: alemão, russo e francês",
-      "texto": "O painel e o relógio ganham alemão, russo e francês como idiomas extras, ainda em teste. As traduções aguardam revisão de quem fala a língua: se você fala algum desses idiomas, comente no GitHub o que soar estranho.",
-      "link": { "href": "https://github.com/davicorrea0/smalltv-pomodoro/issues/152", "texto": "Comentar no GitHub" }
-    }
-  ],
-  "en": [
-    {
-      "data": "2026-11-26",
-      "titulo": "Version 1.26.2 in testing",
-      "texto": "1.26.2 is available as a test version, with improvements to memory use, screen color and security. Since it is a test version, it only shows up for those who turn on \"Get test versions\" in Settings; back up before updating.",
-      "link": { "href": "releases.html", "texto": "See the releases" }
-    },
-    {
-      "data": "2026-11-26",
-      "titulo": "More languages: German, Russian and French",
-      "texto": "The panel and the clock gain German, Russian and French as extra languages, still in testing. The translations are waiting for review by native speakers: if you speak one of them, please comment on GitHub about anything that sounds off.",
-      "link": { "href": "https://github.com/davicorrea0/smalltv-pomodoro/issues/152", "texto": "Comment on GitHub" }
-    }
-  ]
+  "pt": [],
+  "en": []
 }
