@@ -28,6 +28,7 @@ small{color:var(--mut)}.face .ast{display:block;padding:2px 4px 0;font-size:12px
 .scr{position:relative;border-radius:16px;overflow:hidden;background:#000;border:6px solid #2b2b30;box-shadow:0 10px 30px -12px #000}
 .scr img{display:block;width:100%;image-rendering:pixelated}
 .hero .scr{width:132px;flex:none}.hero b{font-size:20px;display:block}.hero p{margin:4px 0 0;color:var(--mut)}
+.wxerr:not([hidden]){display:block;margin-top:6px;color:#f0b37a}
 .faces{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
 .face{text-align:left;padding:0}.face .scr{border-width:5px}.face span{display:block;padding:8px 4px 0;font-weight:600}
 #apps{grid-template-columns:minmax(0,1fr)}.face.app{width:100%;min-width:0}.appmain{display:flex;gap:12px}.appmain .scr{width:120px;flex:0 0 120px}.appi{min-width:0}.face.app span{padding:4px 0 0}.face.app .reads{display:block;padding-top:6px;font-size:11px;color:var(--mut)}.face.app .ast{padding:4px 0 0}.states{overflow-x:auto;margin-top:10px}.states img{display:block;width:auto;max-width:none;height:84px}
@@ -159,7 +160,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
  <div id="pvbar"></div>
  <div class="col1">
  <div class="side">
- <div class="card hero"><div class="scr"><img id="curimg" alt=""></div><div><small>Mostrador atual</small><b id="curname">—</b><p id="curdesc"></p><label id="lcdgrow" style="display:none">Tom verde nos mostradores LCD<input data-k="lcdg" type="checkbox"></label></div></div>
+ <div class="card hero"><div class="scr"><img id="curimg" alt=""></div><div><small>Mostrador atual</small><b id="curname">—</b><p id="curdesc"></p><small id="wxerr0" class="wxerr" hidden>O serviço de clima (Open-Meteo) não responde desta rede.</small><label id="lcdgrow" style="display:none">Tom verde nos mostradores LCD<input data-k="lcdg" type="checkbox"></label></div></div>
  </div>
  <div class="side2">
  <h2>Aparência</h2>
@@ -262,7 +263,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
  <h2>Clima</h2>
  <div class="card">
   <div id="wx" hidden><b id="wt"></b><div><div id="wd"></div><small id="wm"></small></div></div>
-  <small id="wxerr" hidden>O serviço de clima (Open-Meteo) não responde desta rede.</small>
+  <small id="wxerr" class="wxerr" hidden>O serviço de clima (Open-Meteo) não responde desta rede.</small>
   <label>Mostrar clima<input data-k="won" type="checkbox"></label>
   <label>Temperatura em °F<input data-k="fahr" type="checkbox"></label>
   <label>Avisar quando for chover<input data-k="rain" type="checkbox"></label>
@@ -649,7 +650,7 @@ let UPD=null,updating=false,updChecked=false,lastToday=-1;
 const updL2=(j,l2)=>j&&l2&&j.l2&&vnum(j.l2.version)>vnum(j.version)?j.l2:j;
 function checkUpdate(){const get=f=>fetch(SITE+'firmware/'+f,{cache:'no-store'}).then(r=>r.ok?r.json():null).catch(()=>null);
  Promise.all([get('latest.json'),st&&st.cfg.beta?get('beta.json'):null]).then(([a,b])=>{const l2=!!(st&&st.fs&&st.fs.l2);a=updL2(a,l2);b=updL2(b,l2);let u=a;if(b&&(!u||vnum(b.version)>vnum(u.version)))u=Object.assign({beta:1},b);
-  if(!u||!st||vnum(u.version)<=vnum(st.ver))return;UPD=u;let skip='';try{skip=localStorage.updSkip||''}catch(e){}if(skip==u.version)return;showUpdate()})}
+  if(updating||!u||!st||vnum(u.version)<=vnum(st.ver))return;UPD=u;let skip='';try{skip=localStorage.updSkip||''}catch(e){}if(skip==u.version)return;showUpdate()})}
 function showUpdate(){const u=UPD;if(!u)return;$('updt').textContent=t(u.beta?'Versão de teste {0} disponível':'Nova versão {0} disponível',u.version);const n=$('updn');n.innerHTML='';
  ((u.notes||{})[LANGS[LG]]||(LG>=3&&(u.notes||{}).en)||(u.notes||{}).pt||[]).forEach(x=>n.appendChild(el('li',null,x)));$('upd').classList.add('v')}
 function skipUpdate(){try{localStorage.updSkip=UPD.version}catch(e){}$('upd').classList.remove('v')}
@@ -660,7 +661,7 @@ async function doUpdate(){const u=UPD;if(!u||updating)return;const mig=u.layout=
  if(mig){$('updgo').disabled=true;const ok=await backup();$('updgo').disabled=false;if(!ok||!confirm(t('O backup foi salvo? Confira o arquivo smalltv-backup-*.json nos downloads. Atualizar agora?')))return}
  const gz=!!u.gz,sig=gz?u.gzsig:u.sig,h={};  // com senha, o navegador já manda o login do painel
  if(sig)h['X-Firmware-Sig']=sig;  // 1.20.1+: sem a assinatura do arquivo o relógio recusa a troca
- updating=true;$('updgo').disabled=true;
+ updating=true;$('updgo').disabled=true;$('upd').querySelector('.row').style.display='none';  // as notas ficam; os botões voltam se falhar
  try{$('updt').textContent=t('Baixando a versão {0}...',u.version);// a partir da 1.14 o relógio aceita o .bin.gz (menor, e o firmware pode passar de 520 KB)
   const bin=await (await fetch(SITE+'firmware/'+(gz?u.gz:u.file),{cache:'no-store'})).blob();
   if((gz?u.gzsize:u.size)&&bin.size!=(gz?u.gzsize:u.size))throw 'size';
@@ -670,7 +671,7 @@ async function doUpdate(){const u=UPD;if(!u||updating)return;const mig=u.layout=
   const r=await fetch('/update',{method:'POST',body:fd,headers:h}),x=await r.text();
   if(r.status==401)throw t('Senha incorreta');if(!/success/i.test(x))throw x;
   $('updt').textContent=t('Atualizado! O relógio está reiniciando...');$('updn').innerHTML='';setTimeout(()=>location.reload(),20000)}
- catch(e){updating=false;$('updgo').disabled=false;showUpdate();toast(t('Falha na atualização: ')+e)}}
+ catch(e){updating=false;$('updgo').disabled=false;$('upd').querySelector('.row').style.display='';showUpdate();toast(t('Falha na atualização: ')+e)}}
 // ---------- backup: ajustes, histórico e mostradores baixados num .json ----------
 // Sem senhas nem Wi-Fi. A restauração passa pelos mesmos caminhos validados do painel (/api/settings,
 // /api/statsimport) e reinstala da galeria os mostradores que faltarem.
@@ -863,7 +864,7 @@ function load(s){if(!s.cfg){if(st&&s.cv!=null&&s.cv===st.cv)s.cfg=st.cfg;else re
  $('pvbar').style.display=s.pv?'block':'none';if(s.pv)$('pvbar').textContent=t('Prévia no relógio por mais {0} s · depois ele volta para {1}',s.pv,cf?cf.n:t('o mostrador salvo'));
  // clima
  $('city').textContent=s.cfg.city||'—';$('wx').hidden=!(s.cfg.won&&s.wx.ok);
- $('wxerr').hidden=!(s.cfg.won&&s.cfg.city&&s.wx.fail>=3);
+ {const e=!(s.cfg.won&&s.cfg.city&&s.wx.fail>=3);$('wxerr').hidden=e;$('wxerr0').hidden=e}  // também no início: o clima some da tela e o motivo estava só em Ajustes
  if(s.wx.ok){const dg=c=>Math.round(s.cfg.fahr?c*9/5+32:c)+'°';$('wt').textContent=dg(s.wx.t);$('wd').textContent=(s.cfg.city?s.cfg.city+' · ':'')+(s.wx.rin?(s.wx.rin<15?t('Chuva logo'):t('Chuva em {0} min',s.wx.rin)):s.wx.desc);$('wm').textContent=t('Mín')+' '+dg(s.wx.min)+' · '+t('Máx')+' '+dg(s.wx.max)+' · '+t('Umidade')+' '+s.wx.h+'%'}
  // fotos
  $('fsinfo').textContent=s.fs.ok?t('{0} usados de {1}',kb(s.fs.used),kb(s.fs.total)):t('Memória de arquivos indisponível');

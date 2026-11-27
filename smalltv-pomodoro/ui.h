@@ -37,6 +37,7 @@ struct UiWeather {
   uint8_t nd;        // dias em d[] (0 se a previsão não veio)
   UiDay d[UI_DAYS];
   uint8_t rainIn;    // chuva começando na próxima hora: minutos até ela (5 = em instantes, 15, 30, 45); 0 = não
+  bool fail;         // o serviço do clima não respondeu nas últimas 3 tentativas (com a cidade definida)
 };
 
 struct UiState {

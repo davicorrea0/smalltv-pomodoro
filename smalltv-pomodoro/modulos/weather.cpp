@@ -220,6 +220,6 @@ void weatherLoop() {
       wx.ok = false;
       wx.rainIn = 0;
       wx.version++;
-    }
+    } else if (wxBack.fails == 3) wx.version++;  // ainda sem leitura: a tela troca "Buscando clima" por "indisponível"
   }
 }

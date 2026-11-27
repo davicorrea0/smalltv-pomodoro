@@ -144,8 +144,11 @@ void themeForecastCards(const UiState &s, bool full) {
   if (!changed(cA, key) && !full) return;
   if (!(s.weatherOn && s.wx.ok && s.wx.nd)) {
     G->fillRect(0, CARD_Y, 240, CARD_H, BG);
-    otxC(120, 104, 20, MUTED, s.weatherOn ? tr("Buscando clima", "Fetching weather", "Buscando clima") : tr("Clima desligado", "Weather off", "Clima apagado"), BG);
-    otxC(120, 132, 14, MUTED, tr("defina a cidade no painel", "set the city in the panel", "elige la ciudad en el panel"), BG);
+    otxC(120, 104, 20, MUTED, !s.weatherOn ? tr("Clima desligado", "Weather off", "Clima apagado")
+                              : s.wx.fail  ? tr("Clima indisponivel", "Weather unavailable", "Clima no disponible")
+                                           : tr("Buscando clima", "Fetching weather", "Buscando clima"), BG);
+    if (!s.weatherOn) otxC(120, 132, 14, MUTED, tr("defina a cidade no painel", "set the city in the panel", "elige la ciudad en el panel"), BG);
+    else if (s.wx.fail) otxC(120, 132, 14, MUTED, tr("tentando de novo", "retrying", "reintentando"), BG);
     return;
   }
   uiPaint(full, 0, CARD_Y, 240, CARD_H, paintCards, (void *)&s);

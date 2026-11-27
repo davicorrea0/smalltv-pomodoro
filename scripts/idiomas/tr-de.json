@@ -21,6 +21,7 @@
  "Ceu limpo": "Klar",
  "Chuva": "Regen",
  "Clima desligado": "Wetter aus",
+ "Clima indisponivel": "Wetter gestört",
  "Conectado": "Verbunden",
  "Conectando Wi-Fi": "Wi-Fi verbinden",
  "DESENHANDO": "ZEICHNEN",
@@ -39,6 +40,7 @@
  "GIF invalido": "GIF ungültig",
  "Garoa": "Nieselregen",
  "HOJE": "HEUTE",
+ "INDISPONIVEL": "GESTÖRT",
  "Iniciando": "Startet",
  "JPG fora do padrao": "JPG nicht geeignet",
  "JPG invalido": "JPG ungültig",
@@ -91,6 +93,7 @@
  "foco": "Fokus",
  "focos": "Fokus",
  "fundo preto": "Hintergrund schwarz sein",
+ "indisponivel": "gestört",
  "meta %d": "Ziel %d",
  "meta batida!": "Ziel erreicht!",
  "mova ate a estampa parar": "Regler bewegen, bis das Muster",
@@ -100,5 +103,6 @@
  "painel": "Panel",
  "para abrir": "um das Panel",
  "sem clima": "kein Wetter",
+ "tentando de novo": "neuer Versuch läuft",
  "termina %02d:%02d": "endet %02d:%02d"
 }

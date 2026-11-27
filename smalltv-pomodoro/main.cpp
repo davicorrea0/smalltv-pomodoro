@@ -240,7 +240,7 @@ static UiState makeState() {
   s.streak = statsStreak;
   s.best = statsBest;
   s.weatherOn = cfg.weatherOn && cfg.city[0];
-  s.wx = {wx.ok, wx.t, wx.tmin, wx.tmax, wx.hum, wx.code, wx.day, wx.version, wx.nd, {}, (uint8_t)(cfg.rainAlert ? wx.rainIn : 0)};
+  s.wx = {wx.ok, wx.t, wx.tmin, wx.tmax, wx.hum, wx.code, wx.day, wx.version, wx.nd, {}, (uint8_t)(cfg.rainAlert ? wx.rainIn : 0), wxBack.fails >= 3};
   memcpy(s.wx.d, wx.d, sizeof wx.d);
   s.fahr = cfg.fahr;
   if (s.fahr) {  // °F só na tela: o clima segue guardado em °C
