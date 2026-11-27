@@ -626,6 +626,7 @@ static void handleUpload() {
     uploadPath = "";
     if (!panelOk() || !uploadAuthed()) {
       uploadError = F("Proibido");
+      server.client().stop();
       return;
     }
     if (!fsOk) {
@@ -851,7 +852,11 @@ static void handlePanelUpload() {
     if (panelUpload) panelUpload.close();
     panelGate.begin(false, 0);
     panelResult = "";
-    if (!panelOk() || !uploadAuthed() || !fsOk) return;
+    if (!panelOk() || !uploadAuthed()) {
+      server.client().stop();
+      return;
+    }
+    if (!fsOk) return;
     if (!LittleFS.exists("/www")) LittleFS.mkdir("/www");
     panelUpload = LittleFS.open(F("/www/_novo"), "w");
     if (!panelUpload) return;

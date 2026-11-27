@@ -461,6 +461,7 @@ void handlePackUpload() {
     if (up.name == "face") { packUploadError = ""; packFaceReady = false; }
     if (!panelOk() || !uploadAuthed()) {
       packUploadError = F("Proibido");
+      server.client().stop();
       return;
     }
     if (up.name != "face" && up.name != "preview") { packUploadError = F("Campo invalido"); return; }

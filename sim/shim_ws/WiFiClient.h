@@ -5,6 +5,7 @@ struct WiFiClient {
   struct Seg { uint32_t at; std::string d; };
   std::vector<Seg> segs;           // o que o cliente envia, e quando chega
   uint32_t closeAt = 0xFFFFFFFFu;  // quando o cliente fecha o socket (nunca, por padrão)
+  bool stopped = false;            // fechado pelo handler (server.client().stop())
   bool junk = false;               // depois dos segmentos, lixo sem fim ("xxxxxxxx\r\n")
   size_t seg = 0, off = 0, junkPos = 0;
   uint32_t timeout = 5000;         // prazo de cada readStringUntil
@@ -16,7 +17,7 @@ struct WiFiClient {
     for (size_t i = seg; i < segs.size() && segs[i].at <= wsNow; i++) n += segs[i].d.size() - (i == seg ? off : 0);
     return (int)n;
   }
-  uint8_t connected() { return available() > 0 || wsNow < closeAt; }
+  uint8_t connected() { return !stopped && (available() > 0 || wsNow < closeAt); }
   int read() {
     if (++wsSteps > 5000000ULL) wsHang("read");  // dados chegando sem parar e o laço sem fim
     while (seg < segs.size() && off >= segs[seg].d.size()) seg++, off = 0;
@@ -48,7 +49,7 @@ struct WiFiClient {
     return s;
   }
   void flush() {}
-  void stop() {}
+  void stop() { stopped = true; }
   size_t sendSize(S2Stream& d, size_t max, int tmo) {  // lê até max bytes com prazo (corpo urlencoded, como no core)
     size_t n = 0;
     uint32_t t0 = wsNow;
