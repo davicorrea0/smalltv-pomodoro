@@ -170,6 +170,16 @@ node -e 'const n=require("./'"$NOTAS"'");console.log(n.pt.map(x=>"- "+x).join("\
 gh release create "$TAG" -R "$REPO" --target "$TARGET" $([ $BETA = 1 ] && echo --prerelease || echo --latest) \
   --title "Pomodoro $VER" --notes-file "$R/notas.md" "$R"/smalltv-pomodoro-"$TAG".bin "$R"/smalltv-pomodoro-"$TAG".bin.gz "$R"/smalltv-pomodoro-"$TAG".bin.sig "$R"/smalltv-pomodoro-"$TAG".bin.gz.sig "$R"/SHA256SUMS.txt
 
+# A página Versões lê as releases do GitHub: só agora a nova (estável ou de teste) entra nela. A release já saiu,
+# então uma falha aqui só avisa; para refazer: node scripts/releases-page.cjs <cópia do gh-pages> e publicar o site.
+say "página de versões"
+if node scripts/releases-page.cjs "$W" > /dev/null; then
+  git -C "$W" add -A
+  git -C "$W" diff --cached --quiet || { git -C "$W" commit -q -m "Site: Versões até a $VER" && git -C "$W" push -q origin HEAD:gh-pages; }
+else
+  echo "aviso: não consegui gerar a página de versões; a $VER ainda não aparece nela" >&2
+fi
+
 say "conferindo no ar"
 for i in $(seq 1 40); do
   v=$(curl -s "$SITE/$JSON?x=$RANDOM" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);console.log(process.argv[1]=="1"?j.version:(j.l2||{}).version)}catch(e){}})' "$CABE")
