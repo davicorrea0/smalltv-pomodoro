@@ -875,7 +875,7 @@ function load(s){if(!s.cfg){if(st&&s.cv!=null&&s.cv===st.cv)s.cfg=st.cfg;else re
 function ringDraw(ms,rem,wait){holding=true;holdRem=rem;const r=document.querySelector('.ring');r.style.setProperty('--pd',ms+'ms');
  r.classList.remove('drawing');void r.offsetWidth;r.classList.add('drawing');clearTimeout(r._t);r._t=setTimeout(()=>{waitSeq=0;ringDone()},wait?4000:ms)}
 function ringDone(){holding=false;const r=document.querySelector('.ring');clearTimeout(r._t);r.classList.remove('drawing');draw()}
-function draw(){if(!st)return;const s=st,idle=s.phase=='idle';
+function draw(){if(!st||(document.hidden&&(st.phase=='idle'||!st.running)))return;const s=st,idle=s.phase=='idle';
  const rem=idle?s.cfg.work*60000:holding?holdRem:Math.max(0,s.remaining-(s.running?Date.now()-at:0)),sec=Math.ceil(rem/1000);
  const tm=String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0');
  $('time').textContent=tm;$('phase').textContent=t(LBL[s.phase])+(!idle&&!s.running?' · '+t('PAUSADO'):'');
@@ -942,7 +942,10 @@ $('up').onchange=async e=>{const fs=[...e.target.files];e.target.value='';let ok
  if(ok)toast(t('{0} arquivo(s) enviado(s)',ok));if(bad.length)alert(bad.join('\n'));files()};
 $('op').onsubmit=e=>{e.preventDefault();const o=e.target;post('/api/otapass',new URLSearchParams(new FormData(o))).then(r=>r.text()).then(x=>{toast(t(x));o.reset()})};
 document.onkeydown=e=>{if(e.code=='Space'&&curTab==1&&!/INPUT|BUTTON|SELECT/.test(e.target.tagName)){e.preventDefault();cmd('toggle')}};
-function poll(){if(updating)return setTimeout(poll,1000);fetch(st&&st.cfg?'/api/state?cfg=0':'/api/state').then(r=>r.json()).then(load).catch(()=>$('net').className='off').finally(()=>setTimeout(poll,1000))}
+let pollT,pollBusy=false,pollFail=0;
+function pollMs(){if(pollFail)return Math.min(10000,1000<<Math.min(pollFail,3));return st&&st.phase=='idle'&&curTab!=3?3000:1000}
+function poll(){if(pollBusy||document.hidden)return;if(updating){pollT=setTimeout(poll,1000);return}pollBusy=true;fetch(st&&st.cfg?'/api/state?cfg=0':'/api/state').then(r=>r.json()).then(d=>{pollFail=0;load(d)}).catch(()=>{pollFail++;$('net').className='off'}).finally(()=>{pollBusy=false;if(!document.hidden)pollT=setTimeout(poll,pollMs())})}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){pollFail=0;clearTimeout(pollT);poll()}});
 i18n();loadI18n();loadFaces();sessLoad();let t0=0;try{t0=+localStorage.tab||0}catch(e){}tab(t0);poll();
 </script><script>
 // Relógio no computador: a coluna da esquerda acompanha a rolagem da página. Se for mais alta que a tela, ela desce
