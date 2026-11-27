@@ -21,8 +21,9 @@
 // unidade que o incluísse deixaria duas definições fracas (COMDAT) e o linker escolheria uma em silêncio. O sim/build.sh
 // confere que só o app.h inclui ESP8266WebServer.h e que só o main.cpp inclui o app.h.
 //
-// Limite conhecido (C4 parcial): recusar um envio no UploadGate só para de gravar; o analisador ainda lê o arquivo até
-// o fim (a foto aceita até 3 MB). Quem fecha esse buraco é o handler (fechar o socket ao recusar), não este arquivo.
+// C4 fechado: quando um handler recusa em UPLOAD_FILE_START (sem auth), fecha o socket (`server.client().stop()`) e
+// `_parseForm` aborta antes de ler o corpo; para envios aceitos (inclusive sem senha), a taxa mínima após carência e o
+// teto de duração barram ataques de gotejamento (trickle).
 #pragma once
 #include <ESP8266WebServer.h>
 
@@ -41,6 +42,9 @@
 #define WS_HDR_MAX 32          // máximo de cabeçalhos HTTP por requisição
 #define WS_HDR_MS 10000UL      // prazo total para terminar a linha inicial e os cabeçalhos
 #define WS_UPLOAD_MAX (3UL * 1024 * 1024 + 65536UL)  // teto de bytes por arquivo no multipart
+#define WS_UPLOAD_GRACE_MS 10000UL                   // carência inicial antes de exigir taxa mínima no upload
+#define WS_UPLOAD_MIN_BPS 128UL                      // taxa média mínima (B/s) após a carência: barra gotejamento (trickle)
+#define WS_UPLOAD_MAX_MS 240000UL                    // prazo máximo total por arquivo no multipart (4 min)
 
 namespace esp8266webserver {
 
@@ -166,6 +170,7 @@ inline bool ESP8266WebServerTemplate<WiFiServer>::_parseForm(ClientType& client,
             _currentUpload->contentLength = len;
             if(_currentHandler && _currentHandler->canUpload(_currentUri))
               _currentHandler->upload(*this, _currentUri, *_currentUpload);
+            if (!client.connected()) return _parseFormUploadAborted();  // PATCH C4: recusa no UPLOAD_FILE_START fechou o socket
             _currentUpload->status = UPLOAD_FILE_WRITE;
 
             int fastBoundaryLen = 4 /* \r\n-- */ + boundary.length() + 1 /* \0 */;
@@ -173,10 +178,17 @@ inline bool ESP8266WebServerTemplate<WiFiServer>::_parseForm(ClientType& client,
             snprintf(fastBoundary, fastBoundaryLen, "\r\n--%s", boundary.c_str());
             int boundaryPtr = 0;
             uint32_t fileBytes = 0;
+            uint32_t fileStartMs = millis();
             while ( true ) {
                 int ret = _uploadReadByte(client);
                 if (ret < 0 || ++fileBytes > WS_UPLOAD_MAX) {
                     // Unexpected, we should have had data available per above
+                    return _parseFormUploadAborted();
+                }
+                // PATCH C4: teto de duração e taxa mínima após carência (barra gotejamento sem travar o loop)
+                uint32_t elapsed = (uint32_t)(millis() - fileStartMs);
+                if (elapsed > WS_UPLOAD_MAX_MS ||
+                    (elapsed >= WS_UPLOAD_GRACE_MS && fileBytes < (elapsed / 1000UL) * WS_UPLOAD_MIN_BPS)) {
                     return _parseFormUploadAborted();
                 }
                 char in = (char) ret;

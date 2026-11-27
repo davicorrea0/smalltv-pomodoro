@@ -225,8 +225,10 @@ void setupUpdate() {
       if (up.status == UPLOAD_FILE_START) {
         ota = {0, 0, 0, 0xFFFFFFFF, {0}, String(), authOk(), false, false, false};
         otaSigBegin();
-        if (!ota.authOk) ota.err = F("senha");
-        else {
+        if (!ota.authOk) {
+          ota.err = F("senha");
+          server.client().stop();
+        } else {
           eboot_command_clear();  // nenhum comando de um envio anterior (ou de outra parte do mesmo POST) vale para este
           diagBlkSample();  // minblk: o maior bloco antes de o OTA soltar o álbum e o pacote
           if (inAlbum) stopAlbum();  // libera RAM e o LittleFS durante a gravação

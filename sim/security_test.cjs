@@ -224,9 +224,9 @@ struct String:std::string {
 };
 enum{UPLOAD_FILE_START,UPLOAD_FILE_WRITE,UPLOAD_FILE_END,UPLOAD_FILE_ABORTED};
 struct HTTPUpload{int status;String name="face",filename="photo.jpg";size_t currentSize=1;uint8_t buf[1]={0};}event;
-struct{HTTPUpload&upload(){return event;}}server;
+static int opens,writes,deletes,stops;static size_t written;
+struct{struct{void stop(){stops++;}}cli;HTTPUpload&upload(){return event;}auto&client(){return cli;}}server;
 static bool allowed=true,password=true,fsOk=true;
-static int opens,writes,deletes;static size_t written;
 bool panelOk(){return allowed;}bool passOk(){return password;}bool uploadAuthed(){return passOk();}
 struct FSInfo{size_t totalBytes=4000000,usedBytes=0;};
 struct File{bool live=false;operator bool()const{return live;}void close(){live=false;}
@@ -248,14 +248,14 @@ File uploadFile,packUpload;String uploadPath,uploadError,packUploadError;
 UploadGate photoGate,packGate;bool packFaceReady=false;
 ${fn('handleUpload')}
 ${fn('handlePackUpload')}
-void reset(){jpgRes=JPG_OK;allowed=password=true;language=0;opens=writes=deletes=0;written=0;fsFiles.clear();fsDirs={"/image","/gif"};album.clear();uploadFile={};packUpload={};uploadPath="";uploadError="";packUploadError="";packFaceReady=false;photoGate={};packGate={};event={};}
+void reset(){jpgRes=JPG_OK;allowed=password=true;language=0;opens=writes=deletes=stops=0;written=0;fsFiles.clear();fsDirs={"/image","/gif"};album.clear();uploadFile={};packUpload={};uploadPath="";uploadError="";packUploadError="";packFaceReady=false;photoGate={};packGate={};event={};}
 void send(void(*handler)(),int status){event.status=status;handler();}
 int main(){
  for(bool panel:{false,true}){reset();allowed=panel;password=false;
   send(handleUpload,UPLOAD_FILE_START);send(handleUpload,UPLOAD_FILE_WRITE);send(handleUpload,UPLOAD_FILE_END);
-  assert(!opens&&!writes&&!deletes);reset();allowed=panel;password=false;
+  assert(!opens&&!writes&&!deletes&&stops==1);reset();allowed=panel;password=false;
   send(handlePackUpload,UPLOAD_FILE_START);send(handlePackUpload,UPLOAD_FILE_WRITE);send(handlePackUpload,UPLOAD_FILE_END);
-  assert(!opens&&!writes&&!deletes&&!packFaceReady);
+  assert(!opens&&!writes&&!deletes&&!packFaceReady&&stops==1);
  }
  reset();send(handleUpload,UPLOAD_FILE_START);send(handleUpload,UPLOAD_FILE_WRITE);send(handleUpload,UPLOAD_FILE_END);assert(opens==1&&writes==1&&written==1);
  // foto sem memória para conferir: fica salva e o envio avisa; arquivo recusado pelo decodificador: apagado

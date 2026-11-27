@@ -25,11 +25,13 @@ uint64_t wsSteps = 0;
 struct Rec : RequestHandler {  // anota o que o handler de upload do firmware receberia
   std::string eventos, dados;
   bool allowUpload = true;
+  WiFiClient* stopOnStart = nullptr;
   bool canHandle(HTTPMethod, const String&) override { return true; }
   bool canUpload(const String&) override { return allowUpload; }
   void upload(esp8266webserver::ESP8266WebServerTemplate<WiFiServer>&, const String&, HTTPUpload& up) override {
     static const char* nome = "SWEA";
     eventos += nome[up.status];
+    if (up.status == UPLOAD_FILE_START && stopOnStart) stopOnStart->stop();
     if (up.status == UPLOAD_FILE_WRITE) dados.append((const char*)up.buf, up.currentSize);
   }
 };
@@ -248,11 +250,35 @@ static void c8_multipart_sem_upload() {
   CONFERE(s.parse(c) == PARAR && h.eventos.empty() && c.consumed < 400, "multipart em rota sem upload para antes do corpo");
 }
 
+// ---- C9: gotejamento (trickle, issue #185) ----
+static void c9_trickle() {
+  novo();
+  WiFiClient c; Rec h; Srv s(h);
+  c.segs.push_back({0, pedido(cabecalhoArquivo("f"), "multipart", B, "POST", 100000)});
+  // 1 byte a cada 9 s: abaixo do idle timeout de 10 s, mas abaixo da taxa mínima após carência
+  for (uint32_t i = 1; i <= 50; i++) c.segs.push_back({i * 9000u, "x"});
+  CONFERE(s.parse(c) == PARAR, "gotejamento (1 B / 9 s) é abortado");
+  CONFERE(!h.eventos.empty() && h.eventos.back() == 'A', "handler recebe UPLOAD_FILE_ABORTED");
+  CONFERE(wsNow < 25000, "corta logo após a carência em vez de prender o loop");
+}
+
+// ---- C10: handler fecha o socket no UPLOAD_FILE_START (issue #185) ----
+static void c10_recusa_fecha() {
+  novo();
+  WiFiClient c; Rec h; h.stopOnStart = &c; Srv s(h);
+  std::string p = pedido(arquivo("f", bytes(50000), true), "multipart");
+  c.segs.push_back({0, p});
+  CONFERE(s.parse(c) == PARAR, "recusa com client.stop() aborta o multipart");
+  CONFERE(h.eventos == "SA", "recebe START e ABORTED, sem WRITE");
+  CONFERE(c.consumed < 400, "para antes de drenar o corpo do arquivo");
+}
+
 int main(int argc, char** argv) {
   std::map<std::string, void (*)()> casos = {{"ok_arquivo_e_campo", ok_arquivo_e_campo}, {"ok_dois_arquivos", ok_dois_arquivos}, {"ok_envio_lento", ok_envio_lento},
       {"ok_json", ok_json}, {"c1", c1}, {"c2_fechado", c2_fechado}, {"c2_fechado_cabecalho", c2_fechado_cabecalho}, {"c2_mudo", c2_mudo}, {"c2_lixo", c2_lixo},
       {"c2_valor_enorme", c2_valor_enorme}, {"c4_mudo", c4_mudo}, {"c4_fechado", c4_fechado}, {"c3", c3}, {"c5", c5},
-      {"c6_host_stale", c6_host_stale}, {"c7_hdr_enorme", c7_hdr_enorme}, {"c8_multipart_sem_upload", c8_multipart_sem_upload}};
+      {"c6_host_stale", c6_host_stale}, {"c7_hdr_enorme", c7_hdr_enorme}, {"c8_multipart_sem_upload", c8_multipart_sem_upload},
+      {"c9_trickle", c9_trickle}, {"c10_recusa_fecha", c10_recusa_fecha}};
   std::string quer = argc > 1 ? argv[1] : "todos";
   for (auto& k : casos) {
     if (quer != "todos" && quer != k.first) continue;
