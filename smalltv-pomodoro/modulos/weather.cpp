@@ -58,7 +58,10 @@ static uint32_t httpDateEpoch = 0;  // cabeçalho Date da última resposta (0 = 
 
 // Devolve também HTTP_WAIT (buscando o nome: nada foi enviado, tente no próximo laço) e HTTP_DNS (nome não resolveu).
 // readMs vale para o status e os cabeçalhos; o corpo do clima tem prazo próprio.
-int httpGet(WiFiClient &c, const String &url, uint16_t readMs) {
+// Com chunked != nullptr o pedido vai em HTTP/1.1 com keep-alive (quem chama lê o corpo e fecha) e *chunked diz se a
+// resposta veio em pedaços. Sem ele, HTTP/1.0 com Connection: close (os avisos só olham o código).
+int httpGet(WiFiClient &c, const String &url, uint16_t readMs, bool *chunked) {
+  if (chunked) *chunked = false;
   httpDateEpoch = 0;
   if (!safeHttpUrl(url.c_str(), url.length())) return -1;
   int end = 7;
@@ -84,9 +87,10 @@ int httpGet(WiFiClient &c, const String &url, uint16_t readMs) {
   // Envia em partes: concatenar tudo criava um String temporário grande em toda consulta.
   c.print(F("GET "));
   c.print(path);
-  c.print(F(" HTTP/1.0\r\nHost: "));
+  c.print(chunked ? F(" HTTP/1.1\r\nHost: ") : F(" HTTP/1.0\r\nHost: "));
   c.print(host);
-  c.print(F("\r\nUser-Agent: SmallTV\r\nConnection: close\r\n\r\n"));
+  c.print(chunked ? F("\r\nUser-Agent: SmallTV\r\nConnection: keep-alive\r\n\r\n")
+                  : F("\r\nUser-Agent: SmallTV\r\nConnection: close\r\n\r\n"));
   uint32_t start = millis();
   String line;
   line.reserve(128);  // httpLine reutiliza a mesma capacidade para status e cabeçalhos
@@ -100,6 +104,8 @@ int httpGet(WiFiClient &c, const String &url, uint16_t readMs) {
     total += line.length();
     if (total > 8192) return -2;
     if (line.length() <= 1) return code;
+    if (chunked && !strncasecmp_P(line.c_str(), PSTR("transfer-encoding:"), 18) && strstr_P(line.c_str(), PSTR("chunked")))
+      *chunked = true;
     if (!strncasecmp_P(line.c_str(), PSTR("date:"), 5)) {
       int64_t d = httpDateToEpoch(line.c_str() + 5);
       if (d > 0) httpDateEpoch = (uint32_t)d;
@@ -125,7 +131,15 @@ static bool fetchWeather() {
            "&minutely_15=precipitation,precipitation_probability&forecast_minutely_15=4"
            "&timezone=auto&forecast_days=");
   url += UI_DAYS;
-  if (httpGet(client, url, 3000) != 200) return false;
+  // keep-alive: desde 27/11/2026, com Connection: close a resposta do Open-Meteo chegava cortada no relógio logo
+  // depois do primeiro pacote (536 B; o resto se perdia quando o servidor fechava), enquanto um PC recebia tudo.
+  // Pedindo keep-alive o servidor não fecha; o relógio lê até o fim do JSON e fecha ele mesmo (client.stop()).
+  bool chunked;
+  int code = httpGet(client, url, 3000, &chunked);
+  if (code != 200) {
+    wx.err = code;  // código HTTP do serviço, ou negativo: -1 não conectou, -2 resposta cortada, -4 nome não resolveu
+    return false;
+  }
   if (!timeValid() && httpDateEpoch) softTime(httpDateEpoch, 3);  // reserva só para mostrar até o SNTP chegar
   JsonDocument filter;
   filter["minutely_15"]["precipitation"] = true;  // 4 quartos de hora a partir do atual: a próxima hora
@@ -145,9 +159,13 @@ static bool fetchWeather() {
   filter["daily"]["sunset"] = true;
   JsonDocument doc;
   HttpBody body{client, millis(), HTTP_BODY_MAX};  // prazo e teto próprios do corpo
+  body.chunked = chunked;
   DeserializationError err = deserializeJson(doc, body, DeserializationOption::Filter(filter));
   client.stop();
-  if (err || doc["current"]["temperature_2m"].isNull()) return false;
+  if (err || doc["current"]["temperature_2m"].isNull()) {
+    wx.err = err ? 1000 + (int)err.code() : 2000;  // 1000+: JSON inválido ou incompleto; 2000: veio sem a temperatura
+    return false;
+  }
   wx.t = doc["current"]["temperature_2m"];
   wx.hum = doc["current"]["relative_humidity_2m"];
   wx.code = doc["current"]["weather_code"];
@@ -197,6 +215,7 @@ static bool fetchWeather() {
   for (char *c = wx.tzName; *c; c++)  // nome IANA ("America/Sao_Paulo"): só isso vai para o JSON do estado
     if (!isalnum((unsigned char)*c) && !strchr("/_+-", *c)) *c = 0;
   wx.utcOff = doc["utc_offset_seconds"] | 0;
+  wx.err = 0;
   wx.ok = true;
   wx.version++;
   return true;
@@ -210,6 +229,7 @@ void weatherLoop() {
   int d = dnsResolve(WX_HOST, ip);
   if (d == 0) return;
   diagWhere = 1;
+  if (d < 0) wx.err = HTTP_DNS;
   bool ok = d > 0 && fetchWeather();
   if (ok) wxBack.ok(millis(), 15UL * 60000UL);
   else {

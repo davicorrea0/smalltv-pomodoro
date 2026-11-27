@@ -151,6 +151,7 @@ struct Weather {
   uint8_t rainIn = 0;  // ver UiWeather::rainIn
   char tzName[40] = "";  // fuso da cidade segundo o Open-Meteo (IANA, ex.: America/Sao_Paulo)
   int32_t utcOff = 0;     // deslocamento desse fuso agora, em segundos (o painel compara com o do relógio)
+  int16_t err = 0;        // motivo da última busca que falhou (0 = deu certo); ver weatherErr em weather.cpp
 };
 // GET em HTTP/1.0 (resposta sem "chunked", fecha no fim) no lugar do HTTPClient (~4 KB).
 // Devolve o código HTTP (negativo se não conectar) e deixa o cliente no começo do corpo.
@@ -287,7 +288,7 @@ void alexaBegin();
 void alexaLoop();
 void sendHueDescription();
 void appendFixed(String &out, float value, uint8_t digits);
-int httpGet(WiFiClient &c, const String &url, uint16_t readMs);
+int httpGet(WiFiClient &c, const String &url, uint16_t readMs, bool *chunked = nullptr);
 void weatherLoop();
 bool fsLayout2();
 void fsMount();

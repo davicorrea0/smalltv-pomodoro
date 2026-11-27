@@ -1,6 +1,7 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <string>
 #include <utility>
 #include <vector>
@@ -69,6 +70,60 @@ int main() {
   WiFiClient drip({{1400, 'a'}, {2800, 'b'}, {4200, 'c'}});  // 1 byte a cada 1,4 s
   HttpBody slowBody{drip, nowMs, HTTP_BODY_MAX};
   assert(readAll(slowBody) == "ab");
+  assert(nowMs == HTTP_BODY_MS);
+
+  // chunked (HTTP/1.1 com keep-alive): pedaços de tamanhos variados, extensão, maiúsculas e o pedaço 0 do fim
+  auto chunks = [](const std::string &body, size_t size) {
+    std::string out;
+    char hex[16];
+    for (size_t i = 0; i < body.size(); i += size) {
+      std::string part = body.substr(i, size);
+      snprintf(hex, sizeof hex, "%zX", part.size());
+      out += std::string(hex) + (i ? "" : ";ext=1") + "\r\n" + part + "\r\n";
+    }
+    return out + "0\r\n\r\n";
+  };
+  for (size_t size : {3, 7, 280, 536, 1000, 4096}) {
+    nowMs = 0;
+    WiFiClient pieces = immediate(chunks(normal, size));
+    HttpBody chunkedBody{pieces, nowMs, HTTP_BODY_MAX};
+    chunkedBody.chunked = true;
+    assert(readAll(chunkedBody) == normal);
+    assert(chunkedBody.read() == -1);  // depois do pedaço 0, o fim continua o fim
+  }
+
+  // o teto conta os bytes da conexão, tamanhos e \r\n incluídos: pedaços de 1 byte (6 bytes cada) param antes
+  nowMs = 0;
+  WiFiClient tiny = immediate(chunks(normal, 1));
+  HttpBody tinyBody{tiny, nowMs, HTTP_BODY_MAX};
+  tinyBody.chunked = true;
+  std::string got = readAll(tinyBody);
+  assert(got.size() < normal.size() && normal.compare(0, got.size(), got) == 0);
+
+  // chunked com defeito: para sem entregar bytes de controle como corpo
+  struct Bad { const char *raw, *body; } bad[] = {
+      {"3\r\nabc", "abc"},                        // conexão acaba no meio: entrega o que veio
+      {"3\r\nabcXY2\r\nde\r\n0\r\n\r\n", "abc"},  // falta o \r\n depois do pedaço
+      {"G\r\nabc\r\n0\r\n\r\n", ""},              // tamanho não é hexadecimal
+      {"10000\r\nabc\r\n", ""},                   // 5 dígitos: maior que qualquer corpo aceito
+      {"\r\nabc\r\n", ""},                        // linha sem tamanho
+      {"0\r\n\r\nabc", ""},                       // pedaço 0 logo de cara: corpo vazio
+  };
+  for (const Bad &b : bad) {
+    nowMs = 0;
+    WiFiClient broken = immediate(b.raw);
+    HttpBody badBody{broken, nowMs, HTTP_BODY_MAX};
+    badBody.chunked = true;
+    assert(readAll(badBody) == b.body);
+    assert(badBody.read() == -1);
+  }
+
+  // chunked gotejando: o prazo vale para o corpo inteiro, contando os tamanhos
+  nowMs = 0;
+  WiFiClient dripChunks({{0, '2'}, {0, '\r'}, {0, '\n'}, {1000, 'a'}, {2000, 'b'}, {4000, '\r'}});
+  HttpBody slowChunks{dripChunks, nowMs, HTTP_BODY_MAX};
+  slowChunks.chunked = true;
+  assert(readAll(slowChunks) == "ab");
   assert(nowMs == HTTP_BODY_MS);
 
   nowMs = 0;
