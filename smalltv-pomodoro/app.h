@@ -35,7 +35,7 @@ extern "C" uint32_t _FS_start;
 void blit(int16_t x, int16_t y, uint16_t *px, int16_t w, int16_t h);  // ui.cpp: recorta para a área suja; fora da tela, cai na faixa
 
 
-#define FW_VERSION "1.26.2"
+#define FW_VERSION "1.26.4"
 #define HOSTNAME   "smalltv"
 #define AP_NAME    "SmallTV-Pomodoro"
 #define PIN_DC  0
@@ -285,7 +285,7 @@ void alexaBegin();
 void alexaLoop();
 void sendHueDescription();
 void appendFixed(String &out, float value, uint8_t digits);
-int httpGet(WiFiClient &c, const String &url, uint16_t readMs);
+int httpGet(WiFiClient &c, const String &url, uint16_t readMs, bool *chunked = nullptr);
 void weatherLoop();
 bool fsLayout2();
 void fsMount();

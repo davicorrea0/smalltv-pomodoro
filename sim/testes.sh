@@ -41,6 +41,8 @@ for t in sec stats jpg_nomem portal idioma telemetria wifi_ip painel_etag brilho
   g++ -std=c++17 -fsanitize=address,undefined -g -w "$G/$t.cpp" -o "$T/$t"
   "$T/$t"
 done
+g++ -std=c++17 -fsanitize=address,undefined -g -w http_body_test.cpp -o "$T/http_body"
+"$T/http_body"
 g++ -std=c++17 -fsanitize=address,undefined -g -w warm_test.cpp -o "$T/warm"
 "$T/warm"
 # Analisador de requisições do ESP8266WebServer (smalltv-pomodoro/ws_parse.h) sobre o Parsing-impl.h REAL do core 3.1.2, com
