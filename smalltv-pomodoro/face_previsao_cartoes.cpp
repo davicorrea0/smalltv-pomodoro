@@ -12,6 +12,7 @@ static const uint16_t CARD_BG = uiRgb(24, 24, 28), CARD_LINE = uiRgb(48, 48, 54)
 static bool otxNeedsPixel(const char *s) {
   for (const unsigned char *p = (const unsigned char *)s; *p;) {
     if (*p < 0x80) { p++; continue; }
+    if (*p == 0xC3 && p[1] >= 0x80 && p[1] <= 0xBF) { p += 2; continue; }  // Latin-1: o Outfit mostra a letra base
     uint16_t ch = utf8ToCp437(p);
     if (!ch || ch >= 0x100) return true;
     if (ch > 0x7F && ch != 0x84 && ch != 0x94 && ch != 0x81 && ch != 0x8E &&

@@ -193,7 +193,7 @@ void themeWorldWatch(const UiState &s, bool full) {
   if (changed(cC, ik)) {
     indicator(31, foco, tr("FOCO", "FOCUS", "FOCO"));
     indicator(61, chuva, tr("CHUVA", "RAIN", "LLUVIA"));
-    indicator(91, wifi, "WI-FI");
+    indicator(91, wifi, tr("WI-FI", "WI-FI", "WI-FI"));  // alemão: WLAN
   }
   // linha do meio: dia-mês em segmentos (mês-dia em inglês) e, depois do traço, o código da cidade e o fuso,
   // todos na mesma altura de letra (o "+5:30" dos fusos de meia hora entra sem o "UTC")

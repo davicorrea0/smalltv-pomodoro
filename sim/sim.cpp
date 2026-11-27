@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #define UI_ASSET_LIST  // assets.h inclui a lista com o nome de cada asset (para a folha de prévia)
 #include "../smalltv-pomodoro/ui_kit.h"
+#include "../smalltv-pomodoro/utf8_pixel.h"
 #include "../smalltv-pomodoro/assets.h"
 #include "../smalltv-pomodoro/facepack.h"
 #include "../smalltv-pomodoro/setup_qr.h"
@@ -1393,7 +1394,9 @@ static int testGlifosTextoUtf8() {
   int fails = 0;
   struct Caso { const char *utf8; uint16_t glifo; } casos[] = {
     {"\xC3\xA4", 0x84}, {"\xC3\xB6", 0x94}, {"\xC3\xBC", 0x81}, {"\xC3\x9F", 0xE1},
-    {"\xC3\x84", 0x8E}, {"\xC3\x96", 0x99}, {"\xC3\x9C", 0x9A}, {"\xD0\x90", 0x100}
+    {"\xC3\x84", 0x8E}, {"\xC3\x96", 0x99}, {"\xC3\x9C", 0x9A}, {"\xD0\x90", 0x100},
+    {"\xC3\xA9", 0x82}, {"\xC3\x87", 0x80}, {"\xC3\x80", UTF8_LAT}, {"\xC3\x83", UTF8_LAT + 3},
+    {"\xC3\xA3", UTF8_LAT + 18}, {"\xC3\xA7", UTF8_LAT + 20}
   };
   const uint16_t cor = uiRgb(243, 231, 201);
   for (int sz = 1; sz <= 2; sz++)
@@ -1409,7 +1412,7 @@ static int testGlifosTextoUtf8() {
         fails++;
       }
     }
-  printf("glifos do texto UTF-8: %s (alemao CP437 e А cirilico, tamanhos 1 e 2)\n", fails ? "FALHOU" : "ok");
+  printf("glifos do texto UTF-8: %s (alemao e frances CP437, latinos desenhados e А cirilico, tamanhos 1 e 2)\n", fails ? "FALHOU" : "ok");
   return fails;
 }
 

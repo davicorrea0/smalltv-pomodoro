@@ -276,7 +276,7 @@ static const UiSprite *const ICONS[3] PROGMEM = {&SPR_ICONE_TOMATE_LCD, &SPR_ICO
 static const int ICON_Y = 194;
 static void paintIcons(void *p) {
   IconCtx *ic = (IconCtx *)p;
-  const char *label[3] = {tr("FOCO", "FOCUS", "FOCO"), tr("CHUVA", "RAIN", "LLUVIA"), "WI-FI"};
+  const char *label[3] = {tr("FOCO", "FOCUS", "FOCO"), tr("CHUVA", "RAIN", "LLUVIA"), tr("WI-FI", "WI-FI", "WI-FI")};
   G->fillRect(14, ICON_Y, 212, 12, LCD_BG);
   for (int k = 0; k < 3; k++) {
     const int w = 16 + textW(label[k], 1), x = k == 0 ? 16 : k == 1 ? 120 - w / 2 : 224 - w;

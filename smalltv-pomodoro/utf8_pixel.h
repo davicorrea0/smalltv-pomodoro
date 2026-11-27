@@ -14,7 +14,11 @@ static inline unsigned char latin1Base(unsigned char d) {
   return baixa ? c + 32 : c;
 }
 
-// Retorna 1..255 para CP437 e 0x100+i para cirílico. A ordem cirílica é:
+// Glifos latinos desenhados no ui.cpp (acentos que a CP437 não tem): 0x100 + 66 + i, i < UTF8_LAT_N.
+static const uint16_t UTF8_LAT = 0x100 + 66;
+static const int UTF8_LAT_N = 21;
+
+// Retorna 1..255 para CP437 e 0x100+i para cirílico (e os latinos acima). A ordem cirílica é:
 // А Б В Г Д Е Ж З И Й К Л М Н О П Р С Т У Ф Х Ц Ч Ш Щ Ъ Ы Ь Э Ю Я Ё,
 // seguida por а..я e ё (maiúsculas 0..32, minúsculas 33..65).
 static inline uint16_t utf8ToCp437(const unsigned char *&p) {
@@ -40,6 +44,57 @@ static inline uint16_t utf8ToCp437(const unsigned char *&p) {
     if (d == 0x84) return 0x8E;
     if (d == 0x96) return 0x99;
     if (d == 0x9C) return 0x9A;
+    // Acentos do francês, do português e do espanhol: os que a fonte CP437 tem viram o glifo dela; os que ela não
+    // tem (e o ç, que nela sai torto) vêm da tabela latina do ui.cpp, depois dos 66 cirílicos (0x100 + UTF8_LAT + i).
+    switch (d) {
+      case 0x80: return UTF8_LAT + 0;   // À
+      case 0x81: return UTF8_LAT + 1;   // Á
+      case 0x82: return UTF8_LAT + 2;   // Â
+      case 0x83: return UTF8_LAT + 3;   // Ã
+      case 0x85: return 0x8F;           // Å
+      case 0x86: return 0x92;           // Æ
+      case 0x87: return 0x80;           // Ç
+      case 0x88: return UTF8_LAT + 4;   // È
+      case 0x89: return 0x90;           // É
+      case 0x8A: return UTF8_LAT + 5;   // Ê
+      case 0x8B: return UTF8_LAT + 6;   // Ë
+      case 0x8C: return UTF8_LAT + 7;   // Ì
+      case 0x8D: return UTF8_LAT + 8;   // Í
+      case 0x8E: return UTF8_LAT + 9;   // Î
+      case 0x8F: return UTF8_LAT + 10;  // Ï
+      case 0x91: return 0xA5;           // Ñ
+      case 0x92: return UTF8_LAT + 11;  // Ò
+      case 0x93: return UTF8_LAT + 12;  // Ó
+      case 0x94: return UTF8_LAT + 13;  // Ô
+      case 0x95: return UTF8_LAT + 14;  // Õ
+      case 0x99: return UTF8_LAT + 15;  // Ù
+      case 0x9A: return UTF8_LAT + 16;  // Ú
+      case 0x9B: return UTF8_LAT + 17;  // Û
+      case 0xA0: return 0x85;           // à
+      case 0xA1: return 0xA0;           // á
+      case 0xA2: return 0x83;           // â
+      case 0xA3: return UTF8_LAT + 18;  // ã
+      case 0xA5: return 0x86;           // å
+      case 0xA6: return 0x91;           // æ
+      case 0xA7: return UTF8_LAT + 20;  // ç
+      case 0xA8: return 0x8A;           // è
+      case 0xA9: return 0x82;           // é
+      case 0xAA: return 0x88;           // ê
+      case 0xAB: return 0x89;           // ë
+      case 0xAC: return 0x8D;           // ì
+      case 0xAD: return 0xA1;           // í
+      case 0xAE: return 0x8C;           // î
+      case 0xAF: return 0x8B;           // ï
+      case 0xB1: return 0xA4;           // ñ
+      case 0xB2: return 0x95;           // ò
+      case 0xB3: return 0xA2;           // ó
+      case 0xB4: return 0x93;           // ô
+      case 0xB5: return UTF8_LAT + 19;  // õ
+      case 0xB9: return 0x97;           // ù
+      case 0xBA: return 0xA3;           // ú
+      case 0xBB: return 0x96;           // û
+      case 0xBF: return 0x98;           // ÿ
+    }
     return latin1Base(d);
   }
 

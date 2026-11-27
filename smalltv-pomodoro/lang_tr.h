@@ -2,7 +2,7 @@
 #pragma once
 #include <pgmspace.h>
 
-static const uint32_t LANG_DE_H[102] PROGMEM = {
+static const uint32_t LANG_DE_H[103] PROGMEM = {
   0x02cbb15bu,
   0x04add740u,
   0x06abe341u,
@@ -16,6 +16,7 @@ static const uint32_t LANG_DE_H[102] PROGMEM = {
   0x1aec7cb7u,
   0x1c57fda5u,
   0x1c599279u,
+  0x1e0931c1u,
   0x1e3d607fu,
   0x1f08905cu,
   0x21175c5cu,
@@ -106,7 +107,7 @@ static const uint32_t LANG_DE_H[102] PROGMEM = {
   0xfec75ebcu,
   0xff934ba3u
 };
-static const uint16_t LANG_DE_O[102] PROGMEM = {
+static const uint16_t LANG_DE_O[103] PROGMEM = {
   0,
   16,
   22,
@@ -121,94 +122,95 @@ static const uint16_t LANG_DE_O[102] PROGMEM = {
   196,
   202,
   206,
-  222,
-  228,
-  234,
-  253,
-  262,
-  271,
-  282,
-  310,
-  330,
-  336,
-  356,
-  362,
-  368,
-  379,
-  385,
-  395,
-  401,
-  410,
-  425,
-  439,
-  451,
-  467,
-  486,
-  500,
-  514,
-  520,
-  532,
-  540,
-  548,
-  552,
-  558,
-  581,
-  587,
-  610,
-  626,
-  635,
-  654,
-  673,
-  681,
-  706,
-  719,
+  211,
+  227,
+  233,
+  239,
+  258,
+  267,
+  276,
+  287,
+  315,
+  335,
+  341,
+  361,
+  367,
+  373,
+  384,
+  390,
+  400,
+  406,
+  415,
+  430,
+  444,
+  456,
+  472,
+  491,
+  505,
+  519,
+  525,
+  537,
+  545,
+  553,
+  557,
+  563,
+  586,
+  592,
+  615,
+  631,
+  640,
+  659,
+  678,
+  686,
+  711,
   724,
-  731,
-  744,
-  775,
-  784,
-  793,
-  801,
-  847,
-  863,
-  867,
-  887,
-  899,
-  905,
-  916,
-  922,
-  941,
-  949,
-  960,
-  983,
-  1000,
-  1009,
-  1017,
-  1045,
-  1057,
-  1066,
-  1111,
-  1121,
-  1133,
-  1144,
-  1158,
-  1167,
-  1191,
-  1225,
-  1238,
-  1244,
-  1250,
-  1257,
-  1269,
-  1286,
-  1293,
-  1305,
-  1320,
-  1334,
-  1353,
-  1364,
-  1380,
-  1395
+  729,
+  736,
+  749,
+  780,
+  789,
+  798,
+  806,
+  852,
+  868,
+  872,
+  892,
+  904,
+  910,
+  921,
+  927,
+  946,
+  954,
+  965,
+  988,
+  1005,
+  1014,
+  1022,
+  1050,
+  1062,
+  1071,
+  1116,
+  1126,
+  1138,
+  1149,
+  1163,
+  1172,
+  1196,
+  1230,
+  1243,
+  1249,
+  1255,
+  1262,
+  1274,
+  1291,
+  1298,
+  1310,
+  1325,
+  1339,
+  1358,
+  1369,
+  1385,
+  1400
 };
 static const char LANG_DE_S[] PROGMEM =
   "HANDY VERBUNDEN\000"
@@ -224,6 +226,7 @@ static const char LANG_DE_S[] PROGMEM =
   "um das Panel\000"
   "Fokus\000"
   "MAX\000"
+  "WLAN\000"
   "%u %s heute  %s\000"
   "Regen\000"
   "REGEN\000"
@@ -314,9 +317,9 @@ static const char LANG_DE_S[] PROGMEM =
   "Ziel erreicht!\000"
   "Wenig Wolken\000"
 ;
-#define LANG_DE_N 102
+#define LANG_DE_N 103
 
-static const uint32_t LANG_RU_H[102] PROGMEM = {
+static const uint32_t LANG_RU_H[103] PROGMEM = {
   0x02cbb15bu,
   0x04add740u,
   0x06abe341u,
@@ -330,6 +333,7 @@ static const uint32_t LANG_RU_H[102] PROGMEM = {
   0x1aec7cb7u,
   0x1c57fda5u,
   0x1c599279u,
+  0x1e0931c1u,
   0x1e3d607fu,
   0x1f08905cu,
   0x21175c5cu,
@@ -420,7 +424,7 @@ static const uint32_t LANG_RU_H[102] PROGMEM = {
   0xfec75ebcu,
   0xff934ba3u
 };
-static const uint16_t LANG_RU_O[102] PROGMEM = {
+static const uint16_t LANG_RU_O[103] PROGMEM = {
   0,
   34,
   45,
@@ -435,94 +439,95 @@ static const uint16_t LANG_RU_O[102] PROGMEM = {
   289,
   297,
   306,
-  324,
-  335,
-  346,
-  372,
-  383,
-  405,
-  429,
-  474,
-  510,
-  525,
-  565,
-  576,
-  591,
-  613,
-  621,
-  640,
-  655,
-  670,
-  689,
-  733,
-  754,
-  783,
-  811,
-  832,
-  860,
-  877,
-  907,
-  922,
-  935,
-  945,
-  958,
-  992,
-  999,
-  1043,
-  1062,
-  1075,
-  1106,
-  1132,
-  1144,
-  1164,
-  1194,
-  1203,
-  1214,
-  1245,
-  1284,
-  1293,
-  1313,
-  1336,
-  1376,
-  1397,
-  1412,
-  1448,
-  1468,
-  1476,
-  1489,
-  1502,
-  1542,
-  1562,
-  1586,
-  1626,
-  1651,
-  1667,
-  1686,
-  1727,
-  1747,
-  1766,
-  1809,
-  1822,
-  1835,
-  1850,
-  1871,
-  1891,
-  1931,
-  1979,
-  1997,
-  2010,
-  2021,
-  2034,
-  2054,
-  2076,
-  2085,
-  2099,
-  2133,
-  2156,
-  2192,
-  2215,
-  2237,
-  2266
+  312,
+  330,
+  341,
+  352,
+  378,
+  389,
+  411,
+  435,
+  480,
+  516,
+  531,
+  571,
+  582,
+  597,
+  619,
+  627,
+  646,
+  661,
+  676,
+  695,
+  739,
+  760,
+  789,
+  817,
+  838,
+  866,
+  883,
+  913,
+  928,
+  941,
+  951,
+  964,
+  998,
+  1005,
+  1049,
+  1068,
+  1081,
+  1112,
+  1138,
+  1150,
+  1170,
+  1200,
+  1209,
+  1220,
+  1251,
+  1290,
+  1299,
+  1319,
+  1342,
+  1382,
+  1403,
+  1418,
+  1454,
+  1474,
+  1482,
+  1495,
+  1508,
+  1548,
+  1568,
+  1592,
+  1632,
+  1657,
+  1673,
+  1692,
+  1733,
+  1753,
+  1772,
+  1815,
+  1828,
+  1841,
+  1856,
+  1877,
+  1897,
+  1937,
+  1985,
+  2003,
+  2016,
+  2027,
+  2040,
+  2060,
+  2082,
+  2091,
+  2105,
+  2139,
+  2162,
+  2198,
+  2221,
+  2243,
+  2272
 };
 static const char LANG_RU_S[] PROGMEM =
   "\320\242\320\225\320\233\320\225\320\244\320\236\320\235 \320\237\320\236\320\224\320\232\320\233\320\256\320\247\320\225\320\235\000"
@@ -538,6 +543,7 @@ static const char LANG_RU_S[] PROGMEM =
   "\321\207\321\202\320\276\320\261\321\213 \320\276\321\202\320\272\321\200\321\213\321\202\321\214\000"
   "\321\204\320\276\320\272.\000"
   "\320\234\320\220\320\232\320\241\000"
+  "WI-FI\000"
   "%u %s \321\201\320\265\320\263.  %s\000"
   "\320\224\320\276\320\266\320\264\321\214\000"
   "\320\224\320\236\320\226\320\224\320\254\000"
@@ -628,9 +634,9 @@ static const char LANG_RU_S[] PROGMEM =
   "\321\206\320\265\320\273\321\214 \320\262\321\213\320\277\320\276\320\273\320\275\320\265\320\275\320\260!\000"
   "\320\234\320\260\320\273\320\276\320\276\320\261\320\273\320\260\321\207\320\275\320\276\000"
 ;
-#define LANG_RU_N 102
+#define LANG_RU_N 103
 
-static const uint32_t LANG_FR_H[102] PROGMEM = {
+static const uint32_t LANG_FR_H[103] PROGMEM = {
   0x02cbb15bu,
   0x04add740u,
   0x06abe341u,
@@ -644,6 +650,7 @@ static const uint32_t LANG_FR_H[102] PROGMEM = {
   0x1aec7cb7u,
   0x1c57fda5u,
   0x1c599279u,
+  0x1e0931c1u,
   0x1e3d607fu,
   0x1f08905cu,
   0x21175c5cu,
@@ -734,124 +741,126 @@ static const uint32_t LANG_FR_H[102] PROGMEM = {
   0xfec75ebcu,
   0xff934ba3u
 };
-static const uint16_t LANG_FR_O[102] PROGMEM = {
+static const uint16_t LANG_FR_O[103] PROGMEM = {
   0,
-  19,
-  25,
-  55,
-  64,
-  68,
+  22,
+  28,
+  59,
+  69,
   73,
-  94,
-  129,
-  175,
-  186,
-  198,
-  204,
-  208,
-  226,
-  232,
-  238,
-  255,
-  261,
-  279,
-  293,
-  326,
-  345,
-  350,
-  373,
-  379,
-  385,
+  78,
+  101,
+  137,
+  184,
+  195,
+  207,
+  213,
+  217,
+  223,
+  241,
+  247,
+  253,
+  270,
+  276,
+  294,
+  308,
+  343,
+  363,
+  368,
+  393,
   399,
   405,
-  413,
-  419,
-  427,
-  446,
-  460,
-  473,
-  489,
-  503,
-  516,
-  529,
-  540,
-  553,
-  560,
-  570,
-  580,
-  588,
-  614,
-  620,
-  650,
-  667,
-  674,
-  700,
-  717,
-  729,
-  739,
-  756,
-  768,
-  774,
-  793,
-  824,
-  833,
-  841,
-  856,
-  899,
-  913,
-  919,
-  947,
-  960,
-  968,
-  979,
-  986,
-  1009,
-  1019,
-  1033,
-  1060,
-  1080,
-  1089,
+  420,
+  426,
+  434,
+  440,
+  448,
+  467,
+  481,
+  494,
+  510,
+  524,
+  537,
+  550,
+  561,
+  574,
+  581,
+  592,
+  604,
+  612,
+  639,
+  646,
+  676,
+  693,
+  701,
+  728,
+  745,
+  757,
+  767,
+  786,
+  800,
+  807,
+  826,
+  857,
+  866,
+  874,
+  889,
+  932,
+  946,
+  952,
+  981,
+  996,
+  1004,
+  1016,
+  1023,
+  1047,
+  1057,
+  1071,
   1098,
-  1133,
-  1147,
-  1154,
-  1199,
-  1209,
-  1216,
-  1227,
+  1118,
+  1127,
+  1137,
+  1172,
+  1186,
+  1193,
   1240,
-  1254,
-  1275,
-  1308,
-  1321,
-  1329,
-  1340,
-  1346,
-  1359,
-  1373,
-  1379,
+  1250,
+  1257,
+  1269,
+  1282,
+  1296,
+  1319,
+  1353,
+  1366,
+  1374,
+  1385,
   1393,
-  1409,
-  1424,
-  1439,
-  1456,
-  1473,
-  1492
+  1408,
+  1422,
+  1428,
+  1442,
+  1459,
+  1474,
+  1490,
+  1511,
+  1528,
+  1547
 };
 static const char LANG_FR_S[] PROGMEM =
-  "TELEPHONE CONNECTE\000"
+  "T\303\211L\303\211PHONE CONNECT\303\211\000"
   "BLANC\000"
-  "TOMATE   PREVISIONS   4 JOURS\000"
-  "Connecte\000"
+  "TOMATE   PR\303\211VISIONS   4 JOURS\000"
+  "Connect\303\251\000"
   "MIN\000"
   "BLEU\000"
-  "MODE DE RECUPERATION\000"
-  "la 1re barre doit etre rouge et le\000"
-  "Effacer photos, historique, reglages, Wi-Fi ?\000"
+  "MODE DE R\303\211CUP\303\211RATION\000"
+  "la 1re barre doit \303\252tre rouge et le\000"
+  "Effacer photos, historique, r\303\251glages, Wi-Fi ?\000"
   "le panneau\000"
   "pour ouvrir\000"
   "focus\000"
   "MAX\000"
+  "WI-FI\000"
   "%u %s ce jour  %s\000"
   "Pluie\000"
   "PLUIE\000"
@@ -859,13 +868,13 @@ static const char LANG_FR_S[] PROGMEM =
   "Orage\000"
   "TEST DES COULEURS\000"
   "Scannez le QR\000"
-  "Telecharger historique des focus\000"
-  "arrete de trembler\000"
+  "T\303\251l\303\251charger historique des focus\000"
+  "arr\303\252te de trembler\000"
   "VERT\000"
-  "Reorganisation memoire\000"
+  "R\303\251organisation m\303\251moire\000"
   "FOCUS\000"
   "Pause\000"
-  "pluie bientot\000"
+  "pluie bient\303\264t\000"
   "focus\000"
   "Envoyer\000"
   "PAUSE\000"
@@ -880,21 +889,21 @@ static const char LANG_FR_S[] PROGMEM =
   "CHARGEMENT\000"
   "Pause longue\000"
   "Ouvrir\000"
-  "Demarrage\000"
-  "desactive\000"
+  "D\303\251marrage\000"
+  "d\303\251sactiv\303\251\000"
   "LECTURE\000"
-  "Mettre a jour le firmware\000"
-  "ETAPE\000"
+  "Mettre \303\240 jour le firmware\000"
+  "\303\211TAPE\000"
   "choisissez la ville (panneau)\000"
   "Oublier le Wi-Fi\000"
-  "TACHES\000"
-  "GIF: memoire insuffisante\000"
+  "T\303\202CHES\000"
+  "GIF: m\303\251moire insuffisante\000"
   "JPG non conforme\000"
   "objectif %d\000"
   "fond noir\000"
-  "Chargement meteo\000"
-  "Ciel degage\000"
-  "ETUDE\000"
+  "Chargement m\303\251t\303\251o\000"
+  "Ciel d\303\251gag\303\251\000"
+  "\303\211TUDE\000"
   "Utilisez les infos\000"
   "bougez: le motif doit se figer\000"
   "Pomodoro\000"
@@ -903,43 +912,43 @@ static const char LANG_FR_S[] PROGMEM =
   "Album plein (max 100 photos): supprimez-en\000"
   "fin %02d:%02d\000"
   "ROUGE\000"
-  "Photo: memoire insuffisante\000"
-  "PAS DE METEO\000"
+  "Photo: m\303\251moire insuffisante\000"
+  "PAS DE M\303\211T\303\211O\000"
   "CE JOUR\000"
-  "PREVISIONS\000"
+  "PR\303\211VISIONS\000"
   "CODAGE\000"
-  "Redemarrer normalement\000"
+  "Red\303\251marrer normalement\000"
   "encore %d\000"
   "scannez le QR\000"
   "Choisissez le Wi-Fi maison\000"
   "CONFIGUREZ LE WI-FI\000"
   "EN PAUSE\000"
-  "HUMIDITE\000"
+  "HUMIDIT\303\211\000"
   "Envoyez le firmware via le panneau\000"
   "FOCUS DU JOUR\000"
   "DESSIN\000"
-  "Photo ok, memoire insuffisante pour verifier\000"
+  "Photo ok, m\303\251moire insuffisante pour v\303\251rifier\000"
   "ci-contre\000"
   "Bruine\000"
-  "Previsions\000"
+  "Pr\303\251visions\000"
   "GIF invalide\000"
   "chargement...\000"
-  "Mode de recuperation\000"
-  "Effacer toutes les donnees perso\000"
+  "Mode de r\303\251cup\303\251ration\000"
+  "Effacer toutes les donn\303\251es perso\000"
   "pluie %u min\000"
   "panneau\000"
   "Brouillard\000"
-  "METEO\000"
-  "pas de meteo\000"
+  "M\303\211T\303\211O\000"
+  "pas de m\303\251t\303\251o\000"
   "Si le portail\000"
   "Neige\000"
   "%u %s ce jour\000"
-  "Reglage horaire\000"
+  "R\303\251glage horaire\000"
   "ne marche pas,\000"
-  "Reglages usine\000"
-  "Meteo desactivee\000"
+  "R\303\251glages usine\000"
+  "M\303\251t\303\251o d\303\251sactiv\303\251e\000"
   "Signature (.sig)\000"
   "objectif atteint !\000"
   "Peu de nuages\000"
 ;
-#define LANG_FR_N 102
+#define LANG_FR_N 103
