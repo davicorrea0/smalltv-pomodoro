@@ -96,7 +96,7 @@ static void jsonEnd(String &j) { output += j.s; j.s.clear(); }
 enum { IDLE, WORK, SHORT_BREAK, LONG_BREAK }; static int phase = IDLE; static const char *PHASE_KEY[] = {"idle", "work", "short", "long"};
 static bool running = false; static uint32_t remainingMs = 1500000, totalMs = 1500000; static uint8_t cycleDone = 1, sessionFoci = 0; static bool sessionDone = false; static uint16_t statsStreak = 3, statsBest = 8;
 static String curFile("/image/cafe.jpg");
-static struct { bool ok = true; float t = 21.5f, tmin = 17.2f, tmax = 25.8f; int hum = 63; uint8_t rainIn = 0; char tzName[40] = "America/Sao_Paulo"; int32_t utcOff = -10800; int code = 1; } wx;
+static struct { bool ok = true; float t = 21.5f, tmin = 17.2f, tmax = 25.8f; int hum = 63; uint8_t rainIn = 0; char tzName[40] = "America/Sao_Paulo"; int32_t utcOff = -10800; int code = 1; int16_t err = 0; } wx;
 static struct { uint8_t fails = 0; } wxBack;
 static int32_t localOffset() { return -10800; } static int sunRise = 390, sunSet = 1125; static const char *weatherText(int) { return "Parcialmente nublado"; }
 static bool fsLayout2() { return true; } struct FsMark { uint32_t magic; uint8_t pend; }; static FsMark fsMark = {0, 0}; static const uint32_t FS_MAGIC = 0x46533241;

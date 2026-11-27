@@ -398,6 +398,8 @@ static void sendState() {
   j += wx.ok ? 1 : 0;
   j += F(",\"fail\":");
   j += wxBack.fails;
+  j += F(",\"err\":");  // motivo da última falha (o painel mostra junto do aviso e no diagnóstico)
+  j += wx.err;
   j += F(",\"t\":");
   appendFixed(j, wx.t, 1);
   j += F(",\"min\":");
