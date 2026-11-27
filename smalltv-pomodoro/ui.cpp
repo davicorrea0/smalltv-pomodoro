@@ -194,15 +194,17 @@ static_assert(sizeof(CYR) == 66 * 5, "a tabela cirílica tem 66 glifos de 5 colu
 
 void uiDrawCyr(int x, int y, int i, uint16_t fg, int sz) {
   if (i < 0 || i >= 66) return;
+  G->startWrite();
   for (int c = 0; c < 5; c++) {
     uint8_t bits = pgm_read_byte(&CYR[i][c]);
     for (int r = 0; r < 8;) {
       while (r < 8 && !(bits & (1u << r))) r++;
       int r0 = r;
       while (r < 8 && (bits & (1u << r))) r++;
-      if (r > r0) G->fillRect(x + c * sz, y + r0 * sz, sz, (r - r0) * sz, fg);
+      if (r > r0) G->writeFillRect(x + c * sz, y + r0 * sz, sz, (r - r0) * sz, fg);
     }
   }
+  G->endWrite();
 }
 
 void degree(int x, int y, uint8_t sz, uint16_t c) {

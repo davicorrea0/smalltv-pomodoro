@@ -18,7 +18,7 @@ String rotTimes;
 static uint32_t rotAt = 0;
 static bool rotArmed = false;
 
-std::vector<String> album;
+AlbumList album;
 
 // 100 limita novos envios antes de pressionar o heap; 128 protege o rebuild se a flash já tiver mais arquivos.
 // Cada item foi estimado em ~50 B de heap (String + bloco), mas essa estimativa não foi medida.
@@ -251,11 +251,12 @@ void stopAlbum() {
 }
 
 // O pacote de mostrador ativo (até ~6,6 KB) disputa o heap com o GIF (668 B residentes + ~18,9 KB temporários
-// por quadro em blocos de até 8 KB) e o JPEG (~7,7 KB + 2x4 KB). Só sai da RAM quando falta bloco para o
-// item; volta sozinho em packEnsureLoaded(), quando o relógio é desenhado de novo. Sem pressão ele fica,
+// por quadro em 4 blocos de até 8 KB) e o JPEG (~7,7 KB + 2x4 KB em blocos separados). Só sai da RAM quando falta
+// heap total ou bloco contíguo para a maior alocação; volta sozinho em packEnsureLoaded(). Sem pressão ele fica,
 // para o modo "alternado" não reler o pacote a cada item.
-static void albumMakeRoom(uint32_t need) {
-  if (facePackLoaded() && ESP.getMaxFreeBlockSize() < need) facePackUnload();
+static void albumMakeRoom(uint32_t totalNeed, uint32_t maxBlockNeed) {
+  if (facePackLoaded() && (ESP.getFreeHeap() < totalNeed || ESP.getMaxFreeBlockSize() < maxBlockNeed))
+    facePackUnload();
 }
 
 bool showAlbumItem(const String &f) {
@@ -272,7 +273,7 @@ bool showAlbumItem(const String &f) {
       return false;
     }
     diagBlkSample();  // minblk: o maior bloco antes do GIF (e antes de albumMakeRoom soltar o pacote)
-    albumMakeRoom(sizeof(AnimatedGIF) + 1024 + 19456 + 768);
+    albumMakeRoom(sizeof(AnimatedGIF) + 1024 + 19456 + 768, 8192 + 1024);
     gif = new (std::nothrow) AnimatedGIF();  // ~668 B residentes (~18,9 KB temporários só durante playFrame())
     // tabela de cores do filtro (768 B) junto com o GIF, antes dos temporários de cada quadro: alocada no meio de um
     // quadro, ficaria presa entre eles e picotaria o heap. Sem memória, o GIF toca sem o filtro.
@@ -298,7 +299,7 @@ bool showAlbumItem(const String &f) {
     nextFrameAt = millis();  // não 0: com mais de 24,8 dias ligado, (int32_t)(millis() - 0) é negativo e o GIF nunca tocava
   } else {
     diagBlkSample();  // minblk: o maior bloco antes da foto (e antes de albumMakeRoom soltar o pacote)
-    albumMakeRoom(sizeof(JPEGDEC) + 1024 + 8192);  // o decodificador (~7,7 KB) + as 2 tabelas AC (2x4 KB)
+    albumMakeRoom(sizeof(JPEGDEC) + 1024 + 8192, sizeof(JPEGDEC) + 1024);  // ~7,7 KB + 2x4 KB separados
     JpgResult r = drawJpg(f);
     if (r == JPG_NOMEM) {
       diagNoMem(0);
@@ -315,7 +316,7 @@ uint32_t gifCronoDelay = 0, gifCronoGap = 0, gifCronoLast = 0;  // atraso pedido
 
 void albumLoop() {
   if (!gif || (int32_t)(millis() - nextFrameAt) < 0) return;
-  albumMakeRoom(19456 + 1024);
+  albumMakeRoom(19456 + 1024, 8192 + 1024);
   int delayMs = 0;
 #ifdef GIF_CRONO  // build de medição: tempo de cada quadro (decodificar + mandar à tela), lido no diag
   uint32_t cronoT0 = micros();
@@ -364,9 +365,9 @@ void scheduleView() {
   if (viewUntil && (int32_t)(now - viewUntil) < 0) return;
   bool wantAlbum = !album.empty() && (cfg.mode == 1 || (cfg.mode == 2 && !inAlbum));
   if (wantAlbum) {
-    const String &next = album[albumIdx++ % album.size()];
+    const char *next = album[albumIdx++ % album.size()];
     // com um item só, não redesenha a mesma foto (evita piscar e reiniciar o GIF)
-    if (!(inAlbum && next == curFile)) showAlbumItem(next);
+    if (!(inAlbum && curFile == next)) showAlbumItem(next);
   } else if (inAlbum) {
     stopAlbum();
   }
@@ -527,13 +528,27 @@ static void rotChave(char *out, size_t n) {
 }
 
 // Quanto o mostrador que está na tela fica (ms): o tempo dele em /rotime.txt (só vale para item que está na lista) ou o
-// "Trocar de mostrador". Calculado a cada volta, sem guardar: mudar o intervalo, a lista ou os tempos vale na hora, e
-// o tempo é o do item que ESTÁ na tela, não o do próximo.
+// "Trocar de mostrador". Cacheado por (theme, facePkg, rotMin) e invalidado em rotSet/rotTimesSet/rotTimesLoad: mudar
+// qualquer um deles vale na hora, sem varrer rotList e rotTimes em toda volta do loop().
+static uint32_t rotCacheMs = 0;
+static uint8_t rotCacheTheme = 255, rotCacheMin = 0;
+static char rotCachePkg[24] = "";
+static bool rotCacheOk = false;
+
 static uint32_t rotEspera() {
+  if (rotCacheOk && rotCacheTheme == cfg.theme && rotCacheMin == cfg.rotMin &&
+      (cfg.theme != THEME_PACK || !strcmp(rotCachePkg, cfg.facePkg)))
+    return rotCacheMs;
   char cur[32];
   rotChave(cur, sizeof cur);
   uint16_t padrao = (uint16_t)cfg.rotMin * 60;
-  return (uint32_t)(rodNaLista(rotList.c_str(), cur) ? rodSegundos(rotTimes.c_str(), cur, padrao) : padrao) * 1000UL;
+  rotCacheMs = (uint32_t)(rodNaLista(rotList.c_str(), cur) ? rodSegundos(rotTimes.c_str(), cur, padrao) : padrao) * 1000UL;
+  rotCacheTheme = cfg.theme;
+  rotCacheMin = cfg.rotMin;
+  if (cfg.theme == THEME_PACK) strlcpy(rotCachePkg, cfg.facePkg, sizeof rotCachePkg);
+  else rotCachePkg[0] = 0;
+  rotCacheOk = true;
+  return rotCacheMs;
 }
 
 // recomeça a contagem agora (a espera vem de rotEspera())
@@ -552,6 +567,7 @@ void rotSet(const String &v) {
     s = cut > 0 ? s.substring(0, cut) : String();
   }
   rotList = s;
+  rotCacheOk = false;
   rotRecomecar();
   if (!fsOk) return;
   if (!s.length()) LittleFS.remove("/rotation.txt");
@@ -613,6 +629,7 @@ void rotTimesSet(const String &v) {
   char limpo[301];
   rodLimparTempos(v.c_str(), limpo, sizeof limpo);
   rotTimes = limpo;
+  rotCacheOk = false;
   rotRecomecar();
   if (!fsOk) return;
   if (!rotTimes.length()) LittleFS.remove("/rotime.txt");
@@ -636,4 +653,5 @@ void rotTimesLoad() {
   buf[n] = 0;
   rodLimparTempos(buf, limpo, sizeof limpo);
   rotTimes = limpo;
+  rotCacheOk = false;
 }

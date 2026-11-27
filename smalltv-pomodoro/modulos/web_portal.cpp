@@ -54,12 +54,16 @@ static uint32_t diagStall = 0;  // maior intervalo entre dois laços desde que l
 static uint8_t diagStallAt = 0;
 
 // ---------- web ----------
-void jsonEscapeAppend(String &o, const char *s) {
-  for (; *s; s++) {
-    char c = *s;
+void jsonEscapeAppend(String &o, const char *s, size_t len) {
+  for (size_t i = 0; i < len; i++) {
+    char c = s[i];
     if (c == '"' || c == '\\') o += '\\';
     if ((uint8_t)c >= 0x20) o += c;
   }
+}
+
+void jsonEscapeAppend(String &o, const char *s) {
+  jsonEscapeAppend(o, s, strlen(s));
 }
 
 static bool safeText(const String &s) { return s.indexOf('"') < 0 && s.indexOf('\\') < 0; }
@@ -71,11 +75,9 @@ struct SessoesJson {
 
 static void sessoesJsonLinha(const SessaoLinha *s, void *contexto) {
   SessoesJson &c = *(SessoesJson *)contexto;
-  String nome;
-  nome.concat(s->nome, s->nome_len);
   *c.json += c.primeira ? F("{\"name\":\"") : F(",{\"name\":\"");
   c.primeira = false;
-  jsonEscapeAppend(*c.json, nome.c_str());
+  jsonEscapeAppend(*c.json, s->nome, s->nome_len);
   *c.json += F("\",\"work\":");
   *c.json += s->work;
   *c.json += F(",\"short\":");
@@ -695,12 +697,13 @@ static void sendFiles() {
   jsonBegin();
   j = F("{\"files\":[");
   bool first = true;
-  for (const String &n : album) {
+  for (size_t i = 0; i < album.size(); i++) {
+    const char *n = album[i];
     File f = LittleFS.open(n, "r");
     if (!first) j += ',';
     first = false;
     j += F("{\"n\":\"");
-    jsonEscapeAppend(j, n.c_str());
+    jsonEscapeAppend(j, n);
     j += F("\",\"s\":");
     j += (uint32_t)(f ? f.size() : 0);
     j += '}';
@@ -744,11 +747,24 @@ void secHeaders() {
 // login HTTP (o navegador pergunta uma vez e lembra). Erros usam espera progressiva por IP sem bloquear
 // o loop do relógio. A API da Alexa e o modo de recuperação não pedem senha.
 // O login Basic é conferido aqui: o authenticate() do servidor traz junto o modo Digest e o MD5 (~2,5 KB).
+// O cabeçalho "Basic <base64>" fica em cache estático (invalidado em /api/otapass) para não alocar 3 Strings por pedido.
+static char authBasic[48];
+static uint8_t authBasicLen = 0;
+
+static void authBasicInvalidate() {
+  authBasicLen = 0;
+  memset(authBasic, 0, sizeof authBasic);
+}
+
 static bool passOk() {
   if (!cfg.otaPass[0]) return true;
+  if (!authBasicLen) {
+    String want = "Basic " + base64::encode(String("admin:") + cfg.otaPass, false);
+    authBasicLen = (uint8_t)strlcpy(authBasic, want.c_str(), sizeof authBasic);
+    if (authBasicLen >= sizeof authBasic) authBasicLen = sizeof authBasic - 1;
+  }
   const String &h = server.header("Authorization");
-  String want = "Basic " + base64::encode(String("admin:") + cfg.otaPass, false);
-  return constTimeEq(h.c_str(), h.length(), want.c_str(), want.length());
+  return constTimeEq(h.c_str(), h.length(), authBasic, authBasicLen);
 }
 
 void askLogin() {
@@ -790,17 +806,30 @@ bool guard() { return (panelOk() || deny()) && authed(); }   // ações (POST)
 
 bool readOk() { return (hostOk() || deny()) && authed(); }   // leituras
 
-// chave de escrita dos dados de fora (/apps.key, ver /api/apps/data); false, e out vazio, se não existe ou está estragada
+// chave de escrita dos dados de fora (/apps.key, ver /api/apps/data); false, e out vazio, se não existe ou está estragada.
+// Cache em RAM (invalidado em /api/appskey) para evitar abrir/ler o LittleFS em todo push do Home Assistant ou scripts.
+static char appsKeyCache[33];
+static int8_t appsKeyState = 0;  // 0 = não lida, -1 = ausente/inválida, 1 = válida
+
+static void appsKeyInvalidate() {
+  appsKeyState = 0;
+  memset(appsKeyCache, 0, sizeof appsKeyCache);
+}
+
 static bool appsKeyLoad(char out[33]) {
   out[0] = 0;
-  File f = fsOk ? LittleFS.open(F("/apps.key"), "r") : File();
-  if (!f) return false;
-  size_t n = f.read((uint8_t *)out, 32);
-  f.close();
-  out[n] = 0;
-  if (appsKeyOk(out, n)) return true;
-  out[0] = 0;
-  return false;
+  if (appsKeyState == 0) {
+    File f = fsOk ? LittleFS.open(F("/apps.key"), "r") : File();
+    if (!f) { appsKeyState = -1; return false; }
+    size_t n = f.read((uint8_t *)appsKeyCache, 32);
+    f.close();
+    appsKeyCache[n] = 0;
+    if (appsKeyOk(appsKeyCache, n)) appsKeyState = 1;
+    else { memset(appsKeyCache, 0, sizeof appsKeyCache); appsKeyState = -1; return false; }
+  }
+  if (appsKeyState < 0) return false;
+  memcpy(out, appsKeyCache, 33);
+  return true;
 }
 
 // Autenticação comum às escritas de miniapps: a senha do painel nunca substitui a chave dedicada.
@@ -1224,7 +1253,7 @@ void setupWeb() {
     viewUntil = previewUntil;
     showFim = previewUntil;
     showVisto = true;
-    char reply[24];
+    alignas(4) char reply[24];
     snprintf_P(reply, sizeof reply, PSTR("{\"ok\":true,\"s\":%u}"), (unsigned)secs);
     server.send_P(200, PSTR("application/json"), reply, strlen(reply));
   });
@@ -1264,8 +1293,10 @@ void setupWeb() {
       if (f) f.close();
       memset(k, 0, sizeof k);
       if (!ok) LittleFS.remove(F("/apps.key"));
+      appsKeyInvalidate();
     } else if (ok && c == "off") {
       LittleFS.remove(F("/apps.key"));
+      appsKeyInvalidate();
       appDataClear();
     }
     char key[33];
@@ -1556,6 +1587,7 @@ void setupWeb() {
       return;
     }
     strlcpy(cfg.otaPass, p.c_str(), sizeof(cfg.otaPass));
+    authBasicInvalidate();
     saveSettings();
     server.send_P(200, PSTR("text/plain"), p.length() ? PSTR("Senha definida (usuario: admin)") : PSTR("Senha removida"));
   });

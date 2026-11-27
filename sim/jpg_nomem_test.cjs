@@ -19,7 +19,7 @@ fs.writeFileSync(out, `#include <cstdint>
 using std::max;
 using String = std::string;
 #define tr(pt, en, es) (pt)
-static bool g_alloc = true, g_open = true, g_decode = true; static int g_err = 0; static uint32_t g_maxBlock = 100000;
+static bool g_alloc = true, g_open = true, g_decode = true; static int g_err = 0; static uint32_t g_maxBlock = 100000, g_freeHeap = 100000;
 static int g_decodes = 0, g_unloads = 0, g_loads = 0; static bool g_packLoaded = false, g_packAtAlloc = false, g_loadOk = true, g_isGif = false, g_preview = false;
 static int g_gifPlayR = 1, g_gifErr = 0, g_gifResets = 0, g_gifDelay = 50;
 static uint32_t g_now = 0;
@@ -31,9 +31,9 @@ void diagNoMem(uint8_t what) { g_nomem[what]++; }
 enum { THEME_MATRIX = 0, THEME_PACK = 200 };
 struct { int theme = THEME_MATRIX; char facePkg[24] = "koi"; } cfg;
 bool facePackLoaded() { return g_packLoaded; }
-void facePackUnload() { if (g_packLoaded) { g_packLoaded = false; g_unloads++; g_maxBlock += 6627; } }  // libera ~6,6 KB de bloco
+void facePackUnload() { if (g_packLoaded) { g_packLoaded = false; g_unloads++; g_maxBlock += 6627; g_freeHeap += 6627; } }  // libera ~6,6 KB de bloco
 bool loadPack(const String &) { g_loads++; g_packLoaded = g_loadOk; return g_loadOk; }
-struct { uint32_t getMaxFreeBlockSize() { return g_maxBlock; } } ESP;
+struct { uint32_t getMaxFreeBlockSize() { return g_maxBlock; } uint32_t getFreeHeap() { return g_freeHeap < g_maxBlock ? g_maxBlock : g_freeHeap; } } ESP;
 enum { JPEG_ERROR_MEMORY = 5, JPEG_DECODE_ERROR = 2 };
 enum { RGB565_LITTLE_ENDIAN = 1, RGB565_BIG_ENDIAN = 2, JPEG_SCALE_HALF = 2, JPEG_SCALE_QUARTER = 4, JPEG_SCALE_EIGHTH = 8 };
 struct JPEGDEC {
@@ -86,7 +86,7 @@ ${fn('bool showAlbumItem(')}
 ${fn('void albumLoop(')}
 ${fn('void packEnsureLoaded(')}
 #define CHECK(c) do { if (!(c)) { printf("FALHA linha %d: %s (msg='%s')\\n", __LINE__, #c, lastErr.c_str()); return 1; } } while (0)
-static void reset() { releaseGif(); g_err = 0; g_unloads = g_loads = 0; g_packLoaded = g_packAtAlloc = g_isGif = g_preview = false; g_loadOk = true; g_now = 100000; packRetryAt = 0; packRetryWait = false; cfg.theme = THEME_MATRIX; g_alloc = g_open = g_decode = true; g_maxBlock = 100000; lastErr.clear(); g_decodes = 0; g_nomem[0] = g_nomem[1] = 0; g_samples = 0; g_gifPlayR = 1; g_gifErr = 0; g_gifResets = 0; g_gifDelay = 50; inAlbum = false; curFile.clear(); }
+static void reset() { releaseGif(); g_err = 0; g_unloads = g_loads = 0; g_packLoaded = g_packAtAlloc = g_isGif = g_preview = false; g_loadOk = true; g_now = 100000; packRetryAt = 0; packRetryWait = false; cfg.theme = THEME_MATRIX; g_alloc = g_open = g_decode = true; g_maxBlock = g_freeHeap = 100000; lastErr.clear(); g_decodes = 0; g_nomem[0] = g_nomem[1] = 0; g_samples = 0; g_gifPlayR = 1; g_gifErr = 0; g_gifResets = 0; g_gifDelay = 50; inAlbum = false; curFile.clear(); }
 int main() {
   reset(); CHECK(showAlbumItem("/a.jpg") && lastErr.empty() && g_decodes == 1);                    // arquivo bom: sem aviso
   reset(); g_alloc = false; CHECK(drawJpg("/a.jpg") == JPG_NOMEM);                                // new nothrow nulo
@@ -111,14 +111,18 @@ int main() {
   reset(); g_alloc = false; showAlbumItem("/a.jpg"); lastErr.clear(); g_alloc = true;
   CHECK(showAlbumItem("/a.jpg") && lastErr.empty() && g_decodes == 1);
   // ---- pacote de mostrador × álbum: só sai da RAM sob pressão, e a ordem importa (liberar ANTES de alocar) ----
-  const uint32_t JPG_NEED = sizeof(JPEGDEC) + 1024 + 8192, GIF_NEED = sizeof(AnimatedGIF) + 1024 + 19456 + 768;  // + tabela de cores do filtro (album.cpp)
-  reset(); g_packLoaded = true; g_maxBlock = JPG_NEED; CHECK(showAlbumItem("/a.jpg") && g_unloads == 0 && g_packLoaded && lastErr.empty());  // folga: o pacote fica
-  reset(); g_packLoaded = true; g_maxBlock = JPG_NEED - 1; CHECK(showAlbumItem("/a.jpg") && g_unloads == 1 && !g_packLoaded && !g_packAtAlloc && lastErr.empty()); // aperto: libera antes do decodificador
-  reset(); g_packLoaded = true; g_maxBlock = sizeof(JPEGDEC) + 1024; CHECK(showAlbumItem("/a.jpg") && !g_packLoaded && lastErr.empty());  // só cabia o decodificador: com o pacote fora, a foto aparece
-  reset(); g_maxBlock = JPG_NEED - 1; CHECK(showAlbumItem("/a.jpg") && g_unloads == 0);                       // sem pacote carregado, nada a liberar
-  reset(); g_isGif = true; g_packLoaded = true; g_maxBlock = GIF_NEED; CHECK(showAlbumItem("/a.gif") && g_unloads == 0 && g_packLoaded);
-  reset(); g_isGif = true; g_packLoaded = true; g_maxBlock = GIF_NEED - 1; CHECK(showAlbumItem("/a.gif") && g_unloads == 1 && !g_packAtAlloc && lastErr.empty() && gif != nullptr);
-  reset(); g_isGif = true; g_packLoaded = true; g_maxBlock = 100; g_alloc = false; CHECK(showAlbumItem("/a.gif") && g_unloads == 1 && lastErr == "Sem memoria p/ GIF");  // nem sem o pacote: aviso, sem travar
+  const uint32_t JPG_NEED = sizeof(JPEGDEC) + 1024 + 8192, JPG_BLK = sizeof(JPEGDEC) + 1024;
+  const uint32_t GIF_NEED = sizeof(AnimatedGIF) + 1024 + 19456 + 768, GIF_BLK = 8192 + 1024;  // + tabela de cores do filtro (album.cpp)
+  reset(); g_packLoaded = true; g_freeHeap = g_maxBlock = JPG_NEED; CHECK(showAlbumItem("/a.jpg") && g_unloads == 0 && g_packLoaded && lastErr.empty());  // folga: o pacote fica
+  reset(); g_packLoaded = true; g_freeHeap = JPG_NEED; g_maxBlock = JPG_BLK; CHECK(showAlbumItem("/a.jpg") && g_unloads == 0 && g_packLoaded && lastErr.empty());  // heap fragmentado mas cabe: pacote fica
+  reset(); g_packLoaded = true; g_freeHeap = JPG_NEED - 1; g_maxBlock = JPG_BLK; CHECK(showAlbumItem("/a.jpg") && g_unloads == 1 && !g_packLoaded && !g_packAtAlloc && lastErr.empty()); // aperto no total: libera antes
+  reset(); g_packLoaded = true; g_freeHeap = g_maxBlock = sizeof(JPEGDEC) + 1024; CHECK(showAlbumItem("/a.jpg") && !g_packLoaded && lastErr.empty());  // só cabia o decodificador: com o pacote fora, a foto aparece
+  reset(); g_freeHeap = g_maxBlock = JPG_NEED - 1; CHECK(showAlbumItem("/a.jpg") && g_unloads == 0);                       // sem pacote carregado, nada a liberar
+  reset(); g_isGif = true; g_packLoaded = true; g_freeHeap = g_maxBlock = GIF_NEED; CHECK(showAlbumItem("/a.gif") && g_unloads == 0 && g_packLoaded);
+  reset(); g_isGif = true; g_packLoaded = true; g_freeHeap = GIF_NEED; g_maxBlock = GIF_BLK; CHECK(showAlbumItem("/a.gif") && g_unloads == 0 && g_packLoaded);  // 4 blocos separados cabem sem despejar o pacote
+  reset(); g_isGif = true; g_packLoaded = true; g_freeHeap = GIF_NEED; g_maxBlock = GIF_BLK - 1; CHECK(showAlbumItem("/a.gif") && g_unloads == 1 && !g_packAtAlloc && lastErr.empty() && gif != nullptr);
+  reset(); g_isGif = true; g_packLoaded = true; g_freeHeap = GIF_NEED - 1; g_maxBlock = GIF_BLK; CHECK(showAlbumItem("/a.gif") && g_unloads == 1 && !g_packAtAlloc && lastErr.empty() && gif != nullptr);
+  reset(); g_isGif = true; g_packLoaded = true; g_freeHeap = g_maxBlock = 100; g_alloc = false; CHECK(showAlbumItem("/a.gif") && g_unloads == 1 && lastErr == "Sem memoria p/ GIF");  // nem sem o pacote: aviso, sem travar
   // ---- volta ao relógio: recarrega sem mexer no tema, com nova tentativa em 2 s ----
   reset(); cfg.theme = THEME_MATRIX; packEnsureLoaded(); CHECK(g_loads == 0);                                  // mostrador embutido: nada a recarregar
   reset(); cfg.theme = THEME_PACK; g_packLoaded = true; packEnsureLoaded(); CHECK(g_loads == 0);               // já carregado

@@ -47,13 +47,14 @@ namespace esp8266webserver {
 template <typename ClientType>
 static bool wsReadLine(ClientType& client, String& out, size_t maxLen, uint32_t idleMs, uint32_t deadline = 0, bool hasDeadline = false) {
   out.clear();
+  out.reserve(maxLen < 64 ? maxLen : 64);
   uint32_t last = millis();
   for (;;) {
     int ch = client.read();
     if (ch >= 0) {
       last = millis();
       if (ch == '\n') {
-        if (out.length() && out.charAt(out.length() - 1) == '\r') out = out.substring(0, out.length() - 1);
+        if (out.length() && out.charAt(out.length() - 1) == '\r') out.remove(out.length() - 1);
         return true;
       }
       if (out.length() >= maxLen) return false;
