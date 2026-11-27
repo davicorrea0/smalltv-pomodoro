@@ -20,7 +20,9 @@ static void weatherCard(const UiState &s, int x, int y) {
     textC(cx, y + 102, 1, MUTED, mm);
   } else {
     textC(cx, y + 50, 3, DIM, "--");
-    textC(cx, y + 92, 1, MUTED, s.weatherOn ? tr("buscando...", "loading...", "buscando...") : tr("desligado", "off", "apagado"));
+    textC(cx, y + 92, 1, MUTED, !s.weatherOn ? tr("desligado", "off", "apagado")
+                                : s.wx.fail  ? tr("indisponivel", "unavailable", "no disponible")
+                                             : tr("buscando...", "loading...", "buscando..."));
   }
 }
 

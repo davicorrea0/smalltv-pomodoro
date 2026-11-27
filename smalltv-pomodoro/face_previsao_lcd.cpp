@@ -135,7 +135,9 @@ void themeForecastLcd(const UiState &s, bool full) {
   if (!changed(cA, key) && !full) return;
   if (!(s.weatherOn && s.wx.ok && s.wx.nd)) {
     G->fillRect(14, ROW_Y - 4, 212, 4 * ROW_H + 2, LCD_BG);
-    textC(120, 120, 2, LCD_ON, s.weatherOn ? tr("BUSCANDO", "FETCHING", "BUSCANDO") : tr("SEM CLIMA", "NO WEATHER", "SIN CLIMA"));
+    textC(120, 120, 2, LCD_ON, !s.weatherOn ? tr("SEM CLIMA", "NO WEATHER", "SIN CLIMA")
+                               : s.wx.fail  ? tr("INDISPONIVEL", "UNAVAILABLE", "NO DISPONIBLE")
+                                            : tr("BUSCANDO", "FETCHING", "BUSCANDO"));
     return;
   }
   uiPaint(full, 14, ROW_Y - 4, 212, 4 * ROW_H + 2, paintRows, (void *)&s);

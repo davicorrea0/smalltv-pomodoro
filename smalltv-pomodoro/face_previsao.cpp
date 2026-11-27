@@ -90,8 +90,12 @@ void themeForecast(const UiState &s, bool full) {
   if (!changed(cA, key) && !full) return;
   if (!(s.weatherOn && s.wx.ok && s.wx.nd)) {
     G->fillRect(0, ROW_Y - 4, 240, 240 - ROW_Y + 4, BG);
-    textC(120, 112, 2, MUTED, s.weatherOn ? tr("Buscando clima", "Fetching weather", "Buscando clima") : tr("Clima desligado", "Weather off", "Clima apagado"));
-    textC(120, 140, 1, MUTED, tr("defina a cidade no painel", "set the city in the panel", "elige la ciudad en el panel"));
+    const char *m = !s.weatherOn ? tr("Clima desligado", "Weather off", "Clima apagado")
+                    : s.wx.fail  ? tr("Clima indisponivel", "Weather unavailable", "Clima no disponible")
+                                 : tr("Buscando clima", "Fetching weather", "Buscando clima");
+    textC(120, 112, textW(m, 2) <= 236 ? 2 : 1, MUTED, m);
+    if (!s.weatherOn) textC(120, 140, 1, MUTED, tr("defina a cidade no painel", "set the city in the panel", "elige la ciudad en el panel"));
+    else if (s.wx.fail) textC(120, 140, 1, MUTED, tr("tentando de novo", "retrying", "reintentando"));
     return;
   }
   uiPaint(full, 0, ROW_Y - 4, 240, 240 - ROW_Y + 4, paintDays, (void *)&s);

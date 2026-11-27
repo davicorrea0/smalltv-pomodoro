@@ -21,6 +21,7 @@
  "Ceu limpo": "Ясно",
  "Chuva": "Дождь",
  "Clima desligado": "Погода выкл.",
+ "Clima indisponivel": "Погода недоступна",
  "Conectado": "Подключено",
  "Conectando Wi-Fi": "Подключение Wi-Fi",
  "DESENHANDO": "РИСОВАНИЕ",
@@ -39,6 +40,7 @@
  "GIF invalido": "Неверный GIF",
  "Garoa": "Морось",
  "HOJE": "СЕГ.",
+ "INDISPONIVEL": "НЕДОСТУПНО",
  "Iniciando": "Запуск",
  "JPG fora do padrao": "JPG не подходит",
  "JPG invalido": "Неверный JPG",
@@ -91,6 +93,7 @@
  "foco": "фок.",
  "focos": "фок.",
  "fundo preto": "фон черным",
+ "indisponivel": "недоступно",
  "meta %d": "цель %d",
  "meta batida!": "цель выполнена!",
  "mova ate a estampa parar": "двигать, пока узор не",
@@ -100,5 +103,6 @@
  "painel": "панель",
  "para abrir": "чтобы открыть",
  "sem clima": "нет погоды",
+ "tentando de novo": "повторная попытка",
  "termina %02d:%02d": "конец %02d:%02d"
 }

@@ -21,6 +21,7 @@
  "Ceu limpo": "Ciel degage",
  "Chuva": "Pluie",
  "Clima desligado": "Meteo desactivee",
+ "Clima indisponivel": "Meteo indisponible",
  "Conectado": "Connecte",
  "Conectando Wi-Fi": "Connexion Wi-Fi",
  "DESENHANDO": "DESSIN",
@@ -39,6 +40,7 @@
  "GIF invalido": "GIF invalide",
  "Garoa": "Bruine",
  "HOJE": "CE JOUR",
+ "INDISPONIVEL": "INDISPONIBLE",
  "Iniciando": "Demarrage",
  "JPG fora do padrao": "JPG non conforme",
  "JPG invalido": "JPG invalide",
@@ -91,6 +93,7 @@
  "foco": "focus",
  "focos": "focus",
  "fundo preto": "fond noir",
+ "indisponivel": "indisponible",
  "meta %d": "objectif %d",
  "meta batida!": "objectif atteint !",
  "mova ate a estampa parar": "bougez: le motif doit se figer",
@@ -100,5 +103,6 @@
  "painel": "panneau",
  "para abrir": "pour ouvrir",
  "sem clima": "pas de meteo",
+ "tentando de novo": "nouvel essai en cours",
  "termina %02d:%02d": "fin %02d:%02d"
 }

@@ -18,8 +18,13 @@ static void paintWeather(void *c) {
   const UiState &s = *(const UiState *)c;
   G->fillRect(0, 24, 240, 216, BG);
   if (!(s.weatherOn && s.wx.ok)) {
-    textC(120, 96, 2, MUTED, s.weatherOn ? tr("Buscando clima", "Fetching weather", "Buscando clima") : tr("Clima desligado", "Weather off", "Clima apagado"));
-    textC(120, 124, 1, MUTED, tr("defina a cidade no painel", "set the city in the panel", "elige la ciudad en el panel"));
+    // weatherOn já exige a cidade: "defina a cidade" só aparece com o clima desligado ou sem cidade
+    const char *m = !s.weatherOn ? tr("Clima desligado", "Weather off", "Clima apagado")
+                    : s.wx.fail  ? tr("Clima indisponivel", "Weather unavailable", "Clima no disponible")
+                                 : tr("Buscando clima", "Fetching weather", "Buscando clima");
+    textC(120, 96, textW(m, 2) <= 236 ? 2 : 1, MUTED, m);
+    if (!s.weatherOn) textC(120, 124, 1, MUTED, tr("defina a cidade no painel", "set the city in the panel", "elige la ciudad en el panel"));
+    else if (s.wx.fail) textC(120, 124, 1, MUTED, tr("tentando de novo", "retrying", "reintentando"));
     return;
   }
   weatherIcon(64, 82, 1.6f, s.wx.code, s.wx.day, BG);
