@@ -15,7 +15,7 @@ if (!/previewActive\(\)/.test(pe) || !/facePackLoaded\(\)/.test(pe)) throw Error
 const show = fn('bool showAlbumItem(');
 if (/facePackUnload\(\)/.test(show)) throw Error('showAlbumItem só pode liberar o pacote por albumMakeRoom (sob pressão de memória)');
 if ((show.match(/albumMakeRoom\(/g) || []).length !== 2) throw Error('showAlbumItem deve abrir espaço antes do GIF e antes do JPEG');
-if (!/ESP\.getMaxFreeBlockSize\(\) < need/.test(fn('static void albumMakeRoom('))) throw Error('albumMakeRoom deve liberar só quando falta bloco contíguo');
+if (!/ESP\.getFreeHeap\(\) < totalNeed \|\| ESP\.getMaxFreeBlockSize\(\) < maxBlockNeed/.test(fn('static void albumMakeRoom('))) throw Error('albumMakeRoom deve liberar só quando falta heap ou bloco contíguo');
 // restoreActivePack: falta de memória agora (mensagem do motor ou do ArduinoJson) não troca o mostrador pelo Matriz;
 // marca nova tentativa do packEnsureLoaded e sai antes de rebaixar o tema. Pacote ausente ou inválido continua no Matriz.
 const ra = fn('void restoreActivePack() {');

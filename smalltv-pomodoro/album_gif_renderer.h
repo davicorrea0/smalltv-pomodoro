@@ -38,23 +38,27 @@ static inline uint16_t albumGifSwap16(uint16_t v) { return (uint16_t)((v << 8) |
 static inline uint8_t albumGifExpand5(uint16_t v) { return (uint8_t)((v << 3) | (v >> 2)); }
 static inline uint8_t albumGifExpand6(uint16_t v) { return (uint8_t)((v << 2) | (v >> 4)); }
 
-// Uma passada pela paleta por quadro: conta e zera os quase pretos (ruído da compressão com perda) e, com a tabela
-// alocada, guarda o R, G, B de 8 bits de cada cor já limpa para o filtro. Devolve quantos quase pretos havia.
+// Uma passada pela paleta por quadro: conta e zera os quase pretos (ruído da compressão com perda) e, só quando há
+// quase pretos (filtro ativo) e a tabela está alocada, guarda o R, G, B de 8 bits de cada cor já limpa.
 static int albumGifPreparePalette(uint16_t *palette, uint8_t *rgb) {
+  static_assert(GIF_LIMIAR_PRETO == 12, "mascara RGB565 BE abaixo assume limiar 12 (r5<=1, g6<=3, b5<=1)");
   int nearBlack = 0;
   for (int i = 0; i < 256; i++) {
-    uint16_t v = albumGifSwap16(palette[i]);
-    uint8_t r = albumGifExpand5((v >> 11) & 31);
-    uint8_t g = albumGifExpand6((v >> 5) & 63);
-    uint8_t b = albumGifExpand5(v & 31);
-    if (palette[i] && r <= GIF_LIMIAR_PRETO && g <= GIF_LIMIAR_PRETO && b <= GIF_LIMIAR_PRETO) {
+    uint16_t p = palette[i];
+    if (p && (p & 0x9EF7u) == 0) {
       nearBlack++;
 #if GIF_LIMPEZA_PALETA
       palette[i] = 0;
-      r = g = b = 0;
 #endif
     }
-    if (rgb) { rgb[3 * i] = r; rgb[3 * i + 1] = g; rgb[3 * i + 2] = b; }
+  }
+  if (nearBlack && rgb) {
+    for (int i = 0; i < 256; i++) {
+      uint16_t v = albumGifSwap16(palette[i]);
+      rgb[3 * i] = albumGifExpand5((v >> 11) & 31);
+      rgb[3 * i + 1] = albumGifExpand6((v >> 5) & 63);
+      rgb[3 * i + 2] = albumGifExpand5(v & 31);
+    }
   }
   return nearBlack;
 }
@@ -169,38 +173,70 @@ static void albumGifDraw(AlbumGifRenderState &st, Display &out, uint16_t *buf,
     }
     return albumGifRowDone(st, out, p);
   }
-  for (int repeatY = 0; repeatY < scale; repeatY++) {
-    int y = y0 + repeatY;
-    if (w <= 0 || y < 0 || y >= 240) continue;
-    uint16_t *pal = p->pPalette;
-    bool rowRestore = st.clearTrans && y >= st.oldY0 && y < st.oldY1;
-    uint8_t tr = p->ucTransparent;
-    if (rowRestore && x0 >= st.oldX0 && x0 + w <= st.oldX1) {
-      int n = 0;
-      for (int i = 0; i < src1 - src0; i++) {
-        uint8_t px = s[i];
-        uint16_t color = px == tr ? 0 : pal[px];
-        for (int repeatX = 0; repeatX < scale; repeatX++) buf[n++] = color;
+  if (w <= 0) return albumGifRowDone(st, out, p);
+  int ry0 = y0 < 0 ? 0 : y0;
+  int ry1 = y0 + scale > 240 ? 240 : y0 + scale;
+  if (ry0 >= ry1) return albumGifRowDone(st, out, p);
+  uint16_t *pal = p->pPalette;
+  uint8_t tr = p->ucTransparent;
+  int srcW = src1 - src0;
+  // Quando todas as linhas repetidas por `scale` têm o mesmo comportamento de transparência (disposal 0/1 ou
+  // restauração cobrindo o bloco inteiro), monta os pixels uma única vez e envia em uma janela SPI de altura ry1-ry0.
+  bool fullRestore = st.clearTrans && ry0 >= st.oldY0 && ry1 <= st.oldY1 && x0 >= st.oldX0 && x0 + w <= st.oldX1;
+  if (fullRestore) {
+    int n = 0;
+    for (int i = 0; i < srcW; i++) {
+      uint8_t px = s[i];
+      uint16_t color = px == tr ? 0 : pal[px];
+      if (scale == 1) buf[n++] = color;
+      else for (int repeatX = 0; repeatX < scale; repeatX++) buf[n++] = color;
+    }
+    out.setAddrWindow(x0, ry0, w, ry1 - ry0);
+    for (int y = ry0; y < ry1; y++) out.writePixelsBE(buf, w);
+  } else if (!st.clearTrans || ry1 <= st.oldY0 || ry0 >= st.oldY1) {
+    int x = 0;
+    while (x < srcW && s[x] == tr) x++;
+    while (x < srcW) {
+      int start = x, n = 0;
+      while (x < srcW && s[x] != tr) {
+        uint16_t color = pal[s[x++]];
+        if (scale == 1) buf[n++] = color;
+        else for (int repeatX = 0; repeatX < scale; repeatX++) buf[n++] = color;
       }
-      if (!st.blockWindow) out.setAddrWindow(x0, y, w, 1);
-      out.writePixelsBE(buf, w);
-    } else {
-      auto drawPx = [&](int x) {
-        int pxX = x0 + x * scale;
-        return s[x] != tr || (rowRestore && pxX >= st.oldX0 && pxX < st.oldX1);
-      };
-      int srcW = src1 - src0, x = 0;
-      while (x < srcW && !drawPx(x)) x++;
-      while (x < srcW) {
-        int start = x, n = 0;
-        while (x < srcW && drawPx(x)) {
-          uint8_t px = s[x++];
+      out.setAddrWindow(x0 + start * scale, ry0, n, ry1 - ry0);
+      for (int y = ry0; y < ry1; y++) out.writePixelsBE(buf, n);
+      while (x < srcW && s[x] == tr) x++;
+    }
+  } else {
+    for (int y = ry0; y < ry1; y++) {
+      bool rowRestore = st.clearTrans && y >= st.oldY0 && y < st.oldY1;
+      if (rowRestore && x0 >= st.oldX0 && x0 + w <= st.oldX1) {
+        int n = 0;
+        for (int i = 0; i < srcW; i++) {
+          uint8_t px = s[i];
           uint16_t color = px == tr ? 0 : pal[px];
           for (int repeatX = 0; repeatX < scale; repeatX++) buf[n++] = color;
         }
-        out.setAddrWindow(x0 + start * scale, y, n, 1);
-        out.writePixelsBE(buf, n);
+        out.setAddrWindow(x0, y, w, 1);
+        out.writePixelsBE(buf, w);
+      } else {
+        auto drawPx = [&](int x) {
+          int pxX = x0 + x * scale;
+          return s[x] != tr || (rowRestore && pxX >= st.oldX0 && pxX < st.oldX1);
+        };
+        int x = 0;
         while (x < srcW && !drawPx(x)) x++;
+        while (x < srcW) {
+          int start = x, n = 0;
+          while (x < srcW && drawPx(x)) {
+            uint8_t px = s[x++];
+            uint16_t color = px == tr ? 0 : pal[px];
+            for (int repeatX = 0; repeatX < scale; repeatX++) buf[n++] = color;
+          }
+          out.setAddrWindow(x0 + start * scale, y, n, 1);
+          out.writePixelsBE(buf, n);
+          while (x < srcW && !drawPx(x)) x++;
+        }
       }
     }
   }

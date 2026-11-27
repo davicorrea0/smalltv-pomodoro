@@ -227,7 +227,41 @@ extern uint16_t statsStreak, statsBest;
 extern uint32_t fsInfoAt;
 extern String rotList;
 extern String rotTimes;
-extern std::vector<String> album;
+// Lista do álbum em um único bloco contíguo no heap (caminhos separados por '\0') + offsets de 16 bits,
+// evitando até 128 alocações separadas de String picotando o heap entre os quadros de GIF/JPEG.
+struct AlbumList {
+  char *buf = nullptr;
+  uint16_t used = 0, cap = 0;
+  std::vector<uint16_t> off;
+  size_t size() const { return off.size(); }
+  bool empty() const { return off.empty(); }
+  void clear() {
+    free(buf);
+    buf = nullptr;
+    used = cap = 0;
+    off.clear();
+    off.shrink_to_fit();
+  }
+  bool push_back(const String &s) {
+    size_t len = s.length() + 1;
+    if ((uint32_t)used + len > 65535u) return false;
+    if (used + len > cap) {
+      uint32_t need = (uint32_t)used + len;
+      uint16_t nc = (uint16_t)min<uint32_t>(65535u, (need + 255u) & ~255u);
+      char *nb = (char *)realloc(buf, nc);
+      if (!nb) return false;
+      buf = nb;
+      cap = nc;
+    }
+    off.push_back(used);
+    memcpy(buf + used, s.c_str(), len);
+    used += (uint16_t)len;
+    return true;
+  }
+  const char *operator[](size_t i) const { return buf + off[i]; }
+};
+
+extern AlbumList album;
 extern bool inAlbum;
 extern uint32_t viewUntil;
 extern String curFile;
@@ -333,6 +367,7 @@ void jsonFlush(String &chunk);
 void jsonEnd(String &chunk);
 void newFormToken();
 String formTokenField();
+void jsonEscapeAppend(String &o, const char *s, size_t len);
 void jsonEscapeAppend(String &o, const char *s);
 void diagLoop();
 void tcpTwPurge();            // esvazia a lista TIME_WAIT do lwIP a cada volta do laço (contorno do core 3.1.2; diag.tw)

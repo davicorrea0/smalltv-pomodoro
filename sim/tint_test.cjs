@@ -77,7 +77,7 @@ static bool validGif(const String &) { return true; }
 enum JpgResult : uint8_t { JPG_OK, JPG_BAD, JPG_NOMEM };
 static JpgResult drawJpg(const String &) { G->drawPixel(0, 0, TEXT); return JPG_OK; }
 struct JPEGDEC {};
-static void albumMakeRoom(uint32_t) {}  // o pacote na RAM não faz parte deste teste de cor
+static void albumMakeRoom(uint32_t, uint32_t) {}  // o pacote na RAM não faz parte deste teste de cor
 static void diagBlkSample() {}  // telemetria (web_portal.cpp): fora deste teste de cor
 static void diagNoMem(uint8_t) {}
 ${fn('bool showAlbumItem(const String &f)')}

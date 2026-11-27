@@ -56,6 +56,7 @@ struct String : std::string {
     for (size_t i = 0; (i = find(a, i)) != npos; i += b.size()) std::string::replace(i, a.size(), b);
   }
   char charAt(unsigned i) const { return i < size() ? (*this)[i] : 0; }
+  void remove(unsigned i) { if (i < size()) erase(i); }
   long toInt() const { return atol(c_str()); }
   void clear() { std::string::clear(); }
 };
