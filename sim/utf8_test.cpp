@@ -59,14 +59,28 @@ int main() {
   const unsigned char *combina = controleTrema + 1;
   confere(combina, 0, 2);
 
-  const uint8_t latin[] = {0xA1,0xA9,0xAD,0xB3,0xBA,0xA3,0xB5,0xA7,0xB1,
-                           0x81,0x89,0x8D,0x93,0x9A,0x83,0x95,0x87,0x91};
-  // pt/es: a letra sem acento (ñ/Ñ viram n/N; antes caíam em o/O, bug herdado do runText)
-  const char base[] = "aeiouaocnAEIOUAOCN";
-  int bi = 0;
-  for (uint8_t d : latin) {
-    const unsigned char s[] = {0xC3, d, 0};
-    confere(s, (uint8_t)base[bi++], 2);
+  // pt/es/fr: o glifo CP437 quando a fonte tem o acento; senão o latino desenhado (UTF8_LAT + i, ordem de
+  // utf8_pixel.h). Sem glifo: Ð Ø Ý Þ × ÷ ð ø ý þ viram a letra base (ñ/Ñ eram reduzidos a o/O no runText antigo).
+  const uint16_t L = UTF8_LAT;
+  struct Acento { uint8_t segundo; uint16_t cp; } acentos[] = {
+    {0xA1, 0xA0}, {0xA9, 0x82}, {0xAD, 0xA1}, {0xB3, 0xA2}, {0xBA, 0xA3}, {0xA3, (uint16_t)(L + 18)}, {0xB5, (uint16_t)(L + 19)},
+    {0xA7, (uint16_t)(L + 20)}, {0xB1, 0xA4},
+    {0x81, (uint16_t)(L + 1)}, {0x89, 0x90}, {0x8D, (uint16_t)(L + 8)}, {0x93, (uint16_t)(L + 12)}, {0x9A, (uint16_t)(L + 16)},
+    {0x83, (uint16_t)(L + 3)}, {0x95, (uint16_t)(L + 14)}, {0x87, 0x80}, {0x91, 0xA5},
+    {0xA0, 0x85}, {0xA2, 0x83}, {0xA8, 0x8A}, {0xAA, 0x88}, {0xAB, 0x89}, {0xAE, 0x8C}, {0xAF, 0x8B}, {0xB4, 0x93},
+    {0xB9, 0x97}, {0xBB, 0x96}, {0x80, L}, {0x88, (uint16_t)(L + 4)}, {0x8A, (uint16_t)(L + 5)},
+    {0x90, 'D'}, {0x98, 'O'}, {0x9D, 'Y'}, {0xB0, 'd'}, {0xB8, 'o'}, {0xBD, 'y'},
+  };
+  // todo segundo byte 0x80..0xBF dá um glifo que existe: ASCII, CP437 0x80..0xFF ou latino desenhado
+  for (int d = 0x80; d <= 0xBF; d++) {
+    const unsigned char s[] = {0xC3, (unsigned char)d, 0};
+    const unsigned char *p = s;
+    const uint16_t g = utf8ToCp437(p);
+    assert(g >= 0x20 && (g < 0x100 || (g >= L && g < L + UTF8_LAT_N)));
+  }
+  for (const Acento &a : acentos) {
+    const unsigned char s[] = {0xC3, a.segundo, 0};
+    confere(s, a.cp, 2);
   }
 
   // latin1Base inteira (U+00C0..U+00FF) contra o FOLD de face_mundo.cpp (maiúsculas; '.' = sem letra)

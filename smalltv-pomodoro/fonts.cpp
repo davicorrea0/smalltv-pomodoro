@@ -477,6 +477,11 @@ static bool vecHasUtf8(const char *s) {
 // As fontes vetoriais não têm acentos: reduz o UTF-8 à letra-base que elas possuem.
 // Cirílico, bytes inválidos e qualquer CP437 restante somem sem deixar avanço em branco.
 static char vecUtf8Char(const unsigned char *&p) {
+  if (p[0] == 0xC3 && p[1] >= 0x80 && p[1] <= 0xBF) {  // Latin-1: a letra base, mesmo as que a fonte pixel desenha com acento
+    const char b = (char)latin1Base(p[1]);
+    p += 2;
+    return b;
+  }
   uint16_t ch = utf8ToCp437(p);
   if (ch <= 0x7F) return (char)ch;
   switch (ch) {

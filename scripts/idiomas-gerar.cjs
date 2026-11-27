@@ -173,7 +173,8 @@ function linhaDaChave(json, chave) {
 }
 
 function caracterePermitido(texto, idioma) {
-  const extra = idioma === 'de' ? 'äöüßÄÖÜ' : '';
+  // só o que a fonte da tela desenha (CP437 e os latinos de utf8_pixel.h)
+  const extra = idioma === 'de' ? 'äöüßÄÖÜ' : idioma === 'fr' ? 'àâçéèêëîïôûùÀÂÇÉÈÊËÎÏÔÙÛ' : '';
   for (const c of texto) {
     const n = c.codePointAt(0);
     if ('"\'<>&\\'.includes(c) || n < 0x20 || n === 0x7f) return c;
