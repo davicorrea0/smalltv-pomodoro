@@ -60,6 +60,7 @@ node sessoes_test.cjs out/sessoes.cpp && $CXX -O1 -std=c++17 -w out/sessoes.cpp 
 node sessoes_lista_painel.cjs || exit 1
 node painel_test.cjs
 node state_cfg_test.cjs out/state_cfg.cpp && $CXX -O1 -std=c++17 -w out/state_cfg.cpp -o "out/state_cfg_$BIN" && "./out/state_cfg_$BIN" || exit 1
+node clima_leitura_test.cjs out/clima_leitura.cpp && $CXX -O1 -std=c++17 -w out/clima_leitura.cpp -o "out/clima_leitura_$BIN" && "./out/clima_leitura_$BIN" || exit 1
 node ponte_test.cjs || exit 1
 node fuso_test.cjs || exit 1
 node ../web/build.js

@@ -151,7 +151,9 @@ struct Weather {
   uint8_t rainIn = 0;  // ver UiWeather::rainIn
   char tzName[40] = "";  // fuso da cidade segundo o Open-Meteo (IANA, ex.: America/Sao_Paulo)
   int32_t utcOff = 0;     // deslocamento desse fuso agora, em segundos (o painel compara com o do relógio)
+  uint32_t okAt = 0;      // millis() da última busca que deu certo
 };
+const uint32_t WX_STALE_MS = 3600000UL;  // com o serviço fora, a última leitura continua na tela por até 1 h
 // GET em HTTP/1.0 (resposta sem "chunked", fecha no fim) no lugar do HTTPClient (~4 KB).
 // Devolve o código HTTP (negativo se não conectar) e deixa o cliente no começo do corpo.
 const int HTTP_WAIT = -3;  // o nome (DNS) ainda está sendo buscado: tente de novo no próximo laço

@@ -197,6 +197,7 @@ static bool fetchWeather() {
   for (char *c = wx.tzName; *c; c++)  // nome IANA ("America/Sao_Paulo"): só isso vai para o JSON do estado
     if (!isalnum((unsigned char)*c) && !strchr("/_+-", *c)) *c = 0;
   wx.utcOff = doc["utc_offset_seconds"] | 0;
+  wx.okAt = millis();
   wx.ok = true;
   wx.version++;
   return true;
@@ -214,12 +215,18 @@ void weatherLoop() {
   if (ok) wxBack.ok(millis(), 15UL * 60000UL);
   else {
     wxBack.fail(millis());
-    // Três falhas seguidas (~6 min pelo backoff): a leitura velha some da tela e o painel avisa. O nascer e o pôr do
-    // sol ficam: mudam 1 a 2 min por dia, e apagá-los faria o "seguir o sol" cair no horário fixo no meio da noite.
-    if (wxBack.fails >= 3 && wx.ok) {
-      wx.ok = false;
+    // Três falhas seguidas (~6 min pelo backoff): o painel avisa, a tela sem leitura troca "Buscando clima" por
+    // "indisponível" e o aviso de chuva sai (vale só para a próxima hora). A última leitura fica até WX_STALE_MS desde
+    // a última busca que deu certo, para uma instabilidade curta do serviço não apagar o clima; depois some da tela.
+    // O nascer e o pôr do sol ficam: mudam 1 a 2 min por dia, e apagá-los faria o "seguir o sol" cair no horário
+    // fixo no meio da noite.
+    if (wxBack.fails == 3) {
       wx.rainIn = 0;
       wx.version++;
-    } else if (wxBack.fails == 3) wx.version++;  // ainda sem leitura: a tela troca "Buscando clima" por "indisponível"
+    }
+    if (wxBack.fails >= 3 && wx.ok && millis() - wx.okAt >= WX_STALE_MS) {
+      wx.ok = false;
+      wx.version++;
+    }
   }
 }
