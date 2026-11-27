@@ -77,8 +77,8 @@ const int MAX_JPEG_DIM = 1920;
 ${fn('bool jpgDimensionsOk(')}
 static int jpgCheckDraw(JPEGDRAW *) { return 1; }
 ${enumLine}${fn('JPEGDEC *jpgAlloc() {')}
-${fn('JpgResult validJpg(')}
 ${fn('static void albumMakeRoom(')}
+${fn('JpgResult validJpg(')}
 static uint32_t packRetryAt;
 static bool packRetryWait;
 ${fn('JpgResult drawJpg(')}
@@ -105,6 +105,7 @@ int main() {
   reset(); g_open = false; g_err = JPEG_ERROR_MEMORY; CHECK(showAlbumItem("/a.jpg") && lastErr == "Sem memoria p/ foto");
   reset(); g_decode = false; g_err = JPEG_DECODE_ERROR; CHECK(drawJpg("/b.jpg") == JPG_BAD && validJpg("/b.jpg") == JPG_BAD);  // estragado continua BAD
   reset(); CHECK(validJpg("/a.jpg") == JPG_OK);
+  reset(); g_packLoaded = true; g_maxBlock = sizeof(JPEGDEC) + 1024; CHECK(validJpg("/a.jpg") == JPG_OK && g_unloads == 1 && !g_packLoaded);  // #191: libera pacote sob pressão antes de validar upload
   reset(); g_open = false; CHECK(validJpg("/b.jpg") == JPG_BAD);
   reset(); g_alloc = false; CHECK(validJpg("/a.jpg") == JPG_NOMEM);
   // a falta de memória some sozinha: o próximo item, com memória, mostra a foto sem nenhum aviso

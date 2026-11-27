@@ -136,8 +136,18 @@ static JPEGDEC *jpgAlloc() {
   return new (std::nothrow) JPEGDEC();
 }
 
+// O pacote de mostrador ativo (até ~6,6 KB) disputa o heap com o GIF (668 B residentes + ~18,9 KB temporários
+// por quadro em blocos de até 8 KB) e o JPEG (~7,7 KB + 2x4 KB). Só sai da RAM quando falta bloco para o
+// item; volta sozinho em packEnsureLoaded(), quando o relógio é desenhado de novo. Sem pressão ele fica,
+// para o modo "alternado" não reler o pacote a cada item.
+static void albumMakeRoom(uint32_t need) {
+  if (facePackLoaded() && ESP.getMaxFreeBlockSize() < need) facePackUnload();
+}
+
 JpgResult validJpg(const String &path) {
   diagBlkSample();  // minblk: o maior bloco antes de o decodificador pegar ~18 KB
+  if (inAlbum) stopAlbum();  // libera GIF em andamento antes de validar o upload (#191)
+  albumMakeRoom(sizeof(JPEGDEC) + 1024 + 8192);  // mesma reserva do drawJpg(): evita JPG_NOMEM à toa no envio
   JPEGDEC *jpg = jpgAlloc();
   if (!jpg) return JPG_NOMEM;
   bool opened = jpg->open(path.c_str(), mediaOpen, mediaClose, jpgRead, jpgSeek, jpgCheckDraw);
@@ -248,14 +258,6 @@ void stopAlbum() {
   inAlbum = false;
   curFile = "";
   uiInvalidate();  // o relógio redesenha tudo ao voltar
-}
-
-// O pacote de mostrador ativo (até ~6,6 KB) disputa o heap com o GIF (668 B residentes + ~18,9 KB temporários
-// por quadro em blocos de até 8 KB) e o JPEG (~7,7 KB + 2x4 KB). Só sai da RAM quando falta bloco para o
-// item; volta sozinho em packEnsureLoaded(), quando o relógio é desenhado de novo. Sem pressão ele fica,
-// para o modo "alternado" não reler o pacote a cada item.
-static void albumMakeRoom(uint32_t need) {
-  if (facePackLoaded() && ESP.getMaxFreeBlockSize() < need) facePackUnload();
 }
 
 bool showAlbumItem(const String &f) {
