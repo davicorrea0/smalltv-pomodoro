@@ -825,6 +825,7 @@ static bool appsWriteAuth() {
     server.send_P(401, PSTR("text/plain"), PSTR("chave invalida"));
     return false;
   }
+  authThrottle.success(ip);
   return true;
 }
 

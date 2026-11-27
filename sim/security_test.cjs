@@ -28,8 +28,8 @@ for(const name of ['handleUpload','handlePackUpload','handlePanelUpload'])
  const data=handler('/api/apps/data'),show=handler('/api/apps/show');
  const ai=source.indexOf('static bool appsWriteAuth() {'),auth=source.slice(ai,source.indexOf('\n}',ai)+2);
  if(ai<0)throw Error('appsWriteAuth expected');
- const po=auth.indexOf('panelOk()'),bl=auth.indexOf('authThrottle.blocked('),ld=auth.indexOf('appsKeyLoad(key)'),ck=auth.indexOf('appsBearerOk('),fl=auth.indexOf('authThrottle.fail(');
- if(!(po>=0&&po<bl&&bl<ld&&ld<ck&&ck<fl))throw Error('appsWriteAuth: panelOk, throttle, key load, bearer check and fail in order');
+ const po=auth.indexOf('panelOk()'),bl=auth.indexOf('authThrottle.blocked('),ld=auth.indexOf('appsKeyLoad(key)'),ck=auth.indexOf('appsBearerOk('),fl=auth.indexOf('authThrottle.fail('),ok=auth.indexOf('authThrottle.success(ip)');
+ if(!(po>=0&&po<bl&&bl<ld&&ld<ck&&ck<fl&&fl<ok))throw Error('appsWriteAuth: panelOk, throttle, key load, bearer check, fail and success in order');
  if(!auth.includes('deny()')||!auth.includes('send_P(403')||auth.includes('guard()')||auth.includes('authed()')||auth.includes('passOk'))
   throw Error('appsWriteAuth must deny a bad panel request, return 403 without key and never accept the panel password');
  for(const [route,blk,work] of [['/api/apps/data',data,'appDataPut('],['/api/apps/show',show,'appShowParse(']]){
